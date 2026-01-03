@@ -213,6 +213,14 @@
             margin-top: 5px;
         }
 
+        .objective {
+            font-size: 12px;
+            color: #ffd700;
+            font-style: italic;
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+
         .trump-choice {
             position: fixed;
             top: 50%;
@@ -401,24 +409,28 @@
 
         <div class="players">
             <div class="player">
-                <h3>Player 1 (North)</h3>
+                <h3 id="playerName1">Player 1 (North)</h3>
+                <div class="objective" id="objective1"></div>
                 <div class="tricks-won" id="tricks1">Tricks: 0</div>
                 <div class="hand" id="player1"></div>
             </div>
             <div class="player">
-                <h3>Player 2 (East)</h3>
+                <h3 id="playerName2">Player 2 (East)</h3>
+                <div class="objective" id="objective2"></div>
                 <div class="tricks-won" id="tricks2">Tricks: 0</div>
                 <div class="hand-count" id="count2">Cards: 9</div>
                 <div class="hand" id="player2"></div>
             </div>
             <div class="player">
-                <h3>Player 3 (South)</h3>
+                <h3 id="playerName3">Player 3 (South)</h3>
+                <div class="objective" id="objective3"></div>
                 <div class="tricks-won" id="tricks3">Tricks: 0</div>
                 <div class="hand-count" id="count3">Cards: 9</div>
                 <div class="hand" id="player3"></div>
             </div>
             <div class="player">
-                <h3>Player 4 (West)</h3>
+                <h3 id="playerName4">Player 4 (West)</h3>
+                <div class="objective" id="objective4"></div>
                 <div class="tricks-won" id="tricks4">Tricks: 0</div>
                 <div class="hand-count" id="count4">Cards: 9</div>
                 <div class="hand" id="player4"></div>
@@ -451,6 +463,28 @@
         };
 
         const playerNames = ['North (You)', 'East', 'South', 'West'];
+
+        function getPlayerDisplayName(playerIndex) {
+            const character = gameState.playerCharacters[playerIndex];
+            if (character) {
+                // Use character name if assigned
+                if (playerIndex === 0) {
+                    return `${character} (You)`;
+                } else {
+                    return character;
+                }
+            } else {
+                // Fall back to position name
+                return playerNames[playerIndex];
+            }
+        }
+
+        const characterObjectives = {
+            'Frodo': 'Win at least two ring cards',
+            'Gandalf': 'Win at least one trick',
+            'Merry': 'Win exactly one or two tricks',
+            'Celeborn': 'Win at least three cards of the same rank'
+        };
 
         function createDeck() {
             const deck = [];
@@ -746,9 +780,33 @@
         function endCharacterAssignment() {
             gameState.characterAssignmentPhase = false;
 
+            // Update player headings with character names
+            updatePlayerHeadings();
+
             // Start setup phase
             updateGameStatus('Starting setup phase...');
             startSetupPhase();
+        }
+
+        function updatePlayerHeadings() {
+            for (let p = 0; p < 4; p++) {
+                const nameElement = document.getElementById(`playerName${p + 1}`);
+                const objectiveElement = document.getElementById(`objective${p + 1}`);
+                const character = gameState.playerCharacters[p];
+
+                if (character) {
+                    if (p === 0) {
+                        // Human player - show "You"
+                        nameElement.textContent = `${character} (You)`;
+                    } else {
+                        // AI players - show character name
+                        nameElement.textContent = character;
+                    }
+
+                    // Show objective
+                    objectiveElement.textContent = `Goal: ${characterObjectives[character]}`;
+                }
+            }
         }
 
         // ===== SETUP PHASE =====
@@ -763,7 +821,7 @@
             const playerIndex = gameState.setupCharacterIndex;
             const character = gameState.playerCharacters[playerIndex];
 
-            updateGameStatus(`${playerNames[playerIndex]} (${character}) - Setup Phase`);
+            updateGameStatus(`${getPlayerDisplayName(playerIndex)} - Setup Phase`);
 
             // Determine what setup action this character needs
             if (character === 'Frodo') {
@@ -782,7 +840,7 @@
             gameState.setupPhase = false;
             document.getElementById('setupDialog').style.display = 'none';
 
-            updateGameStatus(`Setup complete! ${playerNames[gameState.currentPlayer]} leads.`);
+            updateGameStatus(`Setup complete! ${getPlayerDisplayName(gameState.currentPlayer)} leads.`);
 
             // If AI player starts, play their move
             if (gameState.currentPlayer !== 0) {
@@ -791,20 +849,77 @@
         }
 
         function setupGandalf(playerIndex) {
-            // Gandalf: Take Lost card to hand, then Exchange with Frodo
-            // First, add lost card to Gandalf's hand
-            if (gameState.lostCard) {
+            // Gandalf: Optionally take Lost card to hand, then Exchange with Frodo
+            if (playerIndex === 0) {
+                // Human player - show dialog to ask
+                showLostCardChoice(playerIndex);
+            } else {
+                // AI player - randomly decide (50% chance)
+                const takeLostCard = Math.random() < 0.5;
+                completeLostCardChoice(playerIndex, takeLostCard);
+            }
+        }
+
+        function showLostCardChoice(playerIndex) {
+            const dialog = document.getElementById('setupDialog');
+            const title = document.getElementById('setupTitle');
+            const instruction = document.getElementById('setupInstruction');
+            const playerSelection = document.getElementById('setupPlayerSelection');
+            const cardSelection = document.getElementById('setupCardSelection');
+
+            title.textContent = 'Gandalf - Take Lost Card?';
+            instruction.textContent = `The Lost card is ${gameState.lostCard.value} of ${gameState.lostCard.suit}. Do you want to take it?`;
+
+            cardSelection.style.display = 'none';
+            playerSelection.style.display = 'flex';
+            playerSelection.innerHTML = '';
+
+            const yesButton = document.createElement('button');
+            yesButton.textContent = 'Yes, Take It';
+            yesButton.onclick = () => {
+                dialog.style.display = 'none';
+                completeLostCardChoice(playerIndex, true);
+            };
+
+            const noButton = document.createElement('button');
+            noButton.textContent = 'No, Leave It';
+            noButton.onclick = () => {
+                dialog.style.display = 'none';
+                completeLostCardChoice(playerIndex, false);
+            };
+
+            playerSelection.appendChild(yesButton);
+            playerSelection.appendChild(noButton);
+
+            dialog.style.display = 'block';
+        }
+
+        function completeLostCardChoice(playerIndex, takeLostCard) {
+            if (takeLostCard && gameState.lostCard) {
+                // Add lost card to Gandalf's hand
                 gameState.playerHands[playerIndex].push(gameState.lostCard);
                 sortHand(gameState.playerHands[playerIndex]);
-                updateGameStatus(`${playerNames[playerIndex]} (Gandalf) takes the Lost card`);
-                displayHands();
-            }
 
-            // Then exchange with Frodo
-            setTimeout(() => {
-                const frodoPlayer = gameState.playerCharacters.indexOf('Frodo');
-                startExchange(playerIndex, frodoPlayer);
-            }, 1500);
+                // Clear the lost card display
+                document.getElementById('lostCard').innerHTML = '';
+
+                updateGameStatus(`${getPlayerDisplayName(playerIndex)} takes the Lost card`);
+                displayHands();
+
+                // Then exchange with Frodo
+                setTimeout(() => {
+                    const frodoPlayer = gameState.playerCharacters.indexOf('Frodo');
+                    startExchange(playerIndex, frodoPlayer);
+                }, 1500);
+            } else {
+                // Don't take the card, just exchange with Frodo
+                updateGameStatus(`${getPlayerDisplayName(playerIndex)} declines the Lost card`);
+
+                setTimeout(() => {
+                    const frodoPlayer = gameState.playerCharacters.indexOf('Frodo');
+                    startExchange(playerIndex, frodoPlayer);
+                }, 1500);
+            }
         }
 
         function setupMerry(playerIndex) {
@@ -847,7 +962,7 @@
             for (let p = 0; p < 4; p++) {
                 if (p !== playerIndex) {
                     const button = document.createElement('button');
-                    button.textContent = `${playerNames[p]} (${gameState.playerCharacters[p]})`;
+                    button.textContent = getPlayerDisplayName(p);
                     button.onclick = () => {
                         startExchange(playerIndex, p);
                     };
@@ -866,7 +981,7 @@
             // Hide setup dialog temporarily
             document.getElementById('setupDialog').style.display = 'none';
 
-            updateGameStatus(`${playerNames[fromPlayer]} (${gameState.playerCharacters[fromPlayer]}) exchanges with ${playerNames[toPlayer]} (${gameState.playerCharacters[toPlayer]})`);
+            updateGameStatus(`${getPlayerDisplayName(fromPlayer)} exchanges with ${getPlayerDisplayName(toPlayer)}`);
 
             // Show card selection for the initiating player
             setTimeout(() => showCardSelection(fromPlayer, toPlayer), 1000);
@@ -884,7 +999,7 @@
                 const cardSelection = document.getElementById('setupCardSelection');
 
                 title.textContent = 'Choose Card to Exchange';
-                instruction.textContent = `Select a card to give to ${playerNames[toPlayer]}:`;
+                instruction.textContent = `Select a card to give to ${getPlayerDisplayName(toPlayer)}:`;
                 if (isFrodo) {
                     instruction.textContent += ' (Frodo cannot give away the 1 of Rings)';
                 }
@@ -939,7 +1054,7 @@
             // Hide dialog
             document.getElementById('setupDialog').style.display = 'none';
 
-            updateGameStatus(`${playerNames[fromPlayer]} gives ${card.value} of ${card.suit} to ${playerNames[toPlayer]}`);
+            updateGameStatus(`${getPlayerDisplayName(fromPlayer)} gives ${card.value} of ${card.suit} to ${getPlayerDisplayName(toPlayer)}`);
             displayHands();
 
             // Now toPlayer needs to give a card back
@@ -1028,7 +1143,7 @@
             // Hide dialog
             document.getElementById('setupDialog').style.display = 'none';
 
-            updateGameStatus(`${playerNames[fromPlayer]} returns ${card.value} of ${card.suit}`);
+            updateGameStatus(`${getPlayerDisplayName(fromPlayer)} returns ${card.value} of ${card.suit}`);
             displayHands();
 
             // Exchange complete - move to next player
@@ -1068,7 +1183,7 @@
             if (trumpPlay) {
                 // Trump wins
                 winningPlay = trumpPlay;
-                winMessage = `${playerNames[trumpPlay.playerIndex]} wins with the 1 of Rings (trump)!`;
+                winMessage = `${getPlayerDisplayName(trumpPlay.playerIndex)} wins with the 1 of Rings (trump)!`;
             } else {
                 // Find highest card of lead suit
                 winningPlay = gameState.currentTrick[0];
@@ -1080,7 +1195,7 @@
                     }
                 }
 
-                winMessage = `${playerNames[winningPlay.playerIndex]} wins with ${winningPlay.card.value} of ${winningPlay.card.suit}`;
+                winMessage = `${getPlayerDisplayName(winningPlay.playerIndex)} wins with ${winningPlay.card.value} of ${winningPlay.card.suit}`;
             }
 
             const winnerIndex = winningPlay.playerIndex;
@@ -1096,7 +1211,9 @@
             updateGameStatus(`Trick complete! ${winMessage}`);
 
             // Check if game is over
-            if (gameState.playerHands[0].length === 0) {
+            // Game ends when at least 3 players have no cards (accounts for Gandalf potentially having the lost card)
+            const playersWithNoCards = gameState.playerHands.filter(hand => hand.length === 0).length;
+            if (playersWithNoCards >= 3) {
                 setTimeout(() => {
                     updateGameStatus('Game Over! ' + getGameOverMessage());
                 }, 2000);
@@ -1108,16 +1225,70 @@
             }
         }
 
-        function getGameOverMessage() {
-            const counts = gameState.tricksWon.map(tricks => tricks.length / 4);
-            const maxTricks = Math.max(...counts);
-            const winners = counts.map((count, idx) => count === maxTricks ? idx : -1).filter(idx => idx !== -1);
+        function checkObjective(playerIndex) {
+            const character = gameState.playerCharacters[playerIndex];
+            const wonCards = gameState.tricksWon[playerIndex];
+            const trickCount = wonCards.length / 4;
 
-            if (winners.length === 1) {
-                return `${playerNames[winners[0]]} wins with ${maxTricks} tricks!`;
-            } else {
-                return `Tie between ${winners.map(idx => playerNames[idx]).join(' and ')} with ${maxTricks} tricks each!`;
+            switch (character) {
+                case 'Frodo':
+                    // Win at least two ring cards
+                    const ringCards = wonCards.filter(card => card.suit === 'rings').length;
+                    return ringCards >= 2;
+
+                case 'Gandalf':
+                    // Win at least one trick
+                    return trickCount >= 1;
+
+                case 'Merry':
+                    // Win exactly one or two tricks
+                    return trickCount === 1 || trickCount === 2;
+
+                case 'Celeborn':
+                    // Win at least three cards of the same rank
+                    const rankCounts = {};
+                    wonCards.forEach(card => {
+                        rankCounts[card.value] = (rankCounts[card.value] || 0) + 1;
+                    });
+                    return Object.values(rankCounts).some(count => count >= 3);
+
+                default:
+                    return false;
             }
+        }
+
+        function getGameOverMessage() {
+            const results = [];
+            const objectiveWinners = [];
+
+            for (let p = 0; p < 4; p++) {
+                const character = gameState.playerCharacters[p];
+                const trickCount = gameState.tricksWon[p].length / 4;
+                const objectiveMet = checkObjective(p);
+
+                const playerName = p === 0 ? `${character} (You)` : character;
+                const status = objectiveMet ? '✓ SUCCESS' : '✗ FAILED';
+
+                results.push(`${playerName}: ${status} (${trickCount} tricks)`);
+
+                if (objectiveMet) {
+                    objectiveWinners.push(p);
+                }
+            }
+
+            let message = 'Game Over!\n\n';
+            message += results.join('\n');
+
+            if (objectiveWinners.length > 0) {
+                const winnerNames = objectiveWinners.map(p => {
+                    return p === 0 ? `${gameState.playerCharacters[p]} (You)` : gameState.playerCharacters[p];
+                });
+                message += `\n\nObjectives completed by: ${winnerNames.join(', ')}`;
+            } else {
+                message += '\n\nNo one completed their objective!';
+            }
+
+            return message;
         }
 
         function startNextTrick(leadPlayer) {
@@ -1157,7 +1328,7 @@
 
                 const labelDiv = document.createElement('div');
                 labelDiv.className = 'player-label';
-                labelDiv.textContent = playerNames[play.playerIndex] + (play.isTrump ? ' (TRUMP)' : '');
+                labelDiv.textContent = getPlayerDisplayName(play.playerIndex) + (play.isTrump ? ' (TRUMP)' : '');
 
                 trickCardDiv.appendChild(labelDiv);
                 trickCardDiv.appendChild(createCardElement(play.card));
@@ -1242,7 +1413,7 @@
             } else if (gameState.currentPlayer === 0) {
                 statusDiv.textContent = 'Your turn! Click a card to play.';
             } else {
-                statusDiv.textContent = `${playerNames[gameState.currentPlayer]}'s turn...`;
+                statusDiv.textContent = `${getPlayerDisplayName(gameState.currentPlayer)}'s turn...`;
             }
         }
 
@@ -1309,12 +1480,32 @@
             // Reset tricks won display
             updateTricksDisplay();
 
+            // Reset player headings
+            resetPlayerHeadings();
+
             // Display initial state
             displayHands();
 
             // Start character assignment phase
             updateGameStatus('Assigning characters...');
             startCharacterAssignment(startPlayer);
+        }
+
+        function resetPlayerHeadings() {
+            const directions = ['North', 'East', 'South', 'West'];
+            for (let p = 0; p < 4; p++) {
+                const nameElement = document.getElementById(`playerName${p + 1}`);
+                const objectiveElement = document.getElementById(`objective${p + 1}`);
+
+                if (p === 0) {
+                    nameElement.textContent = `Player ${p + 1} (${directions[p]})`;
+                } else {
+                    nameElement.textContent = `Player ${p + 1} (${directions[p]})`;
+                }
+
+                // Clear objective
+                objectiveElement.textContent = '';
+            }
         }
 
         // Start a game on page load
