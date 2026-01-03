@@ -13,8 +13,20 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
+            display: flex;
+            gap: 20px;
+        }
+
+        .main-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .sidebar {
+            width: 300px;
+            flex-shrink: 0;
         }
 
         h1 {
@@ -357,9 +369,10 @@
             background-color: #1a3009;
             border-radius: 10px;
             padding: 15px;
-            margin: 20px 0;
-            max-height: 300px;
+            height: calc(100vh - 40px);
             overflow-y: auto;
+            position: sticky;
+            top: 20px;
         }
 
         .game-log h2 {
@@ -386,19 +399,15 @@
     </style>
 </head>
 <body>
+    <h1>Trick Taking Game</h1>
+
     <div class="container">
-        <h1>Trick Taking Game</h1>
+        <div class="main-content">
+            <div class="controls">
+                <button onclick="newGame()">New Game</button>
+            </div>
 
-        <div class="controls">
-            <button onclick="newGame()">New Game</button>
-        </div>
-
-        <div class="game-status" id="gameStatus">Click "New Game" to start</div>
-
-        <div class="game-log">
-            <h2>Game Log</h2>
-            <div id="gameLog"></div>
-        </div>
+            <div class="game-status" id="gameStatus">Click "New Game" to start</div>
 
         <div id="trumpChoice" class="trump-choice" style="display: none;">
             <h3>You played the 1 of Rings!</h3>
@@ -433,43 +442,51 @@
             </div>
         </div>
 
-        <div class="lost-card-section">
-            <h2>Lost Card</h2>
-            <div id="lostCard"></div>
+            <div class="trick-area">
+                <h2>Current Trick</h2>
+                <div class="trick-cards" id="trickCards"></div>
+            </div>
+
+            <div class="players">
+                <div class="player">
+                    <h3 id="playerName1">Player 1 (North)</h3>
+                    <div class="objective" id="objective1"></div>
+                    <div class="tricks-won" id="tricks1">Tricks: 0</div>
+                    <div class="hand" id="player1"></div>
+                </div>
+                <div class="player">
+                    <h3 id="playerName2">Player 2 (East)</h3>
+                    <div class="objective" id="objective2"></div>
+                    <div class="tricks-won" id="tricks2">Tricks: 0</div>
+                    <div class="hand-count" id="count2">Cards: 9</div>
+                    <div class="hand" id="player2"></div>
+                </div>
+                <div class="player">
+                    <h3 id="playerName3">Player 3 (South)</h3>
+                    <div class="objective" id="objective3"></div>
+                    <div class="tricks-won" id="tricks3">Tricks: 0</div>
+                    <div class="hand-count" id="count3">Cards: 9</div>
+                    <div class="hand" id="player3"></div>
+                </div>
+                <div class="player">
+                    <h3 id="playerName4">Player 4 (West)</h3>
+                    <div class="objective" id="objective4"></div>
+                    <div class="tricks-won" id="tricks4">Tricks: 0</div>
+                    <div class="hand-count" id="count4">Cards: 9</div>
+                    <div class="hand" id="player4"></div>
+                </div>
+            </div>
+
+            <div class="lost-card-section">
+                <h2>Lost Card</h2>
+                <div id="lostCard"></div>
+            </div>
         </div>
 
-        <div class="trick-area">
-            <h2>Current Trick</h2>
-            <div class="trick-cards" id="trickCards"></div>
-        </div>
-
-        <div class="players">
-            <div class="player">
-                <h3 id="playerName1">Player 1 (North)</h3>
-                <div class="objective" id="objective1"></div>
-                <div class="tricks-won" id="tricks1">Tricks: 0</div>
-                <div class="hand" id="player1"></div>
-            </div>
-            <div class="player">
-                <h3 id="playerName2">Player 2 (East)</h3>
-                <div class="objective" id="objective2"></div>
-                <div class="tricks-won" id="tricks2">Tricks: 0</div>
-                <div class="hand-count" id="count2">Cards: 9</div>
-                <div class="hand" id="player2"></div>
-            </div>
-            <div class="player">
-                <h3 id="playerName3">Player 3 (South)</h3>
-                <div class="objective" id="objective3"></div>
-                <div class="tricks-won" id="tricks3">Tricks: 0</div>
-                <div class="hand-count" id="count3">Cards: 9</div>
-                <div class="hand" id="player3"></div>
-            </div>
-            <div class="player">
-                <h3 id="playerName4">Player 4 (West)</h3>
-                <div class="objective" id="objective4"></div>
-                <div class="tricks-won" id="tricks4">Tricks: 0</div>
-                <div class="hand-count" id="count4">Cards: 9</div>
-                <div class="hand" id="player4"></div>
+        <div class="sidebar">
+            <div class="game-log">
+                <h2>Game Log</h2>
+                <div id="gameLog"></div>
             </div>
         </div>
     </div>
@@ -808,12 +825,12 @@
 
             const playerIndex = gameState.characterAssignmentPlayer;
 
+            // Log character assignment (before assignment to show position name)
+            addToGameLog(`${playerNames[playerIndex]} chose ${character}`);
+
             // Assign character to current player
             gameState.playerCharacters[playerIndex] = character;
             gameState.availableCharacters = gameState.availableCharacters.filter(c => c !== character);
-
-            // Log character assignment
-            addToGameLog(`${getPlayerDisplayName(playerIndex)} chose ${character}`);
 
             // Hide dialog
             document.getElementById('characterChoice').style.display = 'none';
@@ -1116,7 +1133,13 @@
             // Hide dialog
             document.getElementById('setupDialog').style.display = 'none';
 
-            addToGameLog(`${getPlayerDisplayName(fromPlayer)} gives ${card.value} of ${card.suit} to ${getPlayerDisplayName(toPlayer)}`);
+            // Only log if human player is involved
+            if (fromPlayer === 0 || toPlayer === 0) {
+                addToGameLog(`${getPlayerDisplayName(fromPlayer)} gives ${card.value} of ${card.suit} to ${getPlayerDisplayName(toPlayer)}`);
+            } else {
+                addToGameLog(`${getPlayerDisplayName(fromPlayer)} exchanges with ${getPlayerDisplayName(toPlayer)}`);
+            }
+
             updateGameStatus(`${getPlayerDisplayName(fromPlayer)} gives ${card.value} of ${card.suit} to ${getPlayerDisplayName(toPlayer)}`);
             displayHands();
 
@@ -1206,7 +1229,11 @@
             // Hide dialog
             document.getElementById('setupDialog').style.display = 'none';
 
-            addToGameLog(`${getPlayerDisplayName(fromPlayer)} returns ${card.value} of ${card.suit}`);
+            // Only log return details if human player is involved
+            if (fromPlayer === 0 || toPlayer === 0) {
+                addToGameLog(`${getPlayerDisplayName(fromPlayer)} returns ${card.value} of ${card.suit}`);
+            }
+
             updateGameStatus(`${getPlayerDisplayName(fromPlayer)} returns ${card.value} of ${card.suit}`);
             displayHands();
 
