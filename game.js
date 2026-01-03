@@ -1,3 +1,9 @@
+// All possible characters in the game
+const allCharacters = ['Frodo', 'Gandalf', 'Merry', 'Celeborn', 'Pippin', 'Boromir', 'Sam', 'Gimli', 'Legolas'];
+
+// Characters that draw threat cards during setup
+const threatCardCharacters = ['Sam', 'Gimli', 'Legolas'];
+
 // Game state
 let gameState = {
     playerHands: [[], [], [], []],
@@ -9,7 +15,7 @@ let gameState = {
     ringsBroken: false,
     waitingForTrumpChoice: false,
     playerCharacters: [null, null, null, null],  // Character chosen by each player
-    availableCharacters: ['Frodo', 'Gandalf', 'Merry', 'Celeborn', 'Pippin', 'Boromir'],
+    availableCharacters: [...allCharacters],
     characterAssignmentPhase: false,
     characterAssignmentPlayer: 0,
     setupPhase: false,
@@ -19,7 +25,9 @@ let gameState = {
     exchangeToPlayer: null,
     exchangeCard: null,
     lostCard: null,  // Store the lost card separately
-    lastTrickWinner: null  // Track who won the most recent trick (for Boromir's objective)
+    lastTrickWinner: null,  // Track who won the most recent trick (for Boromir's objective)
+    threatDeck: [],  // Threat deck (cards 1-7)
+    playerThreatCards: {}  // Maps playerIndex to their drawn threat card
 };
 
 const playerNames = ['North (You)', 'East', 'South', 'West'];
@@ -45,7 +53,10 @@ const characterObjectives = {
     'Merry': 'Win exactly one or two tricks',
     'Celeborn': 'Win at least three cards of the same rank',
     'Pippin': 'Win the fewest (or joint fewest) tricks',
-    'Boromir': 'Win the last trick; do NOT win the 1 of Rings'
+    'Boromir': 'Win the last trick; do NOT win the 1 of Rings',
+    'Sam': 'Win the Hills card matching your threat card',
+    'Gimli': 'Win the Mountains card matching your threat card',
+    'Legolas': 'Win the Forests card matching your threat card'
 };
 
 // Define which characters each character can exchange with during setup
@@ -57,7 +68,10 @@ const characterExchangeRules = {
     'Merry': ['Frodo', 'Pippin'],
     'Celeborn': null,  // Exchange with any player
     'Pippin': ['Frodo', 'Merry'],
-    'Boromir': { except: ['Frodo'] }  // Exchange with anyone except Frodo
+    'Boromir': { except: ['Frodo'] },  // Exchange with anyone except Frodo
+    'Sam': ['Frodo', 'Merry', 'Pippin'],  // Draw threat card first, then exchange
+    'Gimli': ['Legolas'],  // Draw threat card first, then exchange (will add Aragorn later)
+    'Legolas': ['Gimli']  // Draw threat card first, then exchange (will add Aragorn later)
 };
 
 function addToGameLog(message, important = false) {
@@ -276,7 +290,7 @@ function startCharacterAssignment(firstPlayer) {
     gameState.characterAssignmentPhase = true;
     gameState.characterAssignmentPlayer = firstPlayer;
     gameState.playerCharacters = [null, null, null, null];
-    gameState.availableCharacters = ['Frodo', 'Gandalf', 'Merry', 'Celeborn', 'Pippin'];
+    gameState.availableCharacters = [...allCharacters];
 
     // First player (who has 1 of rings) automatically gets Frodo
     gameState.playerCharacters[firstPlayer] = 'Frodo';
@@ -306,7 +320,7 @@ function showCharacterChoice() {
 
     // Create character buttons
     buttonsEl.innerHTML = '';
-    for (const character of ['Frodo', 'Gandalf', 'Merry', 'Celeborn', 'Pippin', 'Boromir']) {
+    for (const character of allCharacters) {
         const button = document.createElement('button');
         button.textContent = character;
         button.onclick = () => selectCharacter(character);
@@ -431,6 +445,9 @@ function performSetupAction() {
     } else if (character === 'Gandalf') {
         // Gandalf has special logic (optional lost card before exchange)
         setupGandalf(playerIndex);
+    } else if (threatCardCharacters.includes(character)) {
+        // Characters that draw threat cards before exchange
+        setupThreatCardCharacter(playerIndex, character, exchangeRule);
     } else {
         // All other characters use standard exchange logic
         setupStandardExchange(playerIndex, character, exchangeRule);
@@ -489,7 +506,11 @@ function setupStandardExchange(playerIndex, character, exchangeRule) {
         // Human player - determine valid players first
         let validPlayers = getValidExchangePlayers(playerIndex, exchangeRule);
 
-        if (validPlayers.length === 1) {
+        if (validPlayers.length === 0) {
+            // No valid exchange partners - skip exchange
+            addToGameLog(`${getPlayerDisplayName(playerIndex)} has no valid exchange partners`);
+            setTimeout(() => nextSetupPlayerFixed(), 1000);
+        } else if (validPlayers.length === 1) {
             // Only one option - automatically choose it
             startExchange(playerIndex, validPlayers[0]);
         } else {
@@ -499,8 +520,38 @@ function setupStandardExchange(playerIndex, character, exchangeRule) {
     } else {
         // AI player - pick a random valid target
         const validPlayers = getValidExchangePlayers(playerIndex, exchangeRule);
-        const targetPlayer = validPlayers[Math.floor(Math.random() * validPlayers.length)];
-        startExchange(playerIndex, targetPlayer);
+
+        if (validPlayers.length === 0) {
+            // No valid exchange partners - skip exchange
+            addToGameLog(`${getPlayerDisplayName(playerIndex)} has no valid exchange partners`);
+            setTimeout(() => nextSetupPlayerFixed(), 1000);
+        } else {
+            const targetPlayer = validPlayers[Math.floor(Math.random() * validPlayers.length)];
+            startExchange(playerIndex, targetPlayer);
+        }
+    }
+}
+
+function setupThreatCardCharacter(playerIndex, character, exchangeRule) {
+    // Draw a threat card from the deck
+    if (gameState.threatDeck.length > 0) {
+        const threatCard = gameState.threatDeck.shift();
+        gameState.playerThreatCards[playerIndex] = threatCard;
+
+        addToGameLog(`${getPlayerDisplayName(playerIndex)} draws threat card: ${threatCard}`, true);
+        updateGameStatus(`${getPlayerDisplayName(playerIndex)} draws threat card ${threatCard}`);
+
+        // Update tricks display to show the threat card
+        updateTricksDisplay();
+
+        // After a delay, proceed to the exchange
+        setTimeout(() => {
+            setupStandardExchange(playerIndex, character, exchangeRule);
+        }, 1500);
+    } else {
+        // No threat cards left (shouldn't happen in normal play)
+        addToGameLog(`${getPlayerDisplayName(playerIndex)} - No threat cards remaining!`);
+        setTimeout(() => nextSetupPlayerFixed(), 1000);
     }
 }
 
@@ -953,6 +1004,24 @@ function checkObjective(playerIndex) {
             const hasOneRing = wonCards.some(card => card.suit === 'rings' && card.value === 1);
             return wonLastTrick && !hasOneRing;
 
+        case 'Sam':
+            // Win the Hills card matching the threat card
+            const samThreat = gameState.playerThreatCards[playerIndex];
+            if (!samThreat) return false;
+            return wonCards.some(card => card.suit === 'hills' && card.value === samThreat);
+
+        case 'Gimli':
+            // Win the Mountains card matching the threat card
+            const gimliThreat = gameState.playerThreatCards[playerIndex];
+            if (!gimliThreat) return false;
+            return wonCards.some(card => card.suit === 'mountains' && card.value === gimliThreat);
+
+        case 'Legolas':
+            // Win the Forests card matching the threat card
+            const legolsThreat = gameState.playerThreatCards[playerIndex];
+            if (!legolsThreat) return false;
+            return wonCards.some(card => card.suit === 'forests' && card.value === legolsThreat);
+
         default:
             return false;
     }
@@ -1075,6 +1144,18 @@ function updateTricksDisplay() {
                 statusHTML = `${icon} ${ranksWithCounts.join(', ')}`;
             } else {
                 statusHTML = `${icon} none`;
+            }
+            statusDiv.innerHTML = statusHTML;
+        } else if (threatCardCharacters.includes(character)) {
+            // Show threat card and whether they have the matching card
+            const threatCard = gameState.playerThreatCards[p];
+            const objectiveMet = checkObjective(p);
+            const icon = objectiveMet ? '<span class="success">✓</span>' : '<span class="fail">✗</span>';
+
+            if (threatCard) {
+                statusHTML = `${icon} Threat: ${threatCard}`;
+            } else {
+                statusHTML = '<span class="fail">✗</span> No threat card';
             }
             statusDiv.innerHTML = statusHTML;
         }
@@ -1208,7 +1289,7 @@ function newGame() {
         ringsBroken: false,
         waitingForTrumpChoice: false,
         playerCharacters: [null, null, null, null],
-        availableCharacters: ['Frodo', 'Gandalf', 'Merry', 'Celeborn', 'Pippin', 'Boromir'],
+        availableCharacters: [...allCharacters],
         characterAssignmentPhase: false,
         characterAssignmentPlayer: 0,
         setupPhase: false,
@@ -1218,8 +1299,13 @@ function newGame() {
         exchangeToPlayer: null,
         exchangeCard: null,
         lostCard: lostCard,  // Store the lost card
-        lastTrickWinner: null  // Track who won the most recent trick
+        lastTrickWinner: null,  // Track who won the most recent trick
+        threatDeck: [1, 2, 3, 4, 5, 6, 7],  // Threat deck (shuffled later)
+        playerThreatCards: {}  // Maps playerIndex to their drawn threat card
     };
+
+    // Shuffle the threat deck
+    gameState.threatDeck = shuffleDeck(gameState.threatDeck.map(v => ({ value: v }))).map(c => c.value);
 
     // Deal 9 cards to each player
     for (let i = 0; i < 9; i++) {
