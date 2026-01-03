@@ -286,6 +286,64 @@
             color: #aed581;
             font-size: 14px;
         }
+
+        .setup-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #1a3009;
+            border: 3px solid #ffd700;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            z-index: 1000;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            min-width: 400px;
+            max-width: 600px;
+        }
+
+        .setup-dialog h3 {
+            color: #ffd700;
+            margin-top: 0;
+        }
+
+        .setup-instruction {
+            color: #aed581;
+            margin: 15px 0;
+            font-size: 16px;
+        }
+
+        .player-selection {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .player-selection button {
+            min-width: 100px;
+        }
+
+        .card.selectable {
+            cursor: pointer;
+            transition: transform 0.2s;
+            border-color: #ffd700;
+            border-width: 3px;
+        }
+
+        .card.selectable:hover {
+            transform: translateY(-10px);
+        }
+
+        .setup-cards {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
     </style>
 </head>
 <body>
@@ -315,6 +373,19 @@
             </div>
             <div class="character-info" id="characterInfo">
                 <!-- Character assignments will be shown here -->
+            </div>
+        </div>
+
+        <div id="setupDialog" class="setup-dialog" style="display: none;">
+            <h3 id="setupTitle">Setup Phase</h3>
+            <div class="setup-instruction" id="setupInstruction">
+                <!-- Instructions will be populated dynamically -->
+            </div>
+            <div id="setupPlayerSelection" class="player-selection" style="display: none;">
+                <!-- Player buttons will be populated dynamically -->
+            </div>
+            <div id="setupCardSelection" class="setup-cards" style="display: none;">
+                <!-- Cards will be populated dynamically -->
             </div>
         </div>
 
@@ -369,7 +440,14 @@
             playerCharacters: [null, null, null, null],  // Character chosen by each player
             availableCharacters: ['Frodo', 'Gandalf', 'Merry', 'Celeborn'],
             characterAssignmentPhase: false,
-            characterAssignmentPlayer: 0
+            characterAssignmentPlayer: 0,
+            setupPhase: false,
+            setupCharacterIndex: 0,  // Which character is performing setup (0=Frodo, 1=Gandalf, etc)
+            setupStep: 'choose_card',  // 'choose_card', 'waiting_for_response', 'done'
+            exchangeFromPlayer: null,
+            exchangeToPlayer: null,
+            exchangeCard: null,
+            lostCard: null  // Store the lost card separately
         };
 
         const playerNames = ['North (You)', 'East', 'South', 'West'];
@@ -668,12 +746,267 @@
         function endCharacterAssignment() {
             gameState.characterAssignmentPhase = false;
 
-            // Update game status
-            updateGameStatus(`Characters assigned! ${playerNames[gameState.currentPlayer]} leads.`);
+            // Start setup phase
+            updateGameStatus('Starting setup phase...');
+            startSetupPhase();
+        }
+
+        // ===== SETUP PHASE =====
+
+        function startSetupPhase() {
+            gameState.setupPhase = true;
+            gameState.setupCharacterIndex = gameState.currentPlayer; // Start with first player
+            performSetupAction();
+        }
+
+        function performSetupAction() {
+            const playerIndex = gameState.setupCharacterIndex;
+            const character = gameState.playerCharacters[playerIndex];
+
+            updateGameStatus(`${playerNames[playerIndex]} (${character}) - Setup Phase`);
+
+            // Determine what setup action this character needs
+            if (character === 'Frodo') {
+                // Frodo does nothing
+                setTimeout(() => nextSetupPlayerFixed(), 1000);
+            } else if (character === 'Gandalf') {
+                setupGandalf(playerIndex);
+            } else if (character === 'Merry') {
+                setupMerry(playerIndex);
+            } else if (character === 'Celeborn') {
+                setupCeleborn(playerIndex);
+            }
+        }
+
+        function endSetupPhase() {
+            gameState.setupPhase = false;
+            document.getElementById('setupDialog').style.display = 'none';
+
+            updateGameStatus(`Setup complete! ${playerNames[gameState.currentPlayer]} leads.`);
 
             // If AI player starts, play their move
             if (gameState.currentPlayer !== 0) {
                 setTimeout(() => playAIMove(), 1500);
+            }
+        }
+
+        function setupGandalf(playerIndex) {
+            // Gandalf: Take Lost card to hand, then Exchange with Frodo
+            // First, add lost card to Gandalf's hand
+            if (gameState.lostCard) {
+                gameState.playerHands[playerIndex].push(gameState.lostCard);
+                sortHand(gameState.playerHands[playerIndex]);
+                updateGameStatus(`${playerNames[playerIndex]} (Gandalf) takes the Lost card`);
+                displayHands();
+            }
+
+            // Then exchange with Frodo
+            setTimeout(() => {
+                const frodoPlayer = gameState.playerCharacters.indexOf('Frodo');
+                startExchange(playerIndex, frodoPlayer);
+            }, 1500);
+        }
+
+        function setupMerry(playerIndex) {
+            // Merry: Exchange with Frodo (only option currently)
+            const frodoPlayer = gameState.playerCharacters.indexOf('Frodo');
+            startExchange(playerIndex, frodoPlayer);
+        }
+
+        function setupCeleborn(playerIndex) {
+            // Celeborn: Exchange with anyone
+            // Need to show player selection
+            if (playerIndex === 0) {
+                // Human player - show dialog
+                showPlayerSelectionDialog(playerIndex);
+            } else {
+                // AI - pick a random player
+                let targetPlayer;
+                do {
+                    targetPlayer = Math.floor(Math.random() * 4);
+                } while (targetPlayer === playerIndex);
+                startExchange(playerIndex, targetPlayer);
+            }
+        }
+
+        function showPlayerSelectionDialog(playerIndex) {
+            const dialog = document.getElementById('setupDialog');
+            const title = document.getElementById('setupTitle');
+            const instruction = document.getElementById('setupInstruction');
+            const playerSelection = document.getElementById('setupPlayerSelection');
+            const cardSelection = document.getElementById('setupCardSelection');
+
+            title.textContent = `${gameState.playerCharacters[playerIndex]} - Setup`;
+            instruction.textContent = 'Choose a player to exchange with:';
+
+            cardSelection.style.display = 'none';
+            playerSelection.style.display = 'flex';
+            playerSelection.innerHTML = '';
+
+            // Create buttons for each other player
+            for (let p = 0; p < 4; p++) {
+                if (p !== playerIndex) {
+                    const button = document.createElement('button');
+                    button.textContent = `${playerNames[p]} (${gameState.playerCharacters[p]})`;
+                    button.onclick = () => {
+                        startExchange(playerIndex, p);
+                    };
+                    playerSelection.appendChild(button);
+                }
+            }
+
+            dialog.style.display = 'block';
+        }
+
+        function startExchange(fromPlayer, toPlayer) {
+            gameState.exchangeFromPlayer = fromPlayer;
+            gameState.exchangeToPlayer = toPlayer;
+            gameState.setupStep = 'choose_card';
+
+            // Hide setup dialog temporarily
+            document.getElementById('setupDialog').style.display = 'none';
+
+            updateGameStatus(`${playerNames[fromPlayer]} (${gameState.playerCharacters[fromPlayer]}) exchanges with ${playerNames[toPlayer]} (${gameState.playerCharacters[toPlayer]})`);
+
+            // Show card selection for the initiating player
+            setTimeout(() => showCardSelection(fromPlayer, toPlayer), 1000);
+        }
+
+        function showCardSelection(fromPlayer, toPlayer) {
+            if (fromPlayer === 0) {
+                // Human player - show dialog with their cards
+                const dialog = document.getElementById('setupDialog');
+                const title = document.getElementById('setupTitle');
+                const instruction = document.getElementById('setupInstruction');
+                const playerSelection = document.getElementById('setupPlayerSelection');
+                const cardSelection = document.getElementById('setupCardSelection');
+
+                title.textContent = 'Choose Card to Exchange';
+                instruction.textContent = `Select a card to give to ${playerNames[toPlayer]}:`;
+
+                playerSelection.style.display = 'none';
+                cardSelection.style.display = 'flex';
+                cardSelection.innerHTML = '';
+
+                const sortedHand = sortHand([...gameState.playerHands[fromPlayer]]);
+                sortedHand.forEach(card => {
+                    const cardElement = createCardElement(card, true, () => {
+                        giveCard(fromPlayer, toPlayer, card);
+                    });
+                    cardElement.classList.add('selectable');
+                    cardSelection.appendChild(cardElement);
+                });
+
+                dialog.style.display = 'block';
+            } else {
+                // AI player - pick random card
+                const hand = gameState.playerHands[fromPlayer];
+                const randomCard = hand[Math.floor(Math.random() * hand.length)];
+                setTimeout(() => giveCard(fromPlayer, toPlayer, randomCard), 1000);
+            }
+        }
+
+        function giveCard(fromPlayer, toPlayer, card) {
+            // Remove card from fromPlayer's hand
+            const fromHand = gameState.playerHands[fromPlayer];
+            const cardIndex = fromHand.findIndex(c => c.suit === card.suit && c.value === card.value);
+            fromHand.splice(cardIndex, 1);
+
+            // Store the exchanged card
+            gameState.exchangeCard = card;
+
+            // Hide dialog
+            document.getElementById('setupDialog').style.display = 'none';
+
+            updateGameStatus(`${playerNames[fromPlayer]} gives ${card.value} of ${card.suit} to ${playerNames[toPlayer]}`);
+            displayHands();
+
+            // Now toPlayer needs to give a card back
+            setTimeout(() => showReturnCardSelection(toPlayer, fromPlayer), 1500);
+        }
+
+        function showReturnCardSelection(fromPlayer, toPlayer) {
+            if (fromPlayer === 0) {
+                // Human player - show all cards including the one just received
+                const dialog = document.getElementById('setupDialog');
+                const title = document.getElementById('setupTitle');
+                const instruction = document.getElementById('setupInstruction');
+                const cardSelection = document.getElementById('setupCardSelection');
+
+                title.textContent = 'Choose Card to Return';
+                instruction.textContent = `You received ${gameState.exchangeCard.value} of ${gameState.exchangeCard.suit}. Select a card to give back:`;
+
+                cardSelection.style.display = 'flex';
+                cardSelection.innerHTML = '';
+
+                // Add the received card to hand temporarily for display
+                const tempHand = [...gameState.playerHands[fromPlayer], gameState.exchangeCard];
+                const sortedHand = sortHand(tempHand);
+
+                sortedHand.forEach(card => {
+                    const cardElement = createCardElement(card, true, () => {
+                        returnCard(fromPlayer, toPlayer, card);
+                    });
+                    cardElement.classList.add('selectable');
+                    cardSelection.appendChild(cardElement);
+                });
+
+                dialog.style.display = 'block';
+            } else {
+                // AI player - pick random card from hand + received card
+                const tempHand = [...gameState.playerHands[fromPlayer], gameState.exchangeCard];
+                const randomCard = tempHand[Math.floor(Math.random() * tempHand.length)];
+                setTimeout(() => returnCard(fromPlayer, toPlayer, randomCard), 1000);
+            }
+        }
+
+        function returnCard(fromPlayer, toPlayer, card) {
+            // Check if this is the card that was just given
+            const isReceivedCard = (card.suit === gameState.exchangeCard.suit && card.value === gameState.exchangeCard.value);
+
+            if (!isReceivedCard) {
+                // Remove from fromPlayer's hand
+                const fromHand = gameState.playerHands[fromPlayer];
+                const cardIndex = fromHand.findIndex(c => c.suit === card.suit && c.value === card.value);
+                fromHand.splice(cardIndex, 1);
+            }
+
+            // Add card to toPlayer's hand
+            gameState.playerHands[toPlayer].push(card);
+
+            // Add the originally exchanged card to fromPlayer's hand (if they didn't return it)
+            if (!isReceivedCard) {
+                gameState.playerHands[fromPlayer].push(gameState.exchangeCard);
+            }
+
+            // Sort hands
+            sortHand(gameState.playerHands[fromPlayer]);
+            sortHand(gameState.playerHands[toPlayer]);
+
+            // Hide dialog
+            document.getElementById('setupDialog').style.display = 'none';
+
+            updateGameStatus(`${playerNames[fromPlayer]} returns ${card.value} of ${card.suit}`);
+            displayHands();
+
+            // Exchange complete - move to next player
+            setTimeout(() => {
+                gameState.exchangeCard = null;
+                gameState.exchangeFromPlayer = null;
+                gameState.exchangeToPlayer = null;
+                nextSetupPlayerFixed();
+            }, 1500);
+        }
+
+        function nextSetupPlayerFixed() {
+            const startPlayer = gameState.currentPlayer;
+            gameState.setupCharacterIndex = (gameState.setupCharacterIndex + 1) % 4;
+
+            // Check if we've completed all 4 players
+            if (gameState.setupCharacterIndex === startPlayer) {
+                endSetupPhase();
+            } else {
+                performSetupAction();
             }
         }
 
@@ -901,7 +1234,14 @@
                 playerCharacters: [null, null, null, null],
                 availableCharacters: ['Frodo', 'Gandalf', 'Merry', 'Celeborn'],
                 characterAssignmentPhase: false,
-                characterAssignmentPlayer: 0
+                characterAssignmentPlayer: 0,
+                setupPhase: false,
+                setupCharacterIndex: 0,
+                setupStep: 'choose_card',
+                exchangeFromPlayer: null,
+                exchangeToPlayer: null,
+                exchangeCard: null,
+                lostCard: lostCard  // Store the lost card
             };
 
             // Deal 9 cards to each player
@@ -922,6 +1262,7 @@
             // Hide dialogs
             document.getElementById('trumpChoice').style.display = 'none';
             document.getElementById('characterChoice').style.display = 'none';
+            document.getElementById('setupDialog').style.display = 'none';
 
             // Reset tricks won display
             updateTricksDisplay();
