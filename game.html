@@ -242,6 +242,50 @@
         .trump-choice button {
             min-width: 100px;
         }
+
+        .character-choice {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #1a3009;
+            border: 3px solid #ffd700;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            z-index: 1000;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            min-width: 400px;
+        }
+
+        .character-choice h3 {
+            color: #ffd700;
+            margin-top: 0;
+        }
+
+        .character-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .character-buttons button {
+            min-width: 120px;
+            padding: 15px 10px;
+        }
+
+        .character-buttons button:disabled {
+            background-color: #666;
+            color: #999;
+            cursor: not-allowed;
+        }
+
+        .character-info {
+            margin-top: 15px;
+            color: #aed581;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -260,6 +304,17 @@
             <div class="trump-choice-buttons">
                 <button onclick="chooseTrump(true)">Yes, Win Trick</button>
                 <button onclick="chooseTrump(false)">No, Play Normal</button>
+            </div>
+        </div>
+
+        <div id="characterChoice" class="character-choice" style="display: none;">
+            <h3 id="characterChoiceTitle">Choose Your Character</h3>
+            <p id="characterChoiceDesc">Select a character to play as</p>
+            <div class="character-buttons" id="characterButtons">
+                <!-- Character buttons will be populated dynamically -->
+            </div>
+            <div class="character-info" id="characterInfo">
+                <!-- Character assignments will be shown here -->
             </div>
         </div>
 
@@ -310,7 +365,11 @@
             leadSuit: null,
             trickComplete: false,
             ringsBroken: false,
-            waitingForTrumpChoice: false
+            waitingForTrumpChoice: false,
+            playerCharacters: [null, null, null, null],  // Character chosen by each player
+            availableCharacters: ['Frodo', 'Gandalf', 'Merry', 'Celeborn'],
+            characterAssignmentPhase: false,
+            characterAssignmentPlayer: 0
         };
 
         const playerNames = ['North (You)', 'East', 'South', 'West'];
@@ -507,6 +566,115 @@
             setTimeout(() => {
                 determineTrickWinner();
             }, 1500);
+        }
+
+        function startCharacterAssignment(firstPlayer) {
+            gameState.characterAssignmentPhase = true;
+            gameState.characterAssignmentPlayer = firstPlayer;
+            gameState.playerCharacters = [null, null, null, null];
+            gameState.availableCharacters = ['Frodo', 'Gandalf', 'Merry', 'Celeborn'];
+
+            // First player (who has 1 of rings) automatically gets Frodo
+            gameState.playerCharacters[firstPlayer] = 'Frodo';
+            gameState.availableCharacters = gameState.availableCharacters.filter(c => c !== 'Frodo');
+
+            // Move to next player
+            gameState.characterAssignmentPlayer = (firstPlayer + 1) % 4;
+
+            // Show character selection dialog
+            showCharacterChoice();
+        }
+
+        function showCharacterChoice() {
+            const playerIndex = gameState.characterAssignmentPlayer;
+            const dialog = document.getElementById('characterChoice');
+            const titleEl = document.getElementById('characterChoiceTitle');
+            const descEl = document.getElementById('characterChoiceDesc');
+            const buttonsEl = document.getElementById('characterButtons');
+            const infoEl = document.getElementById('characterInfo');
+
+            // Update dialog content
+            titleEl.textContent = `${playerNames[playerIndex]} - Choose Your Character`;
+            descEl.textContent = 'Select a character to play as';
+
+            // Create character buttons
+            buttonsEl.innerHTML = '';
+            for (const character of ['Frodo', 'Gandalf', 'Merry', 'Celeborn']) {
+                const button = document.createElement('button');
+                button.textContent = character;
+                button.onclick = () => selectCharacter(character);
+
+                // Disable if already taken
+                if (!gameState.availableCharacters.includes(character)) {
+                    button.disabled = true;
+                }
+
+                buttonsEl.appendChild(button);
+            }
+
+            // Show current assignments
+            const assignments = [];
+            for (let i = 0; i < 4; i++) {
+                if (gameState.playerCharacters[i]) {
+                    assignments.push(`${playerNames[i]}: ${gameState.playerCharacters[i]}`);
+                }
+            }
+            infoEl.textContent = assignments.length > 0 ? assignments.join(' | ') : '';
+
+            // Show dialog (only for human player)
+            if (playerIndex === 0) {
+                dialog.style.display = 'block';
+            } else {
+                // AI player - choose automatically after delay
+                setTimeout(() => {
+                    selectCharacterAI();
+                }, 1000);
+            }
+        }
+
+        function selectCharacter(character) {
+            if (!gameState.availableCharacters.includes(character)) {
+                return; // Character already taken
+            }
+
+            const playerIndex = gameState.characterAssignmentPlayer;
+
+            // Assign character to current player
+            gameState.playerCharacters[playerIndex] = character;
+            gameState.availableCharacters = gameState.availableCharacters.filter(c => c !== character);
+
+            // Hide dialog
+            document.getElementById('characterChoice').style.display = 'none';
+
+            // Move to next player or end character assignment
+            gameState.characterAssignmentPlayer = (gameState.characterAssignmentPlayer + 1) % 4;
+
+            // Check if all players have characters
+            if (gameState.playerCharacters.every(c => c !== null)) {
+                endCharacterAssignment();
+            } else {
+                // Continue to next player
+                setTimeout(() => showCharacterChoice(), 500);
+            }
+        }
+
+        function selectCharacterAI() {
+            // AI randomly picks from available characters
+            const available = gameState.availableCharacters;
+            const randomChar = available[Math.floor(Math.random() * available.length)];
+            selectCharacter(randomChar);
+        }
+
+        function endCharacterAssignment() {
+            gameState.characterAssignmentPhase = false;
+
+            // Update game status
+            updateGameStatus(`Characters assigned! ${playerNames[gameState.currentPlayer]} leads.`);
+
+            // If AI player starts, play their move
+            if (gameState.currentPlayer !== 0) {
+                setTimeout(() => playAIMove(), 1500);
+            }
         }
 
         function playAIMove() {
@@ -729,7 +897,11 @@
                 leadSuit: null,
                 trickComplete: false,
                 ringsBroken: false,
-                waitingForTrumpChoice: false
+                waitingForTrumpChoice: false,
+                playerCharacters: [null, null, null, null],
+                availableCharacters: ['Frodo', 'Gandalf', 'Merry', 'Celeborn'],
+                characterAssignmentPhase: false,
+                characterAssignmentPlayer: 0
             };
 
             // Deal 9 cards to each player
@@ -747,20 +919,19 @@
             // Clear trick display
             document.getElementById('trickCards').innerHTML = '';
 
-            // Hide trump choice dialog
+            // Hide dialogs
             document.getElementById('trumpChoice').style.display = 'none';
+            document.getElementById('characterChoice').style.display = 'none';
 
             // Reset tricks won display
             updateTricksDisplay();
 
             // Display initial state
             displayHands();
-            updateGameStatus();
 
-            // If AI player starts, play their move
-            if (startPlayer !== 0) {
-                setTimeout(() => playAIMove(), 1000);
-            }
+            // Start character assignment phase
+            updateGameStatus('Assigning characters...');
+            startCharacterAssignment(startPlayer);
         }
 
         // Start a game on page load
