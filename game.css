@@ -1,0 +1,411 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background-color: #2d5016;
+    color: #fff;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    gap: 20px;
+}
+
+.main-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.sidebar {
+    width: 300px;
+    flex-shrink: 0;
+}
+
+h1 {
+    text-align: center;
+    color: #ffd700;
+}
+
+.lost-card-section {
+    text-align: center;
+    margin: 30px 0;
+    padding: 20px;
+    background-color: #1a3009;
+    border-radius: 10px;
+}
+
+.lost-card-section h2 {
+    margin-top: 0;
+    color: #ffd700;
+}
+
+.players {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.player {
+    background-color: #1a3009;
+    padding: 15px;
+    border-radius: 10px;
+    border: 2px solid #4a7023;
+}
+
+.player h3 {
+    margin-top: 0;
+    color: #ffd700;
+}
+
+.hand {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.card {
+    width: 60px;
+    height: 85px;
+    border: 2px solid #333;
+    border-radius: 5px;
+    background-color: #fff;
+    color: #000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    padding: 5px;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+}
+
+.card.mountains {
+    background: linear-gradient(135deg, #8b7355 0%, #d4a574 100%);
+}
+
+.card.shadows {
+    background: linear-gradient(135deg, #2c2c2c 0%, #5a5a5a 100%);
+    color: #fff;
+}
+
+.card.forests {
+    background: linear-gradient(135deg, #2d5016 0%, #4a7023 100%);
+    color: #fff;
+}
+
+.card.hills {
+    background: linear-gradient(135deg, #7cb342 0%, #aed581 100%);
+}
+
+.card.rings {
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+    border-color: #ff6f00;
+    border-width: 3px;
+}
+
+.suit {
+    font-size: 10px;
+    text-transform: uppercase;
+    margin-top: 3px;
+}
+
+.value {
+    font-size: 24px;
+}
+
+.controls {
+    text-align: center;
+    margin: 20px 0;
+}
+
+button {
+    background-color: #ffd700;
+    color: #1a3009;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #ffed4e;
+}
+
+.trick-area {
+    text-align: center;
+    margin: 30px 0;
+    padding: 20px;
+    background-color: #1a3009;
+    border-radius: 10px;
+    min-height: 150px;
+}
+
+.trick-area h2 {
+    margin-top: 0;
+    color: #ffd700;
+}
+
+.trick-cards {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.trick-card {
+    text-align: center;
+}
+
+.trick-card .player-label {
+    font-size: 12px;
+    margin-bottom: 5px;
+    color: #aed581;
+}
+
+.card.clickable {
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.card.clickable:hover {
+    transform: translateY(-5px);
+}
+
+.card.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.card.hidden {
+    background: linear-gradient(135deg, #4a4a4a 0%, #2c2c2c 100%);
+    color: #888;
+}
+
+.card.hidden .value {
+    font-size: 16px;
+}
+
+.card.hidden .suit {
+    display: none;
+}
+
+.hand-count {
+    color: #aed581;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.game-status {
+    text-align: center;
+    font-size: 18px;
+    color: #ffd700;
+    margin: 20px 0;
+    font-weight: bold;
+}
+
+.player.active {
+    border-color: #ffd700;
+    border-width: 3px;
+}
+
+.tricks-won {
+    font-size: 14px;
+    color: #aed581;
+    margin-top: 5px;
+}
+
+.objective-status {
+    font-size: 13px;
+    margin-top: 5px;
+    color: #aed581;
+}
+
+.objective-status .success {
+    color: #4caf50;
+}
+
+.objective-status .fail {
+    color: #f44336;
+}
+
+.ring-cards, .rank-counts {
+    font-size: 12px;
+    color: #aed581;
+    margin-top: 3px;
+}
+
+.objective {
+    font-size: 12px;
+    color: #ffd700;
+    font-style: italic;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.trump-choice {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #1a3009;
+    border: 3px solid #ffd700;
+    border-radius: 10px;
+    padding: 30px;
+    text-align: center;
+    z-index: 1000;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.trump-choice h3 {
+    color: #ffd700;
+    margin-top: 0;
+}
+
+.trump-choice-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.trump-choice button {
+    min-width: 100px;
+}
+
+.character-choice {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #1a3009;
+    border: 3px solid #ffd700;
+    border-radius: 10px;
+    padding: 30px;
+    text-align: center;
+    z-index: 1000;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    min-width: 400px;
+}
+
+.character-choice h3 {
+    color: #ffd700;
+    margin-top: 0;
+}
+
+.character-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.character-buttons button {
+    min-width: 120px;
+    padding: 15px 10px;
+}
+
+.character-buttons button:disabled {
+    background-color: #666;
+    color: #999;
+    cursor: not-allowed;
+}
+
+.character-info {
+    margin-top: 15px;
+    color: #aed581;
+    font-size: 14px;
+}
+
+.setup-dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #1a3009;
+    border: 3px solid #ffd700;
+    border-radius: 10px;
+    padding: 30px;
+    text-align: center;
+    z-index: 1000;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    min-width: 400px;
+    max-width: 600px;
+}
+
+.setup-dialog h3 {
+    color: #ffd700;
+    margin-top: 0;
+}
+
+.setup-instruction {
+    color: #aed581;
+    margin: 15px 0;
+    font-size: 16px;
+}
+
+.player-selection {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.player-selection button {
+    min-width: 100px;
+}
+
+.card.selectable {
+    cursor: pointer;
+    transition: transform 0.2s;
+    border-color: #ffd700;
+    border-width: 3px;
+}
+
+.card.selectable:hover {
+    transform: translateY(-10px);
+}
+
+.setup-cards {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.game-log {
+    background-color: #1a3009;
+    border-radius: 10px;
+    padding: 15px;
+    height: calc(100vh - 40px);
+    overflow-y: auto;
+    position: sticky;
+    top: 20px;
+}
+
+.game-log h2 {
+    margin-top: 0;
+    color: #ffd700;
+    font-size: 18px;
+}
+
+.log-entry {
+    color: #aed581;
+    font-size: 13px;
+    padding: 3px 0;
+    border-bottom: 1px solid #2d5016;
+}
+
+.log-entry:last-child {
+    border-bottom: none;
+}
+
+.log-entry.important {
+    color: #ffd700;
+    font-weight: bold;
+}
