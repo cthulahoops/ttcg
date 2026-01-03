@@ -352,6 +352,37 @@
             margin-top: 20px;
             flex-wrap: wrap;
         }
+
+        .game-log {
+            background-color: #1a3009;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .game-log h2 {
+            margin-top: 0;
+            color: #ffd700;
+            font-size: 18px;
+        }
+
+        .log-entry {
+            color: #aed581;
+            font-size: 13px;
+            padding: 3px 0;
+            border-bottom: 1px solid #2d5016;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-entry.important {
+            color: #ffd700;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -363,6 +394,11 @@
         </div>
 
         <div class="game-status" id="gameStatus">Click "New Game" to start</div>
+
+        <div class="game-log">
+            <h2>Game Log</h2>
+            <div id="gameLog"></div>
+        </div>
 
         <div id="trumpChoice" class="trump-choice" style="display: none;">
             <h3>You played the 1 of Rings!</h3>
@@ -486,6 +522,21 @@
             'Celeborn': 'Win at least three cards of the same rank'
         };
 
+        function addToGameLog(message, important = false) {
+            const logDiv = document.getElementById('gameLog');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry' + (important ? ' important' : '');
+            entry.textContent = message;
+            logDiv.appendChild(entry);
+
+            // Auto-scroll to bottom
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearGameLog() {
+            document.getElementById('gameLog').innerHTML = '';
+        }
+
         function createDeck() {
             const deck = [];
             const normalSuits = ['mountains', 'shadows', 'forests', 'hills'];
@@ -602,6 +653,9 @@
             // Add to current trick
             gameState.currentTrick.push({ playerIndex, card, isTrump: false });
 
+            // Log the card play
+            addToGameLog(`${getPlayerDisplayName(playerIndex)} plays ${card.value} of ${card.suit}`);
+
             // Set lead suit if this is the first card
             if (gameState.currentTrick.length === 1) {
                 gameState.leadSuit = card.suit;
@@ -690,6 +744,9 @@
             gameState.playerCharacters[firstPlayer] = 'Frodo';
             gameState.availableCharacters = gameState.availableCharacters.filter(c => c !== 'Frodo');
 
+            // Log Frodo assignment
+            addToGameLog(`${playerNames[firstPlayer]} gets Frodo (has 1 of Rings)`, true);
+
             // Move to next player
             gameState.characterAssignmentPlayer = (firstPlayer + 1) % 4;
 
@@ -754,6 +811,9 @@
             // Assign character to current player
             gameState.playerCharacters[playerIndex] = character;
             gameState.availableCharacters = gameState.availableCharacters.filter(c => c !== character);
+
+            // Log character assignment
+            addToGameLog(`${getPlayerDisplayName(playerIndex)} chose ${character}`);
 
             // Hide dialog
             document.getElementById('characterChoice').style.display = 'none';
@@ -903,6 +963,7 @@
                 // Clear the lost card display
                 document.getElementById('lostCard').innerHTML = '';
 
+                addToGameLog(`${getPlayerDisplayName(playerIndex)} takes the Lost card (${gameState.lostCard.value} of ${gameState.lostCard.suit})`);
                 updateGameStatus(`${getPlayerDisplayName(playerIndex)} takes the Lost card`);
                 displayHands();
 
@@ -913,6 +974,7 @@
                 }, 1500);
             } else {
                 // Don't take the card, just exchange with Frodo
+                addToGameLog(`${getPlayerDisplayName(playerIndex)} declines the Lost card`);
                 updateGameStatus(`${getPlayerDisplayName(playerIndex)} declines the Lost card`);
 
                 setTimeout(() => {
@@ -1054,6 +1116,7 @@
             // Hide dialog
             document.getElementById('setupDialog').style.display = 'none';
 
+            addToGameLog(`${getPlayerDisplayName(fromPlayer)} gives ${card.value} of ${card.suit} to ${getPlayerDisplayName(toPlayer)}`);
             updateGameStatus(`${getPlayerDisplayName(fromPlayer)} gives ${card.value} of ${card.suit} to ${getPlayerDisplayName(toPlayer)}`);
             displayHands();
 
@@ -1143,6 +1206,7 @@
             // Hide dialog
             document.getElementById('setupDialog').style.display = 'none';
 
+            addToGameLog(`${getPlayerDisplayName(fromPlayer)} returns ${card.value} of ${card.suit}`);
             updateGameStatus(`${getPlayerDisplayName(fromPlayer)} returns ${card.value} of ${card.suit}`);
             displayHands();
 
@@ -1208,6 +1272,9 @@
             // Update tricks won display
             updateTricksDisplay();
 
+            // Log the trick winner
+            addToGameLog(winMessage, true);
+
             updateGameStatus(`Trick complete! ${winMessage}`);
 
             // Check if game is over
@@ -1215,7 +1282,10 @@
             const playersWithNoCards = gameState.playerHands.filter(hand => hand.length === 0).length;
             if (playersWithNoCards >= 3) {
                 setTimeout(() => {
-                    updateGameStatus('Game Over! ' + getGameOverMessage());
+                    const gameOverMsg = getGameOverMessage();
+                    addToGameLog('--- GAME OVER ---', true);
+                    addToGameLog(gameOverMsg.split('\n').join(' | '));
+                    updateGameStatus('Game Over! ' + gameOverMsg);
                 }, 2000);
             } else {
                 // Start next trick after a delay
@@ -1482,6 +1552,11 @@
 
             // Reset player headings
             resetPlayerHeadings();
+
+            // Clear and initialize game log
+            clearGameLog();
+            addToGameLog('=== NEW GAME STARTED ===', true);
+            addToGameLog(`Lost card: ${lostCard.value} of ${lostCard.suit}`);
 
             // Display initial state
             displayHands();
