@@ -225,6 +225,26 @@
             margin-top: 5px;
         }
 
+        .objective-status {
+            font-size: 13px;
+            margin-top: 5px;
+            color: #aed581;
+        }
+
+        .objective-status .success {
+            color: #4caf50;
+        }
+
+        .objective-status .fail {
+            color: #f44336;
+        }
+
+        .ring-cards, .rank-counts {
+            font-size: 12px;
+            color: #aed581;
+            margin-top: 3px;
+        }
+
         .objective {
             font-size: 12px;
             color: #ffd700;
@@ -452,12 +472,14 @@
                     <h3 id="playerName1">Player 1 (North)</h3>
                     <div class="objective" id="objective1"></div>
                     <div class="tricks-won" id="tricks1">Tricks: 0</div>
+                    <div class="objective-status" id="objectiveStatus1"></div>
                     <div class="hand" id="player1"></div>
                 </div>
                 <div class="player">
                     <h3 id="playerName2">Player 2 (East)</h3>
                     <div class="objective" id="objective2"></div>
                     <div class="tricks-won" id="tricks2">Tricks: 0</div>
+                    <div class="objective-status" id="objectiveStatus2"></div>
                     <div class="hand-count" id="count2">Cards: 9</div>
                     <div class="hand" id="player2"></div>
                 </div>
@@ -465,6 +487,7 @@
                     <h3 id="playerName3">Player 3 (South)</h3>
                     <div class="objective" id="objective3"></div>
                     <div class="tricks-won" id="tricks3">Tricks: 0</div>
+                    <div class="objective-status" id="objectiveStatus3"></div>
                     <div class="hand-count" id="count3">Cards: 9</div>
                     <div class="hand" id="player3"></div>
                 </div>
@@ -472,6 +495,7 @@
                     <h3 id="playerName4">Player 4 (West)</h3>
                     <div class="objective" id="objective4"></div>
                     <div class="tricks-won" id="tricks4">Tricks: 0</div>
+                    <div class="objective-status" id="objectiveStatus4"></div>
                     <div class="hand-count" id="count4">Cards: 9</div>
                     <div class="hand" id="player4"></div>
                 </div>
@@ -1411,7 +1435,58 @@
         function updateTricksDisplay() {
             for (let p = 0; p < 4; p++) {
                 const trickCount = gameState.tricksWon[p].length / 4;
+                const character = gameState.playerCharacters[p];
+                const wonCards = gameState.tricksWon[p];
+
+                // Update trick count
                 document.getElementById(`tricks${p + 1}`).textContent = `Tricks: ${trickCount}`;
+
+                // Update objective status
+                const statusDiv = document.getElementById(`objectiveStatus${p + 1}`);
+                if (!character) {
+                    statusDiv.innerHTML = '';
+                    continue;
+                }
+
+                let statusHTML = '';
+
+                if (character === 'Gandalf' || character === 'Merry') {
+                    // Simple tick/cross for Gandalf and Merry
+                    const objectiveMet = checkObjective(p);
+                    const icon = objectiveMet ? '<span class="success">✓</span>' : '<span class="fail">✗</span>';
+                    statusDiv.innerHTML = icon;
+                } else if (character === 'Frodo') {
+                    // Show ring cards won
+                    const ringCards = wonCards.filter(card => card.suit === 'rings');
+                    if (ringCards.length > 0) {
+                        const ringList = ringCards.map(c => c.value).sort((a, b) => a - b).join(', ');
+                        const objectiveMet = ringCards.length >= 2;
+                        const icon = objectiveMet ? '<span class="success">✓</span>' : '<span class="fail">✗</span>';
+                        statusHTML = `${icon} Rings: ${ringList}`;
+                    } else {
+                        statusHTML = '<span class="fail">✗</span> Rings: none';
+                    }
+                    statusDiv.innerHTML = statusHTML;
+                } else if (character === 'Celeborn') {
+                    // Show rank counts
+                    const rankCounts = {};
+                    wonCards.forEach(card => {
+                        rankCounts[card.value] = (rankCounts[card.value] || 0) + 1;
+                    });
+
+                    const objectiveMet = checkObjective(p);
+                    const icon = objectiveMet ? '<span class="success">✓</span>' : '<span class="fail">✗</span>';
+
+                    if (Object.keys(rankCounts).length > 0) {
+                        const ranksWithCounts = Object.entries(rankCounts)
+                            .sort((a, b) => b[1] - a[1])  // Sort by count descending
+                            .map(([rank, count]) => count > 1 ? `${rank}×${count}` : rank);
+                        statusHTML = `${icon} ${ranksWithCounts.join(', ')}`;
+                    } else {
+                        statusHTML = `${icon} none`;
+                    }
+                    statusDiv.innerHTML = statusHTML;
+                }
             }
         }
 
