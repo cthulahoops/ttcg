@@ -1039,10 +1039,23 @@ function determineTrickWinner() {
 
     updateGameStatus(`Trick complete! ${winMessage}`);
 
+    // Check if any objective is now impossible
+    let anyImpossible = false;
+    for (let p = 0; p < 4; p++) {
+        if (!isObjectiveCompletable(p)) {
+            const character = gameState.playerCharacters[p];
+            if (character) {
+                addToGameLog(`${getPlayerDisplayName(p)}'s objective is now impossible!`, true);
+                anyImpossible = true;
+            }
+        }
+    }
+
     // Check if game is over
     // Game ends when at least 3 players have no cards (accounts for Gandalf potentially having the lost card)
+    // OR when any objective becomes impossible
     const playersWithNoCards = gameState.playerHands.filter(hand => hand.length === 0).length;
-    if (playersWithNoCards >= 3) {
+    if (playersWithNoCards >= 3 || anyImpossible) {
         setTimeout(() => {
             const gameOverMsg = getGameOverMessage();
             addToGameLog('--- GAME OVER ---', true);
