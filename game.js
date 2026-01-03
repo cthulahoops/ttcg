@@ -1125,6 +1125,106 @@ function checkObjective(playerIndex) {
     }
 }
 
+function isObjectiveCompletable(playerIndex) {
+    // Simple checks to see if an objective is still achievable
+    // Returns true if completable, false if impossible
+    const character = gameState.playerCharacters[playerIndex];
+    const wonCards = gameState.tricksWon[playerIndex];
+    const trickCount = wonCards.length / 4;
+
+    // If already completed, it's completable
+    if (checkObjective(playerIndex)) {
+        return true;
+    }
+
+    switch (character) {
+        case 'Frodo':
+            // Need at least 2 ring cards
+            // Impossible if other players have already captured 4+ rings (only 5 total)
+            const ringCardsWonByOthers = gameState.tricksWon
+                .reduce((total, cards, idx) => {
+                    if (idx !== playerIndex) {
+                        return total + cards.filter(card => card.suit === 'rings').length;
+                    }
+                    return total;
+                }, 0);
+            const frodoRings = wonCards.filter(card => card.suit === 'rings').length;
+            const ringsRemaining = 5 - ringCardsWonByOthers - frodoRings;
+            return (frodoRings + ringsRemaining) >= 2;
+
+        case 'Merry':
+            // Win exactly 1 or 2 tricks
+            // Impossible if already won 3+ tricks
+            return trickCount < 3;
+
+        case 'Boromir':
+            // Win last trick AND don't win 1 of Rings
+            // Impossible if already won the 1 of Rings
+            const hasOneRing = wonCards.some(card => card.suit === 'rings' && card.value === 1);
+            return !hasOneRing;
+
+        case 'Sam':
+        case 'Gimli':
+        case 'Legolas':
+            // Need to win a specific card
+            const threatCard = gameState.playerThreatCards[playerIndex];
+            if (!threatCard) return true;
+
+            const targetSuit = threatCardSuits[character];
+            // Check if another player has already won this card
+            for (let p = 0; p < 4; p++) {
+                if (p !== playerIndex) {
+                    const hasCard = gameState.tricksWon[p].some(
+                        card => card.suit === targetSuit && card.value === threatCard
+                    );
+                    if (hasCard) return false;
+                }
+            }
+            return true;
+
+        case 'Aragorn':
+            // Win exactly N tricks where N is the threat card
+            const aragornThreat = gameState.playerThreatCards[playerIndex];
+            if (!aragornThreat) return true;
+
+            // Impossible if already won more tricks than target
+            if (trickCount > aragornThreat) return false;
+
+            // Impossible if not enough tricks remaining
+            const tricksRemaining = 9 - Math.max(...gameState.tricksWon.map(cards => cards.length / 4));
+            return (trickCount + tricksRemaining) >= aragornThreat;
+
+        case 'Pippin':
+            // Win the fewest (or joint fewest) tricks
+            const allTrickCounts = gameState.tricksWon.map(cards => cards.length / 4);
+            const minTricks = Math.min(...allTrickCounts);
+
+            // Already has fewest or joint fewest
+            if (trickCount === minTricks) return true;
+
+            // Sum of gaps: each other player needs to catch up to Pippin
+            // Impossible if sum of all gaps > remaining tricks
+            let totalGap = 0;
+            for (let p = 0; p < 4; p++) {
+                if (p !== playerIndex) {
+                    const otherTricks = gameState.tricksWon[p].length / 4;
+                    if (otherTricks < trickCount) {
+                        totalGap += (trickCount - otherTricks);
+                    }
+                }
+            }
+
+            const maxTricksPlayed = Math.max(...allTrickCounts);
+            const remainingTricks = 9 - maxTricksPlayed;
+
+            return totalGap <= remainingTricks;
+
+        default:
+            // For other characters (Gandalf, Celeborn), no simple check
+            return true;
+    }
+}
+
 function getGameOverMessage() {
     const results = [];
     const objectiveWinners = [];
@@ -1200,14 +1300,30 @@ function updateTricksDisplay() {
         if (character === 'Gandalf' || character === 'Merry' || character === 'Pippin') {
             // Simple tick/cross for Gandalf, Merry, and Pippin
             const objectiveMet = checkObjective(p);
-            const icon = objectiveMet ? '<span class="success">✓</span>' : '<span class="fail">✗</span>';
+            const completable = isObjectiveCompletable(p);
+            let icon;
+            if (objectiveMet) {
+                icon = '<span class="success">✓</span>';
+            } else if (!completable) {
+                icon = '<span class="fail">✗ (impossible)</span>';
+            } else {
+                icon = '<span class="fail">✗</span>';
+            }
             statusDiv.innerHTML = icon;
         } else if (character === 'Boromir') {
             // Show last trick status and 1 of rings status
             const wonLastTrick = gameState.lastTrickWinner === p;
             const hasOneRing = wonCards.some(card => card.suit === 'rings' && card.value === 1);
             const objectiveMet = checkObjective(p);
-            const icon = objectiveMet ? '<span class="success">✓</span>' : '<span class="fail">✗</span>';
+            const completable = isObjectiveCompletable(p);
+            let icon;
+            if (objectiveMet) {
+                icon = '<span class="success">✓</span>';
+            } else if (!completable) {
+                icon = '<span class="fail">✗ (impossible)</span>';
+            } else {
+                icon = '<span class="fail">✗</span>';
+            }
 
             const lastTrickIcon = wonLastTrick ? '✓' : '✗';
             const oneRingIcon = hasOneRing ? '✗ Has 1R' : '✓';
@@ -1216,13 +1332,22 @@ function updateTricksDisplay() {
         } else if (character === 'Frodo') {
             // Show ring cards won
             const ringCards = wonCards.filter(card => card.suit === 'rings');
+            const objectiveMet = ringCards.length >= 2;
+            const completable = isObjectiveCompletable(p);
+            let icon;
+            if (objectiveMet) {
+                icon = '<span class="success">✓</span>';
+            } else if (!completable) {
+                icon = '<span class="fail">✗ (impossible)</span>';
+            } else {
+                icon = '<span class="fail">✗</span>';
+            }
+
             if (ringCards.length > 0) {
                 const ringList = ringCards.map(c => c.value).sort((a, b) => a - b).join(', ');
-                const objectiveMet = ringCards.length >= 2;
-                const icon = objectiveMet ? '<span class="success">✓</span>' : '<span class="fail">✗</span>';
                 statusHTML = `${icon} Rings: ${ringList}`;
             } else {
-                statusHTML = '<span class="fail">✗</span> Rings: none';
+                statusHTML = `${icon} Rings: none`;
             }
             statusDiv.innerHTML = statusHTML;
         } else if (character === 'Celeborn') {
@@ -1248,12 +1373,20 @@ function updateTricksDisplay() {
             // Show threat card and whether they have the matching card/tricks
             const threatCard = gameState.playerThreatCards[p];
             const objectiveMet = checkObjective(p);
-            const icon = objectiveMet ? '<span class="success">✓</span>' : '<span class="fail">✗</span>';
+            const completable = isObjectiveCompletable(p);
+            let icon;
+            if (objectiveMet) {
+                icon = '<span class="success">✓</span>';
+            } else if (!completable) {
+                icon = '<span class="fail">✗ (impossible)</span>';
+            } else {
+                icon = '<span class="fail">✗</span>';
+            }
 
             if (threatCard) {
                 statusHTML = `${icon} Threat: ${threatCard}`;
             } else {
-                statusHTML = '<span class="fail">✗</span> No threat card';
+                statusHTML = `${icon} No threat card`;
             }
             statusDiv.innerHTML = statusHTML;
         }
