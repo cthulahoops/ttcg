@@ -873,6 +873,8 @@
         }
 
         function showCardSelection(fromPlayer, toPlayer) {
+            const isFrodo = gameState.playerCharacters[fromPlayer] === 'Frodo';
+
             if (fromPlayer === 0) {
                 // Human player - show dialog with their cards
                 const dialog = document.getElementById('setupDialog');
@@ -883,6 +885,9 @@
 
                 title.textContent = 'Choose Card to Exchange';
                 instruction.textContent = `Select a card to give to ${playerNames[toPlayer]}:`;
+                if (isFrodo) {
+                    instruction.textContent += ' (Frodo cannot give away the 1 of Rings)';
+                }
 
                 playerSelection.style.display = 'none';
                 cardSelection.style.display = 'flex';
@@ -890,17 +895,33 @@
 
                 const sortedHand = sortHand([...gameState.playerHands[fromPlayer]]);
                 sortedHand.forEach(card => {
-                    const cardElement = createCardElement(card, true, () => {
+                    // Frodo cannot give away the 1 of rings
+                    const isOneRing = card.suit === 'rings' && card.value === 1;
+                    const canGive = !isFrodo || !isOneRing;
+
+                    const cardElement = createCardElement(card, canGive, canGive ? () => {
                         giveCard(fromPlayer, toPlayer, card);
-                    });
-                    cardElement.classList.add('selectable');
+                    } : null);
+
+                    if (canGive) {
+                        cardElement.classList.add('selectable');
+                    } else {
+                        cardElement.classList.add('disabled');
+                    }
+
                     cardSelection.appendChild(cardElement);
                 });
 
                 dialog.style.display = 'block';
             } else {
-                // AI player - pick random card
-                const hand = gameState.playerHands[fromPlayer];
+                // AI player - pick random card (but not 1 of rings if Frodo)
+                let hand = gameState.playerHands[fromPlayer];
+
+                // Filter out 1 of rings if Frodo
+                if (isFrodo) {
+                    hand = hand.filter(c => !(c.suit === 'rings' && c.value === 1));
+                }
+
                 const randomCard = hand[Math.floor(Math.random() * hand.length)];
                 setTimeout(() => giveCard(fromPlayer, toPlayer, randomCard), 1000);
             }
@@ -926,6 +947,8 @@
         }
 
         function showReturnCardSelection(fromPlayer, toPlayer) {
+            const isFrodo = gameState.playerCharacters[fromPlayer] === 'Frodo';
+
             if (fromPlayer === 0) {
                 // Human player - show all cards including the one just received
                 const dialog = document.getElementById('setupDialog');
@@ -935,6 +958,9 @@
 
                 title.textContent = 'Choose Card to Return';
                 instruction.textContent = `You received ${gameState.exchangeCard.value} of ${gameState.exchangeCard.suit}. Select a card to give back:`;
+                if (isFrodo) {
+                    instruction.textContent += ' (Frodo cannot give away the 1 of Rings)';
+                }
 
                 cardSelection.style.display = 'flex';
                 cardSelection.innerHTML = '';
@@ -944,17 +970,33 @@
                 const sortedHand = sortHand(tempHand);
 
                 sortedHand.forEach(card => {
-                    const cardElement = createCardElement(card, true, () => {
+                    // Frodo cannot give away the 1 of rings
+                    const isOneRing = card.suit === 'rings' && card.value === 1;
+                    const canGive = !isFrodo || !isOneRing;
+
+                    const cardElement = createCardElement(card, canGive, canGive ? () => {
                         returnCard(fromPlayer, toPlayer, card);
-                    });
-                    cardElement.classList.add('selectable');
+                    } : null);
+
+                    if (canGive) {
+                        cardElement.classList.add('selectable');
+                    } else {
+                        cardElement.classList.add('disabled');
+                    }
+
                     cardSelection.appendChild(cardElement);
                 });
 
                 dialog.style.display = 'block';
             } else {
-                // AI player - pick random card from hand + received card
-                const tempHand = [...gameState.playerHands[fromPlayer], gameState.exchangeCard];
+                // AI player - pick random card from hand + received card (but not 1 of rings if Frodo)
+                let tempHand = [...gameState.playerHands[fromPlayer], gameState.exchangeCard];
+
+                // Filter out 1 of rings if Frodo
+                if (isFrodo) {
+                    tempHand = tempHand.filter(c => !(c.suit === 'rings' && c.value === 1));
+                }
+
                 const randomCard = tempHand[Math.floor(Math.random() * tempHand.length)];
                 setTimeout(() => returnCard(fromPlayer, toPlayer, randomCard), 1000);
             }
