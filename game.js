@@ -1,8 +1,15 @@
 // All possible characters in the game
-const allCharacters = ['Frodo', 'Gandalf', 'Merry', 'Celeborn', 'Pippin', 'Boromir', 'Sam', 'Gimli', 'Legolas'];
+const allCharacters = ['Frodo', 'Gandalf', 'Merry', 'Celeborn', 'Pippin', 'Boromir', 'Sam', 'Gimli', 'Legolas', 'Aragorn'];
 
 // Characters that draw threat cards during setup
 const threatCardCharacters = ['Sam', 'Gimli', 'Legolas'];
+
+// Map threat card characters to their target suit
+const threatCardSuits = {
+    'Sam': 'hills',
+    'Gimli': 'mountains',
+    'Legolas': 'forests'
+};
 
 // Game state
 let gameState = {
@@ -56,7 +63,8 @@ const characterObjectives = {
     'Boromir': 'Win the last trick; do NOT win the 1 of Rings',
     'Sam': 'Win the Hills card matching your threat card',
     'Gimli': 'Win the Mountains card matching your threat card',
-    'Legolas': 'Win the Forests card matching your threat card'
+    'Legolas': 'Win the Forests card matching your threat card',
+    'Aragorn': 'Win exactly the number of tricks shown on your threat card'
 };
 
 // Define which characters each character can exchange with during setup
@@ -70,8 +78,9 @@ const characterExchangeRules = {
     'Pippin': ['Frodo', 'Merry'],
     'Boromir': { except: ['Frodo'] },  // Exchange with anyone except Frodo
     'Sam': ['Frodo', 'Merry', 'Pippin'],  // Draw threat card first, then exchange
-    'Gimli': ['Legolas'],  // Draw threat card first, then exchange (will add Aragorn later)
-    'Legolas': ['Gimli']  // Draw threat card first, then exchange (will add Aragorn later)
+    'Gimli': ['Legolas', 'Aragorn'],  // Draw threat card first, then exchange
+    'Legolas': ['Gimli', 'Aragorn'],  // Draw threat card first, then exchange
+    'Aragorn': ['Gimli', 'Legolas']  // Choose threat card first, then exchange
 };
 
 function addToGameLog(message, important = false) {
@@ -445,6 +454,9 @@ function performSetupAction() {
     } else if (character === 'Gandalf') {
         // Gandalf has special logic (optional lost card before exchange)
         setupGandalf(playerIndex);
+    } else if (character === 'Aragorn') {
+        // Aragorn chooses a threat card (not random draw)
+        setupAragorn(playerIndex, character, exchangeRule);
     } else if (threatCardCharacters.includes(character)) {
         // Characters that draw threat cards before exchange
         setupThreatCardCharacter(playerIndex, character, exchangeRule);
@@ -532,10 +544,90 @@ function setupStandardExchange(playerIndex, character, exchangeRule) {
     }
 }
 
+function setupAragorn(playerIndex, character, exchangeRule) {
+    // Aragorn chooses a threat card from the deck
+    if (gameState.threatDeck.length === 0) {
+        addToGameLog(`${getPlayerDisplayName(playerIndex)} - No threat cards remaining!`);
+        setTimeout(() => nextSetupPlayerFixed(), 1000);
+        return;
+    }
+
+    if (playerIndex === 0) {
+        // Human player - show dialog to choose
+        showAragornThreatCardChoice(playerIndex, character, exchangeRule);
+    } else {
+        // AI player - pick random card
+        const randomIndex = Math.floor(Math.random() * gameState.threatDeck.length);
+        const threatCard = gameState.threatDeck.splice(randomIndex, 1)[0];
+        completeAragornThreatCardChoice(playerIndex, character, exchangeRule, threatCard);
+    }
+}
+
+function showAragornThreatCardChoice(playerIndex, character, exchangeRule) {
+    const dialog = document.getElementById('setupDialog');
+    const title = document.getElementById('setupTitle');
+    const instruction = document.getElementById('setupInstruction');
+    const playerSelection = document.getElementById('setupPlayerSelection');
+    const cardSelection = document.getElementById('setupCardSelection');
+
+    title.textContent = 'Aragorn - Choose Threat Card';
+    instruction.textContent = 'Choose a threat card from the deck:';
+
+    cardSelection.style.display = 'none';
+    playerSelection.style.display = 'flex';
+    playerSelection.innerHTML = '';
+
+    // Create button for each threat card
+    gameState.threatDeck.forEach(card => {
+        const button = document.createElement('button');
+        button.textContent = card;
+        button.onclick = () => {
+            dialog.style.display = 'none';
+            // Remove the chosen card from the deck
+            const cardIndex = gameState.threatDeck.indexOf(card);
+            gameState.threatDeck.splice(cardIndex, 1);
+            completeAragornThreatCardChoice(playerIndex, character, exchangeRule, card);
+        };
+        playerSelection.appendChild(button);
+    });
+
+    dialog.style.display = 'block';
+}
+
+function completeAragornThreatCardChoice(playerIndex, character, exchangeRule, threatCard) {
+    gameState.playerThreatCards[playerIndex] = threatCard;
+
+    addToGameLog(`${getPlayerDisplayName(playerIndex)} chooses threat card: ${threatCard}`, true);
+    updateGameStatus(`${getPlayerDisplayName(playerIndex)} chooses threat card ${threatCard}`);
+
+    // Update tricks display to show the threat card
+    updateTricksDisplay();
+
+    // After a delay, proceed to the exchange
+    setTimeout(() => {
+        setupStandardExchange(playerIndex, character, exchangeRule);
+    }, 1500);
+}
+
 function setupThreatCardCharacter(playerIndex, character, exchangeRule) {
     // Draw a threat card from the deck
     if (gameState.threatDeck.length > 0) {
-        const threatCard = gameState.threatDeck.shift();
+        let threatCard;
+        const targetSuit = threatCardSuits[character];
+
+        // Keep drawing until we get a card that doesn't match the lost card
+        // (if the lost card is in the target suit with the same rank)
+        do {
+            if (gameState.threatDeck.length === 0) {
+                addToGameLog(`${getPlayerDisplayName(playerIndex)} - No valid threat cards remaining!`);
+                setTimeout(() => nextSetupPlayerFixed(), 1000);
+                return;
+            }
+            threatCard = gameState.threatDeck.shift();
+        } while (gameState.lostCard &&
+                 gameState.lostCard.suit === targetSuit &&
+                 gameState.lostCard.value === threatCard);
+
         gameState.playerThreatCards[playerIndex] = threatCard;
 
         addToGameLog(`${getPlayerDisplayName(playerIndex)} draws threat card: ${threatCard}`, true);
@@ -1022,6 +1114,12 @@ function checkObjective(playerIndex) {
             if (!legolsThreat) return false;
             return wonCards.some(card => card.suit === 'forests' && card.value === legolsThreat);
 
+        case 'Aragorn':
+            // Win exactly the number of tricks shown on the threat card
+            const aragornThreat = gameState.playerThreatCards[playerIndex];
+            if (!aragornThreat) return false;
+            return trickCount === aragornThreat;
+
         default:
             return false;
     }
@@ -1146,8 +1244,8 @@ function updateTricksDisplay() {
                 statusHTML = `${icon} none`;
             }
             statusDiv.innerHTML = statusHTML;
-        } else if (threatCardCharacters.includes(character)) {
-            // Show threat card and whether they have the matching card
+        } else if (threatCardCharacters.includes(character) || character === 'Aragorn') {
+            // Show threat card and whether they have the matching card/tricks
             const threatCard = gameState.playerThreatCards[p];
             const objectiveMet = checkObjective(p);
             const icon = objectiveMet ? '<span class="success">✓</span>' : '<span class="fail">✗</span>';
