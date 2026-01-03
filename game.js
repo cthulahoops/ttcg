@@ -9,7 +9,7 @@ let gameState = {
     ringsBroken: false,
     waitingForTrumpChoice: false,
     playerCharacters: [null, null, null, null],  // Character chosen by each player
-    availableCharacters: ['Frodo', 'Gandalf', 'Merry', 'Celeborn'],
+    availableCharacters: ['Frodo', 'Gandalf', 'Merry', 'Celeborn', 'Pippin', 'Boromir'],
     characterAssignmentPhase: false,
     characterAssignmentPlayer: 0,
     setupPhase: false,
@@ -18,7 +18,8 @@ let gameState = {
     exchangeFromPlayer: null,
     exchangeToPlayer: null,
     exchangeCard: null,
-    lostCard: null  // Store the lost card separately
+    lostCard: null,  // Store the lost card separately
+    lastTrickWinner: null  // Track who won the most recent trick (for Boromir's objective)
 };
 
 const playerNames = ['North (You)', 'East', 'South', 'West'];
@@ -42,7 +43,21 @@ const characterObjectives = {
     'Frodo': 'Win at least two ring cards',
     'Gandalf': 'Win at least one trick',
     'Merry': 'Win exactly one or two tricks',
-    'Celeborn': 'Win at least three cards of the same rank'
+    'Celeborn': 'Win at least three cards of the same rank',
+    'Pippin': 'Win the fewest (or joint fewest) tricks',
+    'Boromir': 'Win the last trick; do NOT win the 1 of Rings'
+};
+
+// Define which characters each character can exchange with during setup
+// null means "any player", [] means "no exchange"
+// { except: [...] } means "any player except these characters"
+const characterExchangeRules = {
+    'Frodo': [],  // No exchange
+    'Gandalf': ['Frodo'],  // Exchange with Frodo only (after optional lost card)
+    'Merry': ['Frodo', 'Pippin'],
+    'Celeborn': null,  // Exchange with any player
+    'Pippin': ['Frodo', 'Merry'],
+    'Boromir': { except: ['Frodo'] }  // Exchange with anyone except Frodo
 };
 
 function addToGameLog(message, important = false) {
@@ -261,7 +276,7 @@ function startCharacterAssignment(firstPlayer) {
     gameState.characterAssignmentPhase = true;
     gameState.characterAssignmentPlayer = firstPlayer;
     gameState.playerCharacters = [null, null, null, null];
-    gameState.availableCharacters = ['Frodo', 'Gandalf', 'Merry', 'Celeborn'];
+    gameState.availableCharacters = ['Frodo', 'Gandalf', 'Merry', 'Celeborn', 'Pippin'];
 
     // First player (who has 1 of rings) automatically gets Frodo
     gameState.playerCharacters[firstPlayer] = 'Frodo';
@@ -291,7 +306,7 @@ function showCharacterChoice() {
 
     // Create character buttons
     buttonsEl.innerHTML = '';
-    for (const character of ['Frodo', 'Gandalf', 'Merry', 'Celeborn']) {
+    for (const character of ['Frodo', 'Gandalf', 'Merry', 'Celeborn', 'Pippin', 'Boromir']) {
         const button = document.createElement('button');
         button.textContent = character;
         button.onclick = () => selectCharacter(character);
@@ -406,16 +421,19 @@ function performSetupAction() {
 
     updateGameStatus(`${getPlayerDisplayName(playerIndex)} - Setup Phase`);
 
+    // Get exchange rules for this character
+    const exchangeRule = characterExchangeRules[character];
+
     // Determine what setup action this character needs
-    if (character === 'Frodo') {
-        // Frodo does nothing
+    if (exchangeRule === undefined || (Array.isArray(exchangeRule) && exchangeRule.length === 0)) {
+        // No exchange (e.g., Frodo)
         setTimeout(() => nextSetupPlayerFixed(), 1000);
     } else if (character === 'Gandalf') {
+        // Gandalf has special logic (optional lost card before exchange)
         setupGandalf(playerIndex);
-    } else if (character === 'Merry') {
-        setupMerry(playerIndex);
-    } else if (character === 'Celeborn') {
-        setupCeleborn(playerIndex);
+    } else {
+        // All other characters use standard exchange logic
+        setupStandardExchange(playerIndex, character, exchangeRule);
     }
 }
 
@@ -428,6 +446,61 @@ function endSetupPhase() {
     // If AI player starts, play their move
     if (gameState.currentPlayer !== 0) {
         setTimeout(() => playAIMove(), 1500);
+    }
+}
+
+function getValidExchangePlayers(playerIndex, exchangeRule) {
+    // Returns an array of player indices that are valid exchange targets
+    let validPlayers = [];
+
+    if (exchangeRule === null) {
+        // Can exchange with anyone
+        for (let p = 0; p < 4; p++) {
+            if (p !== playerIndex) {
+                validPlayers.push(p);
+            }
+        }
+    } else if (Array.isArray(exchangeRule)) {
+        // Can only exchange with specific characters
+        validPlayers = exchangeRule
+            .map(charName => gameState.playerCharacters.indexOf(charName))
+            .filter(p => p !== -1 && p !== playerIndex);
+    } else if (exchangeRule.except) {
+        // Can exchange with anyone except specific characters
+        const excludedPlayers = exchangeRule.except
+            .map(charName => gameState.playerCharacters.indexOf(charName));
+        for (let p = 0; p < 4; p++) {
+            if (p !== playerIndex && !excludedPlayers.includes(p)) {
+                validPlayers.push(p);
+            }
+        }
+    }
+
+    return validPlayers;
+}
+
+function setupStandardExchange(playerIndex, character, exchangeRule) {
+    // exchangeRule is either:
+    // - null (any player, e.g., Celeborn)
+    // - array of character names (e.g., ['Frodo', 'Pippin'] for Merry)
+    // - object with 'except' property (e.g., { except: ['Frodo'] } for Boromir)
+
+    if (playerIndex === 0) {
+        // Human player - determine valid players first
+        let validPlayers = getValidExchangePlayers(playerIndex, exchangeRule);
+
+        if (validPlayers.length === 1) {
+            // Only one option - automatically choose it
+            startExchange(playerIndex, validPlayers[0]);
+        } else {
+            // Multiple options - show dialog
+            showExchangePlayerSelectionDialog(playerIndex, character, exchangeRule);
+        }
+    } else {
+        // AI player - pick a random valid target
+        const validPlayers = getValidExchangePlayers(playerIndex, exchangeRule);
+        const targetPlayer = validPlayers[Math.floor(Math.random() * validPlayers.length)];
+        startExchange(playerIndex, targetPlayer);
     }
 }
 
@@ -507,53 +580,63 @@ function completeLostCardChoice(playerIndex, takeLostCard) {
     }
 }
 
-function setupMerry(playerIndex) {
-    // Merry: Exchange with Frodo (only option currently)
-    const frodoPlayer = gameState.playerCharacters.indexOf('Frodo');
-    startExchange(playerIndex, frodoPlayer);
-}
-
-function setupCeleborn(playerIndex) {
-    // Celeborn: Exchange with anyone
-    // Need to show player selection
-    if (playerIndex === 0) {
-        // Human player - show dialog
-        showPlayerSelectionDialog(playerIndex);
-    } else {
-        // AI - pick a random player
-        let targetPlayer;
-        do {
-            targetPlayer = Math.floor(Math.random() * 4);
-        } while (targetPlayer === playerIndex);
-        startExchange(playerIndex, targetPlayer);
-    }
-}
-
-function showPlayerSelectionDialog(playerIndex) {
+function showExchangePlayerSelectionDialog(playerIndex, character, exchangeRule) {
     const dialog = document.getElementById('setupDialog');
     const title = document.getElementById('setupTitle');
     const instruction = document.getElementById('setupInstruction');
     const playerSelection = document.getElementById('setupPlayerSelection');
     const cardSelection = document.getElementById('setupCardSelection');
 
-    title.textContent = `${gameState.playerCharacters[playerIndex]} - Setup`;
-    instruction.textContent = 'Choose a player to exchange with:';
+    title.textContent = `${character} - Setup`;
 
     cardSelection.style.display = 'none';
     playerSelection.style.display = 'flex';
     playerSelection.innerHTML = '';
 
-    // Create buttons for each other player
-    for (let p = 0; p < 4; p++) {
-        if (p !== playerIndex) {
-            const button = document.createElement('button');
-            button.textContent = getPlayerDisplayName(p);
-            button.onclick = () => {
-                startExchange(playerIndex, p);
-            };
-            playerSelection.appendChild(button);
+    let validPlayers = [];
+
+    if (exchangeRule === null) {
+        // Can exchange with any player
+        instruction.textContent = 'Choose a player to exchange with:';
+        for (let p = 0; p < 4; p++) {
+            if (p !== playerIndex) {
+                validPlayers.push(p);
+            }
+        }
+    } else if (Array.isArray(exchangeRule)) {
+        // Can only exchange with specific characters
+        validPlayers = exchangeRule
+            .map(charName => gameState.playerCharacters.indexOf(charName))
+            .filter(p => p !== -1 && p !== playerIndex);
+
+        // Only show character names that are actually in the game
+        const availableCharNames = validPlayers
+            .map(p => gameState.playerCharacters[p])
+            .join(' or ');
+        instruction.textContent = `Choose ${availableCharNames} to exchange with:`;
+    } else if (exchangeRule.except) {
+        // Can exchange with anyone except specific characters
+        const excludedNames = exchangeRule.except.join(', ');
+        instruction.textContent = `Choose a player to exchange with (except ${excludedNames}):`;
+
+        const excludedPlayers = exchangeRule.except
+            .map(charName => gameState.playerCharacters.indexOf(charName));
+        for (let p = 0; p < 4; p++) {
+            if (p !== playerIndex && !excludedPlayers.includes(p)) {
+                validPlayers.push(p);
+            }
         }
     }
+
+    // Create buttons for valid players
+    validPlayers.forEach(p => {
+        const button = document.createElement('button');
+        button.textContent = getPlayerDisplayName(p);
+        button.onclick = () => {
+            startExchange(playerIndex, p);
+        };
+        playerSelection.appendChild(button);
+    });
 
     dialog.style.display = 'block';
 }
@@ -797,6 +880,9 @@ function determineTrickWinner() {
 
     const winnerIndex = winningPlay.playerIndex;
 
+    // Track the last trick winner (for Boromir's objective)
+    gameState.lastTrickWinner = winnerIndex;
+
     // Assign all cards from the trick to the winner
     gameState.currentTrick.forEach(play => {
         gameState.tricksWon[winnerIndex].push(play.card);
@@ -854,6 +940,18 @@ function checkObjective(playerIndex) {
                 rankCounts[card.value] = (rankCounts[card.value] || 0) + 1;
             });
             return Object.values(rankCounts).some(count => count >= 3);
+
+        case 'Pippin':
+            // Win the fewest (or joint fewest) tricks
+            const allTrickCounts = gameState.tricksWon.map(cards => cards.length / 4);
+            const minTricks = Math.min(...allTrickCounts);
+            return trickCount === minTricks;
+
+        case 'Boromir':
+            // Win the last trick AND do NOT win the 1 of rings
+            const wonLastTrick = gameState.lastTrickWinner === playerIndex;
+            const hasOneRing = wonCards.some(card => card.suit === 'rings' && card.value === 1);
+            return wonLastTrick && !hasOneRing;
 
         default:
             return false;
@@ -932,11 +1030,22 @@ function updateTricksDisplay() {
 
         let statusHTML = '';
 
-        if (character === 'Gandalf' || character === 'Merry') {
-            // Simple tick/cross for Gandalf and Merry
+        if (character === 'Gandalf' || character === 'Merry' || character === 'Pippin') {
+            // Simple tick/cross for Gandalf, Merry, and Pippin
             const objectiveMet = checkObjective(p);
             const icon = objectiveMet ? '<span class="success">✓</span>' : '<span class="fail">✗</span>';
             statusDiv.innerHTML = icon;
+        } else if (character === 'Boromir') {
+            // Show last trick status and 1 of rings status
+            const wonLastTrick = gameState.lastTrickWinner === p;
+            const hasOneRing = wonCards.some(card => card.suit === 'rings' && card.value === 1);
+            const objectiveMet = checkObjective(p);
+            const icon = objectiveMet ? '<span class="success">✓</span>' : '<span class="fail">✗</span>';
+
+            const lastTrickIcon = wonLastTrick ? '✓' : '✗';
+            const oneRingIcon = hasOneRing ? '✗ Has 1R' : '✓';
+            statusHTML = `${icon} Last: ${lastTrickIcon}, ${oneRingIcon}`;
+            statusDiv.innerHTML = statusHTML;
         } else if (character === 'Frodo') {
             // Show ring cards won
             const ringCards = wonCards.filter(card => card.suit === 'rings');
@@ -1099,7 +1208,7 @@ function newGame() {
         ringsBroken: false,
         waitingForTrumpChoice: false,
         playerCharacters: [null, null, null, null],
-        availableCharacters: ['Frodo', 'Gandalf', 'Merry', 'Celeborn'],
+        availableCharacters: ['Frodo', 'Gandalf', 'Merry', 'Celeborn', 'Pippin', 'Boromir'],
         characterAssignmentPhase: false,
         characterAssignmentPlayer: 0,
         setupPhase: false,
@@ -1108,7 +1217,8 @@ function newGame() {
         exchangeFromPlayer: null,
         exchangeToPlayer: null,
         exchangeCard: null,
-        lostCard: lostCard  // Store the lost card
+        lostCard: lostCard,  // Store the lost card
+        lastTrickWinner: null  // Track who won the most recent trick
     };
 
     // Deal 9 cards to each player
