@@ -11,9 +11,14 @@ const threatCardSuits = {
     'Legolas': 'forests'
 };
 
+// Import modules
+import { Hand, PlayerHand, PyramidHand } from './hands.js';
+import { sortHand, createCardElement } from './utils.js';
+
 // Game state
 let gameState = {
-    playerCount: 4,  // Number of players (3 or 4)
+    playerCount: 4,  // Number of actual players (2, 3, or 4)
+    numCharacters: 4,  // Number of characters in play (3 for 2-player mode, otherwise same as playerCount)
     playerHands: [[], [], [], []],
     tricksWon: [[], [], [], []],  // Store cards from won tricks
     currentTrick: [],
@@ -35,7 +40,10 @@ let gameState = {
     lostCard: null,  // Store the lost card separately
     lastTrickWinner: null,  // Track who won the most recent trick (for Boromir's objective)
     threatDeck: [],  // Threat deck (cards 1-7)
-    playerThreatCards: {}  // Maps playerIndex to their drawn threat card
+    playerThreatCards: {},  // Maps playerIndex to their drawn threat card
+    // Pyramid player state (for 2-player mode)
+    pyramidPlayerIndex: null,  // Which player is the pyramid (-1 = none)
+    pyramidControllerIndex: null  // Which player controls the pyramid
 };
 
 const playerNames = ['North (You)', 'East', 'South', 'West'];
@@ -127,46 +135,9 @@ function shuffleDeck(deck) {
     return shuffled;
 }
 
-function sortHand(cards) {
-    const suitOrder = { 'mountains': 0, 'shadows': 1, 'forests': 2, 'hills': 3, 'rings': 4 };
-
-    return cards.sort((a, b) => {
-        // First sort by suit
-        if (suitOrder[a.suit] !== suitOrder[b.suit]) {
-            return suitOrder[a.suit] - suitOrder[b.suit];
-        }
-        // Then sort by value within the same suit
-        return a.value - b.value;
-    });
-}
-
-function createCardElement(card, clickable = false, clickHandler = null) {
-    const cardDiv = document.createElement('div');
-    cardDiv.className = `card ${card.suit}`;
-    if (clickable) {
-        cardDiv.classList.add('clickable');
-        if (clickHandler) {
-            cardDiv.onclick = clickHandler;
-        }
-    }
-
-    const valueDiv = document.createElement('div');
-    valueDiv.className = 'value';
-    valueDiv.textContent = card.value;
-
-    const suitDiv = document.createElement('div');
-    suitDiv.className = 'suit';
-    suitDiv.textContent = card.suit;
-
-    cardDiv.appendChild(valueDiv);
-    cardDiv.appendChild(suitDiv);
-
-    return cardDiv;
-}
-
 function findPlayerWithCard(suit, value) {
     for (let p = 0; p < 4; p++) {
-        if (gameState.playerHands[p].some(card => card.suit === suit && card.value === value)) {
+        if (gameState.playerHands[p]._getAllCards().some(card => card.suit === suit && card.value === value)) {
             return p;
         }
     }
@@ -174,7 +145,7 @@ function findPlayerWithCard(suit, value) {
 }
 
 function isLegalMove(playerIndex, card) {
-    const playerHand = gameState.playerHands[playerIndex];
+    const playerHand = gameState.playerHands[playerIndex]._getAllCards();
 
     // If leading the trick
     if (gameState.currentTrick.length === 0) {
@@ -202,15 +173,13 @@ function isLegalMove(playerIndex, card) {
 }
 
 function getLegalMoves(playerIndex) {
-    return gameState.playerHands[playerIndex].filter(card => isLegalMove(playerIndex, card));
+    const availableCards = gameState.playerHands[playerIndex].getAvailableCards();
+    return availableCards.filter(card => isLegalMove(playerIndex, card));
 }
 
 function playCard(playerIndex, card) {
-    // Remove card from player's hand
-    const handIndex = gameState.playerHands[playerIndex].findIndex(
-        c => c.suit === card.suit && c.value === card.value
-    );
-    gameState.playerHands[playerIndex].splice(handIndex, 1);
+    // Remove card from player's hand (pyramid uncovering handled automatically via callback)
+    gameState.playerHands[playerIndex].removeCard(card);
 
     // Add to current trick
     gameState.currentTrick.push({ playerIndex, card, isTrump: false });
@@ -267,8 +236,8 @@ function playCard(playerIndex, card) {
         displayHands();
         updateGameStatus();
 
-        // If it's an AI player's turn, play automatically
-        if (gameState.currentPlayer !== 0) {
+        // If it's an AI-controlled player's turn, play automatically
+        if (!isHumanControlled(gameState.currentPlayer)) {
             setTimeout(() => playAIMove(), 1000);
         }
     }
@@ -299,7 +268,11 @@ function chooseTrump(useTrump) {
 function startCharacterAssignment(firstPlayer) {
     gameState.characterAssignmentPhase = true;
     gameState.characterAssignmentPlayer = firstPlayer;
-    gameState.playerCharacters = [null, null, null, null];
+    // Don't reset playerCharacters - it was already initialized with correct size in newGame
+    // Just clear any existing assignments
+    for (let i = 0; i < gameState.playerCharacters.length; i++) {
+        gameState.playerCharacters[i] = null;
+    }
     gameState.availableCharacters = [...allCharacters];
 
     // First player (who has 1 of rings) automatically gets Frodo
@@ -309,8 +282,20 @@ function startCharacterAssignment(firstPlayer) {
     // Log Frodo assignment
     addToGameLog(`${playerNames[firstPlayer]} gets Frodo (has 1 of Rings)`, true);
 
+    // For 2-player mode, determine pyramid controller now that we know where Frodo is
+    if (gameState.playerCount === 2) {
+        if (firstPlayer === gameState.pyramidPlayerIndex) {
+            // Frodo IS the pyramid, so player to their right controls it
+            gameState.pyramidControllerIndex = (firstPlayer + 2) % 3;
+        } else {
+            // Frodo is not the pyramid, so Frodo controls the pyramid
+            gameState.pyramidControllerIndex = firstPlayer;
+        }
+        addToGameLog(`Pyramid will be controlled by ${getPlayerDisplayName(gameState.pyramidControllerIndex)}`, true);
+    }
+
     // Move to next player
-    gameState.characterAssignmentPlayer = (firstPlayer + 1) % gameState.playerCount;
+    gameState.characterAssignmentPlayer = (firstPlayer + 1) % gameState.numCharacters;
 
     // Show character selection dialog
     showCharacterChoice();
@@ -345,15 +330,24 @@ function showCharacterChoice() {
 
     // Show current assignments
     const assignments = [];
-    for (let i = 0; i < gameState.playerCount; i++) {
+    for (let i = 0; i < gameState.numCharacters; i++) {
         if (gameState.playerCharacters[i]) {
             assignments.push(`${playerNames[i]}: ${gameState.playerCharacters[i]}`);
         }
     }
     infoEl.textContent = assignments.length > 0 ? assignments.join(' | ') : '';
 
-    // Show dialog (only for human player)
-    if (playerIndex === 0) {
+    // Show dialog if human player is choosing
+    // For pyramid player in 2-player mode, show to the controller
+    const shouldShowToHuman = (playerIndex === 0) ||
+                             (gameState.pyramidPlayerIndex === playerIndex && gameState.pyramidControllerIndex === 0);
+
+    if (shouldShowToHuman) {
+        if (gameState.pyramidPlayerIndex === playerIndex) {
+            // Update title to indicate choosing for pyramid
+            titleEl.textContent = `Choose Character for Pyramid Player`;
+            descEl.textContent = `You control the pyramid - select its character`;
+        }
         dialog.style.display = 'block';
     } else {
         // AI player - choose automatically after delay
@@ -381,10 +375,10 @@ function selectCharacter(character) {
     document.getElementById('characterChoice').style.display = 'none';
 
     // Move to next player or end character assignment
-    gameState.characterAssignmentPlayer = (gameState.characterAssignmentPlayer + 1) % gameState.playerCount;
+    gameState.characterAssignmentPlayer = (gameState.characterAssignmentPlayer + 1) % gameState.numCharacters;
 
     // Check if all active players have characters
-    const allAssigned = gameState.playerCharacters.slice(0, gameState.playerCount).every(c => c !== null);
+    const allAssigned = gameState.playerCharacters.every(c => c !== null);
     if (allAssigned) {
         endCharacterAssignment();
     } else {
@@ -412,7 +406,7 @@ function endCharacterAssignment() {
 }
 
 function updatePlayerHeadings() {
-    for (let p = 0; p < gameState.playerCount; p++) {
+    for (let p = 0; p < gameState.numCharacters; p++) {
         const nameElement = document.getElementById(`playerName${p + 1}`);
         const objectiveElement = document.getElementById(`objective${p + 1}`);
         const character = gameState.playerCharacters[p];
@@ -421,6 +415,9 @@ function updatePlayerHeadings() {
             if (p === 0) {
                 // Human player - show "You"
                 nameElement.textContent = `${character} (You)`;
+            } else if (gameState.pyramidPlayerIndex === p) {
+                // Pyramid player - indicate it's the pyramid
+                nameElement.textContent = `${character} (Pyramid)`;
             } else {
                 // AI players - show character name
                 nameElement.textContent = character;
@@ -437,6 +434,16 @@ function updatePlayerHeadings() {
 }
 
 // ===== SETUP PHASE =====
+
+function isHumanControlled(playerIndex) {
+    // Returns true if the human should make decisions for this player
+    // True if it's player 0, OR if it's the pyramid player controlled by player 0
+    if (playerIndex === 0) return true;
+    if (gameState.pyramidPlayerIndex === playerIndex && gameState.pyramidControllerIndex === 0) {
+        return true;
+    }
+    return false;
+}
 
 function startSetupPhase() {
     gameState.setupPhase = true;
@@ -478,8 +485,8 @@ function endSetupPhase() {
 
     updateGameStatus(`Setup complete! ${getPlayerDisplayName(gameState.currentPlayer)} leads.`);
 
-    // If AI player starts, play their move
-    if (gameState.currentPlayer !== 0) {
+    // If AI-controlled player starts, play their move
+    if (!isHumanControlled(gameState.currentPlayer)) {
         setTimeout(() => playAIMove(), 1500);
     }
 }
@@ -520,8 +527,8 @@ function setupStandardExchange(playerIndex, character, exchangeRule) {
     // - array of character names (e.g., ['Frodo', 'Pippin'] for Merry)
     // - object with 'except' property (e.g., { except: ['Frodo'] } for Boromir)
 
-    if (playerIndex === 0) {
-        // Human player - determine valid players first
+    if (isHumanControlled(playerIndex)) {
+        // Human-controlled player - determine valid players first
         let validPlayers = getValidExchangePlayers(playerIndex, exchangeRule);
 
         if (validPlayers.length === 0) {
@@ -558,11 +565,11 @@ function setupAragorn(playerIndex, character, exchangeRule) {
         return;
     }
 
-    if (playerIndex === 0) {
-        // Human player - show dialog to choose
+    if (isHumanControlled(playerIndex)) {
+        // Human-controlled - show dialog to choose
         showAragornThreatCardChoice(playerIndex, character, exchangeRule);
     } else {
-        // AI player - pick random card
+        // AI-controlled - pick random card
         const randomIndex = Math.floor(Math.random() * gameState.threatDeck.length);
         const threatCard = gameState.threatDeck.splice(randomIndex, 1)[0];
         completeAragornThreatCardChoice(playerIndex, character, exchangeRule, threatCard);
@@ -655,11 +662,11 @@ function setupThreatCardCharacter(playerIndex, character, exchangeRule) {
 
 function setupGandalf(playerIndex) {
     // Gandalf: Optionally take Lost card to hand, then Exchange with Frodo
-    if (playerIndex === 0) {
-        // Human player - show dialog to ask
+    if (isHumanControlled(playerIndex)) {
+        // Human-controlled - show dialog to ask
         showLostCardChoice(playerIndex);
     } else {
-        // AI player - randomly decide (50% chance)
+        // AI-controlled - randomly decide (50% chance)
         const takeLostCard = Math.random() < 0.5;
         completeLostCardChoice(playerIndex, takeLostCard);
     }
@@ -702,8 +709,7 @@ function showLostCardChoice(playerIndex) {
 function completeLostCardChoice(playerIndex, takeLostCard) {
     if (takeLostCard && gameState.lostCard) {
         // Add lost card to Gandalf's hand
-        gameState.playerHands[playerIndex].push(gameState.lostCard);
-        sortHand(gameState.playerHands[playerIndex]);
+        gameState.playerHands[playerIndex].addCard(gameState.lostCard);
 
         // Clear the lost card display
         document.getElementById('lostCard').innerHTML = '';
@@ -806,9 +812,10 @@ function startExchange(fromPlayer, toPlayer) {
 
 function showCardSelection(fromPlayer, toPlayer) {
     const isFrodo = gameState.playerCharacters[fromPlayer] === 'Frodo';
+    const isPyramid = gameState.pyramidPlayerIndex === fromPlayer;
 
-    if (fromPlayer === 0) {
-        // Human player - show dialog with their cards
+    if (fromPlayer === 0 || (isPyramid && gameState.pyramidControllerIndex === 0)) {
+        // Human player or human-controlled pyramid - show dialog with their cards
         const dialog = document.getElementById('setupDialog');
         const title = document.getElementById('setupTitle');
         const instruction = document.getElementById('setupInstruction');
@@ -820,13 +827,18 @@ function showCardSelection(fromPlayer, toPlayer) {
         if (isFrodo) {
             instruction.textContent += ' (Frodo cannot give away the 1 of Rings)';
         }
+        if (isPyramid) {
+            instruction.textContent += ' (Only uncovered cards can be exchanged)';
+        }
 
         playerSelection.style.display = 'none';
         cardSelection.style.display = 'flex';
         cardSelection.innerHTML = '';
 
-        const sortedHand = sortHand([...gameState.playerHands[fromPlayer]]);
-        sortedHand.forEach(card => {
+        const availableCards = gameState.playerHands[fromPlayer].getAvailableCards();
+        const sortedCards = sortHand([...availableCards]);
+
+        sortedCards.forEach(card => {
             // Frodo cannot give away the 1 of rings
             const isOneRing = card.suit === 'rings' && card.value === 1;
             const canGive = !isFrodo || !isOneRing;
@@ -847,12 +859,8 @@ function showCardSelection(fromPlayer, toPlayer) {
         dialog.style.display = 'block';
     } else {
         // AI player - pick random card (but not 1 of rings if Frodo)
-        let hand = gameState.playerHands[fromPlayer];
-
-        // Filter out 1 of rings if Frodo
-        if (isFrodo) {
-            hand = hand.filter(c => !(c.suit === 'rings' && c.value === 1));
-        }
+        const availableCards = gameState.playerHands[fromPlayer].getAvailableCards();
+        let hand = availableCards.filter(c => !(isFrodo && c.suit === 'rings' && c.value === 1));
 
         const randomCard = hand[Math.floor(Math.random() * hand.length)];
         setTimeout(() => giveCard(fromPlayer, toPlayer, randomCard), 1000);
@@ -861,9 +869,7 @@ function showCardSelection(fromPlayer, toPlayer) {
 
 function giveCard(fromPlayer, toPlayer, card) {
     // Remove card from fromPlayer's hand
-    const fromHand = gameState.playerHands[fromPlayer];
-    const cardIndex = fromHand.findIndex(c => c.suit === card.suit && c.value === card.value);
-    fromHand.splice(cardIndex, 1);
+    gameState.playerHands[fromPlayer].removeCard(card);
 
     // Store the exchanged card
     gameState.exchangeCard = card;
@@ -887,9 +893,10 @@ function giveCard(fromPlayer, toPlayer, card) {
 
 function showReturnCardSelection(fromPlayer, toPlayer) {
     const isFrodo = gameState.playerCharacters[fromPlayer] === 'Frodo';
+    const isPyramid = gameState.pyramidPlayerIndex === fromPlayer;
 
-    if (fromPlayer === 0) {
-        // Human player - show all cards including the one just received
+    if (fromPlayer === 0 || (isPyramid && gameState.pyramidControllerIndex === 0)) {
+        // Human player or human-controlled pyramid - show all cards including the one just received
         const dialog = document.getElementById('setupDialog');
         const title = document.getElementById('setupTitle');
         const instruction = document.getElementById('setupInstruction');
@@ -900,15 +907,18 @@ function showReturnCardSelection(fromPlayer, toPlayer) {
         if (isFrodo) {
             instruction.textContent += ' (Frodo cannot give away the 1 of Rings)';
         }
+        if (isPyramid) {
+            instruction.textContent += ' (Only uncovered cards + received card can be exchanged)';
+        }
 
         cardSelection.style.display = 'flex';
         cardSelection.innerHTML = '';
 
-        // Add the received card to hand temporarily for display
-        const tempHand = [...gameState.playerHands[fromPlayer], gameState.exchangeCard];
-        const sortedHand = sortHand(tempHand);
+        // Available cards + the received card
+        const availableCards = gameState.playerHands[fromPlayer].getAvailableCards();
+        const tempHand = sortHand([...availableCards, gameState.exchangeCard]);
 
-        sortedHand.forEach(card => {
+        tempHand.forEach(card => {
             // Frodo cannot give away the 1 of rings
             const isOneRing = card.suit === 'rings' && card.value === 1;
             const canGive = !isFrodo || !isOneRing;
@@ -928,15 +938,12 @@ function showReturnCardSelection(fromPlayer, toPlayer) {
 
         dialog.style.display = 'block';
     } else {
-        // AI player - pick random card from hand + received card (but not 1 of rings if Frodo)
-        let tempHand = [...gameState.playerHands[fromPlayer], gameState.exchangeCard];
+        // AI player - pick random card from available + received card (but not 1 of rings if Frodo)
+        const availableCards = gameState.playerHands[fromPlayer].getAvailableCards();
+        const tempHand = [...availableCards, gameState.exchangeCard];
+        const hand = tempHand.filter(c => !(isFrodo && c.suit === 'rings' && c.value === 1));
 
-        // Filter out 1 of rings if Frodo
-        if (isFrodo) {
-            tempHand = tempHand.filter(c => !(c.suit === 'rings' && c.value === 1));
-        }
-
-        const randomCard = tempHand[Math.floor(Math.random() * tempHand.length)];
+        const randomCard = hand[Math.floor(Math.random() * hand.length)];
         setTimeout(() => returnCard(fromPlayer, toPlayer, randomCard), 1000);
     }
 }
@@ -947,22 +954,16 @@ function returnCard(fromPlayer, toPlayer, card) {
 
     if (!isReceivedCard) {
         // Remove from fromPlayer's hand
-        const fromHand = gameState.playerHands[fromPlayer];
-        const cardIndex = fromHand.findIndex(c => c.suit === card.suit && c.value === card.value);
-        fromHand.splice(cardIndex, 1);
+        gameState.playerHands[fromPlayer].removeCard(card);
     }
 
     // Add card to toPlayer's hand
-    gameState.playerHands[toPlayer].push(card);
+    gameState.playerHands[toPlayer].addCard(card);
 
     // Add the originally exchanged card to fromPlayer's hand (if they didn't return it)
     if (!isReceivedCard) {
-        gameState.playerHands[fromPlayer].push(gameState.exchangeCard);
+        gameState.playerHands[fromPlayer].addCard(gameState.exchangeCard);
     }
-
-    // Sort hands
-    sortHand(gameState.playerHands[fromPlayer]);
-    sortHand(gameState.playerHands[toPlayer]);
 
     // Hide dialog
     document.getElementById('setupDialog').style.display = 'none';
@@ -986,9 +987,9 @@ function returnCard(fromPlayer, toPlayer, card) {
 
 function nextSetupPlayerFixed() {
     const startPlayer = gameState.currentPlayer;
-    gameState.setupCharacterIndex = (gameState.setupCharacterIndex + 1) % gameState.playerCount;
+    gameState.setupCharacterIndex = (gameState.setupCharacterIndex + 1) % gameState.numCharacters;
 
-    // Check if we've completed all players
+    // Check if we've completed all characters
     if (gameState.setupCharacterIndex === startPlayer) {
         endSetupPhase();
     } else {
@@ -1060,7 +1061,7 @@ function determineTrickWinner() {
     // Check if game is over
     // Game ends when at least (playerCount - 1) players have no cards (accounts for Gandalf potentially having the lost card)
     // OR when any objective becomes impossible
-    const playersWithNoCards = gameState.playerHands.filter(hand => hand.length === 0).length;
+    const playersWithNoCards = gameState.playerHands.filter(hand => hand.isEmpty()).length;
     if (playersWithNoCards >= gameState.playerCount - 1 || anyImpossible) {
         setTimeout(() => {
             const gameOverMsg = getGameOverMessage();
@@ -1296,8 +1297,8 @@ function startNextTrick(leadPlayer) {
     displayHands();
     updateGameStatus();
 
-    // If AI player leads, play their move
-    if (leadPlayer !== 0) {
+    // If AI-controlled player leads, play their move
+    if (!isHumanControlled(leadPlayer)) {
         setTimeout(() => playAIMove(), 1000);
     }
 }
@@ -1445,7 +1446,7 @@ function displayHands() {
 
     // Update active player indicator
     document.querySelectorAll('.player').forEach((div, idx) => {
-        if (idx < gameState.playerCount && idx === gameState.currentPlayer && !gameState.trickComplete && !gameState.waitingForTrumpChoice) {
+        if (idx < gameState.numCharacters && idx === gameState.currentPlayer && !gameState.trickComplete && !gameState.waitingForTrumpChoice) {
             div.classList.add('active');
         } else {
             div.classList.remove('active');
@@ -1453,48 +1454,34 @@ function displayHands() {
     });
 
     // Display each player's hand
-    for (let p = 0; p < gameState.playerCount; p++) {
-        playerDivs[p].innerHTML = '';
+    for (let p = 0; p < gameState.numCharacters; p++) {
+        const hand = gameState.playerHands[p];
+        const isPlayerTurn = gameState.currentPlayer === p && !gameState.trickComplete && !gameState.waitingForTrumpChoice;
 
-        if (p === 0) {
-            // Human player - show actual cards
-            const sortedHand = sortHand([...gameState.playerHands[p]]);
-
-            sortedHand.forEach(card => {
-                const isPlayerTurn = gameState.currentPlayer === 0 && !gameState.trickComplete && !gameState.waitingForTrumpChoice;
-                const isLegal = isPlayerTurn && isLegalMove(p, card);
-
-                const cardElement = createCardElement(
-                    card,
-                    isPlayerTurn,
-                    isLegal ? () => playCard(0, card) : null
-                );
-
-                if (isPlayerTurn && !isLegal) {
-                    cardElement.classList.add('disabled');
-                }
-
-                playerDivs[p].appendChild(cardElement);
-            });
+        if (p === 0 || (gameState.pyramidPlayerIndex === p && gameState.pyramidControllerIndex === 0)) {
+            // Human-controlled player or pyramid controlled by human
+            hand.render(
+                playerDivs[p],
+                (card) => isPlayerTurn && isLegalMove(p, card),
+                (card) => playCard(p, card)
+            );
         } else {
             // AI players - show card backs
-            const handSize = gameState.playerHands[p].length;
+            playerDivs[p].innerHTML = '';
+            playerDivs[p].classList.remove('pyramid-hand');
 
-            // Update card count
+            const handSize = hand.getSize();
             const countDiv = document.getElementById(`count${p + 1}`);
             if (countDiv) {
                 countDiv.textContent = `Cards: ${handSize}`;
             }
 
-            // Show card backs
             for (let i = 0; i < handSize; i++) {
                 const cardBack = document.createElement('div');
                 cardBack.className = 'card hidden';
-
                 const valueDiv = document.createElement('div');
                 valueDiv.className = 'value';
                 valueDiv.textContent = '?';
-
                 cardBack.appendChild(valueDiv);
                 playerDivs[p].appendChild(cardBack);
             }
@@ -1519,7 +1506,9 @@ function updateGameStatus(message = null) {
 function newGame() {
     // Get player count from dropdown
     const playerCount = parseInt(document.getElementById('playerCount').value);
-    const cardsPerPlayer = playerCount === 3 ? 12 : 9;
+    // For 2-player mode, we have 3 characters (one is pyramid)
+    const numCharacters = playerCount === 2 ? 3 : playerCount;
+    const cardsPerPlayer = numCharacters === 3 ? 12 : 9;
 
     // Set data attribute on body to control CSS
     document.body.setAttribute('data-player-count', playerCount);
@@ -1540,19 +1529,41 @@ function newGame() {
     lostCardDiv.innerHTML = '';
     lostCardDiv.appendChild(createCardElement(lostCard));
 
-    // Initialize arrays based on player count
+    // For 2-player mode, randomly choose which of the 3 internal players is the pyramid
+    let pyramidPlayerIndex = null;
+    let pyramidControllerIndex = null;
+    if (playerCount === 2) {
+        // Choose pyramid player (could be 1 or 2, never 0 since that's the human)
+        // We'll determine the controller after character assignment based on Frodo
+        pyramidPlayerIndex = Math.random() < 0.5 ? 1 : 2;
+    }
+
+    // Initialize arrays/objects based on number of characters
     const playerHands = [];
     const tricksWon = [];
     const playerCharacters = [];
-    for (let i = 0; i < playerCount; i++) {
-        playerHands.push([]);
+    for (let i = 0; i < numCharacters; i++) {
+        // Create Hand objects based on whether this is the pyramid player
+        if (i === pyramidPlayerIndex) {
+            playerHands.push(new PyramidHand());
+        } else {
+            playerHands.push(new PlayerHand());
+        }
         tricksWon.push([]);
         playerCharacters.push(null);
+    }
+
+    // Set up pyramid reveal callback for logging
+    if (pyramidPlayerIndex !== null) {
+        playerHands[pyramidPlayerIndex].onCardRevealed((index, card) => {
+            addToGameLog(`Card at position ${index} in pyramid is revealed: ${card.value} of ${card.suit}`);
+        });
     }
 
     // Reset game state
     gameState = {
         playerCount: playerCount,
+        numCharacters: numCharacters,
         playerHands: playerHands,
         tricksWon: tricksWon,
         currentTrick: [],
@@ -1574,17 +1585,19 @@ function newGame() {
         lostCard: lostCard,  // Store the lost card
         lastTrickWinner: null,  // Track who won the most recent trick
         threatDeck: [1, 2, 3, 4, 5, 6, 7],  // Threat deck (shuffled later)
-        playerThreatCards: {}  // Maps playerIndex to their drawn threat card
+        playerThreatCards: {},  // Maps playerIndex to their drawn threat card
+        pyramidPlayerIndex: pyramidPlayerIndex,
+        pyramidControllerIndex: pyramidControllerIndex
     };
 
     // Shuffle the threat deck
     gameState.threatDeck = shuffleDeck(gameState.threatDeck.map(v => ({ value: v }))).map(c => c.value);
 
-    // Deal cards to each player
+    // Deal cards to each character
     for (let i = 0; i < cardsPerPlayer; i++) {
-        for (let p = 0; p < playerCount; p++) {
+        for (let p = 0; p < numCharacters; p++) {
             const card = deck.shift();
-            gameState.playerHands[p].push(card);
+            gameState.playerHands[p].addCard(card);
         }
     }
 

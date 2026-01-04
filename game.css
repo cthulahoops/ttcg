@@ -432,7 +432,59 @@ button:hover {
     font-weight: bold;
 }
 
-/* Hide 4th player in 3-player mode */
-body[data-player-count="3"] .players .player:nth-child(4) {
+/* Hide 4th player in 3-player and 2-player modes */
+body[data-player-count="3"] .players .player:nth-child(4),
+body[data-player-count="2"] .players .player:nth-child(4) {
     display: none;
+}
+
+/* Pyramid display styles */
+.pyramid-hand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.pyramid-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.pyramid-row-0 {
+    /* Top row - 3 cards */
+}
+
+.pyramid-row-1 {
+    /* Middle row - 4 cards */
+}
+
+.pyramid-row-2 {
+    /* Bottom row - 5 cards */
+}
+
+.pyramid-row-extra {
+    /* Extra cards added beyond the first 12 */
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 2px solid #ffd700;
+}
+
+.card.pyramid-face-down {
+    background: linear-gradient(135deg, #4a2c6d 0%, #6b4c9a 100%);
+    color: #ccc;
+}
+
+.card.pyramid-covered {
+    opacity: 0.7;
+}
+
+.card.pyramid-uncovered {
+    border-color: #ffd700;
+    border-width: 3px;
+}
+
+.card.pyramid-extra {
+    border-color: #ff6f00;
 }
