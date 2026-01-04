@@ -13,6 +13,7 @@ const threatCardSuits = {
 
 // Game state
 let gameState = {
+    playerCount: 4,  // Number of players (3 or 4)
     playerHands: [[], [], [], []],
     tricksWon: [[], [], [], []],  // Store cards from won tricks
     currentTrick: [],
@@ -228,7 +229,7 @@ function playCard(playerIndex, card) {
     }
 
     // Check if trick is complete
-    if (gameState.currentTrick.length === 4) {
+    if (gameState.currentTrick.length === gameState.playerCount) {
         gameState.trickComplete = true;
 
         // Update display
@@ -259,7 +260,7 @@ function playCard(playerIndex, card) {
         }, 1500);
     } else {
         // Move to next player
-        gameState.currentPlayer = (gameState.currentPlayer + 1) % 4;
+        gameState.currentPlayer = (gameState.currentPlayer + 1) % gameState.playerCount;
 
         // Update display AFTER changing current player
         displayTrick();
@@ -309,7 +310,7 @@ function startCharacterAssignment(firstPlayer) {
     addToGameLog(`${playerNames[firstPlayer]} gets Frodo (has 1 of Rings)`, true);
 
     // Move to next player
-    gameState.characterAssignmentPlayer = (firstPlayer + 1) % 4;
+    gameState.characterAssignmentPlayer = (firstPlayer + 1) % gameState.playerCount;
 
     // Show character selection dialog
     showCharacterChoice();
@@ -344,7 +345,7 @@ function showCharacterChoice() {
 
     // Show current assignments
     const assignments = [];
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < gameState.playerCount; i++) {
         if (gameState.playerCharacters[i]) {
             assignments.push(`${playerNames[i]}: ${gameState.playerCharacters[i]}`);
         }
@@ -380,10 +381,11 @@ function selectCharacter(character) {
     document.getElementById('characterChoice').style.display = 'none';
 
     // Move to next player or end character assignment
-    gameState.characterAssignmentPlayer = (gameState.characterAssignmentPlayer + 1) % 4;
+    gameState.characterAssignmentPlayer = (gameState.characterAssignmentPlayer + 1) % gameState.playerCount;
 
-    // Check if all players have characters
-    if (gameState.playerCharacters.every(c => c !== null)) {
+    // Check if all active players have characters
+    const allAssigned = gameState.playerCharacters.slice(0, gameState.playerCount).every(c => c !== null);
+    if (allAssigned) {
         endCharacterAssignment();
     } else {
         // Continue to next player
@@ -410,7 +412,7 @@ function endCharacterAssignment() {
 }
 
 function updatePlayerHeadings() {
-    for (let p = 0; p < 4; p++) {
+    for (let p = 0; p < gameState.playerCount; p++) {
         const nameElement = document.getElementById(`playerName${p + 1}`);
         const objectiveElement = document.getElementById(`objective${p + 1}`);
         const character = gameState.playerCharacters[p];
@@ -424,8 +426,12 @@ function updatePlayerHeadings() {
                 nameElement.textContent = character;
             }
 
-            // Show objective
-            objectiveElement.textContent = `Goal: ${characterObjectives[character]}`;
+            // Show objective (adjust Frodo's objective for 3-player mode)
+            let objective = characterObjectives[character];
+            if (character === 'Frodo' && gameState.playerCount === 3) {
+                objective = 'Win at least four ring cards';
+            }
+            objectiveElement.textContent = `Goal: ${objective}`;
         }
     }
 }
@@ -484,7 +490,7 @@ function getValidExchangePlayers(playerIndex, exchangeRule) {
 
     if (exchangeRule === null) {
         // Can exchange with anyone
-        for (let p = 0; p < 4; p++) {
+        for (let p = 0; p < gameState.playerCount; p++) {
             if (p !== playerIndex) {
                 validPlayers.push(p);
             }
@@ -493,12 +499,12 @@ function getValidExchangePlayers(playerIndex, exchangeRule) {
         // Can only exchange with specific characters
         validPlayers = exchangeRule
             .map(charName => gameState.playerCharacters.indexOf(charName))
-            .filter(p => p !== -1 && p !== playerIndex);
+            .filter(p => p !== -1 && p !== playerIndex && p < gameState.playerCount);
     } else if (exchangeRule.except) {
         // Can exchange with anyone except specific characters
         const excludedPlayers = exchangeRule.except
             .map(charName => gameState.playerCharacters.indexOf(charName));
-        for (let p = 0; p < 4; p++) {
+        for (let p = 0; p < gameState.playerCount; p++) {
             if (p !== playerIndex && !excludedPlayers.includes(p)) {
                 validPlayers.push(p);
             }
@@ -741,7 +747,7 @@ function showExchangePlayerSelectionDialog(playerIndex, character, exchangeRule)
     if (exchangeRule === null) {
         // Can exchange with any player
         instruction.textContent = 'Choose a player to exchange with:';
-        for (let p = 0; p < 4; p++) {
+        for (let p = 0; p < gameState.playerCount; p++) {
             if (p !== playerIndex) {
                 validPlayers.push(p);
             }
@@ -750,7 +756,7 @@ function showExchangePlayerSelectionDialog(playerIndex, character, exchangeRule)
         // Can only exchange with specific characters
         validPlayers = exchangeRule
             .map(charName => gameState.playerCharacters.indexOf(charName))
-            .filter(p => p !== -1 && p !== playerIndex);
+            .filter(p => p !== -1 && p !== playerIndex && p < gameState.playerCount);
 
         // Only show character names that are actually in the game
         const availableCharNames = validPlayers
@@ -764,7 +770,7 @@ function showExchangePlayerSelectionDialog(playerIndex, character, exchangeRule)
 
         const excludedPlayers = exchangeRule.except
             .map(charName => gameState.playerCharacters.indexOf(charName));
-        for (let p = 0; p < 4; p++) {
+        for (let p = 0; p < gameState.playerCount; p++) {
             if (p !== playerIndex && !excludedPlayers.includes(p)) {
                 validPlayers.push(p);
             }
@@ -980,9 +986,9 @@ function returnCard(fromPlayer, toPlayer, card) {
 
 function nextSetupPlayerFixed() {
     const startPlayer = gameState.currentPlayer;
-    gameState.setupCharacterIndex = (gameState.setupCharacterIndex + 1) % 4;
+    gameState.setupCharacterIndex = (gameState.setupCharacterIndex + 1) % gameState.playerCount;
 
-    // Check if we've completed all 4 players
+    // Check if we've completed all players
     if (gameState.setupCharacterIndex === startPlayer) {
         endSetupPhase();
     } else {
@@ -1041,7 +1047,7 @@ function determineTrickWinner() {
 
     // Check if any objective is now impossible
     let anyImpossible = false;
-    for (let p = 0; p < 4; p++) {
+    for (let p = 0; p < gameState.playerCount; p++) {
         if (!isObjectiveCompletable(p)) {
             const character = gameState.playerCharacters[p];
             if (character) {
@@ -1052,10 +1058,10 @@ function determineTrickWinner() {
     }
 
     // Check if game is over
-    // Game ends when at least 3 players have no cards (accounts for Gandalf potentially having the lost card)
+    // Game ends when at least (playerCount - 1) players have no cards (accounts for Gandalf potentially having the lost card)
     // OR when any objective becomes impossible
     const playersWithNoCards = gameState.playerHands.filter(hand => hand.length === 0).length;
-    if (playersWithNoCards >= 3 || anyImpossible) {
+    if (playersWithNoCards >= gameState.playerCount - 1 || anyImpossible) {
         setTimeout(() => {
             const gameOverMsg = getGameOverMessage();
             addToGameLog('--- GAME OVER ---', true);
@@ -1077,9 +1083,10 @@ function checkObjective(playerIndex) {
 
     switch (character) {
         case 'Frodo':
-            // Win at least two ring cards
+            // Win at least two ring cards (4 in 3-player mode)
+            const ringsNeeded = gameState.playerCount === 3 ? 4 : 2;
             const ringCards = wonCards.filter(card => card.suit === 'rings').length;
-            return ringCards >= 2;
+            return ringCards >= ringsNeeded;
 
         case 'Gandalf':
             // Win at least one trick
@@ -1099,7 +1106,7 @@ function checkObjective(playerIndex) {
 
         case 'Pippin':
             // Win the fewest (or joint fewest) tricks
-            const allTrickCounts = gameState.tricksWon.map(cards => cards.length / 4);
+            const allTrickCounts = gameState.tricksWon.map(cards => cards.length / gameState.playerCount);
             const minTricks = Math.min(...allTrickCounts);
             return trickCount === minTricks;
 
@@ -1152,8 +1159,9 @@ function isObjectiveCompletable(playerIndex) {
 
     switch (character) {
         case 'Frodo':
-            // Need at least 2 ring cards
-            // Impossible if other players have already captured 4+ rings (only 5 total)
+            // Need at least 2 ring cards (4 in 3-player mode)
+            // Impossible if other players have already captured too many rings (only 5 total)
+            const ringsNeededForFrodo = gameState.playerCount === 3 ? 4 : 2;
             const ringCardsWonByOthers = gameState.tricksWon
                 .reduce((total, cards, idx) => {
                     if (idx !== playerIndex) {
@@ -1163,7 +1171,7 @@ function isObjectiveCompletable(playerIndex) {
                 }, 0);
             const frodoRings = wonCards.filter(card => card.suit === 'rings').length;
             const ringsRemaining = 5 - ringCardsWonByOthers - frodoRings;
-            return (frodoRings + ringsRemaining) >= 2;
+            return (frodoRings + ringsRemaining) >= ringsNeededForFrodo;
 
         case 'Merry':
             // Win exactly 1 or 2 tricks
@@ -1185,7 +1193,7 @@ function isObjectiveCompletable(playerIndex) {
 
             const targetSuit = threatCardSuits[character];
             // Check if another player has already won this card
-            for (let p = 0; p < 4; p++) {
+            for (let p = 0; p < gameState.playerCount; p++) {
                 if (p !== playerIndex) {
                     const hasCard = gameState.tricksWon[p].some(
                         card => card.suit === targetSuit && card.value === threatCard
@@ -1204,12 +1212,13 @@ function isObjectiveCompletable(playerIndex) {
             if (trickCount > aragornThreat) return false;
 
             // Impossible if not enough tricks remaining
-            const tricksRemaining = 9 - Math.max(...gameState.tricksWon.map(cards => cards.length / 4));
+            const tricksPerPlayerAragorn = gameState.playerCount === 3 ? 12 : 9;
+            const tricksRemaining = tricksPerPlayerAragorn - Math.max(...gameState.tricksWon.map(cards => cards.length / gameState.playerCount));
             return (trickCount + tricksRemaining) >= aragornThreat;
 
         case 'Pippin':
             // Win the fewest (or joint fewest) tricks
-            const allTrickCounts = gameState.tricksWon.map(cards => cards.length / 4);
+            const allTrickCounts = gameState.tricksWon.map(cards => cards.length / gameState.playerCount);
             const minTricks = Math.min(...allTrickCounts);
 
             // Already has fewest or joint fewest
@@ -1218,9 +1227,9 @@ function isObjectiveCompletable(playerIndex) {
             // Sum of gaps: each other player needs to catch up to Pippin
             // Impossible if sum of all gaps > remaining tricks
             let totalGap = 0;
-            for (let p = 0; p < 4; p++) {
+            for (let p = 0; p < gameState.playerCount; p++) {
                 if (p !== playerIndex) {
-                    const otherTricks = gameState.tricksWon[p].length / 4;
+                    const otherTricks = gameState.tricksWon[p].length / gameState.playerCount;
                     if (otherTricks < trickCount) {
                         totalGap += (trickCount - otherTricks);
                     }
@@ -1228,7 +1237,8 @@ function isObjectiveCompletable(playerIndex) {
             }
 
             const maxTricksPlayed = Math.max(...allTrickCounts);
-            const remainingTricks = 9 - maxTricksPlayed;
+            const tricksPerPlayer = gameState.playerCount === 3 ? 12 : 9;
+            const remainingTricks = tricksPerPlayer - maxTricksPlayed;
 
             return totalGap <= remainingTricks;
 
@@ -1242,9 +1252,9 @@ function getGameOverMessage() {
     const results = [];
     const objectiveWinners = [];
 
-    for (let p = 0; p < 4; p++) {
+    for (let p = 0; p < gameState.playerCount; p++) {
         const character = gameState.playerCharacters[p];
-        const trickCount = gameState.tricksWon[p].length / 4;
+        const trickCount = gameState.tricksWon[p].length / gameState.playerCount;
         const objectiveMet = checkObjective(p);
 
         const playerName = p === 0 ? `${character} (You)` : character;
@@ -1293,8 +1303,8 @@ function startNextTrick(leadPlayer) {
 }
 
 function updateTricksDisplay() {
-    for (let p = 0; p < 4; p++) {
-        const trickCount = gameState.tricksWon[p].length / 4;
+    for (let p = 0; p < gameState.playerCount; p++) {
+        const trickCount = gameState.tricksWon[p].length / gameState.playerCount;
         const character = gameState.playerCharacters[p];
         const wonCards = gameState.tricksWon[p];
 
@@ -1345,7 +1355,8 @@ function updateTricksDisplay() {
         } else if (character === 'Frodo') {
             // Show ring cards won
             const ringCards = wonCards.filter(card => card.suit === 'rings');
-            const objectiveMet = ringCards.length >= 2;
+            const ringsNeededForDisplay = gameState.playerCount === 3 ? 4 : 2;
+            const objectiveMet = ringCards.length >= ringsNeededForDisplay;
             const completable = isObjectiveCompletable(p);
             let icon;
             if (objectiveMet) {
@@ -1434,7 +1445,7 @@ function displayHands() {
 
     // Update active player indicator
     document.querySelectorAll('.player').forEach((div, idx) => {
-        if (idx === gameState.currentPlayer && !gameState.trickComplete && !gameState.waitingForTrumpChoice) {
+        if (idx < gameState.playerCount && idx === gameState.currentPlayer && !gameState.trickComplete && !gameState.waitingForTrumpChoice) {
             div.classList.add('active');
         } else {
             div.classList.remove('active');
@@ -1442,7 +1453,7 @@ function displayHands() {
     });
 
     // Display each player's hand
-    for (let p = 0; p < 4; p++) {
+    for (let p = 0; p < gameState.playerCount; p++) {
         playerDivs[p].innerHTML = '';
 
         if (p === 0) {
@@ -1506,6 +1517,13 @@ function updateGameStatus(message = null) {
 }
 
 function newGame() {
+    // Get player count from dropdown
+    const playerCount = parseInt(document.getElementById('playerCount').value);
+    const cardsPerPlayer = playerCount === 3 ? 12 : 9;
+
+    // Set data attribute on body to control CSS
+    document.body.setAttribute('data-player-count', playerCount);
+
     let deck, lostCard;
 
     // Keep shuffling until the lost card is not the 1 of rings
@@ -1522,17 +1540,28 @@ function newGame() {
     lostCardDiv.innerHTML = '';
     lostCardDiv.appendChild(createCardElement(lostCard));
 
+    // Initialize arrays based on player count
+    const playerHands = [];
+    const tricksWon = [];
+    const playerCharacters = [];
+    for (let i = 0; i < playerCount; i++) {
+        playerHands.push([]);
+        tricksWon.push([]);
+        playerCharacters.push(null);
+    }
+
     // Reset game state
     gameState = {
-        playerHands: [[], [], [], []],
-        tricksWon: [[], [], [], []],
+        playerCount: playerCount,
+        playerHands: playerHands,
+        tricksWon: tricksWon,
         currentTrick: [],
         currentPlayer: 0,
         leadSuit: null,
         trickComplete: false,
         ringsBroken: false,
         waitingForTrumpChoice: false,
-        playerCharacters: [null, null, null, null],
+        playerCharacters: playerCharacters,
         availableCharacters: [...allCharacters],
         characterAssignmentPhase: false,
         characterAssignmentPlayer: 0,
@@ -1551,9 +1580,9 @@ function newGame() {
     // Shuffle the threat deck
     gameState.threatDeck = shuffleDeck(gameState.threatDeck.map(v => ({ value: v }))).map(c => c.value);
 
-    // Deal 9 cards to each player
-    for (let i = 0; i < 9; i++) {
-        for (let p = 0; p < 4; p++) {
+    // Deal cards to each player
+    for (let i = 0; i < cardsPerPlayer; i++) {
+        for (let p = 0; p < playerCount; p++) {
             const card = deck.shift();
             gameState.playerHands[p].push(card);
         }
