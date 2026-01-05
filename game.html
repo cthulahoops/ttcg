@@ -24,86 +24,63 @@
 
             <div class="game-status" id="gameStatus">Click "New Game" to start</div>
 
-        <div id="trumpChoice" class="trump-choice" style="display: none;">
-            <h3>You played the 1 of Rings!</h3>
-            <p>Do you want to use it as trump to win this trick?</p>
-            <div class="trump-choice-buttons">
-                <button onclick="chooseTrump(true)">Yes, Win Trick</button>
-                <button onclick="chooseTrump(false)">No, Play Normal</button>
-            </div>
-        </div>
+            <!-- Unified Dialog Area -->
+            <section id="dialogArea" class="dialog-area" style="display: none;">
+                <div class="dialog-content">
+                    <h3 id="dialogTitle"></h3>
+                    <div id="dialogMessage" class="dialog-message"></div>
+                    <div id="dialogChoices" class="dialog-buttons"></div>
+                    <div id="dialogInfo" class="dialog-info"></div>
+                </div>
+            </section>
 
-        <div id="characterChoice" class="character-choice" style="display: none;">
-            <h3 id="characterChoiceTitle">Choose Your Character</h3>
-            <p id="characterChoiceDesc">Select a character to play as</p>
-            <div class="character-buttons" id="characterButtons">
-                <!-- Character buttons will be populated dynamically -->
-            </div>
-            <div class="character-info" id="characterInfo">
-                <!-- Character assignments will be shown here -->
-            </div>
-        </div>
-
-        <div id="setupDialog" class="setup-dialog" style="display: none;">
-            <h3 id="setupTitle">Setup Phase</h3>
-            <div class="setup-instruction" id="setupInstruction">
-                <!-- Instructions will be populated dynamically -->
-            </div>
-            <div id="setupPlayerSelection" class="player-selection" style="display: none;">
-                <!-- Player buttons will be populated dynamically -->
-            </div>
-            <div id="setupCardSelection" class="setup-cards" style="display: none;">
-                <!-- Cards will be populated dynamically -->
-            </div>
-        </div>
-
-            <div class="trick-area">
+            <section class="trick-area">
                 <h2>Current Trick</h2>
                 <div class="trick-cards" id="trickCards"></div>
-            </div>
+            </section>
 
             <div class="players">
-                <div class="player">
+                <section class="player">
                     <h3 id="playerName1">Player 1 (North)</h3>
                     <div class="objective" id="objective1"></div>
                     <div class="tricks-won" id="tricks1">Tricks: 0</div>
                     <div class="objective-status" id="objectiveStatus1"></div>
                     <div class="hand" id="player1"></div>
-                </div>
-                <div class="player">
+                </section>
+                <section class="player">
                     <h3 id="playerName2">Player 2 (East)</h3>
                     <div class="objective" id="objective2"></div>
                     <div class="tricks-won" id="tricks2">Tricks: 0</div>
                     <div class="objective-status" id="objectiveStatus2"></div>
                     <div class="hand" id="player2"></div>
-                </div>
-                <div class="player">
+                </section>
+                <section class="player">
                     <h3 id="playerName3">Player 3 (South)</h3>
                     <div class="objective" id="objective3"></div>
                     <div class="tricks-won" id="tricks3">Tricks: 0</div>
                     <div class="objective-status" id="objectiveStatus3"></div>
                     <div class="hand" id="player3"></div>
-                </div>
-                <div class="player">
+                </section>
+                <section class="player">
                     <h3 id="playerName4">Player 4 (West)</h3>
                     <div class="objective" id="objective4"></div>
                     <div class="tricks-won" id="tricks4">Tricks: 0</div>
                     <div class="objective-status" id="objectiveStatus4"></div>
                     <div class="hand" id="player4"></div>
-                </div>
+                </section>
             </div>
 
-            <div class="lost-card-section">
+            <section class="lost-card-section">
                 <h2>Lost Card</h2>
                 <div id="lostCard"></div>
-            </div>
+            </section>
         </div>
 
         <div class="sidebar">
-            <div class="game-log">
+            <section class="section game-log">
                 <h2>Game Log</h2>
                 <div id="gameLog"></div>
-            </div>
+            </section>
         </div>
     </div>
 

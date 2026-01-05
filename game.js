@@ -23,7 +23,13 @@ const threatCardSuits = {
 };
 
 // Import modules
-import { Hand, PlayerHand, PyramidHand, HiddenHand, SolitaireHand } from "./hands.js";
+import {
+  Hand,
+  PlayerHand,
+  PyramidHand,
+  HiddenHand,
+  SolitaireHand,
+} from "./hands.js";
 import { sortHand, createCardElement } from "./utils.js";
 import { Seat } from "./seat.js";
 
@@ -36,7 +42,7 @@ let gameState = {
   currentPlayer: 0,
   currentTrickNumber: 0, // Track trick number for tricksWon
   leadSuit: null,
-  phase: 'playing', // 'playing', 'character_assignment', 'setup', 'waiting_for_trump', 'trick_complete'
+  phase: "playing", // 'playing', 'character_assignment', 'setup', 'waiting_for_trump', 'trick_complete'
   ringsBroken: false,
   availableCharacters: [...allCharacters],
   characterAssignmentPlayer: 0,
@@ -51,6 +57,62 @@ let gameState = {
 };
 
 const playerNames = ["North (You)", "East", "South", "West"];
+
+// ===== DIALOG HELPERS =====
+
+function showDialog({ title, message, buttons = [], cards = [], info = "" }) {
+  const dialogArea = document.getElementById("dialogArea");
+  const dialogTitle = document.getElementById("dialogTitle");
+  const dialogMessage = document.getElementById("dialogMessage");
+  const dialogChoices = document.getElementById("dialogChoices");
+  const dialogInfo = document.getElementById("dialogInfo");
+
+  // Set content
+  dialogTitle.textContent = title;
+  dialogMessage.textContent = message;
+  dialogInfo.textContent = info;
+
+  // Clear and populate buttons
+  dialogChoices.innerHTML = "";
+  if (buttons.length > 0) {
+    buttons.forEach(({ label, onClick, disabled = false, grid = false }) => {
+      const button = document.createElement("button");
+      button.textContent = label;
+      button.disabled = disabled;
+      // Automatically wrap onClick with hideDialog() to close dialog before executing callback
+      button.onclick = onClick
+        ? () => {
+            hideDialog();
+            onClick();
+          }
+        : null;
+      dialogChoices.appendChild(button);
+    });
+  }
+
+  if (cards.length > 0) {
+    cards.forEach((card) => {
+      // Automatically wrap card onClick with hideDialog() to close dialog before executing callback
+      if (card.onclick) {
+        const originalOnClick = card.onclick;
+        card.onclick = () => {
+          hideDialog();
+          originalOnClick();
+        };
+      }
+      dialogChoices.appendChild(card);
+    });
+  }
+
+  // Show dialog
+  dialogArea.style.display = "block";
+}
+
+function hideDialog() {
+  document.getElementById("dialogArea").style.display = "none";
+}
+
+// ===== GAME FUNCTIONS =====
 
 function getPlayerDisplayName(playerIndex) {
   return gameState.seats[playerIndex].getDisplayName();
@@ -202,7 +264,7 @@ function playCard(playerIndex, card) {
 
   // Check if trick is complete
   if (gameState.currentTrick.length === gameState.numCharacters) {
-    gameState.phase = 'trick_complete';
+    gameState.phase = "trick_complete";
 
     // Update display
     displayTrick();
@@ -217,8 +279,15 @@ function playCard(playerIndex, card) {
       // Ask the player who played it if they want to use it as trump
       if (isHumanControlled(oneRingPlay.playerIndex)) {
         // Human-controlled player - show dialog
-        gameState.phase = 'waiting_for_trump';
-        document.getElementById("trumpChoice").style.display = "block";
+        gameState.phase = "waiting_for_trump";
+        showDialog({
+          title: "You played the 1 of Rings!",
+          message: "Do you want to use it as trump to win this trick?",
+          buttons: [
+            { label: "Yes, Win Trick", onClick: () => chooseTrump(true) },
+            { label: "No, Play Normal", onClick: () => chooseTrump(false) },
+          ],
+        });
         return; // Wait for user choice
       } else {
         // AI player - decide automatically (always choose yes)
@@ -248,9 +317,7 @@ function playCard(playerIndex, card) {
 }
 
 function chooseTrump(useTrump) {
-  // Hide the dialog
-  document.getElementById("trumpChoice").style.display = "none";
-  gameState.phase = 'trick_complete';
+  gameState.phase = "trick_complete";
 
   // Find the 1 of rings in the current trick and update its trump status
   const oneRingPlay = gameState.currentTrick.find(
@@ -270,7 +337,7 @@ function chooseTrump(useTrump) {
 }
 
 function startCharacterAssignment(firstPlayer) {
-  gameState.phase = 'character_assignment';
+  gameState.phase = "character_assignment";
   gameState.characterAssignmentPlayer = firstPlayer;
   // Don't reset seat characters - they were already initialized with correct size in newGame
   // Just clear any existing assignments
@@ -321,51 +388,36 @@ function startCharacterAssignment(firstPlayer) {
 
 function showCharacterChoice() {
   const playerIndex = gameState.characterAssignmentPlayer;
-  const dialog = document.getElementById("characterChoice");
-  const titleEl = document.getElementById("characterChoiceTitle");
-  const descEl = document.getElementById("characterChoiceDesc");
-  const buttonsEl = document.getElementById("characterButtons");
-  const infoEl = document.getElementById("characterInfo");
-
-  // Update dialog content
-  titleEl.textContent = `${playerNames[playerIndex]} - Choose Your Character`;
-  descEl.textContent = "Select a character to play as";
-
-  // Create character buttons
-  buttonsEl.innerHTML = "";
-  for (const character of allCharacters) {
-    const button = document.createElement("button");
-    button.textContent = character;
-    button.onclick = () => selectCharacter(character);
-
-    // Disable if already taken
-    if (!gameState.availableCharacters.includes(character)) {
-      button.disabled = true;
-    }
-
-    buttonsEl.appendChild(button);
-  }
-
-  // Show current assignments
-  const assignments = [];
-  for (let i = 0; i < gameState.numCharacters; i++) {
-    if (gameState.seats[i].character) {
-      assignments.push(`${playerNames[i]}: ${gameState.seats[i].character}`);
-    }
-  }
-  infoEl.textContent = assignments.length > 0 ? assignments.join(" | ") : "";
-
-  // Show dialog if human player is choosing
-  // For pyramid player in 2-player mode, show to the controller
   const shouldShowToHuman = gameState.seats[playerIndex].controller === "human";
 
   if (shouldShowToHuman) {
+    // Build title and message
+    let title = `${playerNames[playerIndex]} - Choose Your Character`;
+    let message = "Select a character to play as";
+
     if (gameState.seats[playerIndex].isPyramid) {
-      // Update title to indicate choosing for pyramid
-      titleEl.textContent = `Choose Character for Pyramid Player`;
-      descEl.textContent = `You control the pyramid - select its character`;
+      title = `Choose Character for Pyramid Player`;
+      message = `You control the pyramid - select its character`;
     }
-    dialog.style.display = "block";
+
+    // Build character buttons
+    const buttons = allCharacters.map((character) => ({
+      label: character,
+      onClick: () => selectCharacter(character),
+      disabled: !gameState.availableCharacters.includes(character),
+      grid: true, // Use grid layout
+    }));
+
+    // Show current assignments
+    const assignments = [];
+    for (let i = 0; i < gameState.numCharacters; i++) {
+      if (gameState.seats[i].character) {
+        assignments.push(`${playerNames[i]}: ${gameState.seats[i].character}`);
+      }
+    }
+    const info = assignments.length > 0 ? assignments.join(" | ") : "";
+
+    showDialog({ title, message, buttons, info });
   } else {
     // AI player - choose automatically after delay
     setTimeout(() => {
@@ -389,9 +441,6 @@ function selectCharacter(character) {
   gameState.availableCharacters = gameState.availableCharacters.filter(
     (c) => c !== character,
   );
-
-  // Hide dialog
-  document.getElementById("characterChoice").style.display = "none";
 
   // Move to next player or end character assignment
   gameState.characterAssignmentPlayer =
@@ -462,7 +511,7 @@ function isHumanControlled(playerIndex) {
 }
 
 function startSetupPhase() {
-  gameState.phase = 'setup';
+  gameState.phase = "setup";
   gameState.setupCharacterIndex = gameState.currentPlayer; // Start with first player
   performSetupAction();
 }
@@ -499,8 +548,8 @@ function performSetupAction() {
 }
 
 function endSetupPhase() {
-  gameState.phase = 'playing';
-  document.getElementById("setupDialog").style.display = "none";
+  gameState.phase = "playing";
+  hideDialog();
 
   updateGameStatus(
     `Setup complete! ${getPlayerDisplayName(gameState.currentPlayer)} leads.`,
@@ -613,25 +662,9 @@ function setupAragorn(playerIndex, character, exchangeRule) {
 }
 
 function showAragornThreatCardChoice(playerIndex, character, exchangeRule) {
-  const dialog = document.getElementById("setupDialog");
-  const title = document.getElementById("setupTitle");
-  const instruction = document.getElementById("setupInstruction");
-  const playerSelection = document.getElementById("setupPlayerSelection");
-  const cardSelection = document.getElementById("setupCardSelection");
-
-  title.textContent = "Aragorn - Choose Threat Card";
-  instruction.textContent = "Choose a threat card from the deck:";
-
-  cardSelection.style.display = "none";
-  playerSelection.style.display = "flex";
-  playerSelection.innerHTML = "";
-
-  // Create button for each threat card
-  gameState.threatDeck.forEach((card) => {
-    const button = document.createElement("button");
-    button.textContent = card;
-    button.onclick = () => {
-      dialog.style.display = "none";
+  const buttons = gameState.threatDeck.map((card) => ({
+    label: String(card),
+    onClick: () => {
       // Remove the chosen card from the deck
       const cardIndex = gameState.threatDeck.indexOf(card);
       gameState.threatDeck.splice(cardIndex, 1);
@@ -641,11 +674,14 @@ function showAragornThreatCardChoice(playerIndex, character, exchangeRule) {
         exchangeRule,
         card,
       );
-    };
-    playerSelection.appendChild(button);
-  });
+    },
+  }));
 
-  dialog.style.display = "block";
+  showDialog({
+    title: "Aragorn - Choose Threat Card",
+    message: "Choose a threat card from the deck:",
+    buttons,
+  });
 }
 
 function completeAragornThreatCardChoice(
@@ -735,37 +771,20 @@ function setupGandalf(playerIndex) {
 }
 
 function showLostCardChoice(playerIndex) {
-  const dialog = document.getElementById("setupDialog");
-  const title = document.getElementById("setupTitle");
-  const instruction = document.getElementById("setupInstruction");
-  const playerSelection = document.getElementById("setupPlayerSelection");
-  const cardSelection = document.getElementById("setupCardSelection");
-
-  title.textContent = "Gandalf - Take Lost Card?";
-  instruction.textContent = `The Lost card is ${gameState.lostCard.value} of ${gameState.lostCard.suit}. Do you want to take it?`;
-
-  cardSelection.style.display = "none";
-  playerSelection.style.display = "flex";
-  playerSelection.innerHTML = "";
-
-  const yesButton = document.createElement("button");
-  yesButton.textContent = "Yes, Take It";
-  yesButton.onclick = () => {
-    dialog.style.display = "none";
-    completeLostCardChoice(playerIndex, true);
-  };
-
-  const noButton = document.createElement("button");
-  noButton.textContent = "No, Leave It";
-  noButton.onclick = () => {
-    dialog.style.display = "none";
-    completeLostCardChoice(playerIndex, false);
-  };
-
-  playerSelection.appendChild(yesButton);
-  playerSelection.appendChild(noButton);
-
-  dialog.style.display = "block";
+  showDialog({
+    title: "Gandalf - Take Lost Card?",
+    message: `The Lost card is ${gameState.lostCard.value} of ${gameState.lostCard.suit}. Do you want to take it?`,
+    buttons: [
+      {
+        label: "Yes, Take It",
+        onClick: () => completeLostCardChoice(playerIndex, true),
+      },
+      {
+        label: "No, Leave It",
+        onClick: () => completeLostCardChoice(playerIndex, false),
+      },
+    ],
+  });
 }
 
 function completeLostCardChoice(playerIndex, takeLostCard) {
@@ -808,23 +827,12 @@ function showExchangePlayerSelectionDialog(
   character,
   exchangeRule,
 ) {
-  const dialog = document.getElementById("setupDialog");
-  const title = document.getElementById("setupTitle");
-  const instruction = document.getElementById("setupInstruction");
-  const playerSelection = document.getElementById("setupPlayerSelection");
-  const cardSelection = document.getElementById("setupCardSelection");
-
-  title.textContent = `${character} - Setup`;
-
-  cardSelection.style.display = "none";
-  playerSelection.style.display = "flex";
-  playerSelection.innerHTML = "";
-
+  let message = "";
   let validPlayers = [];
 
   if (exchangeRule === null) {
     // Can exchange with any player
-    instruction.textContent = "Choose a player to exchange with:";
+    message = "Choose a player to exchange with:";
     for (let p = 0; p < gameState.numCharacters; p++) {
       if (p !== playerIndex) {
         validPlayers.push(p);
@@ -842,11 +850,11 @@ function showExchangePlayerSelectionDialog(
     const availableCharNames = validPlayers
       .map((p) => gameState.seats[p].character)
       .join(" or ");
-    instruction.textContent = `Choose ${availableCharNames} to exchange with:`;
+    message = `Choose ${availableCharNames} to exchange with:`;
   } else if (exchangeRule.except) {
     // Can exchange with anyone except specific characters
     const excludedNames = exchangeRule.except.join(", ");
-    instruction.textContent = `Choose a player to exchange with (except ${excludedNames}):`;
+    message = `Choose a player to exchange with (except ${excludedNames}):`;
 
     const excludedPlayers = exchangeRule.except.map((charName) =>
       findSeatByCharacter(charName),
@@ -859,25 +867,22 @@ function showExchangePlayerSelectionDialog(
   }
 
   // Create buttons for valid players
-  validPlayers.forEach((p) => {
-    const button = document.createElement("button");
-    button.textContent = getPlayerDisplayName(p);
-    button.onclick = () => {
-      startExchange(playerIndex, p);
-    };
-    playerSelection.appendChild(button);
-  });
+  const buttons = validPlayers.map((p) => ({
+    label: getPlayerDisplayName(p),
+    onClick: () => startExchange(playerIndex, p),
+  }));
 
-  dialog.style.display = "block";
+  showDialog({
+    title: `${character} - Setup`,
+    message,
+    buttons,
+  });
 }
 
 function startExchange(fromPlayer, toPlayer) {
   gameState.exchangeFromPlayer = fromPlayer;
   gameState.exchangeToPlayer = toPlayer;
   gameState.setupStep = "choose_card";
-
-  // Hide setup dialog temporarily
-  document.getElementById("setupDialog").style.display = "none";
 
   updateGameStatus(
     `${getPlayerDisplayName(fromPlayer)} exchanges with ${getPlayerDisplayName(toPlayer)}`,
@@ -891,33 +896,20 @@ function showCardSelection(fromPlayer, toPlayer) {
   const isFrodo = gameState.seats[fromPlayer].character === "Frodo";
   const isPyramid = gameState.seats[fromPlayer].isPyramid;
 
-  if (gameState.seats[fromPlayer].controller === "human"
-  ) {
+  if (gameState.seats[fromPlayer].controller === "human") {
     // Human player or human-controlled pyramid - show dialog with their cards
-    const dialog = document.getElementById("setupDialog");
-    const title = document.getElementById("setupTitle");
-    const instruction = document.getElementById("setupInstruction");
-    const playerSelection = document.getElementById("setupPlayerSelection");
-    const cardSelection = document.getElementById("setupCardSelection");
-
-    title.textContent = "Choose Card to Exchange";
-    instruction.textContent = `Select a card to give to ${getPlayerDisplayName(toPlayer)}:`;
+    let message = `Select a card to give to ${getPlayerDisplayName(toPlayer)}:`;
     if (isFrodo) {
-      instruction.textContent += " (Frodo cannot give away the 1 of Rings)";
+      message += " (Frodo cannot give away the 1 of Rings)";
     }
     if (isPyramid) {
-      instruction.textContent += " (Only uncovered cards can be exchanged)";
+      message += " (Only uncovered cards can be exchanged)";
     }
 
-    playerSelection.style.display = "none";
-    cardSelection.style.display = "flex";
-    cardSelection.innerHTML = "";
-
-    const availableCards =
-      gameState.seats[fromPlayer].hand.getAvailableCards();
+    const availableCards = gameState.seats[fromPlayer].hand.getAvailableCards();
     const sortedCards = sortHand([...availableCards]);
 
-    sortedCards.forEach((card) => {
+    const cards = sortedCards.map((card) => {
       // Frodo cannot give away the 1 of rings
       const isOneRing = card.suit === "rings" && card.value === 1;
       const canGive = !isFrodo || !isOneRing;
@@ -925,11 +917,7 @@ function showCardSelection(fromPlayer, toPlayer) {
       const cardElement = createCardElement(
         card,
         canGive,
-        canGive
-          ? () => {
-              giveCard(fromPlayer, toPlayer, card);
-            }
-          : null,
+        canGive ? () => giveCard(fromPlayer, toPlayer, card) : null,
       );
 
       if (canGive) {
@@ -938,14 +926,17 @@ function showCardSelection(fromPlayer, toPlayer) {
         cardElement.classList.add("disabled");
       }
 
-      cardSelection.appendChild(cardElement);
+      return cardElement;
     });
 
-    dialog.style.display = "block";
+    showDialog({
+      title: "Choose Card to Exchange",
+      message,
+      cards,
+    });
   } else {
     // AI player - pick random card (but not 1 of rings if Frodo)
-    const availableCards =
-      gameState.seats[fromPlayer].hand.getAvailableCards();
+    const availableCards = gameState.seats[fromPlayer].hand.getAvailableCards();
     let hand = availableCards.filter(
       (c) => !(isFrodo && c.suit === "rings" && c.value === 1),
     );
@@ -961,9 +952,6 @@ function giveCard(fromPlayer, toPlayer, card) {
 
   // Store the exchanged card
   gameState.exchangeCard = card;
-
-  // Hide dialog
-  document.getElementById("setupDialog").style.display = "none";
 
   // Only log if human player is involved
   if (fromPlayer === 0 || toPlayer === 0) {
@@ -989,33 +977,21 @@ function showReturnCardSelection(fromPlayer, toPlayer) {
   const isFrodo = gameState.seats[fromPlayer].character === "Frodo";
   const isPyramid = gameState.seats[fromPlayer].isPyramid;
 
-  if (gameState.seats[fromPlayer].controller === "human"
-  ) {
+  if (gameState.seats[fromPlayer].controller === "human") {
     // Human player or human-controlled pyramid - show all cards including the one just received
-    const dialog = document.getElementById("setupDialog");
-    const title = document.getElementById("setupTitle");
-    const instruction = document.getElementById("setupInstruction");
-    const cardSelection = document.getElementById("setupCardSelection");
-
-    title.textContent = "Choose Card to Return";
-    instruction.textContent = `You received ${gameState.exchangeCard.value} of ${gameState.exchangeCard.suit}. Select a card to give back:`;
+    let message = `You received ${gameState.exchangeCard.value} of ${gameState.exchangeCard.suit}. Select a card to give back:`;
     if (isFrodo) {
-      instruction.textContent += " (Frodo cannot give away the 1 of Rings)";
+      message += " (Frodo cannot give away the 1 of Rings)";
     }
     if (isPyramid) {
-      instruction.textContent +=
-        " (Only uncovered cards + received card can be exchanged)";
+      message += " (Only uncovered cards + received card can be exchanged)";
     }
 
-    cardSelection.style.display = "flex";
-    cardSelection.innerHTML = "";
-
     // Available cards + the received card
-    const availableCards =
-      gameState.seats[fromPlayer].hand.getAvailableCards();
+    const availableCards = gameState.seats[fromPlayer].hand.getAvailableCards();
     const tempHand = sortHand([...availableCards, gameState.exchangeCard]);
 
-    tempHand.forEach((card) => {
+    const cards = tempHand.map((card) => {
       // Frodo cannot give away the 1 of rings
       const isOneRing = card.suit === "rings" && card.value === 1;
       const canGive = !isFrodo || !isOneRing;
@@ -1023,11 +999,7 @@ function showReturnCardSelection(fromPlayer, toPlayer) {
       const cardElement = createCardElement(
         card,
         canGive,
-        canGive
-          ? () => {
-              returnCard(fromPlayer, toPlayer, card);
-            }
-          : null,
+        canGive ? () => returnCard(fromPlayer, toPlayer, card) : null,
       );
 
       if (canGive) {
@@ -1036,14 +1008,17 @@ function showReturnCardSelection(fromPlayer, toPlayer) {
         cardElement.classList.add("disabled");
       }
 
-      cardSelection.appendChild(cardElement);
+      return cardElement;
     });
 
-    dialog.style.display = "block";
+    showDialog({
+      title: "Choose Card to Return",
+      message,
+      cards,
+    });
   } else {
     // AI player - pick random card from available + received card (but not 1 of rings if Frodo)
-    const availableCards =
-      gameState.seats[fromPlayer].hand.getAvailableCards();
+    const availableCards = gameState.seats[fromPlayer].hand.getAvailableCards();
     const tempHand = [...availableCards, gameState.exchangeCard];
     const hand = tempHand.filter(
       (c) => !(isFrodo && c.suit === "rings" && c.value === 1),
@@ -1072,9 +1047,6 @@ function returnCard(fromPlayer, toPlayer, card) {
   if (!isReceivedCard) {
     gameState.seats[fromPlayer].hand.addCard(gameState.exchangeCard);
   }
-
-  // Hide dialog
-  document.getElementById("setupDialog").style.display = "none";
 
   // Only log return details if human player is involved
   if (fromPlayer === 0 || toPlayer === 0) {
@@ -1151,7 +1123,10 @@ function determineTrickWinner() {
 
   // Assign all cards from the trick to the winner
   const trickCards = gameState.currentTrick.map((play) => play.card);
-  gameState.seats[winnerIndex].addTrick(gameState.currentTrickNumber, trickCards);
+  gameState.seats[winnerIndex].addTrick(
+    gameState.currentTrickNumber,
+    trickCards,
+  );
   gameState.currentTrickNumber++;
 
   // Notify all hands that the trick is complete (for pyramid to reveal new cards)
@@ -1302,15 +1277,15 @@ function isObjectiveCompletable(playerIndex) {
       // Need at least 2 ring cards (4 in 3-character mode)
       // Impossible if other players have already captured too many rings (only 5 total)
       const ringsNeededForFrodo = gameState.numCharacters === 3 ? 4 : 2;
-      const ringCardsWonByOthers = gameState.seats.reduce(
-        (total, s, idx) => {
-          if (idx !== playerIndex) {
-            return total + s.getAllWonCards().filter((card) => card.suit === "rings").length;
-          }
-          return total;
-        },
-        0,
-      );
+      const ringCardsWonByOthers = gameState.seats.reduce((total, s, idx) => {
+        if (idx !== playerIndex) {
+          return (
+            total +
+            s.getAllWonCards().filter((card) => card.suit === "rings").length
+          );
+        }
+        return total;
+      }, 0);
       const frodoRings = wonCards.filter(
         (card) => card.suit === "rings",
       ).length;
@@ -1341,9 +1316,11 @@ function isObjectiveCompletable(playerIndex) {
       // Check if another player has already won this card
       for (let p = 0; p < gameState.numCharacters; p++) {
         if (p !== playerIndex) {
-          const hasCard = gameState.seats[p].getAllWonCards().some(
-            (card) => card.suit === targetSuit && card.value === threatCard,
-          );
+          const hasCard = gameState.seats[p]
+            .getAllWonCards()
+            .some(
+              (card) => card.suit === targetSuit && card.value === threatCard,
+            );
           if (hasCard) return false;
         }
       }
@@ -1439,7 +1416,7 @@ function startNextTrick(leadPlayer) {
   // Clear the current trick
   gameState.currentTrick = [];
   gameState.leadSuit = null;
-  gameState.phase = 'playing';
+  gameState.phase = "playing";
   gameState.currentPlayer = leadPlayer;
 
   // Clear trick display
@@ -1617,8 +1594,8 @@ function displayHands() {
     if (
       idx < gameState.numCharacters &&
       idx === gameState.currentPlayer &&
-      gameState.phase !== 'trick_complete' &&
-      gameState.phase !== 'waiting_for_trump'
+      gameState.phase !== "trick_complete" &&
+      gameState.phase !== "waiting_for_trump"
     ) {
       div.classList.add("active");
     } else {
@@ -1631,8 +1608,8 @@ function displayHands() {
     const hand = gameState.seats[p].hand;
     const isPlayerTurn =
       gameState.currentPlayer === p &&
-      gameState.phase !== 'trick_complete' &&
-      gameState.phase !== 'waiting_for_trump';
+      gameState.phase !== "trick_complete" &&
+      gameState.phase !== "waiting_for_trump";
 
     hand.render(
       playerDivs[p],
@@ -1647,7 +1624,7 @@ function updateGameStatus(message = null) {
 
   if (message) {
     statusDiv.textContent = message;
-  } else if (gameState.phase === 'trick_complete') {
+  } else if (gameState.phase === "trick_complete") {
     statusDiv.textContent = "Trick complete!";
   } else if (gameState.currentPlayer === 0) {
     statusDiv.textContent = "Your turn! Click a card to play.";
@@ -1731,7 +1708,7 @@ function newGame() {
   const seats = [];
   for (let i = 0; i < numCharacters; i++) {
     // Determine controller - in 1-player mode, all seats are human-controlled
-    const controller = (playerCount === 1 || i === 0) ? "human" : "ai";
+    const controller = playerCount === 1 || i === 0 ? "human" : "ai";
     const seat = new Seat(i, controller);
 
     // Create Hand objects based on player type, passing initial cards
@@ -1771,7 +1748,7 @@ function newGame() {
     currentPlayer: startPlayer,
     currentTrickNumber: 0,
     leadSuit: null,
-    phase: 'playing', // 'playing', 'character_assignment', 'setup', 'waiting_for_trump', 'trick_complete'
+    phase: "playing", // 'playing', 'character_assignment', 'setup', 'waiting_for_trump', 'trick_complete'
     ringsBroken: false,
     availableCharacters: [...allCharacters],
     characterAssignmentPlayer: 0,
@@ -1793,10 +1770,8 @@ function newGame() {
   // Clear trick display
   document.getElementById("trickCards").innerHTML = "";
 
-  // Hide dialogs
-  document.getElementById("trumpChoice").style.display = "none";
-  document.getElementById("characterChoice").style.display = "none";
-  document.getElementById("setupDialog").style.display = "none";
+  // Hide dialog
+  hideDialog();
 
   // Reset tricks won display
   updateTricksDisplay();
