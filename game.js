@@ -355,14 +355,16 @@ async function startCharacterAssignment(firstPlayer) {
     const pyramidIndex = gameState.seats.findIndex((s) => s.isPyramid);
     let pyramidControllerIndex;
 
+    const pyramid = gameState.seats[pyramidIndex]
+
     if (firstPlayer === pyramidIndex) {
       // Frodo IS the pyramid, so player to their right controls it
       pyramidControllerIndex = (firstPlayer + 2) % 3;
     } else {
       // Frodo is not the pyramid, so Frodo controls the pyramid
       pyramidControllerIndex = firstPlayer;
-      gameState.seats[pyramidIndex].controller = "human";
     }
+    pyramid.controller = gameState.seats[pyramidControllerIndex].controller
 
     addToGameLog(
       `Pyramid will be controlled by ${getPlayerDisplayName(pyramidControllerIndex)}`,
@@ -379,6 +381,7 @@ async function startCharacterAssignment(firstPlayer) {
     gameState.characterAssignmentPlayer = playerIndex;
 
     await assignCharacterToPlayer(playerIndex);
+    updatePlayerHeadings();
     await delay(500);
   }
 
