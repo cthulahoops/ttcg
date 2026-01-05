@@ -1638,18 +1638,6 @@ async function newGame() {
     }
   }
 
-  // In 1-player solitaire mode, ensure 1 of Rings is in the initially revealed cards
-  if (playerCount === 1) {
-    const hand = playerCards[startPlayer];
-    const oneRingIndex = hand.findIndex(
-      (c) => c.suit === "rings" && c.value === 1,
-    );
-    // Swap 1 of Rings to one of the first 4 positions if needed
-    if (oneRingIndex >= 4) {
-      [hand[3], hand[oneRingIndex]] = [hand[oneRingIndex], hand[3]];
-    }
-  }
-
   // Initialize Seat instances with their dealt cards
   const seats = [];
   for (let i = 0; i < numCharacters; i++) {

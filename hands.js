@@ -394,9 +394,21 @@ export class HiddenHand extends Hand {
 export class SolitaireHand extends Hand {
   constructor(cards = []) {
     super();
+    // Ensure 1 of Rings is in the initially revealed cards
+    SolitaireHand._ensureOneRingRevealed(cards);
     // Initialize with first 4 cards revealed, rest hidden
     this._revealedCards = cards.slice(0, 4);
     this._hiddenCards = cards.slice(4);
+  }
+
+  static _ensureOneRingRevealed(cards) {
+    // Swap 1 of Rings to one of the first 4 positions if needed
+    const oneRingIndex = cards.findIndex(
+      (c) => c.suit === "rings" && c.value === 1,
+    );
+    if (oneRingIndex >= 4) {
+      [cards[3], cards[oneRingIndex]] = [cards[oneRingIndex], cards[3]];
+    }
   }
 
   addCard(card) {
