@@ -145,7 +145,7 @@ function findPlayerWithCard(suit, value) {
 }
 
 function isLegalMove(playerIndex, card) {
-    const playerHand = gameState.playerHands[playerIndex]._getAllCards();
+    const playerHand = gameState.playerHands[playerIndex].getAvailableCards();
 
     // If leading the trick
     if (gameState.currentTrick.length === 0) {
