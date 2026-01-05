@@ -445,21 +445,14 @@ body[data-player-count="2"] .players .player:nth-child(4) {
 /* Pyramid display styles */
 .pyramid-hand {
     display: grid;
-    grid-template-columns: repeat(10, calc(var(--card-width) / 2 - 5px));
-    grid-template-rows: repeat(4, calc(var(--card-height) / 2 - 5px));
+    grid-auto-columns: calc(var(--card-width) / 2 - 5px);
+    grid-auto-rows: calc(var(--card-height) / 2 - 5px);
     gap: 5px;
 }
 
 .pyramid-hand > .card {
     width: auto;
     height: auto;
-}
-
-.pyramid-row-extra {
-    /* Extra cards added beyond the first 12 */
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 2px solid #ffd700;
 }
 
 .card.pyramid-face-down {
