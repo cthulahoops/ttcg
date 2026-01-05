@@ -1,12 +1,37 @@
 # Trick Taking Game - Project Documentation
 
 ## Overview
-This is a Lord of the Rings-themed trick-taking card game implemented as a single-page web application. The game features 4 players (1 human, 3 AI) with unique character abilities and win conditions.
+This is a Lord of the Rings-themed trick-taking card game implemented as a single-page web application. The game supports 1-4 players with unique character abilities and win conditions.
 
 ## Project Structure
 - **game.html** - Main HTML structure and layout
 - **game.css** - All styling and visual design
 - **game.js** - Game logic, AI, and interactivity
+- **hands.js** - Hand class implementations (PlayerHand, PyramidHand, SolitaireHand, HiddenHand)
+- **utils.js** - Utility functions for card sorting and rendering
+- **seat.js** - Seat class for managing player state
+
+## Game Modes
+
+### 1-Player (Solitaire)
+- All 4 seats controlled by the human player
+- Each seat uses **SolitaireHand**: initially reveals 4 cards, reveals 1 additional card after each trick
+- The 1 of Rings is guaranteed to be in the initially revealed cards for the seat that has it
+- Player must complete all character objectives to win
+
+### 2-Player (with Pyramid)
+- 3 characters in play (one is a pyramid)
+- Pyramid hand reveals cards as they become uncovered
+- One human player, pyramid controlled by human or Frodo
+
+### 3-Player
+- 3 human/AI players
+- Each player gets 12 cards
+- Frodo needs 4 ring cards instead of 2
+
+### 4-Player
+- Classic mode: 1 human vs 3 AI
+- Each player gets 9 cards
 
 ## Game Rules Summary
 
@@ -15,7 +40,7 @@ This is a Lord of the Rings-themed trick-taking card game implemented as a singl
 - Rings suit: 1-5 cards (5 cards)
 - Total: 37 cards
 - Lost card: 1 card dealt face-up at start (never the 1 of Rings)
-- Each player gets 9 cards
+- Cards per player: 9 (4-player), 12 (3-player)
 
 ### Characters and Objectives
 1. **Frodo** - Win at least two ring cards
@@ -36,6 +61,20 @@ This is a Lord of the Rings-themed trick-taking card game implemented as a singl
 - **Game End**: When at least 3 players have no cards (accounts for Gandalf potentially having extra)
 
 ## Code Architecture
+
+### Hand Classes
+- **Hand** - Abstract base class defining the hand interface
+- **PlayerHand** - Standard visible hand for human players
+- **PyramidHand** - Pyramid layout that reveals cards as they become uncovered
+- **SolitaireHand** - Progressive reveal hand (4 initially, +1 per trick) for 1-player mode
+- **HiddenHand** - Wrapper that hides cards from view (for AI players)
+
+All hands implement:
+- `addCard(card)` - Add a card to the hand
+- `removeCard(card)` - Remove a card from the hand
+- `getAvailableCards()` - Get playable cards
+- `onTrickComplete()` - Called when trick ends (for revealing new cards)
+- `render(domElement, isPlayable, onClick)` - Render the hand to DOM
 
 ### Key Functions
 - `newGame()` - Initializes a new game, deals cards, starts character assignment
@@ -69,10 +108,9 @@ The `gameState` object tracks:
 - Random card exchanges during setup (50% chance for Gandalf to take lost card)
 
 ### Known Constraints
-- Single-player only (human vs 3 AI)
 - No save/load functionality
 - AI has no strategic play logic
-- No multiplayer support
+- No network multiplayer support (local only)
 
 ## Testing Considerations
 - Ensure 1 of Rings is never the lost card
@@ -80,3 +118,6 @@ The `gameState` object tracks:
 - Test Gandalf's optional lost card choice
 - Confirm game ends when 3+ players have empty hands
 - Validate each character's objective checking logic
+- **1-player mode**: Verify 1 of Rings is always in initially revealed cards
+- **1-player mode**: Confirm each seat reveals exactly 1 card per trick
+- **Pyramid mode**: Ensure cards only reveal after trick completion, not immediately when played

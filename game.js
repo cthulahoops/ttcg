@@ -23,7 +23,7 @@ const threatCardSuits = {
 };
 
 // Import modules
-import { Hand, PlayerHand, PyramidHand, HiddenHand } from "./hands.js";
+import { Hand, PlayerHand, PyramidHand, HiddenHand, SolitaireHand } from "./hands.js";
 import { sortHand, createCardElement } from "./utils.js";
 import { Seat } from "./seat.js";
 
@@ -1665,7 +1665,15 @@ function newGame() {
   // Get player count from dropdown
   const playerCount = parseInt(document.getElementById("playerCount").value);
   // For 2-player mode, we have 3 characters (one is pyramid)
-  const numCharacters = playerCount === 2 ? 3 : playerCount;
+  // For 1-player mode, we have 4 characters (all human-controlled)
+  let numCharacters;
+  if (playerCount === 1) {
+    numCharacters = 4;
+  } else if (playerCount === 2) {
+    numCharacters = 3;
+  } else {
+    numCharacters = playerCount;
+  }
   const cardsPerPlayer = numCharacters === 3 ? 12 : 9;
 
   // Set data attribute on body to control CSS
@@ -1687,33 +1695,64 @@ function newGame() {
   lostCardDiv.innerHTML = "";
   lostCardDiv.appendChild(createCardElement(lostCard));
 
+  // Deal cards to temporary arrays first
+  const playerCards = Array.from({ length: numCharacters }, () => []);
+  for (let i = 0; i < cardsPerPlayer; i++) {
+    for (let p = 0; p < numCharacters; p++) {
+      playerCards[p].push(deck.shift());
+    }
+  }
+
   // For 2-player mode, randomly choose which of the 3 internal players is the pyramid
   let pyramidPlayerIndex = null;
-  let pyramidControllerIndex = null;
   if (playerCount === 2) {
     // Choose pyramid player (could be 1 or 2, never 0 since that's the human)
     // We'll determine the controller after character assignment based on Frodo
     pyramidPlayerIndex = Math.random() < 0.5 ? 1 : 2;
   }
 
-  // Initialize Seat instances based on number of characters
+  // Find who has the 1 of rings before creating hands
+  let startPlayer = -1;
+  for (let p = 0; p < numCharacters; p++) {
+    if (playerCards[p].some((c) => c.suit === "rings" && c.value === 1)) {
+      startPlayer = p;
+      break;
+    }
+  }
+
+  // In 1-player solitaire mode, ensure 1 of Rings is in the initially revealed cards
+  if (playerCount === 1) {
+    const hand = playerCards[startPlayer];
+    const oneRingIndex = hand.findIndex(
+      (c) => c.suit === "rings" && c.value === 1,
+    );
+    // Swap 1 of Rings to one of the first 4 positions if needed
+    if (oneRingIndex >= 4) {
+      [hand[3], hand[oneRingIndex]] = [hand[oneRingIndex], hand[3]];
+    }
+  }
+
+  // Initialize Seat instances with their dealt cards
   const seats = [];
   for (let i = 0; i < numCharacters; i++) {
-    // Determine controller
-    const controller = i === 0 ? "human" : "ai";
+    // Determine controller - in 1-player mode, all seats are human-controlled
+    const controller = (playerCount === 1 || i === 0) ? "human" : "ai";
     const seat = new Seat(i, controller);
 
-    // Create Hand objects based on player type
-    if (i === pyramidPlayerIndex) {
+    // Create Hand objects based on player type, passing initial cards
+    if (playerCount === 1) {
+      // 1-player solitaire mode - all seats use SolitaireHand
+      seat.hand = new SolitaireHand(playerCards[i]);
+    } else if (i === pyramidPlayerIndex) {
       // Pyramid is always visible
-      seat.hand = new PyramidHand();
+      seat.hand = new PyramidHand(playerCards[i]);
       seat.isPyramid = true;
     } else if (i === 0) {
       // Player 0 is the human player - always visible
-      seat.hand = new PlayerHand();
+      seat.hand = new PlayerHand(playerCards[i]);
     } else {
       // AI players - wrap in HiddenHand
-      seat.hand = new HiddenHand(new PlayerHand());
+      seat.hand = new HiddenHand(playerCards[i]);
     }
 
     seats.push(seat);
@@ -1734,7 +1773,7 @@ function newGame() {
     numCharacters: numCharacters,
     seats: seats,
     currentTrick: [],
-    currentPlayer: 0,
+    currentPlayer: startPlayer,
     currentTrickNumber: 0,
     leadSuit: null,
     trickComplete: false,
@@ -1758,18 +1797,6 @@ function newGame() {
   gameState.threatDeck = shuffleDeck(
     gameState.threatDeck.map((v) => ({ value: v })),
   ).map((c) => c.value);
-
-  // Deal cards to each character
-  for (let i = 0; i < cardsPerPlayer; i++) {
-    for (let p = 0; p < numCharacters; p++) {
-      const card = deck.shift();
-      gameState.seats[p].hand.addCard(card);
-    }
-  }
-
-  // Find who has the 1 of rings
-  const startPlayer = findPlayerWithCard("rings", 1);
-  gameState.currentPlayer = startPlayer;
 
   // Clear trick display
   document.getElementById("trickCards").innerHTML = "";

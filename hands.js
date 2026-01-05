@@ -30,9 +30,9 @@ export class Hand {
 }
 
 export class PlayerHand extends Hand {
-  constructor() {
+  constructor(cards = []) {
     super();
-    this._cards = [];
+    this._cards = [...cards];
   }
 
   addCard(card) {
@@ -94,7 +94,7 @@ export class PlayerHand extends Hand {
 }
 
 export class PyramidHand extends Hand {
-  constructor() {
+  constructor(cards = []) {
     super();
     this._positions = new Array(12).fill(null);
     this._faceUp = [
@@ -113,6 +113,15 @@ export class PyramidHand extends Hand {
     ];
     this._extraCards = [];
     this._revealCallback = null;
+
+    // Initialize with cards
+    cards.forEach((card, idx) => {
+      if (idx < 12) {
+        this._positions[idx] = card;
+      } else {
+        this._extraCards.push(card);
+      }
+    });
   }
 
   addCard(card) {
@@ -325,9 +334,9 @@ export class PyramidHand extends Hand {
 }
 
 export class HiddenHand extends Hand {
-  constructor(wrappedHand) {
+  constructor(cards = []) {
     super();
-    this._wrappedHand = wrappedHand;
+    this._wrappedHand = new PlayerHand(cards);
   }
 
   addCard(card) {
@@ -379,5 +388,99 @@ export class HiddenHand extends Hand {
   onTrickComplete() {
     // Delegate to wrapped hand
     return this._wrappedHand.onTrickComplete();
+  }
+}
+
+export class SolitaireHand extends Hand {
+  constructor(cards = []) {
+    super();
+    // Initialize with first 4 cards revealed, rest hidden
+    this._revealedCards = cards.slice(0, 4);
+    this._hiddenCards = cards.slice(4);
+  }
+
+  addCard(card) {
+    // Cards added after construction (e.g., during exchanges) are revealed
+    this._revealedCards.push(card);
+  }
+
+  removeCard(card) {
+    // Try to remove from revealed cards first
+    const revealedIndex = this._revealedCards.findIndex(
+      (c) => c.suit === card.suit && c.value === card.value,
+    );
+    if (revealedIndex !== -1) {
+      this._revealedCards.splice(revealedIndex, 1);
+      return true;
+    }
+
+    // Try to remove from hidden cards
+    const hiddenIndex = this._hiddenCards.findIndex(
+      (c) => c.suit === card.suit && c.value === card.value,
+    );
+    if (hiddenIndex !== -1) {
+      this._hiddenCards.splice(hiddenIndex, 1);
+      return true;
+    }
+
+    return false;
+  }
+
+  getAvailableCards() {
+    // Only revealed cards are available to play
+    return [...this._revealedCards];
+  }
+
+  isEmpty() {
+    return this._revealedCards.length === 0 && this._hiddenCards.length === 0;
+  }
+
+  getSize() {
+    return this._revealedCards.length + this._hiddenCards.length;
+  }
+
+  getAllCards() {
+    return [...this._revealedCards, ...this._hiddenCards];
+  }
+
+  onTrickComplete() {
+    // Reveal one more card after each trick (if any hidden cards remain)
+    if (this._hiddenCards.length > 0) {
+      const cardToReveal = this._hiddenCards.shift();
+      this._revealedCards.push(cardToReveal);
+    }
+  }
+
+  render(domElement, isPlayable, onClick) {
+    domElement.innerHTML = "";
+    domElement.classList.remove("pyramid-hand");
+    domElement.classList.add("solitaire-hand");
+
+    // Render revealed cards
+    this._revealedCards.forEach((card) => {
+      const canPlay = isPlayable(card);
+      const cardElement = createCardElement(
+        card,
+        canPlay,
+        canPlay ? () => onClick(card) : null,
+      );
+
+      if (!canPlay) {
+        cardElement.classList.add("disabled");
+      }
+
+      domElement.appendChild(cardElement);
+    });
+
+    // Render hidden cards as face-down
+    this._hiddenCards.forEach(() => {
+      const cardBack = document.createElement("div");
+      cardBack.className = "card hidden";
+      const valueDiv = document.createElement("div");
+      valueDiv.className = "value";
+      valueDiv.textContent = "?";
+      cardBack.appendChild(valueDiv);
+      domElement.appendChild(cardBack);
+    });
   }
 }
