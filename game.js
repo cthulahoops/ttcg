@@ -215,8 +215,8 @@ function playCard(playerIndex, card) {
 
     if (oneRingPlay) {
       // Ask the player who played it if they want to use it as trump
-      if (oneRingPlay.playerIndex === 0) {
-        // Human player - show dialog
+      if (isHumanControlled(oneRingPlay.playerIndex)) {
+        // Human-controlled player - show dialog
         gameState.phase = 'waiting_for_trump';
         document.getElementById("trumpChoice").style.display = "block";
         return; // Wait for user choice
