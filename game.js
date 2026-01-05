@@ -1,3 +1,14 @@
+// Import modules
+import {
+  Hand,
+  PlayerHand,
+  PyramidHand,
+  HiddenHand,
+  SolitaireHand,
+} from "./hands.js";
+import { shuffleDeck, sortHand, createCardElement } from "./utils.js";
+import { Seat } from "./seat.js";
+
 // All possible characters in the game
 const allCharacters = [
   "Frodo",
@@ -22,16 +33,6 @@ const threatCardSuits = {
   Legolas: "forests",
 };
 
-// Import modules
-import {
-  Hand,
-  PlayerHand,
-  PyramidHand,
-  HiddenHand,
-  SolitaireHand,
-} from "./hands.js";
-import { sortHand, createCardElement } from "./utils.js";
-import { Seat } from "./seat.js";
 
 // ===== ASYNC HELPERS =====
 
@@ -203,15 +204,6 @@ function createDeck() {
   }
 
   return deck;
-}
-
-function shuffleDeck(deck) {
-  const shuffled = [...deck];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
 }
 
 function findPlayerWithCard(suit, value) {
