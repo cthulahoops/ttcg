@@ -14,8 +14,6 @@ export class Seat {
 
   // Display helper - encapsulates complex display logic
   getDisplayName() {
-    const directions = ["North", "East", "South", "West"];
-
     if (this.character) {
       // Use character name if assigned
       if (this.controller === "human") {
@@ -27,7 +25,7 @@ export class Seat {
       }
     } else {
       // Fall back to position name
-      const baseName = directions[this.seatIndex];
+      const baseName = `Player ${this.seatIndex + 1}`;
       return this.seatIndex === 0 ? `${baseName} (You)` : baseName;
     }
   }
