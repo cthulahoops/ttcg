@@ -285,3 +285,56 @@ export class PyramidHand extends Hand {
         }
     }
 }
+
+export class HiddenHand extends Hand {
+    constructor(wrappedHand) {
+        super();
+        this._wrappedHand = wrappedHand;
+    }
+
+    addCard(card) {
+        return this._wrappedHand.addCard(card);
+    }
+
+    removeCard(card) {
+        return this._wrappedHand.removeCard(card);
+    }
+
+    getAvailableCards() {
+        return this._wrappedHand.getAvailableCards();
+    }
+
+    isEmpty() {
+        return this._wrappedHand.isEmpty();
+    }
+
+    getSize() {
+        return this._wrappedHand.getSize();
+    }
+
+    getAllCards() {
+        return this._wrappedHand.getAllCards();
+    }
+
+    render(domElement, isPlayable, onClick) {
+        domElement.innerHTML = '';
+        domElement.classList.remove('pyramid-hand');
+
+        const handSize = this.getSize();
+
+        for (let i = 0; i < handSize; i++) {
+            const cardBack = document.createElement('div');
+            cardBack.className = 'card hidden';
+            const valueDiv = document.createElement('div');
+            valueDiv.className = 'value';
+            valueDiv.textContent = '?';
+            cardBack.appendChild(valueDiv);
+            domElement.appendChild(cardBack);
+        }
+    }
+
+    // Expose wrapped hand for direct access if needed
+    unwrap() {
+        return this._wrappedHand;
+    }
+}

@@ -23,7 +23,7 @@ const threatCardSuits = {
 };
 
 // Import modules
-import { Hand, PlayerHand, PyramidHand } from "./hands.js";
+import { Hand, PlayerHand, PyramidHand, HiddenHand } from "./hands.js";
 import { sortHand, createCardElement } from "./utils.js";
 
 // Game state
@@ -315,6 +315,9 @@ function startCharacterAssignment(firstPlayer) {
       `Pyramid will be controlled by ${getPlayerDisplayName(gameState.pyramidControllerIndex)}`,
       true,
     );
+
+    // Refresh display now that we know who controls the pyramid
+    displayHands();
   }
 
   // Move to next player
@@ -428,6 +431,9 @@ function endCharacterAssignment() {
 
   // Update player headings with character names
   updatePlayerHeadings();
+
+  // Refresh display to show character names
+  displayHands();
 
   // Start setup phase
   updateGameStatus("Starting setup phase...");
@@ -1650,38 +1656,11 @@ function displayHands() {
       !gameState.trickComplete &&
       !gameState.waitingForTrumpChoice;
 
-    if (
-      p === 0 ||
-      (gameState.pyramidPlayerIndex === p &&
-        gameState.pyramidControllerIndex === 0)
-    ) {
-      // Human-controlled player or pyramid controlled by human
-      hand.render(
-        playerDivs[p],
-        (card) => isPlayerTurn && isLegalMove(p, card),
-        (card) => playCard(p, card),
-      );
-    } else {
-      // AI players - show card backs
-      playerDivs[p].innerHTML = "";
-      playerDivs[p].classList.remove("pyramid-hand");
-
-      const handSize = hand.getSize();
-      const countDiv = document.getElementById(`count${p + 1}`);
-      if (countDiv) {
-        countDiv.textContent = `Cards: ${handSize}`;
-      }
-
-      for (let i = 0; i < handSize; i++) {
-        const cardBack = document.createElement("div");
-        cardBack.className = "card hidden";
-        const valueDiv = document.createElement("div");
-        valueDiv.className = "value";
-        valueDiv.textContent = "?";
-        cardBack.appendChild(valueDiv);
-        playerDivs[p].appendChild(cardBack);
-      }
-    }
+    hand.render(
+      playerDivs[p],
+      (card) => isPlayerTurn && isLegalMove(p, card),
+      (card) => playCard(p, card),
+    );
   }
 }
 
@@ -1739,11 +1718,16 @@ function newGame() {
   const tricksWon = [];
   const playerCharacters = [];
   for (let i = 0; i < numCharacters; i++) {
-    // Create Hand objects based on whether this is the pyramid player
+    // Create Hand objects based on player type
     if (i === pyramidPlayerIndex) {
+      // Pyramid is always visible
       playerHands.push(new PyramidHand());
-    } else {
+    } else if (i === 0) {
+      // Player 0 is the human player - always visible
       playerHands.push(new PlayerHand());
+    } else {
+      // AI players - wrap in HiddenHand
+      playerHands.push(new HiddenHand(new PlayerHand()));
     }
     tricksWon.push([]);
     playerCharacters.push(null);
