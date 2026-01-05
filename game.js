@@ -215,7 +215,7 @@ function playCard(playerIndex, card) {
   }
 
   // Check if trick is complete
-  if (gameState.currentTrick.length === gameState.playerCount) {
+  if (gameState.currentTrick.length === gameState.numCharacters) {
     gameState.trickComplete = true;
 
     // Update display
@@ -247,7 +247,7 @@ function playCard(playerIndex, card) {
   } else {
     // Move to next player
     gameState.currentPlayer =
-      (gameState.currentPlayer + 1) % gameState.playerCount;
+      (gameState.currentPlayer + 1) % gameState.numCharacters;
 
     // Update display AFTER changing current player
     displayTrick();
@@ -460,7 +460,7 @@ function updatePlayerHeadings() {
 
       // Show objective (adjust Frodo's objective for 3-player mode)
       let objective = characterObjectives[character];
-      if (character === "Frodo" && gameState.playerCount === 3) {
+      if (character === "Frodo" && gameState.numCharacters === 3) {
         objective = "Win at least four ring cards";
       }
       objectiveElement.textContent = `Goal: ${objective}`;
@@ -540,7 +540,7 @@ function getValidExchangePlayers(playerIndex, exchangeRule) {
 
   if (exchangeRule === null) {
     // Can exchange with anyone
-    for (let p = 0; p < gameState.playerCount; p++) {
+    for (let p = 0; p < gameState.numCharacters; p++) {
       if (p !== playerIndex) {
         validPlayers.push(p);
       }
@@ -550,14 +550,14 @@ function getValidExchangePlayers(playerIndex, exchangeRule) {
     validPlayers = exchangeRule
       .map((charName) => gameState.playerCharacters.indexOf(charName))
       .filter(
-        (p) => p !== -1 && p !== playerIndex && p < gameState.playerCount,
+        (p) => p !== -1 && p !== playerIndex && p < gameState.numCharacters,
       );
   } else if (exchangeRule.except) {
     // Can exchange with anyone except specific characters
     const excludedPlayers = exchangeRule.except.map((charName) =>
       gameState.playerCharacters.indexOf(charName),
     );
-    for (let p = 0; p < gameState.playerCount; p++) {
+    for (let p = 0; p < gameState.numCharacters; p++) {
       if (p !== playerIndex && !excludedPlayers.includes(p)) {
         validPlayers.push(p);
       }
@@ -847,7 +847,7 @@ function showExchangePlayerSelectionDialog(
   if (exchangeRule === null) {
     // Can exchange with any player
     instruction.textContent = "Choose a player to exchange with:";
-    for (let p = 0; p < gameState.playerCount; p++) {
+    for (let p = 0; p < gameState.numCharacters; p++) {
       if (p !== playerIndex) {
         validPlayers.push(p);
       }
@@ -857,7 +857,7 @@ function showExchangePlayerSelectionDialog(
     validPlayers = exchangeRule
       .map((charName) => gameState.playerCharacters.indexOf(charName))
       .filter(
-        (p) => p !== -1 && p !== playerIndex && p < gameState.playerCount,
+        (p) => p !== -1 && p !== playerIndex && p < gameState.numCharacters,
       );
 
     // Only show character names that are actually in the game
@@ -873,7 +873,7 @@ function showExchangePlayerSelectionDialog(
     const excludedPlayers = exchangeRule.except.map((charName) =>
       gameState.playerCharacters.indexOf(charName),
     );
-    for (let p = 0; p < gameState.playerCount; p++) {
+    for (let p = 0; p < gameState.numCharacters; p++) {
       if (p !== playerIndex && !excludedPlayers.includes(p)) {
         validPlayers.push(p);
       }
@@ -1190,7 +1190,7 @@ function determineTrickWinner() {
 
   // Check if any objective is now impossible
   let anyImpossible = false;
-  for (let p = 0; p < gameState.playerCount; p++) {
+  for (let p = 0; p < gameState.numCharacters; p++) {
     if (!isObjectiveCompletable(p)) {
       const character = gameState.playerCharacters[p];
       if (character) {
@@ -1204,12 +1204,12 @@ function determineTrickWinner() {
   }
 
   // Check if game is over
-  // Game ends when at least (playerCount - 1) players have no cards (accounts for Gandalf potentially having the lost card)
+  // Game ends when at least (numCharacters - 1) players have no cards (accounts for Gandalf potentially having the lost card)
   // OR when any objective becomes impossible
   const playersWithNoCards = gameState.playerHands.filter((hand) =>
     hand.isEmpty(),
   ).length;
-  if (playersWithNoCards >= gameState.playerCount - 1 || anyImpossible) {
+  if (playersWithNoCards >= gameState.numCharacters - 1 || anyImpossible) {
     setTimeout(() => {
       const gameOverMsg = getGameOverMessage();
       addToGameLog("--- GAME OVER ---", true);
@@ -1227,12 +1227,12 @@ function determineTrickWinner() {
 function checkObjective(playerIndex) {
   const character = gameState.playerCharacters[playerIndex];
   const wonCards = gameState.tricksWon[playerIndex];
-  const trickCount = wonCards.length / 4;
+  const trickCount = wonCards.length / gameState.numCharacters;
 
   switch (character) {
     case "Frodo":
-      // Win at least two ring cards (4 in 3-player mode)
-      const ringsNeeded = gameState.playerCount === 3 ? 4 : 2;
+      // Win at least two ring cards (4 in 3-character mode)
+      const ringsNeeded = gameState.numCharacters === 3 ? 4 : 2;
       const ringCards = wonCards.filter((card) => card.suit === "rings").length;
       return ringCards >= ringsNeeded;
 
@@ -1255,7 +1255,7 @@ function checkObjective(playerIndex) {
     case "Pippin":
       // Win the fewest (or joint fewest) tricks
       const allTrickCounts = gameState.tricksWon.map(
-        (cards) => cards.length / gameState.playerCount,
+        (cards) => cards.length / gameState.numCharacters,
       );
       const minTricks = Math.min(...allTrickCounts);
       return trickCount === minTricks;
@@ -1308,7 +1308,7 @@ function isObjectiveCompletable(playerIndex) {
   // Returns true if completable, false if impossible
   const character = gameState.playerCharacters[playerIndex];
   const wonCards = gameState.tricksWon[playerIndex];
-  const trickCount = wonCards.length / 4;
+  const trickCount = wonCards.length / gameState.numCharacters;
 
   // If already completed, it's completable
   if (checkObjective(playerIndex)) {
@@ -1317,9 +1317,9 @@ function isObjectiveCompletable(playerIndex) {
 
   switch (character) {
     case "Frodo":
-      // Need at least 2 ring cards (4 in 3-player mode)
+      // Need at least 2 ring cards (4 in 3-character mode)
       // Impossible if other players have already captured too many rings (only 5 total)
-      const ringsNeededForFrodo = gameState.playerCount === 3 ? 4 : 2;
+      const ringsNeededForFrodo = gameState.numCharacters === 3 ? 4 : 2;
       const ringCardsWonByOthers = gameState.tricksWon.reduce(
         (total, cards, idx) => {
           if (idx !== playerIndex) {
@@ -1357,7 +1357,7 @@ function isObjectiveCompletable(playerIndex) {
 
       const targetSuit = threatCardSuits[character];
       // Check if another player has already won this card
-      for (let p = 0; p < gameState.playerCount; p++) {
+      for (let p = 0; p < gameState.numCharacters; p++) {
         if (p !== playerIndex) {
           const hasCard = gameState.tricksWon[p].some(
             (card) => card.suit === targetSuit && card.value === threatCard,
@@ -1376,12 +1376,12 @@ function isObjectiveCompletable(playerIndex) {
       if (trickCount > aragornThreat) return false;
 
       // Impossible if not enough tricks remaining
-      const tricksPerPlayerAragorn = gameState.playerCount === 3 ? 12 : 9;
+      const tricksPerPlayerAragorn = gameState.numCharacters === 3 ? 12 : 9;
       const tricksRemaining =
         tricksPerPlayerAragorn -
         Math.max(
           ...gameState.tricksWon.map(
-            (cards) => cards.length / gameState.playerCount,
+            (cards) => cards.length / gameState.numCharacters,
           ),
         );
       return trickCount + tricksRemaining >= aragornThreat;
@@ -1389,7 +1389,7 @@ function isObjectiveCompletable(playerIndex) {
     case "Pippin":
       // Win the fewest (or joint fewest) tricks
       const allTrickCounts = gameState.tricksWon.map(
-        (cards) => cards.length / gameState.playerCount,
+        (cards) => cards.length / gameState.numCharacters,
       );
       const minTricks = Math.min(...allTrickCounts);
 
@@ -1399,10 +1399,10 @@ function isObjectiveCompletable(playerIndex) {
       // Sum of gaps: each other player needs to catch up to Pippin
       // Impossible if sum of all gaps > remaining tricks
       let totalGap = 0;
-      for (let p = 0; p < gameState.playerCount; p++) {
+      for (let p = 0; p < gameState.numCharacters; p++) {
         if (p !== playerIndex) {
           const otherTricks =
-            gameState.tricksWon[p].length / gameState.playerCount;
+            gameState.tricksWon[p].length / gameState.numCharacters;
           if (otherTricks < trickCount) {
             totalGap += trickCount - otherTricks;
           }
@@ -1410,7 +1410,7 @@ function isObjectiveCompletable(playerIndex) {
       }
 
       const maxTricksPlayed = Math.max(...allTrickCounts);
-      const tricksPerPlayer = gameState.playerCount === 3 ? 12 : 9;
+      const tricksPerPlayer = gameState.numCharacters === 3 ? 12 : 9;
       const remainingTricks = tricksPerPlayer - maxTricksPlayed;
 
       return totalGap <= remainingTricks;
@@ -1425,9 +1425,9 @@ function getGameOverMessage() {
   const results = [];
   const objectiveWinners = [];
 
-  for (let p = 0; p < gameState.playerCount; p++) {
+  for (let p = 0; p < gameState.numCharacters; p++) {
     const character = gameState.playerCharacters[p];
-    const trickCount = gameState.tricksWon[p].length / gameState.playerCount;
+    const trickCount = gameState.tricksWon[p].length / gameState.numCharacters;
     const objectiveMet = checkObjective(p);
 
     const playerName = p === 0 ? `${character} (You)` : character;
@@ -1478,8 +1478,8 @@ function startNextTrick(leadPlayer) {
 }
 
 function updateTricksDisplay() {
-  for (let p = 0; p < gameState.playerCount; p++) {
-    const trickCount = gameState.tricksWon[p].length / gameState.playerCount;
+  for (let p = 0; p < gameState.numCharacters; p++) {
+    const trickCount = gameState.tricksWon[p].length / gameState.numCharacters;
     const character = gameState.playerCharacters[p];
     const wonCards = gameState.tricksWon[p];
 
@@ -1537,7 +1537,7 @@ function updateTricksDisplay() {
     } else if (character === "Frodo") {
       // Show ring cards won
       const ringCards = wonCards.filter((card) => card.suit === "rings");
-      const ringsNeededForDisplay = gameState.playerCount === 3 ? 4 : 2;
+      const ringsNeededForDisplay = gameState.numCharacters === 3 ? 4 : 2;
       const objectiveMet = ringCards.length >= ringsNeededForDisplay;
       const completable = isObjectiveCompletable(p);
       let icon;
