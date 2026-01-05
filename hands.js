@@ -177,8 +177,8 @@ export class PyramidHand extends Hand {
         if (cardIndex >= 3 && cardIndex <= 6) {
             const row1Position = cardIndex - 3;
             const covering = [];
-            if (row1Position < 4) covering.push(row1Position + 7);
-            if (row1Position > 0) covering.push(row1Position + 6);
+            covering.push(row1Position + 7);  // Left covering card
+            covering.push(row1Position + 8);  // Right covering card
             return covering;
         }
 
@@ -186,8 +186,8 @@ export class PyramidHand extends Hand {
         if (cardIndex >= 0 && cardIndex <= 2) {
             const row0Position = cardIndex;
             const covering = [];
-            if (row0Position < 3) covering.push(row0Position + 3);
-            if (row0Position > 0) covering.push(row0Position + 2);
+            covering.push(row0Position + 3);  // Left covering card
+            covering.push(row0Position + 4);  // Right covering card
             return covering;
         }
 
@@ -216,11 +216,8 @@ export class PyramidHand extends Hand {
         ];
 
         rows.forEach((rowInfo, rowIdx) => {
-            const rowDiv = document.createElement('div');
-            rowDiv.className = `pyramid-row pyramid-row-${rowIdx}`;
-
-            for (let i = 0; i < rowInfo.count; i++) {
-                const cardIdx = rowInfo.start + i;
+            for (let colIdx = 0; colIdx < rowInfo.count; colIdx++) {
+                const cardIdx = rowInfo.start + colIdx;
                 const card = this._positions[cardIdx];
 
                 if (!card) continue;
@@ -255,10 +252,12 @@ export class PyramidHand extends Hand {
                     cardElement.appendChild(valueDiv);
                 }
 
-                rowDiv.appendChild(cardElement);
-            }
+                cardElement.style.gridRow = `${rowIdx + 1} / span 2`;
+                cardElement.style.gridColumn = `${2 * colIdx + (3 - rowIdx)} / span 2`;
+                cardElement.style.zIndex = `${rowIdx}`
 
-            domElement.appendChild(rowDiv);
+                domElement.appendChild(cardElement);
+            }
         });
 
         // Render extra cards
