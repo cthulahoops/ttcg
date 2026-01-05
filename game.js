@@ -341,14 +341,14 @@ async function startCharacterAssignment(firstPlayer) {
   }
   gameState.availableCharacters = [...allCharacters];
 
+  // Log Frodo assignment
+  addToGameLog(`${getPlayerDisplayName(firstPlayer)} gets Frodo (has 1 of Rings)`, true);
+
   // First player (who has 1 of rings) automatically gets Frodo
   gameState.seats[firstPlayer].character = "Frodo";
   gameState.availableCharacters = gameState.availableCharacters.filter(
     (c) => c !== "Frodo",
   );
-
-  // Log Frodo assignment
-  addToGameLog(`${getPlayerDisplayName[firstPlayer]} gets Frodo (has 1 of Rings)`, true);
 
   // For 2-player mode, determine pyramid controller now that we know where Frodo is
   if (gameState.playerCount === 2) {
@@ -373,18 +373,26 @@ async function startCharacterAssignment(firstPlayer) {
     displayHands();
   }
 
-  // Move to next player
-  gameState.characterAssignmentPlayer =
-    (firstPlayer + 1) % gameState.numCharacters;
+  // Loop over remaining characters to assign
+  for (let i = 1; i < gameState.numCharacters; i++) {
+    const playerIndex = (firstPlayer + i) % gameState.numCharacters;
+    gameState.characterAssignmentPlayer = playerIndex;
 
-  // Show character selection dialog
-  await showCharacterChoice();
+    await assignCharacterToPlayer(playerIndex);
+    await delay(500);
+  }
+
+  // Update player headings with character names
+  updatePlayerHeadings();
+
+  // Refresh display to show character names
+  displayHands();
 }
 
-async function showCharacterChoice() {
-  const playerIndex = gameState.characterAssignmentPlayer;
+async function assignCharacterToPlayer(playerIndex) {
   const shouldShowToHuman = gameState.seats[playerIndex].controller === "human";
 
+  let character;
   if (shouldShowToHuman) {
     // Build title and message
     let title = `${getPlayerDisplayName(playerIndex)} - Choose Your Character`;
@@ -396,10 +404,10 @@ async function showCharacterChoice() {
     }
 
     // Build character buttons
-    const buttons = allCharacters.map((character) => ({
-      label: character,
-      value: character,
-      disabled: !gameState.availableCharacters.includes(character),
+    const buttons = allCharacters.map((char) => ({
+      label: char,
+      value: char,
+      disabled: !gameState.availableCharacters.includes(char),
       grid: true, // Use grid layout
     }));
 
@@ -412,63 +420,22 @@ async function showCharacterChoice() {
     }
     const info = assignments.length > 0 ? assignments.join(" | ") : "";
 
-    const character = await showDialog({ title, message, buttons, info });
-    await selectCharacter(character);
+    character = await showDialog({ title, message, buttons, info });
   } else {
     // AI player - choose automatically after delay
     await delay(1000);
-    await selectCharacterAI();
+    const available = gameState.availableCharacters;
+    character = available[Math.floor(Math.random() * available.length)];
   }
-}
-
-async function selectCharacter(character) {
-  if (!gameState.availableCharacters.includes(character)) {
-    return; // Character already taken
-  }
-
-  const playerIndex = gameState.characterAssignmentPlayer;
 
   // Log character assignment (before assignment to show position name)
-  addToGameLog(`${getPlayerDisplayName( playerIndex )} chose ${character}`);
+  addToGameLog(`${getPlayerDisplayName(playerIndex)} chose ${character}`);
 
   // Assign character to current player
   gameState.seats[playerIndex].character = character;
   gameState.availableCharacters = gameState.availableCharacters.filter(
     (c) => c !== character,
   );
-
-  // Move to next player or end character assignment
-  gameState.characterAssignmentPlayer =
-    (gameState.characterAssignmentPlayer + 1) % gameState.numCharacters;
-
-  // Check if all active players have characters
-  const allAssigned = gameState.seats.every((seat) => seat.character !== null);
-  if (allAssigned) {
-    await endCharacterAssignment();
-  } else {
-    // Continue to next player
-    await delay(500);
-    await showCharacterChoice();
-  }
-}
-
-async function selectCharacterAI() {
-  // AI randomly picks from available characters
-  const available = gameState.availableCharacters;
-  const randomChar = available[Math.floor(Math.random() * available.length)];
-  await selectCharacter(randomChar);
-}
-
-async function endCharacterAssignment() {
-  // Update player headings with character names
-  updatePlayerHeadings();
-
-  // Refresh display to show character names
-  displayHands();
-
-  // Start setup phase
-  updateGameStatus("Starting setup phase...");
-  await startSetupPhase();
 }
 
 function updatePlayerHeadings() {
@@ -508,12 +475,29 @@ function isHumanControlled(playerIndex) {
 
 async function startSetupPhase() {
   gameState.phase = "setup";
-  gameState.setupCharacterIndex = gameState.currentPlayer; // Start with first player
-  await performSetupAction();
+
+  // Loop over all characters starting from currentPlayer
+  for (let i = 0; i < gameState.numCharacters; i++) {
+    const playerIndex = (gameState.currentPlayer + i) % gameState.numCharacters;
+    gameState.setupCharacterIndex = playerIndex;
+
+    await performSetupAction(playerIndex);
+  }
+
+  gameState.phase = "playing";
+  hideDialog();
+
+  updateGameStatus(
+    `Setup complete! ${getPlayerDisplayName(gameState.currentPlayer)} leads.`,
+  );
+
+  // If AI-controlled player starts, play their move
+  if (!isHumanControlled(gameState.currentPlayer)) {
+    setTimeout(() => playAIMove(), 1500);
+  }
 }
 
-async function performSetupAction() {
-  const playerIndex = gameState.setupCharacterIndex;
+async function performSetupAction(playerIndex) {
   const character = gameState.seats[playerIndex].character;
 
   updateGameStatus(`${getPlayerDisplayName(playerIndex)} - Setup Phase`);
@@ -540,22 +524,6 @@ async function performSetupAction() {
   } else {
     // All other characters use standard exchange logic
     await setupStandardExchange(playerIndex, character, exchangeRule);
-  }
-
-  await nextSetupPlayerFixed();
-}
-
-async function endSetupPhase() {
-  gameState.phase = "playing";
-  hideDialog();
-
-  updateGameStatus(
-    `Setup complete! ${getPlayerDisplayName(gameState.currentPlayer)} leads.`,
-  );
-
-  // If AI-controlled player starts, play their move
-  if (!isHumanControlled(gameState.currentPlayer)) {
-    setTimeout(() => playAIMove(), 1500);
   }
 }
 
@@ -1020,18 +988,6 @@ async function showExchangePlayerSelectionDialog(
   return selectedPlayer;
 }
 
-async function nextSetupPlayerFixed() {
-  const startPlayer = gameState.currentPlayer;
-  gameState.setupCharacterIndex =
-    (gameState.setupCharacterIndex + 1) % gameState.numCharacters;
-
-  // Check if we've completed all characters
-  if (gameState.setupCharacterIndex === startPlayer) {
-    await endSetupPhase();
-  } else {
-    await performSetupAction();
-  }
-}
 
 function playAIMove() {
   const legalMoves = getLegalMoves(gameState.currentPlayer);
@@ -1724,6 +1680,9 @@ async function newGame() {
   // Start character assignment phase
   updateGameStatus("Assigning characters...");
   await startCharacterAssignment(startPlayer);
+
+  updateGameStatus("Starting setup phase...");
+  await startSetupPhase();
 }
 
 function resetPlayerHeadings() {
