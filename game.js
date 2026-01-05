@@ -137,7 +137,7 @@ function shuffleDeck(deck) {
 
 function findPlayerWithCard(suit, value) {
     for (let p = 0; p < 4; p++) {
-        if (gameState.playerHands[p]._getAllCards().some(card => card.suit === suit && card.value === value)) {
+        if (gameState.playerHands[p].getAllCards().some(card => card.suit === suit && card.value === value)) {
             return p;
         }
     }

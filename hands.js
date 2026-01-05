@@ -9,7 +9,7 @@ export class Hand {
     isEmpty() { throw new Error('Abstract'); }
     getSize() { throw new Error('Abstract'); }
     render(domElement, isPlayable, onClick) { throw new Error('Abstract'); }
-    _getAllCards() { throw new Error('Abstract'); }
+    getAllCards() { throw new Error('Abstract'); }
 }
 
 export class PlayerHand extends Hand {
@@ -43,7 +43,7 @@ export class PlayerHand extends Hand {
         return this._cards.length;
     }
 
-    _getAllCards() {
+    getAllCards() {
         return [...this._cards];
     }
 
@@ -138,7 +138,7 @@ export class PyramidHand extends Hand {
         return count + this._extraCards.length;
     }
 
-    _getAllCards() {
+    getAllCards() {
         const allCards = [];
         for (let i = 0; i < 12; i++) {
             if (this._positions[i]) {
