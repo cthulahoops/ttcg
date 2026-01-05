@@ -24,6 +24,9 @@ export class Hand {
   getAllCards() {
     throw new Error("Abstract");
   }
+  onTrickComplete() {
+    throw new Error("Abstract");
+  }
 }
 
 export class PlayerHand extends Hand {
@@ -84,6 +87,10 @@ export class PlayerHand extends Hand {
       domElement.appendChild(cardElement);
     });
   }
+
+  onTrickComplete() {
+    // No-op for PlayerHand
+  }
 }
 
 export class PyramidHand extends Hand {
@@ -133,7 +140,7 @@ export class PyramidHand extends Hand {
     );
     if (posIndex !== -1) {
       this._positions[posIndex] = null;
-      this._revealNewlyUncoveredCards();
+      // Don't reveal here - wait until trick is complete
       return true;
     }
 
@@ -310,6 +317,11 @@ export class PyramidHand extends Hand {
       domElement.appendChild(cardElement);
     });
   }
+
+  onTrickComplete() {
+    // Reveal newly uncovered cards after trick is complete
+    this._revealNewlyUncoveredCards();
+  }
 }
 
 export class HiddenHand extends Hand {
@@ -362,5 +374,10 @@ export class HiddenHand extends Hand {
   // Expose wrapped hand for direct access if needed
   unwrap() {
     return this._wrappedHand;
+  }
+
+  onTrickComplete() {
+    // Delegate to wrapped hand
+    return this._wrappedHand.onTrickComplete();
   }
 }
