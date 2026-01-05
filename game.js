@@ -600,6 +600,13 @@ function setupStandardExchange(playerIndex, character, exchangeRule) {
   // - array of character names (e.g., ['Frodo', 'Pippin'] for Merry)
   // - object with 'except' property (e.g., { except: ['Frodo'] } for Boromir)
 
+  // In 1-player mode, check if exchange already made
+  if (gameState.playerCount === 1 && gameState.exchangeMadeInSolitaire) {
+    // Exchange already made, skip
+    setTimeout(() => nextSetupPlayerFixed(), 1000);
+    return;
+  }
+
   if (isHumanControlled(playerIndex)) {
     // Human-controlled player - determine valid players first
     let validPlayers = getValidExchangePlayers(playerIndex, exchangeRule);
@@ -610,12 +617,49 @@ function setupStandardExchange(playerIndex, character, exchangeRule) {
         `${getPlayerDisplayName(playerIndex)} has no valid exchange partners`,
       );
       setTimeout(() => nextSetupPlayerFixed(), 1000);
-    } else if (validPlayers.length === 1) {
-      // Only one option - automatically choose it
-      startExchange(playerIndex, validPlayers[0]);
     } else {
-      // Multiple options - show dialog
-      showExchangePlayerSelectionDialog(playerIndex, character, exchangeRule);
+      // In 1-player mode, ask if player wants to exchange
+      if (gameState.playerCount === 1) {
+        // Determine target player for the message
+        let targetDescription;
+        if (validPlayers.length === 1) {
+          targetDescription = getPlayerDisplayName(validPlayers[0]);
+        } else if (exchangeRule === null) {
+          targetDescription = "another player";
+        } else if (Array.isArray(exchangeRule)) {
+          const charNames = validPlayers.map(p => gameState.seats[p].character).join(" or ");
+          targetDescription = charNames;
+        } else {
+          targetDescription = "another player";
+        }
+
+        showDialog({
+          title: `${character} - Exchange?`,
+          message: `Do you want ${character} to exchange with ${targetDescription}?`,
+          buttons: [
+            {
+              label: "Yes, Exchange",
+              onClick: () => {
+                if (validPlayers.length === 1) {
+                  startExchange(playerIndex, validPlayers[0]);
+                } else {
+                  showExchangePlayerSelectionDialog(playerIndex, character, exchangeRule);
+                }
+              }
+            },
+            { label: "No, Skip", onClick: () => nextSetupPlayerFixed() },
+          ],
+        });
+      } else {
+        // Normal mode - proceed with exchange
+        if (validPlayers.length === 1) {
+          // Only one option - automatically choose it
+          startExchange(playerIndex, validPlayers[0]);
+        } else {
+          // Multiple options - show dialog
+          showExchangePlayerSelectionDialog(playerIndex, character, exchangeRule);
+        }
+      }
     }
   } else {
     // AI player - pick a random valid target
@@ -803,21 +847,23 @@ function completeLostCardChoice(playerIndex, takeLostCard) {
     );
     displayHands();
 
-    // Then exchange with Frodo
+    // Then exchange with Frodo using standard exchange logic
     setTimeout(() => {
-      const frodoPlayer = findSeatByCharacter("Frodo");
-      startExchange(playerIndex, frodoPlayer);
+      const character = gameState.seats[playerIndex].character;
+      const exchangeRule = characterExchangeRules[character];
+      setupStandardExchange(playerIndex, character, exchangeRule);
     }, 1500);
   } else {
-    // Don't take the card, just exchange with Frodo
+    // Don't take the card, but still exchange with Frodo
     addToGameLog(`${getPlayerDisplayName(playerIndex)} declines the Lost card`);
     updateGameStatus(
       `${getPlayerDisplayName(playerIndex)} declines the Lost card`,
     );
 
     setTimeout(() => {
-      const frodoPlayer = findSeatByCharacter("Frodo");
-      startExchange(playerIndex, frodoPlayer);
+      const character = gameState.seats[playerIndex].character;
+      const exchangeRule = characterExchangeRules[character];
+      setupStandardExchange(playerIndex, character, exchangeRule);
     }, 1500);
   }
 }
@@ -1065,6 +1111,12 @@ function returnCard(fromPlayer, toPlayer, card) {
     gameState.exchangeCard = null;
     gameState.exchangeFromPlayer = null;
     gameState.exchangeToPlayer = null;
+
+    // Mark exchange as made in 1-player mode
+    if (gameState.playerCount === 1) {
+      gameState.exchangeMadeInSolitaire = true;
+    }
+
     nextSetupPlayerFixed();
   }, 1500);
 }
@@ -1760,6 +1812,7 @@ function newGame() {
     lostCard: lostCard, // Store the lost card
     lastTrickWinner: null, // Track who won the most recent trick
     threatDeck: [1, 2, 3, 4, 5, 6, 7], // Threat deck (shuffled later)
+    exchangeMadeInSolitaire: false, // Track if exchange has been made in 1-player mode
   };
 
   // Shuffle the threat deck
