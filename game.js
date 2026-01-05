@@ -36,13 +36,10 @@ let gameState = {
   currentPlayer: 0,
   currentTrickNumber: 0, // Track trick number for tricksWon
   leadSuit: null,
-  trickComplete: false,
+  phase: 'playing', // 'playing', 'character_assignment', 'setup', 'waiting_for_trump', 'trick_complete'
   ringsBroken: false,
-  waitingForTrumpChoice: false,
   availableCharacters: [...allCharacters],
-  characterAssignmentPhase: false,
   characterAssignmentPlayer: 0,
-  setupPhase: false,
   setupCharacterIndex: 0, // Which character is performing setup (0=Frodo, 1=Gandalf, etc)
   setupStep: "choose_card", // 'choose_card', 'waiting_for_response', 'done'
   exchangeFromPlayer: null,
@@ -205,7 +202,7 @@ function playCard(playerIndex, card) {
 
   // Check if trick is complete
   if (gameState.currentTrick.length === gameState.numCharacters) {
-    gameState.trickComplete = true;
+    gameState.phase = 'trick_complete';
 
     // Update display
     displayTrick();
@@ -220,7 +217,7 @@ function playCard(playerIndex, card) {
       // Ask the player who played it if they want to use it as trump
       if (oneRingPlay.playerIndex === 0) {
         // Human player - show dialog
-        gameState.waitingForTrumpChoice = true;
+        gameState.phase = 'waiting_for_trump';
         document.getElementById("trumpChoice").style.display = "block";
         return; // Wait for user choice
       } else {
@@ -253,7 +250,7 @@ function playCard(playerIndex, card) {
 function chooseTrump(useTrump) {
   // Hide the dialog
   document.getElementById("trumpChoice").style.display = "none";
-  gameState.waitingForTrumpChoice = false;
+  gameState.phase = 'trick_complete';
 
   // Find the 1 of rings in the current trick and update its trump status
   const oneRingPlay = gameState.currentTrick.find(
@@ -273,7 +270,7 @@ function chooseTrump(useTrump) {
 }
 
 function startCharacterAssignment(firstPlayer) {
-  gameState.characterAssignmentPhase = true;
+  gameState.phase = 'character_assignment';
   gameState.characterAssignmentPlayer = firstPlayer;
   // Don't reset seat characters - they were already initialized with correct size in newGame
   // Just clear any existing assignments
@@ -418,8 +415,6 @@ function selectCharacterAI() {
 }
 
 function endCharacterAssignment() {
-  gameState.characterAssignmentPhase = false;
-
   // Update player headings with character names
   updatePlayerHeadings();
 
@@ -467,7 +462,7 @@ function isHumanControlled(playerIndex) {
 }
 
 function startSetupPhase() {
-  gameState.setupPhase = true;
+  gameState.phase = 'setup';
   gameState.setupCharacterIndex = gameState.currentPlayer; // Start with first player
   performSetupAction();
 }
@@ -504,7 +499,7 @@ function performSetupAction() {
 }
 
 function endSetupPhase() {
-  gameState.setupPhase = false;
+  gameState.phase = 'playing';
   document.getElementById("setupDialog").style.display = "none";
 
   updateGameStatus(
@@ -1444,7 +1439,7 @@ function startNextTrick(leadPlayer) {
   // Clear the current trick
   gameState.currentTrick = [];
   gameState.leadSuit = null;
-  gameState.trickComplete = false;
+  gameState.phase = 'playing';
   gameState.currentPlayer = leadPlayer;
 
   // Clear trick display
@@ -1622,8 +1617,8 @@ function displayHands() {
     if (
       idx < gameState.numCharacters &&
       idx === gameState.currentPlayer &&
-      !gameState.trickComplete &&
-      !gameState.waitingForTrumpChoice
+      gameState.phase !== 'trick_complete' &&
+      gameState.phase !== 'waiting_for_trump'
     ) {
       div.classList.add("active");
     } else {
@@ -1636,8 +1631,8 @@ function displayHands() {
     const hand = gameState.seats[p].hand;
     const isPlayerTurn =
       gameState.currentPlayer === p &&
-      !gameState.trickComplete &&
-      !gameState.waitingForTrumpChoice;
+      gameState.phase !== 'trick_complete' &&
+      gameState.phase !== 'waiting_for_trump';
 
     hand.render(
       playerDivs[p],
@@ -1652,7 +1647,7 @@ function updateGameStatus(message = null) {
 
   if (message) {
     statusDiv.textContent = message;
-  } else if (gameState.trickComplete) {
+  } else if (gameState.phase === 'trick_complete') {
     statusDiv.textContent = "Trick complete!";
   } else if (gameState.currentPlayer === 0) {
     statusDiv.textContent = "Your turn! Click a card to play.";
@@ -1776,13 +1771,10 @@ function newGame() {
     currentPlayer: startPlayer,
     currentTrickNumber: 0,
     leadSuit: null,
-    trickComplete: false,
+    phase: 'playing', // 'playing', 'character_assignment', 'setup', 'waiting_for_trump', 'trick_complete'
     ringsBroken: false,
-    waitingForTrumpChoice: false,
     availableCharacters: [...allCharacters],
-    characterAssignmentPhase: false,
     characterAssignmentPlayer: 0,
-    setupPhase: false,
     setupCharacterIndex: 0,
     setupStep: "choose_card",
     exchangeFromPlayer: null,
