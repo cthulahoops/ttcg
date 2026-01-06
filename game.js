@@ -6,8 +6,10 @@ import {
   HiddenHand,
   SolitaireHand,
 } from "./hands.js";
-import { shuffleDeck, sortHand, createCardElement } from "./utils.js";
+import { shuffleDeck, sortHand, createCardElement, delay } from "./utils.js";
 import { Seat } from "./seat.js";
+
+import { HumanController, AIController } from "./controllers.js";
 
 // All possible characters in the game
 const allCharacters = [
@@ -33,16 +35,7 @@ const threatCardSuits = {
   Legolas: "forests",
 };
 
-
 // ===== ASYNC HELPERS =====
-
-// Helper to delay execution
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-// Promise resolver storage for current dialog
-let currentDialogResolver = null;
 
 // Game state
 let gameState = {
@@ -65,73 +58,6 @@ let gameState = {
   lastTrickWinner: null, // Track who won the most recent trick (for Boromir's objective)
   threatDeck: [], // Threat deck (cards 1-7)
 };
-
-// ===== DIALOG HELPERS =====
-
-function showDialog({ title, message, buttons = [], cards = [], info = "" }) {
-  return new Promise((resolve) => {
-    const dialogArea = document.getElementById("dialogArea");
-    const dialogTitle = document.getElementById("dialogTitle");
-    const dialogMessage = document.getElementById("dialogMessage");
-    const dialogChoices = document.getElementById("dialogChoices");
-    const dialogInfo = document.getElementById("dialogInfo");
-
-    // Store resolver for potential cleanup
-    currentDialogResolver = resolve;
-
-    // Set content
-    dialogTitle.textContent = title;
-    dialogMessage.textContent = message;
-    dialogInfo.textContent = info;
-
-    // Clear and populate buttons
-    dialogChoices.innerHTML = "";
-    if (buttons.length > 0) {
-      buttons.forEach(
-        ({ label, value, onClick, disabled = false, grid = false }) => {
-          const button = document.createElement("button");
-          button.textContent = label;
-          button.disabled = disabled;
-
-          // Support both new value-based and old onClick-based patterns during transition
-          button.onclick = () => {
-            hideDialog();
-            currentDialogResolver = null;
-            if (value !== undefined) {
-              resolve(value);
-            } else if (onClick) {
-              // Fallback for old pattern during transition
-              onClick();
-            }
-          };
-          dialogChoices.appendChild(button);
-        },
-      );
-    }
-
-    if (cards.length > 0) {
-      cards.forEach((cardElement) => {
-        // Card elements should have dataset.cardValue set by caller
-        cardElement.onclick = () => {
-          hideDialog();
-          currentDialogResolver = null;
-          const card = JSON.parse(cardElement.dataset.cardValue);
-          resolve(card);
-        };
-        dialogChoices.appendChild(cardElement);
-      });
-    }
-
-    // Show dialog
-    dialogArea.style.display = "block";
-  });
-}
-
-function hideDialog() {
-  document.getElementById("dialogArea").style.display = "none";
-  // Clear the resolver to prevent hanging promises
-  currentDialogResolver = null;
-}
 
 // ===== GAME FUNCTIONS =====
 
@@ -288,27 +214,20 @@ async function playCard(playerIndex, card) {
     );
 
     if (oneRingPlay) {
-      // Ask the player who played it if they want to use it as trump
-      if (isHumanControlled(oneRingPlay.playerIndex)) {
-        // Human-controlled player - show dialog
-        gameState.phase = "waiting_for_trump";
-        const useTrump = await showDialog({
-          title: "You played the 1 of Rings!",
-          message: "Do you want to use it as trump to win this trick?",
-          buttons: [
-            { label: "Yes, Win Trick", value: true },
-            { label: "No, Play Normal", value: false },
-          ],
-        });
-        oneRingPlay.isTrump = useTrump;
-        gameState.phase = "trick_complete";
+      gameState.phase = "waiting_for_trump";
+      const useTrump = await gameState.seats[oneRingPlay.playerIndex].choice({
+        title: "You played the 1 of Rings!",
+        message: "Do you want to use it as trump to win this trick?",
+        buttons: [
+          { label: "Yes, Win Trick", value: true },
+          { label: "No, Play Normal", value: false },
+        ],
+      });
+      oneRingPlay.isTrump = useTrump;
+      gameState.phase = "trick_complete";
 
-        // Update display to show trump status
-        displayTrick();
-      } else {
-        // AI player - decide automatically (always choose yes)
-        oneRingPlay.isTrump = true;
-      }
+      // Update display to show trump status
+      displayTrick();
     }
 
     // Determine winner after a delay
@@ -342,7 +261,10 @@ async function startCharacterAssignment(firstPlayer) {
   gameState.availableCharacters = [...allCharacters];
 
   // Log Frodo assignment
-  addToGameLog(`${getPlayerDisplayName(firstPlayer)} gets Frodo (has 1 of Rings)`, true);
+  addToGameLog(
+    `${getPlayerDisplayName(firstPlayer)} gets Frodo (has 1 of Rings)`,
+    true,
+  );
 
   // First player (who has 1 of rings) automatically gets Frodo
   gameState.seats[firstPlayer].character = "Frodo";
@@ -355,7 +277,7 @@ async function startCharacterAssignment(firstPlayer) {
     const pyramidIndex = gameState.seats.findIndex((s) => s.isPyramid);
     let pyramidControllerIndex;
 
-    const pyramid = gameState.seats[pyramidIndex]
+    const pyramid = gameState.seats[pyramidIndex];
 
     if (firstPlayer === pyramidIndex) {
       // Frodo IS the pyramid, so player to their right controls it
@@ -364,7 +286,7 @@ async function startCharacterAssignment(firstPlayer) {
       // Frodo is not the pyramid, so Frodo controls the pyramid
       pyramidControllerIndex = firstPlayer;
     }
-    pyramid.controller = gameState.seats[pyramidControllerIndex].controller
+    pyramid.controller = gameState.seats[pyramidControllerIndex].controller;
 
     addToGameLog(
       `Pyramid will be controlled by ${getPlayerDisplayName(pyramidControllerIndex)}`,
@@ -393,43 +315,42 @@ async function startCharacterAssignment(firstPlayer) {
 }
 
 async function assignCharacterToPlayer(playerIndex) {
-  const shouldShowToHuman = gameState.seats[playerIndex].controller === "human";
+  // Build title and message
+  let title = `${getPlayerDisplayName(playerIndex)} - Choose Your Character`;
+  let message = "Select a character to play as";
 
-  let character;
-  if (shouldShowToHuman) {
-    // Build title and message
-    let title = `${getPlayerDisplayName(playerIndex)} - Choose Your Character`;
-    let message = "Select a character to play as";
-
-    if (gameState.seats[playerIndex].isPyramid) {
-      title = `Choose Character for Pyramid Player`;
-      message = `You control the pyramid - select its character`;
-    }
-
-    // Build character buttons
-    const buttons = allCharacters.map((char) => ({
-      label: char,
-      value: char,
-      disabled: !gameState.availableCharacters.includes(char),
-      grid: true, // Use grid layout
-    }));
-
-    // Show current assignments
-    const assignments = [];
-    for (let i = 0; i < gameState.numCharacters; i++) {
-      if (gameState.seats[i].character) {
-        assignments.push(`${getPlayerDisplayName(i)}: ${gameState.seats[i].character}`);
-      }
-    }
-    const info = assignments.length > 0 ? assignments.join(" | ") : "";
-
-    character = await showDialog({ title, message, buttons, info });
-  } else {
-    // AI player - choose automatically after delay
-    await delay(1000);
-    const available = gameState.availableCharacters;
-    character = available[Math.floor(Math.random() * available.length)];
+  if (gameState.seats[playerIndex].isPyramid) {
+    title = `Choose Character for Pyramid Player`;
+    message = `You control the pyramid - select its character`;
   }
+
+  // Build character buttons
+  const buttons = allCharacters.map((char) => ({
+    label: char,
+    value: char,
+    disabled: !gameState.availableCharacters.includes(char),
+    grid: true, // Use grid layout
+  }));
+
+  // Show current assignments
+  const assignments = [];
+  for (let i = 0; i < gameState.numCharacters; i++) {
+    if (gameState.seats[i].character) {
+      assignments.push(
+        `${getPlayerDisplayName(i)}: ${gameState.seats[i].character}`,
+      );
+    }
+  }
+  const info = assignments.length > 0 ? assignments.join(" | ") : "";
+
+  const seat = gameState.seats[playerIndex];
+
+  const character = await seat.controller.choice({
+    title,
+    message,
+    buttons,
+    info,
+  });
 
   // Log character assignment (before assignment to show position name)
   addToGameLog(`${getPlayerDisplayName(playerIndex)} chose ${character}`);
@@ -473,7 +394,7 @@ function updatePlayerHeadings() {
 
 function isHumanControlled(playerIndex) {
   // Returns true if the human should make decisions for this player
-  return gameState.seats[playerIndex].controller === "human";
+  return gameState.seats[playerIndex].controller instanceof HumanController;
 }
 
 async function startSetupPhase() {
@@ -488,16 +409,6 @@ async function startSetupPhase() {
   }
 
   gameState.phase = "playing";
-  hideDialog();
-
-  updateGameStatus(
-    `Setup complete! ${getPlayerDisplayName(gameState.currentPlayer)} leads.`,
-  );
-
-  // If AI-controlled player starts, play their move
-  if (!isHumanControlled(gameState.currentPlayer)) {
-    setTimeout(() => playAIMove(), 1500);
-  }
 }
 
 async function performSetupAction(playerIndex) {
@@ -568,92 +479,69 @@ function getValidExchangePlayers(playerIndex, exchangeRule) {
 async function chooseCardToGive(fromPlayer, toPlayer) {
   const isFrodo = gameState.seats[fromPlayer].character === "Frodo";
 
-  if (isHumanControlled(fromPlayer)) {
-    const availableCards = gameState.seats[fromPlayer].hand.getAvailableCards();
-    const sortedCards = sortHand([...availableCards]);
+  const availableCards = gameState.seats[fromPlayer].hand.getAvailableCards();
+  const sortedCards = sortHand([...availableCards]);
 
-    const cards = sortedCards.map((card) => {
-      const isOneRing = card.suit === "rings" && card.value === 1;
-      const canGive = !isFrodo || !isOneRing;
+  const cards = sortedCards.map((card) => {
+    const isOneRing = card.suit === "rings" && card.value === 1;
+    const canGive = !isFrodo || !isOneRing;
 
-      const cardElement = createCardElement(card, canGive, null);
-      cardElement.dataset.cardValue = JSON.stringify(card);
+    const cardElement = createCardElement(card, canGive, null);
+    cardElement.dataset.cardValue = JSON.stringify(card);
 
-      if (!canGive) {
-        cardElement.classList.add("disabled");
-      }
-
-      return cardElement;
-    });
-
-    let message = `Select a card to give to ${getPlayerDisplayName(toPlayer)}`;
-    if (isFrodo) {
-      message += " (Frodo cannot give away the 1 of Rings)";
+    if (!canGive) {
+      cardElement.classList.add("disabled");
     }
 
-    const selectedCard = await showDialog({
-      title: "Choose Card to Exchange",
-      message,
-      cards,
-    });
+    return cardElement;
+  });
 
-    return selectedCard;
-  } else {
-    // AI chooses random card
-    const availableCards = gameState.seats[fromPlayer].hand.getAvailableCards();
-    const hand = availableCards.filter(
-      (c) => !(isFrodo && c.suit === "rings" && c.value === 1),
-    );
-    const randomCard = hand[Math.floor(Math.random() * hand.length)];
-    await delay(1000);
-    return randomCard;
+  let message = `Select a card to give to ${getPlayerDisplayName(toPlayer)}`;
+  if (isFrodo) {
+    message += " (Frodo cannot give away the 1 of Rings)";
   }
+
+  const selectedCard = await gameState.seats[fromPlayer].controller.choice({
+    title: "Choose Card to Exchange",
+    message,
+    cards,
+  });
+
+  return selectedCard;
 }
 
 async function chooseCardToReturn(fromPlayer, toPlayer) {
   const isFrodo = gameState.seats[fromPlayer].character === "Frodo";
 
-  if (isHumanControlled(fromPlayer)) {
-    const availableCards = gameState.seats[fromPlayer].hand.getAvailableCards();
-    const tempHand = sortHand([...availableCards, gameState.exchangeCard]);
+  const availableCards = gameState.seats[fromPlayer].hand.getAvailableCards();
+  const tempHand = sortHand([...availableCards, gameState.exchangeCard]);
 
-    const cards = tempHand.map((card) => {
-      const isOneRing = card.suit === "rings" && card.value === 1;
-      const canGive = !isFrodo || !isOneRing;
+  const cards = tempHand.map((card) => {
+    const isOneRing = card.suit === "rings" && card.value === 1;
+    const canGive = !isFrodo || !isOneRing;
 
-      const cardElement = createCardElement(card, canGive, null);
-      cardElement.dataset.cardValue = JSON.stringify(card);
+    const cardElement = createCardElement(card, canGive, null);
+    cardElement.dataset.cardValue = JSON.stringify(card);
 
-      if (!canGive) {
-        cardElement.classList.add("disabled");
-      }
-
-      return cardElement;
-    });
-
-    let message = `You received ${gameState.exchangeCard.value} of ${gameState.exchangeCard.suit}. Select a card to give back`;
-    if (isFrodo) {
-      message += " (Frodo cannot give away the 1 of Rings)";
+    if (!canGive) {
+      cardElement.classList.add("disabled");
     }
 
-    const selectedCard = await showDialog({
-      title: "Choose Card to Return",
-      message,
-      cards,
-    });
+    return cardElement;
+  });
 
-    return selectedCard;
-  } else {
-    // AI chooses random card
-    const availableCards = gameState.seats[fromPlayer].hand.getAvailableCards();
-    const tempHand = [...availableCards, gameState.exchangeCard];
-    const hand = tempHand.filter(
-      (c) => !(isFrodo && c.suit === "rings" && c.value === 1),
-    );
-    const randomCard = hand[Math.floor(Math.random() * hand.length)];
-    await delay(1000);
-    return randomCard;
+  let message = `You received ${gameState.exchangeCard.value} of ${gameState.exchangeCard.suit}. Select a card to give back`;
+  if (isFrodo) {
+    message += " (Frodo cannot give away the 1 of Rings)";
   }
+
+  const selectedCard = await gameState.seats[fromPlayer].controller.choice({
+    title: "Choose Card to Return",
+    message,
+    cards,
+  });
+
+  return selectedCard;
 }
 
 async function performExchange(fromPlayer, toPlayer) {
@@ -689,6 +577,8 @@ async function performExchange(fromPlayer, toPlayer) {
 
   // Step 2: Return card
   const cardToReturn = await chooseCardToReturn(toPlayer, fromPlayer);
+
+  console.log("Exchange: ", cardToGive, cardToReturn);
 
   // Check if this is the card that was just given
   const isReceivedCard =
@@ -729,7 +619,7 @@ async function performExchange(fromPlayer, toPlayer) {
 
 async function setupStandardExchange(playerIndex, character, exchangeRule) {
   // In 1-player mode, check if exchange already made
-  if (gameState.playerCount === 1 && gameState.exchangeMadeInSolitaire) {
+  if (gameState.playerCount === 1 && gameState.exchangeMade) {
     await delay(1000);
     return;
   }
@@ -745,63 +635,57 @@ async function setupStandardExchange(playerIndex, character, exchangeRule) {
     return;
   }
 
-  if (isHumanControlled(playerIndex)) {
-    // Human-controlled player
-    // In 1-player mode, ask if player wants to exchange
-    if (gameState.playerCount === 1) {
-      // Determine target player for the message
-      let targetDescription;
-      if (validPlayers.length === 1) {
-        targetDescription = getPlayerDisplayName(validPlayers[0]);
-      } else if (exchangeRule === null) {
-        targetDescription = "another player";
-      } else if (Array.isArray(exchangeRule)) {
-        const charNames = validPlayers
-          .map((p) => gameState.seats[p].character)
-          .join(" or ");
-        targetDescription = charNames;
-      } else {
-        targetDescription = "another player";
-      }
-
-      const wantsToExchange = await showDialog({
-        title: `${character} - Exchange?`,
-        message: `Do you want ${character} to exchange with ${targetDescription}?`,
-        buttons: [
-          { label: "Yes, Exchange", value: true },
-          { label: "No, Skip", value: false },
-        ],
-      });
-
-      if (!wantsToExchange) {
-        return;
-      }
-    }
-
-    // Choose target player
-    let targetPlayer;
+  // In 1-player mode, ask if player wants to exchange
+  if (gameState.playerCount === 1) {
+    // Determine target player for the message
+    let targetDescription;
     if (validPlayers.length === 1) {
-      targetPlayer = validPlayers[0];
+      targetDescription = getPlayerDisplayName(validPlayers[0]);
+    } else if (exchangeRule === null) {
+      targetDescription = "another player";
+    } else if (Array.isArray(exchangeRule)) {
+      const charNames = validPlayers
+        .map((p) => gameState.seats[p].character)
+        .join(" or ");
+      targetDescription = charNames;
     } else {
-      targetPlayer = await showExchangePlayerSelectionDialog(
-        playerIndex,
-        character,
-        exchangeRule,
-      );
+      targetDescription = "another player";
     }
 
-    // Perform exchange
-    await performExchange(playerIndex, targetPlayer);
-  } else {
-    // AI player - pick a random valid target
-    const targetPlayer =
-      validPlayers[Math.floor(Math.random() * validPlayers.length)];
-    await performExchange(playerIndex, targetPlayer);
+    const wantsToExchange = await gameState.seats[
+      playerIndex
+    ].controller.choice({
+      title: `${character} - Exchange?`,
+      message: `Do you want ${character} to exchange with ${targetDescription}?`,
+      buttons: [
+        { label: "Yes, Exchange", value: true },
+        { label: "No, Skip", value: false },
+      ],
+    });
+
+    if (!wantsToExchange) {
+      return;
+    }
   }
+
+  // Choose target player
+  let targetPlayer;
+  if (validPlayers.length === 1) {
+    targetPlayer = validPlayers[0];
+  } else {
+    targetPlayer = await showExchangePlayerSelectionDialog(
+      playerIndex,
+      character,
+      exchangeRule,
+    );
+  }
+
+  // Perform exchange
+  await performExchange(playerIndex, targetPlayer);
 
   // Mark exchange as made in 1-player mode
   if (gameState.playerCount === 1) {
-    gameState.exchangeMadeInSolitaire = true;
+    gameState.exchangeMade = true;
   }
 }
 
@@ -816,27 +700,23 @@ async function setupAragorn(playerIndex, character, exchangeRule) {
   }
 
   let threatCard;
-  if (isHumanControlled(playerIndex)) {
-    // Human-controlled - show dialog to choose
-    const buttons = gameState.threatDeck.map((card) => ({
-      label: String(card),
-      value: card,
-    }));
 
-    threatCard = await showDialog({
-      title: "Aragorn - Choose Threat Card",
-      message: "Choose a threat card from the deck:",
-      buttons,
-    });
+  const seat = gameState.seats[playerIndex];
 
-    // Remove the chosen card from the deck
-    const cardIndex = gameState.threatDeck.indexOf(threatCard);
-    gameState.threatDeck.splice(cardIndex, 1);
-  } else {
-    // AI-controlled - pick random card
-    const randomIndex = Math.floor(Math.random() * gameState.threatDeck.length);
-    threatCard = gameState.threatDeck.splice(randomIndex, 1)[0];
-  }
+  const buttons = gameState.threatDeck.map((card) => ({
+    label: String(card),
+    value: card,
+  }));
+
+  threatCard = await seat.controller.choice({
+    title: "Aragorn - Choose Threat Card",
+    message: "Choose a threat card from the deck:",
+    buttons,
+  });
+
+  // Remove the chosen card from the deck
+  const cardIndex = gameState.threatDeck.indexOf(threatCard);
+  gameState.threatDeck.splice(cardIndex, 1);
 
   gameState.seats[playerIndex].threatCard = threatCard;
 
@@ -908,20 +788,14 @@ async function setupGandalf(playerIndex) {
   // Gandalf: Optionally take Lost card to hand, then Exchange with Frodo
   let takeLostCard;
 
-  if (isHumanControlled(playerIndex)) {
-    // Human-controlled - show dialog to ask
-    takeLostCard = await showDialog({
-      title: "Gandalf - Take Lost Card?",
-      message: `The Lost card is ${gameState.lostCard.value} of ${gameState.lostCard.suit}. Do you want to take it?`,
-      buttons: [
-        { label: "Yes, Take It", value: true },
-        { label: "No, Leave It", value: false },
-      ],
-    });
-  } else {
-    // AI-controlled - randomly decide (50% chance)
-    takeLostCard = Math.random() < 0.5;
-  }
+  takeLostCard = await gameState.seats[playerIndex].controller.choice({
+    title: "Gandalf - Take Lost Card?",
+    message: `The Lost card is ${gameState.lostCard.value} of ${gameState.lostCard.suit}. Do you want to take it?`,
+    buttons: [
+      { label: "Yes, Take It", value: true },
+      { label: "No, Leave It", value: false },
+    ],
+  });
 
   if (takeLostCard && gameState.lostCard) {
     // Add lost card to Gandalf's hand
@@ -982,7 +856,7 @@ async function showExchangePlayerSelectionDialog(
     value: p,
   }));
 
-  const selectedPlayer = await showDialog({
+  const selectedPlayer = await gameState.seats[playerIndex].controller.choice({
     title: `${character} - Setup`,
     message,
     buttons,
@@ -990,7 +864,6 @@ async function showExchangePlayerSelectionDialog(
 
   return selectedPlayer;
 }
-
 
 function playAIMove() {
   const legalMoves = getLegalMoves(gameState.currentPlayer);
@@ -1501,7 +1374,7 @@ function displayHands() {
 
   // Update active player indicator
   document.querySelectorAll(".player").forEach((div, idx) => {
-    if ( idx === gameState.currentPlayer) {
+    if (idx === gameState.currentPlayer) {
       div.classList.add("active");
     } else {
       div.classList.remove("active");
@@ -1601,7 +1474,8 @@ async function newGame() {
   const seats = [];
   for (let i = 0; i < numCharacters; i++) {
     // Determine controller - in 1-player mode, all seats are human-controlled
-    const controller = playerCount === 1 || i === 0 ? "human" : "ai";
+    const controller =
+      playerCount === 1 || i === 0 ? new HumanController() : new AIController();
     const seat = new Seat(i, controller);
 
     // Create Hand objects based on player type, passing initial cards
@@ -1652,7 +1526,7 @@ async function newGame() {
     lostCard: lostCard, // Store the lost card
     lastTrickWinner: null, // Track who won the most recent trick
     threatDeck: [1, 2, 3, 4, 5, 6, 7], // Threat deck (shuffled later)
-    exchangeMadeInSolitaire: false, // Track if exchange has been made in 1-player mode
+    exchangeMade: false, // Track if exchange has been made in 1-player mode
   };
 
   // Shuffle the threat deck
@@ -1662,9 +1536,6 @@ async function newGame() {
 
   // Clear trick display
   document.getElementById("trickCards").innerHTML = "";
-
-  // Hide dialog
-  hideDialog();
 
   // Reset tricks won display
   updateTricksDisplay();
@@ -1686,6 +1557,15 @@ async function newGame() {
 
   updateGameStatus("Starting setup phase...");
   await startSetupPhase();
+
+  updateGameStatus(
+    `Setup complete! ${getPlayerDisplayName(gameState.currentPlayer)} leads.`,
+  );
+
+  // If AI-controlled player starts, play their move
+  if (!isHumanControlled(gameState.currentPlayer)) {
+    setTimeout(() => playAIMove(), 1500);
+  }
 }
 
 function resetPlayerHeadings() {
