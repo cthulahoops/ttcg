@@ -1,4 +1,4 @@
-import { delay } from "./utils.js";
+import { delay, createCardElement } from "./utils.js";
 
 let currentDialogResolver = null;
 
@@ -51,12 +51,12 @@ export class HumanController extends Controller {
       }
 
       if (cards.length > 0) {
-        cards.forEach((cardElement) => {
-          // Card elements should have dataset.cardValue set by caller
+        cards.forEach((card) => {
+          // Create DOM element from card object
+          const cardElement = createCardElement(card, true, null);
           cardElement.onclick = () => {
             hideDialog();
             currentDialogResolver = null;
-            const card = JSON.parse(cardElement.dataset.cardValue);
             resolve(card);
           };
           dialogChoices.appendChild(cardElement);
@@ -77,7 +77,7 @@ export class AIController extends Controller {
     }
 
     if (cards.length > 0) {
-      return randomChoice(cards).dataset.cardValue;
+      return randomChoice(cards);
     }
   }
 }

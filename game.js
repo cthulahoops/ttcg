@@ -482,18 +482,10 @@ async function chooseCardToGive(fromPlayer, toPlayer) {
   const availableCards = gameState.seats[fromPlayer].hand.getAvailableCards();
   const sortedCards = sortHand([...availableCards]);
 
-  const cards = sortedCards.map((card) => {
+  // Filter out 1 of Rings if Frodo (only pass playable cards)
+  const playableCards = sortedCards.filter((card) => {
     const isOneRing = card.suit === "rings" && card.value === 1;
-    const canGive = !isFrodo || !isOneRing;
-
-    const cardElement = createCardElement(card, canGive, null);
-    cardElement.dataset.cardValue = JSON.stringify(card);
-
-    if (!canGive) {
-      cardElement.classList.add("disabled");
-    }
-
-    return cardElement;
+    return !isFrodo || !isOneRing;
   });
 
   let message = `Select a card to give to ${getPlayerDisplayName(toPlayer)}`;
@@ -504,7 +496,7 @@ async function chooseCardToGive(fromPlayer, toPlayer) {
   const selectedCard = await gameState.seats[fromPlayer].controller.choice({
     title: "Choose Card to Exchange",
     message,
-    cards,
+    cards: playableCards,
   });
 
   return selectedCard;
@@ -516,18 +508,10 @@ async function chooseCardToReturn(fromPlayer, toPlayer) {
   const availableCards = gameState.seats[fromPlayer].hand.getAvailableCards();
   const tempHand = sortHand([...availableCards, gameState.exchangeCard]);
 
-  const cards = tempHand.map((card) => {
+  // Filter out 1 of Rings if Frodo (only pass playable cards)
+  const playableCards = tempHand.filter((card) => {
     const isOneRing = card.suit === "rings" && card.value === 1;
-    const canGive = !isFrodo || !isOneRing;
-
-    const cardElement = createCardElement(card, canGive, null);
-    cardElement.dataset.cardValue = JSON.stringify(card);
-
-    if (!canGive) {
-      cardElement.classList.add("disabled");
-    }
-
-    return cardElement;
+    return !isFrodo || !isOneRing;
   });
 
   let message = `You received ${gameState.exchangeCard.value} of ${gameState.exchangeCard.suit}. Select a card to give back`;
@@ -538,7 +522,7 @@ async function chooseCardToReturn(fromPlayer, toPlayer) {
   const selectedCard = await gameState.seats[fromPlayer].controller.choice({
     title: "Choose Card to Return",
     message,
-    cards,
+    cards: playableCards,
   });
 
   return selectedCard;
