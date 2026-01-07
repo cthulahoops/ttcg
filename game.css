@@ -55,7 +55,6 @@ section h3 {
 
 .players {
     display: grid;
-    grid-template-columns: 1fr 1fr;
     gap: 20px;
     margin-top: 30px;
 }
