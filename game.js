@@ -6,14 +6,14 @@ import {
   HiddenHand,
   SolitaireHand,
 } from "./hands.js";
-import { shuffleDeck, sortHand, createCardElement, delay } from "./utils.js";
+import { shuffleDeck, sortHand, createCardElement } from "./utils.js";
 import { Seat } from "./seat.js";
 
 import { HumanController, AIController } from "./controllers.js";
 
 // All possible characters in the game
 const allCharacters = [
-    // Added later: "Frodo",
+  // Added later: "Frodo",
   "Gandalf",
   "Merry",
   "Celeborn",
@@ -255,7 +255,6 @@ async function performSetupAction(playerIndex, setupContext) {
     (Array.isArray(exchangeRule) && exchangeRule.length === 0)
   ) {
     // No exchange (e.g., Frodo)
-    await delay(1000);
   } else if (character === "Gandalf") {
     // Gandalf has special logic (optional lost card before exchange)
     await setupGandalf(playerIndex, setupContext);
@@ -264,10 +263,20 @@ async function performSetupAction(playerIndex, setupContext) {
     await setupAragorn(playerIndex, character, exchangeRule, setupContext);
   } else if (threatCardCharacters.includes(character)) {
     // Characters that draw threat cards before exchange
-    await setupThreatCardCharacter(playerIndex, character, exchangeRule, setupContext);
+    await setupThreatCardCharacter(
+      playerIndex,
+      character,
+      exchangeRule,
+      setupContext,
+    );
   } else {
     // All other characters use standard exchange logic
-    await setupStandardExchange(playerIndex, character, exchangeRule, setupContext);
+    await setupStandardExchange(
+      playerIndex,
+      character,
+      exchangeRule,
+      setupContext,
+    );
   }
 }
 
@@ -362,8 +371,6 @@ async function performExchange(fromPlayer, toPlayer) {
   updateGameStatus(
     `${getPlayerDisplayName(fromPlayer)} exchanges with ${getPlayerDisplayName(toPlayer)}`,
   );
-  await delay(1000);
-
   // Step 1: Give card
   const cardToGive = await chooseCardToGive(fromPlayer, toPlayer);
   gameState.seats[fromPlayer].hand.removeCard(cardToGive);
@@ -383,10 +390,13 @@ async function performExchange(fromPlayer, toPlayer) {
     `${getPlayerDisplayName(fromPlayer)} gives ${cardToGive.value} of ${cardToGive.suit} to ${getPlayerDisplayName(toPlayer)}`,
   );
   displayHands(gameState.seats);
-  await delay(1500);
 
   // Step 2: Return card
-  const cardToReturn = await chooseCardToReturn(toPlayer, fromPlayer, cardToGive);
+  const cardToReturn = await chooseCardToReturn(
+    toPlayer,
+    fromPlayer,
+    cardToGive,
+  );
 
   // Check if this is the card that was just given
   const isReceivedCard =
@@ -417,13 +427,16 @@ async function performExchange(fromPlayer, toPlayer) {
     `${getPlayerDisplayName(toPlayer)} returns ${cardToReturn.value} of ${cardToReturn.suit}`,
   );
   displayHands(gameState.seats);
-  await delay(1500);
 }
 
-async function setupStandardExchange(playerIndex, character, exchangeRule, setupContext) {
+async function setupStandardExchange(
+  playerIndex,
+  character,
+  exchangeRule,
+  setupContext,
+) {
   // In 1-player mode, check if exchange already made
   if (gameState.playerCount === 1 && setupContext.exchangeMade) {
-    await delay(1000);
     return;
   }
 
@@ -434,7 +447,6 @@ async function setupStandardExchange(playerIndex, character, exchangeRule, setup
     addToGameLog(
       `${getPlayerDisplayName(playerIndex)} has no valid exchange partners`,
     );
-    await delay(1000);
     return;
   }
 
@@ -492,16 +504,24 @@ async function setupStandardExchange(playerIndex, character, exchangeRule, setup
   }
 }
 
-async function setupAragorn(playerIndex, character, exchangeRule, setupContext) {
+async function setupAragorn(
+  playerIndex,
+  character,
+  exchangeRule,
+  setupContext,
+) {
   const seat = gameState.seats[playerIndex];
 
-  seat.threatCard = await chooseThreatCard(
-      seat, gameState.threatDeck
-  )
+  seat.threatCard = await chooseThreatCard(seat, gameState.threatDeck);
 
   updateTricksDisplay();
 
-  await setupStandardExchange(playerIndex, character, exchangeRule, setupContext);
+  await setupStandardExchange(
+    playerIndex,
+    character,
+    exchangeRule,
+    setupContext,
+  );
 }
 
 async function chooseThreatCard(seat, threatDeck) {
@@ -522,7 +542,7 @@ async function chooseThreatCard(seat, threatDeck) {
     title: `${seat.character} - Choose Threat Card`,
     message: "Choose a threat card from the deck:",
     buttons,
-  })
+  });
 
   // Remove the chosen card from the deck
   const cardIndex = gameState.threatDeck.indexOf(threatCard);
@@ -539,13 +559,18 @@ async function chooseThreatCard(seat, threatDeck) {
   return threatCard;
 }
 
-async function setupThreatCardCharacter(playerIndex, character, exchangeRule, setupContext) {
+async function setupThreatCardCharacter(
+  playerIndex,
+  character,
+  exchangeRule,
+  setupContext,
+) {
   // Draw a threat card from the deck
   if (gameState.threatDeck.length === 0) {
     addToGameLog(
       `${getPlayerDisplayName(playerIndex)} - No threat cards remaining!`,
     );
-    await delay(1000);
+    throw new Exception("Threat deck is empty!");
     return;
   }
 
@@ -559,7 +584,7 @@ async function setupThreatCardCharacter(playerIndex, character, exchangeRule, se
       addToGameLog(
         `${getPlayerDisplayName(playerIndex)} - No valid threat cards remaining!`,
       );
-      await delay(1000);
+      throw new Exception("Threat deck is empty!");
       return;
     }
     threatCard = gameState.threatDeck.shift();
@@ -582,9 +607,12 @@ async function setupThreatCardCharacter(playerIndex, character, exchangeRule, se
   // Update tricks display to show the threat card
   updateTricksDisplay();
 
-  // After a delay, proceed to the exchange
-  await delay(1500);
-  await setupStandardExchange(playerIndex, character, exchangeRule, setupContext);
+  await setupStandardExchange(
+    playerIndex,
+    character,
+    exchangeRule,
+    setupContext,
+  );
 }
 
 async function setupGandalf(playerIndex, setupContext) {
@@ -614,20 +642,23 @@ async function setupGandalf(playerIndex, setupContext) {
       `${getPlayerDisplayName(playerIndex)} takes the Lost card`,
     );
     displayHands(gameState.seats);
-    await delay(1500);
   } else {
     // Don't take the card, but still exchange with Frodo
     addToGameLog(`${getPlayerDisplayName(playerIndex)} declines the Lost card`);
     updateGameStatus(
       `${getPlayerDisplayName(playerIndex)} declines the Lost card`,
     );
-    await delay(1500);
   }
 
   // Proceed to exchange with Frodo
   const character = gameState.seats[playerIndex].character;
   const exchangeRule = characterExchangeRules[character];
-  await setupStandardExchange(playerIndex, character, exchangeRule, setupContext);
+  await setupStandardExchange(
+    playerIndex,
+    character,
+    exchangeRule,
+    setupContext,
+  );
 }
 
 async function showExchangePlayerSelectionDialog(
@@ -830,8 +861,8 @@ function isObjectiveCompletable(playerIndex) {
 
     case "Pippin":
       // Win the fewest (or joint fewest) tricks
-      const allTrickCounts = gameState.seats.map(
-        (seat) => seat.getTrickCount()
+      const allTrickCounts = gameState.seats.map((seat) =>
+        seat.getTrickCount(),
       );
       const minTricks = Math.min(...allTrickCounts);
 
@@ -842,10 +873,10 @@ function isObjectiveCompletable(playerIndex) {
       // Impossible if sum of all gaps > remaining tricks
       let totalGap = 0;
       for (const otherTricks of allTrickCounts) {
-      if (otherTricks < trickCount) {
-        totalGap += trickCount - otherTricks;
+        if (otherTricks < trickCount) {
+          totalGap += trickCount - otherTricks;
+        }
       }
-    }
 
       const maxTricksPlayed = Math.max(...allTrickCounts);
       const tricksPerPlayer = gameState.numCharacters === 3 ? 12 : 9;
@@ -1045,7 +1076,7 @@ function displayTrick() {
 }
 
 function highlightActivePlayer(activePlayer) {
-  document.querySelectorAll(".player").forEach(div => {
+  document.querySelectorAll(".player").forEach((div) => {
     if (div.dataset.player === String(activePlayer + 1)) {
       div.classList.add("active");
     } else {
@@ -1059,7 +1090,8 @@ function displayHands(seats, activePlayer = undefined) {
 
   // Display each player's hand
   for (const seat of seats) {
-    const canSelectCard = activePlayer !== undefined && seat.seatIndex === activePlayer;
+    const canSelectCard =
+      activePlayer !== undefined && seat.seatIndex === activePlayer;
 
     seat.hand.render(
       document.getElementById(`player${seat.seatIndex + 1}`),
@@ -1094,7 +1126,7 @@ function checkForImpossibleObjectives() {
       if (character) {
         addToGameLog(
           `${getPlayerDisplayName(p)}'s objective is now impossible!`,
-          true
+          true,
         );
       }
     }
@@ -1104,7 +1136,7 @@ function checkForImpossibleObjectives() {
 function isGameOver() {
   // Game ends when (numCharacters - 1) players have no cards
   const playersWithNoCards = gameState.seats.filter((seat) =>
-    seat.hand.isEmpty()
+    seat.hand.isEmpty(),
   ).length;
 
   return playersWithNoCards >= gameState.numCharacters - 1;
@@ -1146,7 +1178,7 @@ async function playSelectedCard(playerIndex, card) {
 
   // Log the play
   addToGameLog(
-    `${getPlayerDisplayName(playerIndex)} plays ${card.value} of ${card.suit}`
+    `${getPlayerDisplayName(playerIndex)} plays ${card.value} of ${card.suit}`,
   );
 
   // Set lead suit if first card
@@ -1191,7 +1223,7 @@ async function runTrickTakingPhase() {
       updateGameStatus(
         playerIndex === 0
           ? "Your turn! Click a card to play."
-          : `${getPlayerDisplayName(playerIndex)}'s turn...`
+          : `${getPlayerDisplayName(playerIndex)}'s turn...`,
       );
 
       // Get legal moves
@@ -1207,12 +1239,9 @@ async function runTrickTakingPhase() {
       displayHands(gameState.seats); // Redisplay with no active player
     }
 
-    // Trick is complete
-    await delay(1500);
-
     // Check for 1 of Rings trump decision
     const oneRingPlay = gameState.currentTrick.find(
-      (play) => play.card.suit === "rings" && play.card.value === 1
+      (play) => play.card.suit === "rings" && play.card.value === 1,
     );
 
     if (oneRingPlay) {
@@ -1231,23 +1260,19 @@ async function runTrickTakingPhase() {
     }
 
     // Determine winner
-    await delay(1500);
     const winnerIndex = determineTrickWinner();
 
     // Award trick to winner
     const trickCards = gameState.currentTrick.map((play) => play.card);
     gameState.seats[winnerIndex].addTrick(
       gameState.currentTrickNumber,
-      trickCards
+      trickCards,
     );
     gameState.currentTrickNumber++;
     gameState.lastTrickWinner = winnerIndex;
 
     // Log winner
-    addToGameLog(
-      `${getPlayerDisplayName(winnerIndex)} wins the trick!`,
-      true
-    );
+    addToGameLog(`${getPlayerDisplayName(winnerIndex)} wins the trick!`, true);
 
     // Reveal new cards (pyramid, solitaire)
     for (let p = 0; p < gameState.numCharacters; p++) {
@@ -1262,8 +1287,6 @@ async function runTrickTakingPhase() {
 
     // Winner leads next trick
     gameState.currentPlayer = winnerIndex;
-
-    await delay(2000);
   }
 }
 
@@ -1272,7 +1295,7 @@ async function runSetupPhase() {
 
   // Track exchange status for 1-player mode (only one exchange allowed)
   const setupContext = {
-    exchangeMade: false
+    exchangeMade: false,
   };
 
   // Loop over all characters starting from currentPlayer
@@ -1294,11 +1317,11 @@ async function runCharacterAssignment() {
   // First player automatically gets Frodo
   addToGameLog(
     `${getPlayerDisplayName(startPlayer)} gets Frodo (has 1 of Rings)`,
-    true
+    true,
   );
   gameState.seats[startPlayer].character = "Frodo";
   gameState.availableCharacters = gameState.availableCharacters.filter(
-    (c) => c !== "Frodo"
+    (c) => c !== "Frodo",
   );
 
   // For 2-player mode, assign pyramid controller
@@ -1319,7 +1342,7 @@ async function runCharacterAssignment() {
 
     addToGameLog(
       `Pyramid will be controlled by ${getPlayerDisplayName(pyramidControllerIndex)}`,
-      true
+      true,
     );
   }
 
@@ -1349,11 +1372,10 @@ async function runCharacterAssignment() {
     addToGameLog(`${getPlayerDisplayName(playerIndex)} chose ${character}`);
     gameState.seats[playerIndex].character = character;
     gameState.availableCharacters = gameState.availableCharacters.filter(
-      (c) => c !== character
+      (c) => c !== character,
     );
 
     updatePlayerHeadings();
-    await delay(500);
   }
 
   displayHands(gameState.seats);
@@ -1474,7 +1496,7 @@ async function newGame() {
   }
 
   const availableCharacters = shuffleDeck(allCharacters).slice(0, 4);
-  availableCharacters.push("Frodo")
+  availableCharacters.push("Frodo");
 
   // Reset game state
   gameState = {
