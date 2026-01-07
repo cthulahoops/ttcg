@@ -6,7 +6,7 @@ import {
   HiddenHand,
   SolitaireHand,
 } from "./hands.js";
-import { shuffleDeck, sortHand, createCardElement } from "./utils.js";
+import { shuffleDeck, sortHand, createCardElement, delay } from "./utils.js";
 import { Seat } from "./seat.js";
 
 import { HumanController, AIController } from "./controllers.js";
@@ -1171,6 +1171,8 @@ function isGameOver(gameState) {
 }
 
 function determineTrickWinner(gameState) {
+  delay(500);
+
   // Check if 1 of rings was played as trump
   const trumpPlay = gameState.currentTrick.find((play) => play.isTrump);
 
