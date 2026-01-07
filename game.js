@@ -1163,7 +1163,18 @@ function isGameOver(gameState) {
     seat.hand.isEmpty(),
   ).length;
 
-  return playersWithNoCards >= gameState.numCharacters - 1;
+  if (playersWithNoCards >= gameState.numCharacters - 1) {
+    return true;
+  }
+
+  // Also end game if any objective has become impossible
+  for (const seat of gameState.seats) {
+    if (!isObjectiveCompletable(gameState, seat)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function determineTrickWinner(gameState) {
