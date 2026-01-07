@@ -111,13 +111,13 @@ function createDeck() {
 }
 
 function findPlayerWithCard(gameState, suit, value) {
-  for (let p = 0; p < 4; p++) {
+  for (const seat of gameState.seats) {
     if (
-      gameState.seats[p].hand
+      seat.hand
         .getAllCards()
         .some((card) => card.suit === suit && card.value === value)
     ) {
-      return p;
+      return seat.seatIndex;
     }
   }
   return -1;
@@ -195,16 +195,16 @@ async function assignCharacterToPlayer(gameState, playerIndex) {
 }
 
 function updatePlayerHeadings(gameState) {
-  for (let p = 0; p < gameState.numCharacters; p++) {
-    const nameElement = document.getElementById(`playerName${p + 1}`);
-    const objectiveElement = document.getElementById(`objective${p + 1}`);
-    const character = gameState.seats[p].character;
+  for (const seat of gameState.seats) {
+    const nameElement = document.getElementById(`playerName${seat.seatIndex + 1}`);
+    const objectiveElement = document.getElementById(`objective${seat.seatIndex + 1}`);
+    const character = seat.character;
 
     if (character) {
-      if (p === 0) {
+      if (seat.seatIndex === 0) {
         // Human player - show "You"
         nameElement.textContent = `${character} (You)`;
-      } else if (gameState.seats[p].isPyramid) {
+      } else if (seat.isPyramid) {
         // Pyramid player - indicate it's the pyramid
         nameElement.textContent = `${character} (Pyramid)`;
       } else {
@@ -280,9 +280,9 @@ function getValidExchangePlayers(gameState, playerIndex, exchangeRule) {
 
   if (exchangeRule === null) {
     // Can exchange with anyone
-    for (let p = 0; p < gameState.numCharacters; p++) {
-      if (p !== playerIndex) {
-        validPlayers.push(p);
+    for (const seat of gameState.seats) {
+      if (seat.seatIndex !== playerIndex) {
+        validPlayers.push(seat.seatIndex);
       }
     }
   } else if (Array.isArray(exchangeRule)) {
@@ -297,9 +297,9 @@ function getValidExchangePlayers(gameState, playerIndex, exchangeRule) {
     const excludedPlayers = exchangeRule.except.map((charName) =>
       findSeatByCharacter(gameState, charName),
     );
-    for (let p = 0; p < gameState.numCharacters; p++) {
-      if (p !== playerIndex && !excludedPlayers.includes(p)) {
-        validPlayers.push(p);
+    for (const seat of gameState.seats) {
+      if (seat.seatIndex !== playerIndex && !excludedPlayers.includes(seat.seatIndex)) {
+        validPlayers.push(seat.seatIndex);
       }
     }
   }
@@ -859,9 +859,9 @@ function isObjectiveCompletable(gameState, playerIndex) {
 
       const targetSuit = threatCardSuits[character];
       // Check if another player has already won this card
-      for (let p = 0; p < gameState.numCharacters; p++) {
-        if (p !== playerIndex) {
-          const hasCard = gameState.seats[p]
+      for (const seat of gameState.seats) {
+        if (seat.seatIndex !== playerIndex) {
+          const hasCard = seat
             .getAllWonCards()
             .some(
               (card) => card.suit === targetSuit && card.value === threatCard,
@@ -1148,12 +1148,12 @@ function updateGameStatus(gameState, message = null) {
 // ===== NEW GAME LOOP FUNCTIONS =====
 
 function checkForImpossibleObjectives(gameState) {
-  for (let p = 0; p < gameState.numCharacters; p++) {
-    if (!isObjectiveCompletable(gameState, p)) {
-      const character = gameState.seats[p].character;
+  for (const seat of gameState.seats) {
+    if (!isObjectiveCompletable(gameState, seat.seatIndex)) {
+      const character = seat.character;
       if (character) {
         addToGameLog(
-          `${getPlayerDisplayName(gameState, p)}'s objective is now impossible!`,
+          `${seat.getDisplayName()}'s objective is now impossible!`,
           true,
         );
       }
@@ -1314,8 +1314,8 @@ async function runTrickTakingPhase(gameState) {
     );
 
     // Reveal new cards (pyramid, solitaire)
-    for (let p = 0; p < gameState.numCharacters; p++) {
-      gameState.seats[p].hand.onTrickComplete();
+    for (const seat of gameState.seats) {
+      seat.hand.onTrickComplete();
     }
 
     displayHands(gameState, gameState.seats);
@@ -1588,14 +1588,7 @@ function resetPlayerHeadings() {
   for (let p = 0; p < 4; p++) {
     const nameElement = document.getElementById(`playerName${p + 1}`);
     const objectiveElement = document.getElementById(`objective${p + 1}`);
-
-    if (p === 0) {
-      nameElement.textContent = `Player ${p + 1}`;
-    } else {
-      nameElement.textContent = `Player ${p + 1}`;
-    }
-
-    // Clear objective
+    nameElement.textContent = `Player ${p + 1}`;
     objectiveElement.textContent = "";
   }
 }
