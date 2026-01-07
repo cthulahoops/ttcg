@@ -103,7 +103,6 @@ section h3 {
 .card.rings {
     background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
     border-color: #ff6f00;
-    border-width: 3px;
 }
 
 .suit {

@@ -13,7 +13,7 @@ import { HumanController, AIController } from "./controllers.js";
 
 // All possible characters in the game
 const allCharacters = [
-  "Frodo",
+    // Added later: "Frodo",
   "Gandalf",
   "Merry",
   "Celeborn",
@@ -215,7 +215,7 @@ async function playCard(playerIndex, card) {
 
     if (oneRingPlay) {
       gameState.phase = "waiting_for_trump";
-      const useTrump = await gameState.seats[oneRingPlay.playerIndex].choice({
+      const useTrump = await gameState.seats[oneRingPlay.playerIndex].controller.choice({
         title: "You played the 1 of Rings!",
         message: "Do you want to use it as trump to win this trick?",
         buttons: [
@@ -258,7 +258,6 @@ async function startCharacterAssignment(firstPlayer) {
   for (let i = 0; i < gameState.seats.length; i++) {
     gameState.seats[i].character = null;
   }
-  gameState.availableCharacters = [...allCharacters];
 
   // Log Frodo assignment
   addToGameLog(
@@ -297,18 +296,19 @@ async function startCharacterAssignment(firstPlayer) {
     displayHands();
   }
 
+  updatePlayerHeadings();
   // Loop over remaining characters to assign
   for (let i = 1; i < gameState.numCharacters; i++) {
     const playerIndex = (firstPlayer + i) % gameState.numCharacters;
     gameState.characterAssignmentPlayer = playerIndex;
 
+    highlightActivePlayer(playerIndex);
+
     await assignCharacterToPlayer(playerIndex);
+
     updatePlayerHeadings();
     await delay(500);
   }
-
-  // Update player headings with character names
-  updatePlayerHeadings();
 
   // Refresh display to show character names
   displayHands();
@@ -324,24 +324,12 @@ async function assignCharacterToPlayer(playerIndex) {
     message = `You control the pyramid - select its character`;
   }
 
+  console.log("ASSIGN: ", gameState.availableCharacters);
   // Build character buttons
-  const buttons = allCharacters.map((char) => ({
+  const buttons = gameState.availableCharacters.map((char) => ({
     label: char,
     value: char,
-    disabled: !gameState.availableCharacters.includes(char),
-    grid: true, // Use grid layout
   }));
-
-  // Show current assignments
-  const assignments = [];
-  for (let i = 0; i < gameState.numCharacters; i++) {
-    if (gameState.seats[i].character) {
-      assignments.push(
-        `${getPlayerDisplayName(i)}: ${gameState.seats[i].character}`,
-      );
-    }
-  }
-  const info = assignments.length > 0 ? assignments.join(" | ") : "";
 
   const seat = gameState.seats[playerIndex];
 
@@ -349,7 +337,6 @@ async function assignCharacterToPlayer(playerIndex) {
     title,
     message,
     buttons,
-    info,
   });
 
   // Log character assignment (before assignment to show position name)
@@ -403,6 +390,7 @@ async function startSetupPhase() {
   // Loop over all characters starting from currentPlayer
   for (let i = 0; i < gameState.numCharacters; i++) {
     const playerIndex = (gameState.currentPlayer + i) % gameState.numCharacters;
+    highlightActivePlayer(playerIndex)
     gameState.setupCharacterIndex = playerIndex;
 
     await performSetupAction(playerIndex);
@@ -674,50 +662,50 @@ async function setupStandardExchange(playerIndex, character, exchangeRule) {
 }
 
 async function setupAragorn(playerIndex, character, exchangeRule) {
-  // Aragorn chooses a threat card from the deck
-  if (gameState.threatDeck.length === 0) {
+  const seat = gameState.seats[playerIndex];
+
+  seat.threatCard = await chooseThreatCard(
+      seat, gameState.threatDeck
+  )
+
+  updateTricksDisplay();
+
+  await setupStandardExchange(playerIndex, character, exchangeRule);
+}
+
+async function chooseThreatCard(seat, threatDeck) {
+  if (threatDeck.length === 0) {
     addToGameLog(
       `${getPlayerDisplayName(playerIndex)} - No threat cards remaining!`,
     );
-    await delay(1000);
-    return;
+    throw Exception("Threat deck is empty somehow!");
   }
 
-  let threatCard;
-
-  const seat = gameState.seats[playerIndex];
-
-  const buttons = gameState.threatDeck.map((card) => ({
+  const buttons = threatDeck.map((card) => ({
     label: String(card),
     value: card,
   }));
+  buttons.sort((a, b) => a.value - b.value);
 
-  threatCard = await seat.controller.choice({
-    title: "Aragorn - Choose Threat Card",
+  const threatCard = await seat.controller.choice({
+    title: `${seat.character} - Choose Threat Card`,
     message: "Choose a threat card from the deck:",
     buttons,
-  });
+  })
 
   // Remove the chosen card from the deck
   const cardIndex = gameState.threatDeck.indexOf(threatCard);
   gameState.threatDeck.splice(cardIndex, 1);
 
-  gameState.seats[playerIndex].threatCard = threatCard;
-
   addToGameLog(
-    `${getPlayerDisplayName(playerIndex)} chooses threat card: ${threatCard}`,
+    `${seat.getDisplayName()} chooses threat card: ${threatCard}`,
     true,
   );
   updateGameStatus(
-    `${getPlayerDisplayName(playerIndex)} chooses threat card ${threatCard}`,
+    `${seat.getDisplayName()} chooses threat card ${threatCard}`,
   );
 
-  // Update tricks display to show the threat card
-  updateTricksDisplay();
-
-  // After a delay, proceed to the exchange
-  await delay(1500);
-  await setupStandardExchange(playerIndex, character, exchangeRule);
+  return threatCard;
 }
 
 async function setupThreatCardCharacter(playerIndex, character, exchangeRule) {
@@ -1110,8 +1098,8 @@ function isObjectiveCompletable(playerIndex) {
 
     case "Pippin":
       // Win the fewest (or joint fewest) tricks
-      const allTrickCounts = gameState.tricksWon.map(
-        (cards) => cards.length / gameState.numCharacters,
+      const allTrickCounts = gameState.seats.map(
+        (seat) => seat.getTrickCount()
       );
       const minTricks = Math.min(...allTrickCounts);
 
@@ -1121,15 +1109,11 @@ function isObjectiveCompletable(playerIndex) {
       // Sum of gaps: each other player needs to catch up to Pippin
       // Impossible if sum of all gaps > remaining tricks
       let totalGap = 0;
-      for (let p = 0; p < gameState.numCharacters; p++) {
-        if (p !== playerIndex) {
-          const otherTricks =
-            gameState.tricksWon[p].length / gameState.numCharacters;
-          if (otherTricks < trickCount) {
-            totalGap += trickCount - otherTricks;
-          }
-        }
+      for (const otherTricks of allTrickCounts) {
+      if (otherTricks < trickCount) {
+        totalGap += trickCount - otherTricks;
       }
+    }
 
       const maxTricksPlayed = Math.max(...allTrickCounts);
       const tricksPerPlayer = gameState.numCharacters === 3 ? 12 : 9;
@@ -1348,22 +1332,18 @@ function displayTrick() {
   });
 }
 
-function displayHands() {
-  const playerDivs = [
-    document.getElementById("player1"),
-    document.getElementById("player2"),
-    document.getElementById("player3"),
-    document.getElementById("player4"),
-  ];
-
-  // Update active player indicator
-  document.querySelectorAll(".player").forEach((div, idx) => {
-    if (idx === gameState.currentPlayer) {
+function highlightActivePlayer(activePlayer) {
+  document.querySelectorAll(".player").forEach(div => {
+    if (div.dataset.player === String(activePlayer + 1)) {
       div.classList.add("active");
     } else {
       div.classList.remove("active");
     }
   });
+}
+
+function displayHands() {
+  highlightActivePlayer(gameState.currentPlayer);
 
   // Display each player's hand
   for (let p = 0; p < gameState.numCharacters; p++) {
@@ -1374,7 +1354,7 @@ function displayHands() {
       gameState.phase !== "waiting_for_trump";
 
     hand.render(
-      playerDivs[p],
+      document.getElementById(`player${p + 1}`),
       (card) => isPlayerTurn && isLegalMove(p, card),
       (card) => playCard(p, card),
     );
@@ -1490,6 +1470,11 @@ async function newGame() {
     });
   }
 
+  const availableCharacters = shuffleDeck(allCharacters).slice(0, 4);
+  availableCharacters.push("Frodo")
+
+  console.log("Available: ", availableCharacters)
+
   // Reset game state
   gameState = {
     playerCount: playerCount,
@@ -1501,7 +1486,7 @@ async function newGame() {
     leadSuit: null,
     phase: "playing", // 'playing', 'character_assignment', 'setup', 'waiting_for_trump', 'trick_complete'
     ringsBroken: false,
-    availableCharacters: [...allCharacters],
+    availableCharacters: availableCharacters,
     characterAssignmentPlayer: 0,
     setupCharacterIndex: 0,
     exchangeFromPlayer: null,
