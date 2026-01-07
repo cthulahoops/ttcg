@@ -393,7 +393,7 @@ async function startSetupPhase() {
   gameState.phase = "playing";
 }
 
-async function performSetupAction(playerIndex) {
+async function performSetupAction(playerIndex, setupContext) {
   const character = gameState.seats[playerIndex].character;
 
   updateGameStatus(`${getPlayerDisplayName(playerIndex)} - Setup Phase`);
@@ -413,13 +413,13 @@ async function performSetupAction(playerIndex) {
     await setupGandalf(playerIndex);
   } else if (character === "Aragorn") {
     // Aragorn chooses a threat card (not random draw)
-    await setupAragorn(playerIndex, character, exchangeRule);
+    await setupAragorn(playerIndex, character, exchangeRule, setupContext);
   } else if (threatCardCharacters.includes(character)) {
     // Characters that draw threat cards before exchange
-    await setupThreatCardCharacter(playerIndex, character, exchangeRule);
+    await setupThreatCardCharacter(playerIndex, character, exchangeRule, setupContext);
   } else {
     // All other characters use standard exchange logic
-    await setupStandardExchange(playerIndex, character, exchangeRule);
+    await setupStandardExchange(playerIndex, character, exchangeRule, setupContext);
   }
 }
 
@@ -574,7 +574,13 @@ async function performExchange(fromPlayer, toPlayer) {
   await delay(1500);
 }
 
-async function setupStandardExchange(playerIndex, character, exchangeRule) {
+async function setupStandardExchange(playerIndex, character, exchangeRule, setupContext) {
+  // In 1-player mode, check if exchange already made
+  if (gameState.playerCount === 1 && setupContext.exchangeMade) {
+    await delay(1000);
+    return;
+  }
+
   const validPlayers = getValidExchangePlayers(playerIndex, exchangeRule);
 
   if (validPlayers.length === 0) {
@@ -633,9 +639,14 @@ async function setupStandardExchange(playerIndex, character, exchangeRule) {
 
   // Perform exchange
   await performExchange(playerIndex, targetPlayer);
+
+  // Mark exchange as made in 1-player mode
+  if (gameState.playerCount === 1) {
+    setupContext.exchangeMade = true;
+  }
 }
 
-async function setupAragorn(playerIndex, character, exchangeRule) {
+async function setupAragorn(playerIndex, character, exchangeRule, setupContext) {
   const seat = gameState.seats[playerIndex];
 
   seat.threatCard = await chooseThreatCard(
@@ -644,7 +655,7 @@ async function setupAragorn(playerIndex, character, exchangeRule) {
 
   updateTricksDisplay();
 
-  await setupStandardExchange(playerIndex, character, exchangeRule);
+  await setupStandardExchange(playerIndex, character, exchangeRule, setupContext);
 }
 
 async function chooseThreatCard(seat, threatDeck) {
@@ -682,7 +693,7 @@ async function chooseThreatCard(seat, threatDeck) {
   return threatCard;
 }
 
-async function setupThreatCardCharacter(playerIndex, character, exchangeRule) {
+async function setupThreatCardCharacter(playerIndex, character, exchangeRule, setupContext) {
   // Draw a threat card from the deck
   if (gameState.threatDeck.length === 0) {
     addToGameLog(
@@ -727,7 +738,7 @@ async function setupThreatCardCharacter(playerIndex, character, exchangeRule) {
 
   // After a delay, proceed to the exchange
   await delay(1500);
-  await setupStandardExchange(playerIndex, character, exchangeRule);
+  await setupStandardExchange(playerIndex, character, exchangeRule, setupContext);
 }
 
 async function setupGandalf(playerIndex) {
@@ -1529,6 +1540,11 @@ async function runTrickTakingPhase() {
 async function runSetupPhase() {
   addToGameLog("=== SETUP PHASE ===", true);
 
+  // Track exchange status for 1-player mode (only one exchange allowed)
+  const setupContext = {
+    exchangeMade: false
+  };
+
   // Loop over all characters starting from currentPlayer
   for (let i = 0; i < gameState.numCharacters; i++) {
     const playerIndex = (gameState.currentPlayer + i) % gameState.numCharacters;
@@ -1536,7 +1552,7 @@ async function runSetupPhase() {
     highlightActivePlayer(playerIndex);
     updateGameStatus(`${getPlayerDisplayName(playerIndex)} - Setup Phase`);
 
-    await performSetupAction(playerIndex);
+    await performSetupAction(playerIndex, setupContext);
   }
 }
 
