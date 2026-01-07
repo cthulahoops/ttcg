@@ -172,70 +172,6 @@ function getLegalMoves(playerIndex) {
   return availableCards.filter((card) => isLegalMove(playerIndex, card));
 }
 
-async function startCharacterAssignment(firstPlayer) {
-  gameState.phase = "character_assignment";
-  gameState.characterAssignmentPlayer = firstPlayer;
-  // Don't reset seat characters - they were already initialized with correct size in newGame
-  // Just clear any existing assignments
-  for (let i = 0; i < gameState.seats.length; i++) {
-    gameState.seats[i].character = null;
-  }
-
-  // Log Frodo assignment
-  addToGameLog(
-    `${getPlayerDisplayName(firstPlayer)} gets Frodo (has 1 of Rings)`,
-    true,
-  );
-
-  // First player (who has 1 of rings) automatically gets Frodo
-  gameState.seats[firstPlayer].character = "Frodo";
-  gameState.availableCharacters = gameState.availableCharacters.filter(
-    (c) => c !== "Frodo",
-  );
-
-  // For 2-player mode, determine pyramid controller now that we know where Frodo is
-  if (gameState.playerCount === 2) {
-    const pyramidIndex = gameState.seats.findIndex((s) => s.isPyramid);
-    let pyramidControllerIndex;
-
-    const pyramid = gameState.seats[pyramidIndex];
-
-    if (firstPlayer === pyramidIndex) {
-      // Frodo IS the pyramid, so player to their right controls it
-      pyramidControllerIndex = (firstPlayer + 2) % 3;
-    } else {
-      // Frodo is not the pyramid, so Frodo controls the pyramid
-      pyramidControllerIndex = firstPlayer;
-    }
-    pyramid.controller = gameState.seats[pyramidControllerIndex].controller;
-
-    addToGameLog(
-      `Pyramid will be controlled by ${getPlayerDisplayName(pyramidControllerIndex)}`,
-      true,
-    );
-
-    // Refresh display now that we know who controls the pyramid
-    displayHands(gameState.seats);
-  }
-
-  updatePlayerHeadings();
-  // Loop over remaining characters to assign
-  for (let i = 1; i < gameState.numCharacters; i++) {
-    const playerIndex = (firstPlayer + i) % gameState.numCharacters;
-    gameState.characterAssignmentPlayer = playerIndex;
-
-    highlightActivePlayer(playerIndex);
-
-    await assignCharacterToPlayer(playerIndex);
-
-    updatePlayerHeadings();
-    await delay(500);
-  }
-
-  // Refresh display to show character names
-  displayHands(gameState.seats);
-}
-
 async function assignCharacterToPlayer(playerIndex) {
   // Build title and message
   let title = `${getPlayerDisplayName(playerIndex)} - Choose Your Character`;
@@ -246,7 +182,6 @@ async function assignCharacterToPlayer(playerIndex) {
     message = `You control the pyramid - select its character`;
   }
 
-  console.log("ASSIGN: ", gameState.availableCharacters);
   // Build character buttons
   const buttons = gameState.availableCharacters.map((char) => ({
     label: char,
@@ -304,21 +239,6 @@ function updatePlayerHeadings() {
 function isHumanControlled(playerIndex) {
   // Returns true if the human should make decisions for this player
   return gameState.seats[playerIndex].controller instanceof HumanController;
-}
-
-async function startSetupPhase() {
-  gameState.phase = "setup";
-
-  // Loop over all characters starting from currentPlayer
-  for (let i = 0; i < gameState.numCharacters; i++) {
-    const playerIndex = (gameState.currentPlayer + i) % gameState.numCharacters;
-    highlightActivePlayer(playerIndex)
-    gameState.setupCharacterIndex = playerIndex;
-
-    await performSetupAction(playerIndex);
-  }
-
-  gameState.phase = "playing";
 }
 
 async function performSetupAction(playerIndex, setupContext) {
@@ -467,8 +387,6 @@ async function performExchange(fromPlayer, toPlayer) {
 
   // Step 2: Return card
   const cardToReturn = await chooseCardToReturn(toPlayer, fromPlayer, cardToGive);
-
-  console.log("Exchange: ", cardToGive, cardToReturn);
 
   // Check if this is the card that was just given
   const isReceivedCard =
@@ -1192,7 +1110,7 @@ function isGameOver() {
   return playersWithNoCards >= gameState.numCharacters - 1;
 }
 
-function determineTrickWinnerSync() {
+function determineTrickWinner() {
   // Check if 1 of rings was played as trump
   const trumpPlay = gameState.currentTrick.find((play) => play.isTrump);
 
@@ -1314,7 +1232,7 @@ async function runTrickTakingPhase() {
 
     // Determine winner
     await delay(1500);
-    const winnerIndex = determineTrickWinnerSync();
+    const winnerIndex = determineTrickWinner();
 
     // Award trick to winner
     const trickCards = gameState.currentTrick.map((play) => play.card);
@@ -1557,8 +1475,6 @@ async function newGame() {
 
   const availableCharacters = shuffleDeck(allCharacters).slice(0, 4);
   availableCharacters.push("Frodo")
-
-  console.log("Available: ", availableCharacters)
 
   // Reset game state
   gameState = {
