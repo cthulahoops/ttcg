@@ -6,6 +6,7 @@ export class Seat {
     this.seatIndex = seatIndex;
     this.hand = null;              // Hand instance (set after creation)
     this.character = null;         // Character name or null
+    this.characterDef = null;      // Character definition from registry (cached)
     this.threatCard = null;        // Threat card number or null
     this.tricksWon = [];           // Array of { number: number, cards: Card[] }
     this.controller = controller;  // "human" | "ai"

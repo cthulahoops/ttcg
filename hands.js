@@ -27,6 +27,10 @@ export class Hand {
   onTrickComplete() {
     throw new Error("Abstract");
   }
+
+  revealed() {
+    return new PlayerHand(this.getAllCards());
+  }
 }
 
 export class PlayerHand extends Hand {
@@ -122,6 +126,13 @@ export class PyramidHand extends Hand {
         this._extraCards.push(card);
       }
     });
+  }
+
+  revealed() {
+    for (let i = 0; i < this._faceUp.length; i++) {
+      this._faceUp[i] = true;
+    }
+    return this;
   }
 
   addCard(card) {
