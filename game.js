@@ -224,10 +224,6 @@ function updatePlayerHeadings(gameState) {
 
 // ===== SETUP PHASE =====
 
-function isHumanControlled(playerIndex) {
-  // Returns true if the human should make decisions for this player
-  return gameState.seats[playerIndex].controller instanceof HumanController;
-}
 async function performSetupAction(gameState, playerIndex, setupContext) {
   const character = gameState.seats[playerIndex].character;
 
