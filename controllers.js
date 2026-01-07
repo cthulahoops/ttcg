@@ -19,6 +19,14 @@ export class HumanController extends Controller {
   }
 
   async choice({ title, message, buttons = [], cards = [], info = "" }) {
+    // If only one choice, make it automatically
+    if (buttons.length === 1) {
+      return buttons[0].value;
+    }
+    if (cards.length === 1) {
+      return cards[0];
+    }
+
     return new Promise((resolve) => {
       const dialogArea = document.getElementById("dialogArea");
       const dialogTitle = document.getElementById("dialogTitle");
@@ -78,6 +86,11 @@ export class HumanController extends Controller {
   }
 
   async selectCard(availableCards, renderCards) {
+    // If only one card available, select it automatically
+    if (availableCards.length === 1) {
+      return availableCards[0];
+    }
+
     // Render cards with selection enabled
     renderCards();
 
