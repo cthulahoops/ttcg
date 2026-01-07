@@ -37,29 +37,13 @@ const threatCardSuits = {
 
 // ===== ASYNC HELPERS =====
 
-// Game state
-let gameState = {
-  playerCount: 4, // Number of actual players (2, 3, or 4)
-  numCharacters: 4, // Number of characters in play (3 for 2-player mode, otherwise same as playerCount)
-  seats: [], // Array of Seat instances
-  currentTrick: [],
-  currentPlayer: 0,
-  currentTrickNumber: 0, // Track trick number for tricksWon
-  leadSuit: null,
-  ringsBroken: false,
-  availableCharacters: [...allCharacters],
-  lostCard: null, // Store the lost card separately
-  lastTrickWinner: null, // Track who won the most recent trick (for Boromir's objective)
-  threatDeck: [], // Threat deck (cards 1-7)
-};
-
 // ===== GAME FUNCTIONS =====
 
-function getPlayerDisplayName(playerIndex) {
+function getPlayerDisplayName(gameState, playerIndex) {
   return gameState.seats[playerIndex].getDisplayName();
 }
 
-function findSeatByCharacter(characterName) {
+function findSeatByCharacter(gameState, characterName) {
   return gameState.seats.findIndex((seat) => seat.character === characterName);
 }
 
@@ -126,7 +110,7 @@ function createDeck() {
   return deck;
 }
 
-function findPlayerWithCard(suit, value) {
+function findPlayerWithCard(gameState, suit, value) {
   for (let p = 0; p < 4; p++) {
     if (
       gameState.seats[p].hand
@@ -139,7 +123,7 @@ function findPlayerWithCard(suit, value) {
   return -1;
 }
 
-function isLegalMove(playerIndex, card) {
+function isLegalMove(gameState, playerIndex, card) {
   const playerHand = gameState.seats[playerIndex].hand.getAvailableCards();
 
   // If leading the trick
@@ -167,14 +151,16 @@ function isLegalMove(playerIndex, card) {
   return true;
 }
 
-function getLegalMoves(playerIndex) {
+function getLegalMoves(gameState, playerIndex) {
   const availableCards = gameState.seats[playerIndex].hand.getAvailableCards();
-  return availableCards.filter((card) => isLegalMove(playerIndex, card));
+  return availableCards.filter((card) =>
+    isLegalMove(gameState, playerIndex, card),
+  );
 }
 
-async function assignCharacterToPlayer(playerIndex) {
+async function assignCharacterToPlayer(gameState, playerIndex) {
   // Build title and message
-  let title = `${getPlayerDisplayName(playerIndex)} - Choose Your Character`;
+  let title = `${getPlayerDisplayName(gameState, playerIndex)} - Choose Your Character`;
   let message = "Select a character to play as";
 
   if (gameState.seats[playerIndex].isPyramid) {
@@ -197,7 +183,9 @@ async function assignCharacterToPlayer(playerIndex) {
   });
 
   // Log character assignment (before assignment to show position name)
-  addToGameLog(`${getPlayerDisplayName(playerIndex)} chose ${character}`);
+  addToGameLog(
+    `${getPlayerDisplayName(gameState, playerIndex)} chose ${character}`,
+  );
 
   // Assign character to current player
   gameState.seats[playerIndex].character = character;
@@ -206,7 +194,7 @@ async function assignCharacterToPlayer(playerIndex) {
   );
 }
 
-function updatePlayerHeadings() {
+function updatePlayerHeadings(gameState) {
   for (let p = 0; p < gameState.numCharacters; p++) {
     const nameElement = document.getElementById(`playerName${p + 1}`);
     const objectiveElement = document.getElementById(`objective${p + 1}`);
@@ -240,11 +228,13 @@ function isHumanControlled(playerIndex) {
   // Returns true if the human should make decisions for this player
   return gameState.seats[playerIndex].controller instanceof HumanController;
 }
-
-async function performSetupAction(playerIndex, setupContext) {
+async function performSetupAction(gameState, playerIndex, setupContext) {
   const character = gameState.seats[playerIndex].character;
 
-  updateGameStatus(`${getPlayerDisplayName(playerIndex)} - Setup Phase`);
+  updateGameStatus(
+    gameState,
+    `${getPlayerDisplayName(gameState, playerIndex)} - Setup Phase`,
+  );
 
   // Get exchange rules for this character
   const exchangeRule = characterExchangeRules[character];
@@ -257,13 +247,20 @@ async function performSetupAction(playerIndex, setupContext) {
     // No exchange (e.g., Frodo)
   } else if (character === "Gandalf") {
     // Gandalf has special logic (optional lost card before exchange)
-    await setupGandalf(playerIndex, setupContext);
+    await setupGandalf(gameState, playerIndex, setupContext);
   } else if (character === "Aragorn") {
     // Aragorn chooses a threat card (not random draw)
-    await setupAragorn(playerIndex, character, exchangeRule, setupContext);
+    await setupAragorn(
+      gameState,
+      playerIndex,
+      character,
+      exchangeRule,
+      setupContext,
+    );
   } else if (threatCardCharacters.includes(character)) {
     // Characters that draw threat cards before exchange
     await setupThreatCardCharacter(
+      gameState,
       playerIndex,
       character,
       exchangeRule,
@@ -272,6 +269,7 @@ async function performSetupAction(playerIndex, setupContext) {
   } else {
     // All other characters use standard exchange logic
     await setupStandardExchange(
+      gameState,
       playerIndex,
       character,
       exchangeRule,
@@ -280,7 +278,7 @@ async function performSetupAction(playerIndex, setupContext) {
   }
 }
 
-function getValidExchangePlayers(playerIndex, exchangeRule) {
+function getValidExchangePlayers(gameState, playerIndex, exchangeRule) {
   // Returns an array of player indices that are valid exchange targets
   let validPlayers = [];
 
@@ -294,14 +292,14 @@ function getValidExchangePlayers(playerIndex, exchangeRule) {
   } else if (Array.isArray(exchangeRule)) {
     // Can only exchange with specific characters
     validPlayers = exchangeRule
-      .map((charName) => findSeatByCharacter(charName))
+      .map((charName) => findSeatByCharacter(gameState, charName))
       .filter(
         (p) => p !== -1 && p !== playerIndex && p < gameState.numCharacters,
       );
   } else if (exchangeRule.except) {
     // Can exchange with anyone except specific characters
     const excludedPlayers = exchangeRule.except.map((charName) =>
-      findSeatByCharacter(charName),
+      findSeatByCharacter(gameState, charName),
     );
     for (let p = 0; p < gameState.numCharacters; p++) {
       if (p !== playerIndex && !excludedPlayers.includes(p)) {
@@ -315,7 +313,7 @@ function getValidExchangePlayers(playerIndex, exchangeRule) {
 
 // ===== EXCHANGE HELPER FUNCTIONS =====
 
-async function chooseCardToGive(fromPlayer, toPlayer) {
+async function chooseCardToGive(gameState, fromPlayer, toPlayer) {
   const isFrodo = gameState.seats[fromPlayer].character === "Frodo";
 
   const availableCards = gameState.seats[fromPlayer].hand.getAvailableCards();
@@ -327,7 +325,7 @@ async function chooseCardToGive(fromPlayer, toPlayer) {
     return !isFrodo || !isOneRing;
   });
 
-  let message = `Select a card to give to ${getPlayerDisplayName(toPlayer)}`;
+  let message = `Select a card to give to ${getPlayerDisplayName(gameState, toPlayer)}`;
   if (isFrodo) {
     message += " (Frodo cannot give away the 1 of Rings)";
   }
@@ -341,7 +339,12 @@ async function chooseCardToGive(fromPlayer, toPlayer) {
   return selectedCard;
 }
 
-async function chooseCardToReturn(fromPlayer, toPlayer, receivedCard) {
+async function chooseCardToReturn(
+  gameState,
+  fromPlayer,
+  toPlayer,
+  receivedCard,
+) {
   const isFrodo = gameState.seats[fromPlayer].character === "Frodo";
 
   const availableCards = gameState.seats[fromPlayer].hand.getAvailableCards();
@@ -367,32 +370,35 @@ async function chooseCardToReturn(fromPlayer, toPlayer, receivedCard) {
   return selectedCard;
 }
 
-async function performExchange(fromPlayer, toPlayer) {
+async function performExchange(gameState, fromPlayer, toPlayer) {
   updateGameStatus(
-    `${getPlayerDisplayName(fromPlayer)} exchanges with ${getPlayerDisplayName(toPlayer)}`,
+    gameState,
+    `${getPlayerDisplayName(gameState, fromPlayer)} exchanges with ${getPlayerDisplayName(gameState, toPlayer)}`,
   );
   // Step 1: Give card
-  const cardToGive = await chooseCardToGive(fromPlayer, toPlayer);
+  const cardToGive = await chooseCardToGive(gameState, fromPlayer, toPlayer);
   gameState.seats[fromPlayer].hand.removeCard(cardToGive);
 
   // Only log if human player is involved
   if (fromPlayer === 0 || toPlayer === 0) {
     addToGameLog(
-      `${getPlayerDisplayName(fromPlayer)} gives ${cardToGive.value} of ${cardToGive.suit} to ${getPlayerDisplayName(toPlayer)}`,
+      `${getPlayerDisplayName(gameState, fromPlayer)} gives ${cardToGive.value} of ${cardToGive.suit} to ${getPlayerDisplayName(gameState, toPlayer)}`,
     );
   } else {
     addToGameLog(
-      `${getPlayerDisplayName(fromPlayer)} exchanges with ${getPlayerDisplayName(toPlayer)}`,
+      `${getPlayerDisplayName(gameState, fromPlayer)} exchanges with ${getPlayerDisplayName(gameState, toPlayer)}`,
     );
   }
 
   updateGameStatus(
-    `${getPlayerDisplayName(fromPlayer)} gives ${cardToGive.value} of ${cardToGive.suit} to ${getPlayerDisplayName(toPlayer)}`,
+    gameState,
+    `${getPlayerDisplayName(gameState, fromPlayer)} gives ${cardToGive.value} of ${cardToGive.suit} to ${getPlayerDisplayName(gameState, toPlayer)}`,
   );
-  displayHands(gameState.seats);
+  displayHands(gameState, gameState.seats);
 
   // Step 2: Return card
   const cardToReturn = await chooseCardToReturn(
+    gameState,
     toPlayer,
     fromPlayer,
     cardToGive,
@@ -419,17 +425,19 @@ async function performExchange(fromPlayer, toPlayer) {
   // Only log return details if human player is involved
   if (fromPlayer === 0 || toPlayer === 0) {
     addToGameLog(
-      `${getPlayerDisplayName(toPlayer)} returns ${cardToReturn.value} of ${cardToReturn.suit}`,
+      `${getPlayerDisplayName(gameState, toPlayer)} returns ${cardToReturn.value} of ${cardToReturn.suit}`,
     );
   }
 
   updateGameStatus(
-    `${getPlayerDisplayName(toPlayer)} returns ${cardToReturn.value} of ${cardToReturn.suit}`,
+    gameState,
+    `${getPlayerDisplayName(gameState, toPlayer)} returns ${cardToReturn.value} of ${cardToReturn.suit}`,
   );
-  displayHands(gameState.seats);
+  displayHands(gameState, gameState.seats);
 }
 
 async function setupStandardExchange(
+  gameState,
   playerIndex,
   character,
   exchangeRule,
@@ -440,12 +448,16 @@ async function setupStandardExchange(
     return;
   }
 
-  const validPlayers = getValidExchangePlayers(playerIndex, exchangeRule);
+  const validPlayers = getValidExchangePlayers(
+    gameState,
+    playerIndex,
+    exchangeRule,
+  );
 
   if (validPlayers.length === 0) {
     // No valid exchange partners - skip exchange
     addToGameLog(
-      `${getPlayerDisplayName(playerIndex)} has no valid exchange partners`,
+      `${getPlayerDisplayName(gameState, playerIndex)} has no valid exchange partners`,
     );
     return;
   }
@@ -455,7 +467,7 @@ async function setupStandardExchange(
     // Determine target player for the message
     let targetDescription;
     if (validPlayers.length === 1) {
-      targetDescription = getPlayerDisplayName(validPlayers[0]);
+      targetDescription = getPlayerDisplayName(gameState, validPlayers[0]);
     } else if (exchangeRule === null) {
       targetDescription = "another player";
     } else if (Array.isArray(exchangeRule)) {
@@ -489,6 +501,7 @@ async function setupStandardExchange(
     targetPlayer = validPlayers[0];
   } else {
     targetPlayer = await showExchangePlayerSelectionDialog(
+      gameState,
       playerIndex,
       character,
       exchangeRule,
@@ -496,7 +509,7 @@ async function setupStandardExchange(
   }
 
   // Perform exchange
-  await performExchange(playerIndex, targetPlayer);
+  await performExchange(gameState, playerIndex, targetPlayer);
 
   // Mark exchange as made in 1-player mode
   if (gameState.playerCount === 1) {
@@ -505,6 +518,7 @@ async function setupStandardExchange(
 }
 
 async function setupAragorn(
+  gameState,
   playerIndex,
   character,
   exchangeRule,
@@ -512,11 +526,16 @@ async function setupAragorn(
 ) {
   const seat = gameState.seats[playerIndex];
 
-  seat.threatCard = await chooseThreatCard(seat, gameState.threatDeck);
+  seat.threatCard = await chooseThreatCard(
+    gameState,
+    seat,
+    gameState.threatDeck,
+  );
 
-  updateTricksDisplay();
+  updateTricksDisplay(gameState);
 
   await setupStandardExchange(
+    gameState,
     playerIndex,
     character,
     exchangeRule,
@@ -524,11 +543,9 @@ async function setupAragorn(
   );
 }
 
-async function chooseThreatCard(seat, threatDeck) {
+async function chooseThreatCard(gameState, seat, threatDeck) {
   if (threatDeck.length === 0) {
-    addToGameLog(
-      `${getPlayerDisplayName(playerIndex)} - No threat cards remaining!`,
-    );
+    addToGameLog(`${seat.getDisplayName()} - No threat cards remaining!`);
     throw Exception("Threat deck is empty somehow!");
   }
 
@@ -553,6 +570,7 @@ async function chooseThreatCard(seat, threatDeck) {
     true,
   );
   updateGameStatus(
+    gameState,
     `${seat.getDisplayName()} chooses threat card ${threatCard}`,
   );
 
@@ -560,6 +578,7 @@ async function chooseThreatCard(seat, threatDeck) {
 }
 
 async function setupThreatCardCharacter(
+  gameState,
   playerIndex,
   character,
   exchangeRule,
@@ -568,7 +587,7 @@ async function setupThreatCardCharacter(
   // Draw a threat card from the deck
   if (gameState.threatDeck.length === 0) {
     addToGameLog(
-      `${getPlayerDisplayName(playerIndex)} - No threat cards remaining!`,
+      `${getPlayerDisplayName(gameState, playerIndex)} - No threat cards remaining!`,
     );
     throw new Exception("Threat deck is empty!");
     return;
@@ -582,7 +601,7 @@ async function setupThreatCardCharacter(
   do {
     if (gameState.threatDeck.length === 0) {
       addToGameLog(
-        `${getPlayerDisplayName(playerIndex)} - No valid threat cards remaining!`,
+        `${getPlayerDisplayName(gameState, playerIndex)} - No valid threat cards remaining!`,
       );
       throw new Exception("Threat deck is empty!");
       return;
@@ -597,17 +616,19 @@ async function setupThreatCardCharacter(
   gameState.seats[playerIndex].threatCard = threatCard;
 
   addToGameLog(
-    `${getPlayerDisplayName(playerIndex)} draws threat card: ${threatCard}`,
+    `${getPlayerDisplayName(gameState, playerIndex)} draws threat card: ${threatCard}`,
     true,
   );
   updateGameStatus(
-    `${getPlayerDisplayName(playerIndex)} draws threat card ${threatCard}`,
+    gameState,
+    `${getPlayerDisplayName(gameState, playerIndex)} draws threat card ${threatCard}`,
   );
 
   // Update tricks display to show the threat card
-  updateTricksDisplay();
+  updateTricksDisplay(gameState);
 
   await setupStandardExchange(
+    gameState,
     playerIndex,
     character,
     exchangeRule,
@@ -615,7 +636,7 @@ async function setupThreatCardCharacter(
   );
 }
 
-async function setupGandalf(playerIndex, setupContext) {
+async function setupGandalf(gameState, playerIndex, setupContext) {
   // Gandalf: Optionally take Lost card to hand, then Exchange with Frodo
   let takeLostCard;
 
@@ -636,17 +657,21 @@ async function setupGandalf(playerIndex, setupContext) {
     document.getElementById("lostCard").innerHTML = "";
 
     addToGameLog(
-      `${getPlayerDisplayName(playerIndex)} takes the Lost card (${gameState.lostCard.value} of ${gameState.lostCard.suit})`,
+      `${getPlayerDisplayName(gameState, playerIndex)} takes the Lost card (${gameState.lostCard.value} of ${gameState.lostCard.suit})`,
     );
     updateGameStatus(
-      `${getPlayerDisplayName(playerIndex)} takes the Lost card`,
+      gameState,
+      `${getPlayerDisplayName(gameState, playerIndex)} takes the Lost card`,
     );
-    displayHands(gameState.seats);
+    displayHands(gameState, gameState.seats);
   } else {
     // Don't take the card, but still exchange with Frodo
-    addToGameLog(`${getPlayerDisplayName(playerIndex)} declines the Lost card`);
+    addToGameLog(
+      `${getPlayerDisplayName(gameState, playerIndex)} declines the Lost card`,
+    );
     updateGameStatus(
-      `${getPlayerDisplayName(playerIndex)} declines the Lost card`,
+      gameState,
+      `${getPlayerDisplayName(gameState, playerIndex)} declines the Lost card`,
     );
   }
 
@@ -654,6 +679,7 @@ async function setupGandalf(playerIndex, setupContext) {
   const character = gameState.seats[playerIndex].character;
   const exchangeRule = characterExchangeRules[character];
   await setupStandardExchange(
+    gameState,
     playerIndex,
     character,
     exchangeRule,
@@ -662,12 +688,17 @@ async function setupGandalf(playerIndex, setupContext) {
 }
 
 async function showExchangePlayerSelectionDialog(
+  gameState,
   playerIndex,
   character,
   exchangeRule,
 ) {
   let message = "";
-  const validPlayers = getValidExchangePlayers(playerIndex, exchangeRule);
+  const validPlayers = getValidExchangePlayers(
+    gameState,
+    playerIndex,
+    exchangeRule,
+  );
 
   if (exchangeRule === null) {
     // Can exchange with any player
@@ -686,7 +717,7 @@ async function showExchangePlayerSelectionDialog(
 
   // Create buttons for valid players
   const buttons = validPlayers.map((p) => ({
-    label: getPlayerDisplayName(p),
+    label: getPlayerDisplayName(gameState, p),
     value: p,
   }));
 
@@ -699,7 +730,7 @@ async function showExchangePlayerSelectionDialog(
   return selectedPlayer;
 }
 
-function checkObjective(playerIndex) {
+function checkObjective(gameState, playerIndex) {
   const seat = gameState.seats[playerIndex];
   const character = seat.character;
   const wonCards = seat.getAllWonCards();
@@ -777,7 +808,7 @@ function checkObjective(playerIndex) {
   }
 }
 
-function isObjectiveCompletable(playerIndex) {
+function isObjectiveCompletable(gameState, playerIndex) {
   // Simple checks to see if an objective is still achievable
   // Returns true if completable, false if impossible
   const seat = gameState.seats[playerIndex];
@@ -786,7 +817,7 @@ function isObjectiveCompletable(playerIndex) {
   const trickCount = seat.getTrickCount();
 
   // If already completed, it's completable
-  if (checkObjective(playerIndex)) {
+  if (checkObjective(gameState, playerIndex)) {
     return true;
   }
 
@@ -890,14 +921,14 @@ function isObjectiveCompletable(playerIndex) {
   }
 }
 
-function getGameOverMessage() {
+function getGameOverMessage(gameState) {
   const results = [];
   const objectiveWinners = [];
 
   for (let p = 0; p < gameState.numCharacters; p++) {
     const character = gameState.seats[p].character;
     const trickCount = gameState.seats[p].getTrickCount();
-    const objectiveMet = checkObjective(p);
+    const objectiveMet = checkObjective(gameState, p);
 
     const playerName = p === 0 ? `${character} (You)` : character;
     const status = objectiveMet ? "✓ SUCCESS" : "✗ FAILED";
@@ -926,7 +957,7 @@ function getGameOverMessage() {
   return message;
 }
 
-function updateTricksDisplay() {
+function updateTricksDisplay(gameState) {
   for (let p = 0; p < gameState.numCharacters; p++) {
     const trickCount = gameState.seats[p].getTrickCount();
     const character = gameState.seats[p].character;
@@ -951,8 +982,8 @@ function updateTricksDisplay() {
       character === "Pippin"
     ) {
       // Simple tick/cross for Gandalf, Merry, and Pippin
-      const objectiveMet = checkObjective(p);
-      const completable = isObjectiveCompletable(p);
+      const objectiveMet = checkObjective(gameState, p);
+      const completable = isObjectiveCompletable(gameState, p);
       let icon;
       if (objectiveMet) {
         icon = '<span class="success">✓</span>';
@@ -968,8 +999,8 @@ function updateTricksDisplay() {
       const hasOneRing = wonCards.some(
         (card) => card.suit === "rings" && card.value === 1,
       );
-      const objectiveMet = checkObjective(p);
-      const completable = isObjectiveCompletable(p);
+      const objectiveMet = checkObjective(gameState, p);
+      const completable = isObjectiveCompletable(gameState, p);
       let icon;
       if (objectiveMet) {
         icon = '<span class="success">✓</span>';
@@ -988,7 +1019,7 @@ function updateTricksDisplay() {
       const ringCards = wonCards.filter((card) => card.suit === "rings");
       const ringsNeededForDisplay = gameState.numCharacters === 3 ? 4 : 2;
       const objectiveMet = ringCards.length >= ringsNeededForDisplay;
-      const completable = isObjectiveCompletable(p);
+      const completable = isObjectiveCompletable(gameState, p);
       let icon;
       if (objectiveMet) {
         icon = '<span class="success">✓</span>';
@@ -1015,7 +1046,7 @@ function updateTricksDisplay() {
         rankCounts[card.value] = (rankCounts[card.value] || 0) + 1;
       });
 
-      const objectiveMet = checkObjective(p);
+      const objectiveMet = checkObjective(gameState, p);
       const icon = objectiveMet
         ? '<span class="success">✓</span>'
         : '<span class="fail">✗</span>';
@@ -1035,8 +1066,8 @@ function updateTricksDisplay() {
     ) {
       // Show threat card and whether they have the matching card/tricks
       const threatCard = gameState.seats[p].threatCard;
-      const objectiveMet = checkObjective(p);
-      const completable = isObjectiveCompletable(p);
+      const objectiveMet = checkObjective(gameState, p);
+      const completable = isObjectiveCompletable(gameState, p);
       let icon;
       if (objectiveMet) {
         icon = '<span class="success">✓</span>';
@@ -1056,7 +1087,7 @@ function updateTricksDisplay() {
   }
 }
 
-function displayTrick() {
+function displayTrick(gameState) {
   const trickDiv = document.getElementById("trickCards");
   trickDiv.innerHTML = "";
 
@@ -1067,7 +1098,8 @@ function displayTrick() {
     const labelDiv = document.createElement("div");
     labelDiv.className = "player-label";
     labelDiv.textContent =
-      getPlayerDisplayName(play.playerIndex) + (play.isTrump ? " (TRUMP)" : "");
+      getPlayerDisplayName(gameState, play.playerIndex) +
+      (play.isTrump ? " (TRUMP)" : "");
 
     trickCardDiv.appendChild(labelDiv);
     trickCardDiv.appendChild(createCardElement(play.card));
@@ -1085,7 +1117,7 @@ function highlightActivePlayer(activePlayer) {
   });
 }
 
-function displayHands(seats, activePlayer = undefined) {
+function displayHands(gameState, seats, activePlayer = undefined) {
   highlightActivePlayer(gameState.currentPlayer);
 
   // Display each player's hand
@@ -1095,7 +1127,7 @@ function displayHands(seats, activePlayer = undefined) {
 
     seat.hand.render(
       document.getElementById(`player${seat.seatIndex + 1}`),
-      (card) => canSelectCard && isLegalMove(seat.seatIndex, card),
+      (card) => canSelectCard && isLegalMove(gameState, seat.seatIndex, card),
       (card) => {
         if (canSelectCard) {
           seat.controller.resolveCardSelection(card);
@@ -1105,7 +1137,7 @@ function displayHands(seats, activePlayer = undefined) {
   }
 }
 
-function updateGameStatus(message = null) {
+function updateGameStatus(gameState, message = null) {
   const statusDiv = document.getElementById("gameStatus");
 
   if (message) {
@@ -1113,19 +1145,19 @@ function updateGameStatus(message = null) {
   } else if (gameState.currentPlayer === 0) {
     statusDiv.textContent = "Your turn! Click a card to play.";
   } else {
-    statusDiv.textContent = `${getPlayerDisplayName(gameState.currentPlayer)}'s turn...`;
+    statusDiv.textContent = `${getPlayerDisplayName(gameState, gameState.currentPlayer)}'s turn...`;
   }
 }
 
 // ===== NEW GAME LOOP FUNCTIONS =====
 
-function checkForImpossibleObjectives() {
+function checkForImpossibleObjectives(gameState) {
   for (let p = 0; p < gameState.numCharacters; p++) {
-    if (!isObjectiveCompletable(p)) {
+    if (!isObjectiveCompletable(gameState, p)) {
       const character = gameState.seats[p].character;
       if (character) {
         addToGameLog(
-          `${getPlayerDisplayName(p)}'s objective is now impossible!`,
+          `${getPlayerDisplayName(gameState, p)}'s objective is now impossible!`,
           true,
         );
       }
@@ -1133,7 +1165,7 @@ function checkForImpossibleObjectives() {
   }
 }
 
-function isGameOver() {
+function isGameOver(gameState) {
   // Game ends when (numCharacters - 1) players have no cards
   const playersWithNoCards = gameState.seats.filter((seat) =>
     seat.hand.isEmpty(),
@@ -1142,7 +1174,7 @@ function isGameOver() {
   return playersWithNoCards >= gameState.numCharacters - 1;
 }
 
-function determineTrickWinner() {
+function determineTrickWinner(gameState) {
   // Check if 1 of rings was played as trump
   const trumpPlay = gameState.currentTrick.find((play) => play.isTrump);
 
@@ -1169,7 +1201,7 @@ function determineTrickWinner() {
   return winningPlay.playerIndex;
 }
 
-async function playSelectedCard(playerIndex, card) {
+async function playSelectedCard(gameState, playerIndex, card) {
   // Remove card from hand
   gameState.seats[playerIndex].hand.removeCard(card);
 
@@ -1178,7 +1210,7 @@ async function playSelectedCard(playerIndex, card) {
 
   // Log the play
   addToGameLog(
-    `${getPlayerDisplayName(playerIndex)} plays ${card.value} of ${card.suit}`,
+    `${getPlayerDisplayName(gameState, playerIndex)} plays ${card.value} of ${card.suit}`,
   );
 
   // Set lead suit if first card
@@ -1192,19 +1224,20 @@ async function playSelectedCard(playerIndex, card) {
   }
 }
 
-async function selectCardFromPlayer(playerIndex, legalMoves) {
+async function selectCardFromPlayer(gameState, playerIndex, legalMoves) {
   gameState.currentPlayer = playerIndex;
 
   const controller = gameState.seats[playerIndex].controller;
-  const renderCards = () => displayHands(gameState.seats, playerIndex);
+  const renderCards = () =>
+    displayHands(gameState, gameState.seats, playerIndex);
 
   return await controller.selectCard(legalMoves, renderCards);
 }
 
-async function runTrickTakingPhase() {
+async function runTrickTakingPhase(gameState) {
   addToGameLog("=== PLAYING PHASE ===", true);
 
-  while (!isGameOver()) {
+  while (!isGameOver(gameState)) {
     // === TRICK LOOP ===
     const trickLeader = gameState.currentPlayer;
     gameState.currentTrick = [];
@@ -1221,22 +1254,27 @@ async function runTrickTakingPhase() {
 
       highlightActivePlayer(playerIndex);
       updateGameStatus(
+        gameState,
         playerIndex === 0
           ? "Your turn! Click a card to play."
-          : `${getPlayerDisplayName(playerIndex)}'s turn...`,
+          : `${getPlayerDisplayName(gameState, playerIndex)}'s turn...`,
       );
 
       // Get legal moves
-      const legalMoves = getLegalMoves(playerIndex);
+      const legalMoves = getLegalMoves(gameState, playerIndex);
 
       // Ask controller to select card
-      const selectedCard = await selectCardFromPlayer(playerIndex, legalMoves);
+      const selectedCard = await selectCardFromPlayer(
+        gameState,
+        playerIndex,
+        legalMoves,
+      );
 
       // Play the card
-      await playSelectedCard(playerIndex, selectedCard);
+      await playSelectedCard(gameState, playerIndex, selectedCard);
 
-      displayTrick();
-      displayHands(gameState.seats); // Redisplay with no active player
+      displayTrick(gameState);
+      displayHands(gameState, gameState.seats); // Redisplay with no active player
     }
 
     // Check for 1 of Rings trump decision
@@ -1256,11 +1294,11 @@ async function runTrickTakingPhase() {
         ],
       });
       oneRingPlay.isTrump = useTrump;
-      displayTrick();
+      displayTrick(gameState);
     }
 
     // Determine winner
-    const winnerIndex = determineTrickWinner();
+    const winnerIndex = determineTrickWinner(gameState);
 
     // Award trick to winner
     const trickCards = gameState.currentTrick.map((play) => play.card);
@@ -1272,25 +1310,28 @@ async function runTrickTakingPhase() {
     gameState.lastTrickWinner = winnerIndex;
 
     // Log winner
-    addToGameLog(`${getPlayerDisplayName(winnerIndex)} wins the trick!`, true);
+    addToGameLog(
+      `${getPlayerDisplayName(gameState, winnerIndex)} wins the trick!`,
+      true,
+    );
 
     // Reveal new cards (pyramid, solitaire)
     for (let p = 0; p < gameState.numCharacters; p++) {
       gameState.seats[p].hand.onTrickComplete();
     }
 
-    displayHands(gameState.seats);
-    updateTricksDisplay();
+    displayHands(gameState, gameState.seats);
+    updateTricksDisplay(gameState);
 
     // Check for impossible objectives
-    checkForImpossibleObjectives();
+    checkForImpossibleObjectives(gameState);
 
     // Winner leads next trick
     gameState.currentPlayer = winnerIndex;
   }
 }
 
-async function runSetupPhase() {
+async function runSetupPhase(gameState) {
   addToGameLog("=== SETUP PHASE ===", true);
 
   // Track exchange status for 1-player mode (only one exchange allowed)
@@ -1303,20 +1344,23 @@ async function runSetupPhase() {
     const playerIndex = (gameState.currentPlayer + i) % gameState.numCharacters;
 
     highlightActivePlayer(playerIndex);
-    updateGameStatus(`${getPlayerDisplayName(playerIndex)} - Setup Phase`);
+    updateGameStatus(
+      gameState,
+      `${getPlayerDisplayName(gameState, playerIndex)} - Setup Phase`,
+    );
 
-    await performSetupAction(playerIndex, setupContext);
+    await performSetupAction(gameState, playerIndex, setupContext);
   }
 }
 
-async function runCharacterAssignment() {
+async function runCharacterAssignment(gameState) {
   addToGameLog("=== CHARACTER ASSIGNMENT ===", true);
 
   const startPlayer = gameState.currentPlayer; // Player with 1 of Rings
 
   // First player automatically gets Frodo
   addToGameLog(
-    `${getPlayerDisplayName(startPlayer)} gets Frodo (has 1 of Rings)`,
+    `${getPlayerDisplayName(gameState, startPlayer)} gets Frodo (has 1 of Rings)`,
     true,
   );
   gameState.seats[startPlayer].character = "Frodo";
@@ -1341,13 +1385,13 @@ async function runCharacterAssignment() {
       gameState.seats[pyramidControllerIndex].controller;
 
     addToGameLog(
-      `Pyramid will be controlled by ${getPlayerDisplayName(pyramidControllerIndex)}`,
+      `Pyramid will be controlled by ${getPlayerDisplayName(gameState, pyramidControllerIndex)}`,
       true,
     );
   }
 
-  updatePlayerHeadings();
-  displayHands(gameState.seats);
+  updatePlayerHeadings(gameState);
+  displayHands(gameState, gameState.seats);
 
   // Loop through remaining players
   for (let i = 1; i < gameState.numCharacters; i++) {
@@ -1363,39 +1407,41 @@ async function runCharacterAssignment() {
 
     // Ask controller to choose
     const character = await gameState.seats[playerIndex].controller.choice({
-      title: `${getPlayerDisplayName(playerIndex)} - Choose Your Character`,
+      title: `${getPlayerDisplayName(gameState, playerIndex)} - Choose Your Character`,
       message: "Select a character to play as",
       buttons,
     });
 
     // Assign character
-    addToGameLog(`${getPlayerDisplayName(playerIndex)} chose ${character}`);
+    addToGameLog(
+      `${getPlayerDisplayName(gameState, playerIndex)} chose ${character}`,
+    );
     gameState.seats[playerIndex].character = character;
     gameState.availableCharacters = gameState.availableCharacters.filter(
       (c) => c !== character,
     );
 
-    updatePlayerHeadings();
+    updatePlayerHeadings(gameState);
   }
 
-  displayHands(gameState.seats);
+  displayHands(gameState, gameState.seats);
 }
 
-async function runGame() {
+async function runGame(gameState) {
   // === CHARACTER ASSIGNMENT PHASE ===
-  await runCharacterAssignment();
+  await runCharacterAssignment(gameState);
 
   // === SETUP PHASE ===
-  await runSetupPhase();
+  await runSetupPhase(gameState);
 
   // === TRICK-TAKING PHASE ===
-  await runTrickTakingPhase();
+  await runTrickTakingPhase(gameState);
 
   // === GAME END ===
-  const gameOverMsg = getGameOverMessage();
+  const gameOverMsg = getGameOverMessage(gameState);
   addToGameLog("--- GAME OVER ---", true);
   addToGameLog(gameOverMsg.split("\n").join(" | "));
-  updateGameStatus("Game Over! " + gameOverMsg);
+  updateGameStatus(gameState, "Game Over! " + gameOverMsg);
 }
 
 // ===== END NEW GAME LOOP FUNCTIONS =====
@@ -1498,8 +1544,8 @@ async function newGame() {
   const availableCharacters = shuffleDeck(allCharacters).slice(0, 4);
   availableCharacters.push("Frodo");
 
-  // Reset game state
-  gameState = {
+  // Create game state locally
+  const gameState = {
     playerCount: playerCount,
     numCharacters: numCharacters,
     seats: seats,
@@ -1523,7 +1569,7 @@ async function newGame() {
   document.getElementById("trickCards").innerHTML = "";
 
   // Reset tricks won display
-  updateTricksDisplay();
+  updateTricksDisplay(gameState);
 
   // Reset player headings
   resetPlayerHeadings();
@@ -1534,10 +1580,10 @@ async function newGame() {
   addToGameLog(`Lost card: ${lostCard.value} of ${lostCard.suit}`);
 
   // Display initial state
-  displayHands(gameState.seats);
+  displayHands(gameState, gameState.seats);
 
   // Run the game loop
-  await runGame();
+  await runGame(gameState);
 }
 
 function resetPlayerHeadings() {
