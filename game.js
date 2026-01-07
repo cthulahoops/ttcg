@@ -730,6 +730,7 @@ function checkObjective(gameState, seat) {
   const character = seat.character;
   const wonCards = seat.getAllWonCards();
   const trickCount = seat.getTrickCount();
+  const playerIndex = seat.seatIndex;
 
   switch (character) {
     case "Frodo":
@@ -770,7 +771,7 @@ function checkObjective(gameState, seat) {
 
     case "Sam":
       // Win the Hills card matching the threat card
-      const samThreat = gameState.seats[playerIndex].threatCard;
+      const samThreat = seat.threatCard;
       if (!samThreat) return false;
       return wonCards.some(
         (card) => card.suit === "hills" && card.value === samThreat,
@@ -778,7 +779,7 @@ function checkObjective(gameState, seat) {
 
     case "Gimli":
       // Win the Mountains card matching the threat card
-      const gimliThreat = gameState.seats[playerIndex].threatCard;
+      const gimliThreat = seat.threatCard;
       if (!gimliThreat) return false;
       return wonCards.some(
         (card) => card.suit === "mountains" && card.value === gimliThreat,
@@ -786,7 +787,7 @@ function checkObjective(gameState, seat) {
 
     case "Legolas":
       // Win the Forests card matching the threat card
-      const legolsThreat = gameState.seats[playerIndex].threatCard;
+      const legolsThreat = seat.threatCard;
       if (!legolsThreat) return false;
       return wonCards.some(
         (card) => card.suit === "forests" && card.value === legolsThreat,
@@ -794,7 +795,7 @@ function checkObjective(gameState, seat) {
 
     case "Aragorn":
       // Win exactly the number of tricks shown on the threat card
-      const aragornThreat = gameState.seats[playerIndex].threatCard;
+      const aragornThreat = seat.threatCard;
       if (!aragornThreat) return false;
       return trickCount === aragornThreat;
 
@@ -803,13 +804,13 @@ function checkObjective(gameState, seat) {
   }
 }
 
-function isObjectiveCompletable(gameState, playerIndex) {
+function isObjectiveCompletable(gameState, seat) {
   // Simple checks to see if an objective is still achievable
   // Returns true if completable, false if impossible
-  const seat = gameState.seats[playerIndex];
   const character = seat.character;
   const wonCards = seat.getAllWonCards();
   const trickCount = seat.getTrickCount();
+  const playerIndex = seat.seatIndex;
 
   // If already completed, it's completable
   if (checkObjective(gameState, seat)) {
@@ -821,8 +822,8 @@ function isObjectiveCompletable(gameState, playerIndex) {
       // Need at least 2 ring cards (4 in 3-character mode)
       // Impossible if other players have already captured too many rings (only 5 total)
       const ringsNeededForFrodo = gameState.numCharacters === 3 ? 4 : 2;
-      const ringCardsWonByOthers = gameState.seats.reduce((total, s, idx) => {
-        if (idx !== playerIndex) {
+      const ringCardsWonByOthers = gameState.seats.reduce((total, s) => {
+        if (s.seatIndex !== playerIndex) {
           return (
             total +
             s.getAllWonCards().filter((card) => card.suit === "rings").length
@@ -853,14 +854,14 @@ function isObjectiveCompletable(gameState, playerIndex) {
     case "Gimli":
     case "Legolas":
       // Need to win a specific card
-      const threatCard = gameState.seats[playerIndex].threatCard;
+      const threatCard = seat.threatCard;
       if (!threatCard) return true;
 
       const targetSuit = threatCardSuits[character];
       // Check if another player has already won this card
-      for (const seat of gameState.seats) {
-        if (seat.seatIndex !== playerIndex) {
-          const hasCard = seat
+      for (const otherSeat of gameState.seats) {
+        if (otherSeat.seatIndex !== playerIndex) {
+          const hasCard = otherSeat
             .getAllWonCards()
             .some(
               (card) => card.suit === targetSuit && card.value === threatCard,
@@ -872,7 +873,7 @@ function isObjectiveCompletable(gameState, playerIndex) {
 
     case "Aragorn":
       // Win exactly N tricks where N is the threat card
-      const aragornThreat = gameState.seats[playerIndex].threatCard;
+      const aragornThreat = seat.threatCard;
       if (!aragornThreat) return true;
 
       // Impossible if already won more tricks than target
@@ -887,9 +888,7 @@ function isObjectiveCompletable(gameState, playerIndex) {
 
     case "Pippin":
       // Win the fewest (or joint fewest) tricks
-      const allTrickCounts = gameState.seats.map((seat) =>
-        seat.getTrickCount(),
-      );
+      const allTrickCounts = gameState.seats.map((s) => s.getTrickCount());
       const minTricks = Math.min(...allTrickCounts);
 
       // Already has fewest or joint fewest
@@ -976,7 +975,7 @@ function updateTricksDisplay(gameState) {
     ) {
       // Simple tick/cross for Gandalf, Merry, and Pippin
       const objectiveMet = checkObjective(gameState, seat);
-      const completable = isObjectiveCompletable(gameState, seat.seatIndex);
+      const completable = isObjectiveCompletable(gameState, seat);
       let icon;
       if (objectiveMet) {
         icon = '<span class="success">✓</span>';
@@ -993,7 +992,7 @@ function updateTricksDisplay(gameState) {
         (card) => card.suit === "rings" && card.value === 1,
       );
       const objectiveMet = checkObjective(gameState, seat);
-      const completable = isObjectiveCompletable(gameState, seat.seatIndex);
+      const completable = isObjectiveCompletable(gameState, seat);
       let icon;
       if (objectiveMet) {
         icon = '<span class="success">✓</span>';
@@ -1012,7 +1011,7 @@ function updateTricksDisplay(gameState) {
       const ringCards = wonCards.filter((card) => card.suit === "rings");
       const ringsNeededForDisplay = gameState.numCharacters === 3 ? 4 : 2;
       const objectiveMet = ringCards.length >= ringsNeededForDisplay;
-      const completable = isObjectiveCompletable(gameState, seat.seatIndex);
+      const completable = isObjectiveCompletable(gameState, seat);
       let icon;
       if (objectiveMet) {
         icon = '<span class="success">✓</span>';
@@ -1060,7 +1059,7 @@ function updateTricksDisplay(gameState) {
       // Show threat card and whether they have the matching card/tricks
       const threatCard = seat.threatCard;
       const objectiveMet = checkObjective(gameState, seat);
-      const completable = isObjectiveCompletable(gameState, seat.seatIndex);
+      const completable = isObjectiveCompletable(gameState, seat);
       let icon;
       if (objectiveMet) {
         icon = '<span class="success">✓</span>';
@@ -1146,7 +1145,7 @@ function updateGameStatus(gameState, message = null) {
 
 function checkForImpossibleObjectives(gameState) {
   for (const seat of gameState.seats) {
-    if (!isObjectiveCompletable(gameState, seat.seatIndex)) {
+    if (!isObjectiveCompletable(gameState, seat)) {
       const character = seat.character;
       if (character) {
         addToGameLog(
@@ -1594,6 +1593,7 @@ function resetPlayerHeadings() {
 window.newGame = () => {
   newGame().catch((error) => {
     console.error("Error in newGame:", error);
-    updateGameStatus("Error starting game. Check console for details.");
+    const statusDiv = document.getElementById("gameStatus");
+    statusDiv.textContent = "Error starting game. Check console for details.";
   });
 };
