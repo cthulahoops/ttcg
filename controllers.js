@@ -6,9 +6,18 @@ class Controller {
   async choice({ title, message, buttons = [], cards = [], info = "" }) {
     throw Exception("Abstract");
   }
+
+  async selectCard(availableCards, renderCards) {
+    throw new Error("Abstract");
+  }
 }
 
 export class HumanController extends Controller {
+  constructor() {
+    super();
+    this._cardSelectionResolver = null;
+  }
+
   async choice({ title, message, buttons = [], cards = [], info = "" }) {
     return new Promise((resolve) => {
       const dialogArea = document.getElementById("dialogArea");
@@ -67,6 +76,24 @@ export class HumanController extends Controller {
       dialogArea.style.display = "block";
     });
   }
+
+  async selectCard(availableCards, renderCards) {
+    // Render cards with selection enabled
+    renderCards();
+
+    return new Promise((resolve) => {
+      // Store resolver to be called when user clicks a card
+      this._cardSelectionResolver = resolve;
+    });
+  }
+
+  resolveCardSelection(card) {
+    if (this._cardSelectionResolver) {
+      const resolver = this._cardSelectionResolver;
+      this._cardSelectionResolver = null;
+      resolver(card);
+    }
+  }
 }
 
 export class AIController extends Controller {
@@ -79,6 +106,12 @@ export class AIController extends Controller {
     if (cards.length > 0) {
       return randomChoice(cards);
     }
+  }
+
+  async selectCard(availableCards, renderCards) {
+    // AI doesn't need to render - callbacks not needed
+    await delay(800);
+    return randomChoice(availableCards);
   }
 }
 
