@@ -172,78 +172,6 @@ function getLegalMoves(playerIndex) {
   return availableCards.filter((card) => isLegalMove(playerIndex, card));
 }
 
-async function playCard(playerIndex, card) {
-  // Remove card from player's hand (pyramid uncovering handled automatically via callback)
-  gameState.seats[playerIndex].hand.removeCard(card);
-
-  // Add to current trick
-  gameState.currentTrick.push({ playerIndex, card, isTrump: false });
-
-  // Log the card play
-  addToGameLog(
-    `${getPlayerDisplayName(playerIndex)} plays ${card.value} of ${card.suit}`,
-  );
-
-  // Set lead suit if this is the first card
-  if (gameState.currentTrick.length === 1) {
-    gameState.leadSuit = card.suit;
-  }
-
-  // Check if rings have been broken
-  if (card.suit === "rings") {
-    gameState.ringsBroken = true;
-  }
-
-  // Check if trick is complete
-  if (gameState.currentTrick.length === gameState.numCharacters) {
-    gameState.phase = "trick_complete";
-
-    // Update display
-    displayTrick();
-    displayHands(gameState.seats);
-
-    // Check if 1 of rings was played
-    const oneRingPlay = gameState.currentTrick.find(
-      (play) => play.card.suit === "rings" && play.card.value === 1,
-    );
-
-    if (oneRingPlay) {
-      gameState.phase = "waiting_for_trump";
-      const useTrump = await gameState.seats[oneRingPlay.playerIndex].controller.choice({
-        title: "You played the 1 of Rings!",
-        message: "Do you want to use it as trump to win this trick?",
-        buttons: [
-          { label: "Yes, Win Trick", value: true },
-          { label: "No, Play Normal", value: false },
-        ],
-      });
-      oneRingPlay.isTrump = useTrump;
-      gameState.phase = "trick_complete";
-
-      // Update display to show trump status
-      displayTrick();
-    }
-
-    // Determine winner after a delay
-    await delay(1500);
-    determineTrickWinner();
-  } else {
-    // Move to next player
-    gameState.currentPlayer =
-      (gameState.currentPlayer + 1) % gameState.numCharacters;
-
-    // Update display AFTER changing current player
-    displayTrick();
-    displayHands(gameState.seats);
-    updateGameStatus();
-
-    // If it's an AI-controlled player's turn, play automatically
-    if (!isHumanControlled(gameState.currentPlayer)) {
-      setTimeout(() => playAIMove(), 1000);
-    }
-  }
-}
-
 async function startCharacterAssignment(firstPlayer) {
   gameState.phase = "character_assignment";
   gameState.characterAssignmentPlayer = firstPlayer;
@@ -410,7 +338,7 @@ async function performSetupAction(playerIndex, setupContext) {
     await delay(1000);
   } else if (character === "Gandalf") {
     // Gandalf has special logic (optional lost card before exchange)
-    await setupGandalf(playerIndex);
+    await setupGandalf(playerIndex, setupContext);
   } else if (character === "Aragorn") {
     // Aragorn chooses a threat card (not random draw)
     await setupAragorn(playerIndex, character, exchangeRule, setupContext);
@@ -741,7 +669,7 @@ async function setupThreatCardCharacter(playerIndex, character, exchangeRule, se
   await setupStandardExchange(playerIndex, character, exchangeRule, setupContext);
 }
 
-async function setupGandalf(playerIndex) {
+async function setupGandalf(playerIndex, setupContext) {
   // Gandalf: Optionally take Lost card to hand, then Exchange with Frodo
   let takeLostCard;
 
@@ -781,7 +709,7 @@ async function setupGandalf(playerIndex) {
   // Proceed to exchange with Frodo
   const character = gameState.seats[playerIndex].character;
   const exchangeRule = characterExchangeRules[character];
-  await setupStandardExchange(playerIndex, character, exchangeRule);
+  await setupStandardExchange(playerIndex, character, exchangeRule, setupContext);
 }
 
 async function showExchangePlayerSelectionDialog(
@@ -820,105 +748,6 @@ async function showExchangePlayerSelectionDialog(
   });
 
   return selectedPlayer;
-}
-
-function playAIMove() {
-  const legalMoves = getLegalMoves(gameState.currentPlayer);
-  const randomMove = legalMoves[Math.floor(Math.random() * legalMoves.length)];
-  playCard(gameState.currentPlayer, randomMove);
-}
-
-function determineTrickWinner() {
-  // Check if 1 of rings was played as trump
-  const trumpPlay = gameState.currentTrick.find((play) => play.isTrump);
-
-  let winningPlay;
-  let winMessage;
-
-  if (trumpPlay) {
-    // Trump wins
-    winningPlay = trumpPlay;
-    winMessage = `${getPlayerDisplayName(trumpPlay.playerIndex)} wins with the 1 of Rings (trump)!`;
-  } else {
-    // Find highest card of lead suit
-    winningPlay = gameState.currentTrick[0];
-
-    for (let i = 1; i < gameState.currentTrick.length; i++) {
-      const play = gameState.currentTrick[i];
-      if (
-        play.card.suit === gameState.leadSuit &&
-        play.card.value > winningPlay.card.value
-      ) {
-        winningPlay = play;
-      }
-    }
-
-    winMessage = `${getPlayerDisplayName(winningPlay.playerIndex)} wins with ${winningPlay.card.value} of ${winningPlay.card.suit}`;
-  }
-
-  const winnerIndex = winningPlay.playerIndex;
-
-  // Track the last trick winner (for Boromir's objective)
-  gameState.lastTrickWinner = winnerIndex;
-
-  // Assign all cards from the trick to the winner
-  const trickCards = gameState.currentTrick.map((play) => play.card);
-  gameState.seats[winnerIndex].addTrick(
-    gameState.currentTrickNumber,
-    trickCards,
-  );
-  gameState.currentTrickNumber++;
-
-  // Notify all hands that the trick is complete (for pyramid to reveal new cards)
-  for (let p = 0; p < gameState.numCharacters; p++) {
-    gameState.seats[p].hand.onTrickComplete();
-  }
-
-  // Update display to show newly revealed cards
-  displayHands(gameState.seats);
-
-  // Update tricks won display
-  updateTricksDisplay();
-
-  // Log the trick winner
-  addToGameLog(winMessage, true);
-
-  updateGameStatus(`Trick complete! ${winMessage}`);
-
-  // Check if any objective is now impossible
-  let anyImpossible = false;
-  for (let p = 0; p < gameState.numCharacters; p++) {
-    if (!isObjectiveCompletable(p)) {
-      const character = gameState.seats[p].character;
-      if (character) {
-        addToGameLog(
-          `${getPlayerDisplayName(p)}'s objective is now impossible!`,
-          true,
-        );
-        anyImpossible = true;
-      }
-    }
-  }
-
-  // Check if game is over
-  // Game ends when at least (numCharacters - 1) players have no cards (accounts for Gandalf potentially having the lost card)
-  // OR when any objective becomes impossible
-  const playersWithNoCards = gameState.seats.filter((seat) =>
-    seat.hand.isEmpty(),
-  ).length;
-  if (playersWithNoCards >= gameState.numCharacters - 1 || anyImpossible) {
-    setTimeout(() => {
-      const gameOverMsg = getGameOverMessage();
-      addToGameLog("--- GAME OVER ---", true);
-      addToGameLog(gameOverMsg.split("\n").join(" | "));
-      updateGameStatus("Game Over! " + gameOverMsg);
-    }, 2000);
-  } else {
-    // Start next trick after a delay
-    setTimeout(() => {
-      startNextTrick(winnerIndex);
-    }, 2000);
-  }
 }
 
 function checkObjective(playerIndex) {
@@ -1146,26 +975,6 @@ function getGameOverMessage() {
   }
 
   return message;
-}
-
-function startNextTrick(leadPlayer) {
-  // Clear the current trick
-  gameState.currentTrick = [];
-  gameState.leadSuit = null;
-  gameState.phase = "playing";
-  gameState.currentPlayer = leadPlayer;
-
-  // Clear trick display
-  document.getElementById("trickCards").innerHTML = "";
-
-  // Update display
-  displayHands(gameState.seats);
-  updateGameStatus();
-
-  // If AI-controlled player leads, play their move
-  if (!isHumanControlled(leadPlayer)) {
-    setTimeout(() => playAIMove(), 1000);
-  }
 }
 
 function updateTricksDisplay() {
@@ -1450,6 +1259,9 @@ async function runTrickTakingPhase() {
     const trickLeader = gameState.currentPlayer;
     gameState.currentTrick = [];
     gameState.leadSuit = null;
+
+    // Clear trick display
+    document.getElementById("trickCards").innerHTML = "";
 
     addToGameLog(`--- Trick ${gameState.currentTrickNumber + 1} ---`);
 
