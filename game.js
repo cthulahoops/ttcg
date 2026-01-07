@@ -726,8 +726,7 @@ async function showExchangePlayerSelectionDialog(
   return selectedPlayer;
 }
 
-function checkObjective(gameState, playerIndex) {
-  const seat = gameState.seats[playerIndex];
+function checkObjective(gameState, seat) {
   const character = seat.character;
   const wonCards = seat.getAllWonCards();
   const trickCount = seat.getTrickCount();
@@ -813,7 +812,7 @@ function isObjectiveCompletable(gameState, playerIndex) {
   const trickCount = seat.getTrickCount();
 
   // If already completed, it's completable
-  if (checkObjective(gameState, playerIndex)) {
+  if (checkObjective(gameState, seat)) {
     return true;
   }
 
@@ -921,18 +920,18 @@ function getGameOverMessage(gameState) {
   const results = [];
   const objectiveWinners = [];
 
-  for (let p = 0; p < gameState.numCharacters; p++) {
-    const character = gameState.seats[p].character;
-    const trickCount = gameState.seats[p].getTrickCount();
-    const objectiveMet = checkObjective(gameState, p);
+  for (const seat of gameState.seats) {
+    const character = seat.character;
+    const trickCount = seat.getTrickCount();
+    const objectiveMet = checkObjective(gameState, seat);
 
-    const playerName = p === 0 ? `${character} (You)` : character;
+    const playerName = seat.getDisplayName();
     const status = objectiveMet ? "✓ SUCCESS" : "✗ FAILED";
 
     results.push(`${playerName}: ${status} (${trickCount} tricks)`);
 
     if (objectiveMet) {
-      objectiveWinners.push(p);
+      objectiveWinners.push(seat.seatIndex);
     }
   }
 
@@ -941,9 +940,7 @@ function getGameOverMessage(gameState) {
 
   if (objectiveWinners.length > 0) {
     const winnerNames = objectiveWinners.map((p) => {
-      return p === 0
-        ? `${gameState.seats[p].character} (You)`
-        : gameState.seats[p].character;
+      return gameState.seats[p].getDisplayName();
     });
     message += `\n\nObjectives completed by: ${winnerNames.join(", ")}`;
   } else {
@@ -954,17 +951,17 @@ function getGameOverMessage(gameState) {
 }
 
 function updateTricksDisplay(gameState) {
-  for (let p = 0; p < gameState.numCharacters; p++) {
-    const trickCount = gameState.seats[p].getTrickCount();
-    const character = gameState.seats[p].character;
-    const wonCards = gameState.seats[p].getAllWonCards();
+  for (const seat of gameState.seats) {
+    const trickCount = seat.getTrickCount();
+    const character = seat.character;
+    const wonCards = seat.getAllWonCards();
 
     // Update trick count
-    document.getElementById(`tricks${p + 1}`).textContent =
+    document.getElementById(`tricks${seat.seatIndex + 1}`).textContent =
       `Tricks: ${trickCount}`;
 
     // Update objective status
-    const statusDiv = document.getElementById(`objectiveStatus${p + 1}`);
+    const statusDiv = document.getElementById(`objectiveStatus${seat.seatIndex + 1}`);
     if (!character) {
       statusDiv.innerHTML = "";
       continue;
@@ -978,8 +975,8 @@ function updateTricksDisplay(gameState) {
       character === "Pippin"
     ) {
       // Simple tick/cross for Gandalf, Merry, and Pippin
-      const objectiveMet = checkObjective(gameState, p);
-      const completable = isObjectiveCompletable(gameState, p);
+      const objectiveMet = checkObjective(gameState, seat);
+      const completable = isObjectiveCompletable(gameState, seat.seatIndex);
       let icon;
       if (objectiveMet) {
         icon = '<span class="success">✓</span>';
@@ -991,12 +988,12 @@ function updateTricksDisplay(gameState) {
       statusDiv.innerHTML = icon;
     } else if (character === "Boromir") {
       // Show last trick status and 1 of rings status
-      const wonLastTrick = gameState.lastTrickWinner === p;
+      const wonLastTrick = gameState.lastTrickWinner === seat.seatIndex;
       const hasOneRing = wonCards.some(
         (card) => card.suit === "rings" && card.value === 1,
       );
-      const objectiveMet = checkObjective(gameState, p);
-      const completable = isObjectiveCompletable(gameState, p);
+      const objectiveMet = checkObjective(gameState, seat);
+      const completable = isObjectiveCompletable(gameState, seat.seatIndex);
       let icon;
       if (objectiveMet) {
         icon = '<span class="success">✓</span>';
@@ -1015,7 +1012,7 @@ function updateTricksDisplay(gameState) {
       const ringCards = wonCards.filter((card) => card.suit === "rings");
       const ringsNeededForDisplay = gameState.numCharacters === 3 ? 4 : 2;
       const objectiveMet = ringCards.length >= ringsNeededForDisplay;
-      const completable = isObjectiveCompletable(gameState, p);
+      const completable = isObjectiveCompletable(gameState, seat.seatIndex);
       let icon;
       if (objectiveMet) {
         icon = '<span class="success">✓</span>';
@@ -1042,7 +1039,7 @@ function updateTricksDisplay(gameState) {
         rankCounts[card.value] = (rankCounts[card.value] || 0) + 1;
       });
 
-      const objectiveMet = checkObjective(gameState, p);
+      const objectiveMet = checkObjective(gameState, seat);
       const icon = objectiveMet
         ? '<span class="success">✓</span>'
         : '<span class="fail">✗</span>';
@@ -1061,9 +1058,9 @@ function updateTricksDisplay(gameState) {
       character === "Aragorn"
     ) {
       // Show threat card and whether they have the matching card/tricks
-      const threatCard = gameState.seats[p].threatCard;
-      const objectiveMet = checkObjective(gameState, p);
-      const completable = isObjectiveCompletable(gameState, p);
+      const threatCard = seat.threatCard;
+      const objectiveMet = checkObjective(gameState, seat);
+      const completable = isObjectiveCompletable(gameState, seat.seatIndex);
       let icon;
       if (objectiveMet) {
         icon = '<span class="success">✓</span>';
