@@ -1,11 +1,16 @@
 // ===== UTILITY FUNCTIONS =====
 
-export function delay(ms) {
+import type { Card, Suit } from "./types";
+
+// Re-export for convenience
+export type { Card, Suit };
+
+export function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export function sortHand(cards) {
-  const suitOrder = {
+export function sortHand(cards: Card[]): Card[] {
+  const suitOrder: Record<Suit, number> = {
     mountains: 0,
     shadows: 1,
     forests: 2,
@@ -24,10 +29,10 @@ export function sortHand(cards) {
 }
 
 export function createCardElement(
-  card,
+  card: Card,
   clickable = false,
-  clickHandler = null,
-) {
+  clickHandler: (() => void) | null = null,
+): HTMLDivElement {
   const cardDiv = document.createElement("div");
   cardDiv.className = `card ${card.suit}`;
   if (clickable) {
@@ -39,7 +44,7 @@ export function createCardElement(
 
   const valueDiv = document.createElement("div");
   valueDiv.className = "value";
-  valueDiv.textContent = card.value;
+  valueDiv.textContent = card.value.toString();
 
   const suitDiv = document.createElement("div");
   suitDiv.className = "suit";
@@ -51,7 +56,7 @@ export function createCardElement(
   return cardDiv;
 }
 
-export function shuffleDeck(deck) {
+export function shuffleDeck<T>(deck: T[]): T[] {
   const shuffled = [...deck];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
