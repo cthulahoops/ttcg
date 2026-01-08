@@ -62,6 +62,7 @@ Characters are defined in `characters/registry.ts` with their objectives and set
 13. **Galadriel** - Win neither the fewest nor the most tricks
 14. **Gildor Inglorian** - Play a forests card in final trick
 15. **Farmer Maggot** - Win at least two cards matching the threat card rank
+16. **Fatty Bolger** - Win exactly one trick
 
 ### Character Setup Actions
 Each character has a specific setup action defined in their CharacterDefinition. Common patterns:
@@ -70,12 +71,14 @@ Each character has a specific setup action defined in their CharacterDefinition.
 - Draw threat cards
 - Choose threat cards
 - Reveal hand face-up
+- Give cards to other characters (Fatty Bolger)
 
 ### Special Rules
 - **1 of Rings**: Can be used as trump to automatically win a trick (player chooses)
 - **Rings Breaking**: Can't lead with Rings suit unless broken or only have Rings
 - **Card Exchange**: Frodo cannot give away the 1 of Rings during setup
-- **Game End**: When at least 3 players have no cards (accounts for Gandalf potentially having extra)
+- **Game End**: When all tricks have been played (tracked by `game.tricksToPlay`, normally 9 or 12 but can be modified by characters like Fatty Bolger)
+- **Empty Hands**: Players with no cards pass automatically during trick-taking; lead passes to next player with cards
 
 ## Code Architecture
 
@@ -118,7 +121,60 @@ The `Game` class tracks:
 - Character assignments and available characters
 - Setup phase state and card exchanges
 - Trump choice status and lost card
+- `tricksToPlay` - Total number of tricks that will be played (can be modified by characters like Fatty Bolger)
 - `finished` getter - Returns true when game is over
+
+### Game API for Character Setup Actions
+
+**IMPORTANT DESIGN PRINCIPLE**: The Game class provides a narrow set of reusable utility methods. Do NOT add character-specific methods (e.g., `fattyGiveCards()`). Instead, use the generic utilities and implement character-specific logic in the character's setup function.
+
+#### Available Methods
+
+**Card Transfer:**
+- `giveCard(fromSeat, toSeat)` - One-way card transfer from one seat to another
+- `exchange(seat, setupContext, canExchangeWith)` - Two-way card exchange with another player (filtered by predicate)
+- `exchangeWithLostCard(seat, setupContext)` - Swap one card with the lost card
+
+**Lost Card:**
+- `offerLostCard(seat)` - Let a player optionally take the lost card
+
+**Threat Cards:**
+- `drawThreatCard(seat, targetSuit, options?)` - Draw a random threat card (optionally excluding a value)
+- `chooseThreatCard(seat)` - Choose from 3 threat card options
+
+**Hand Visibility:**
+- `revealHand(seat)` - Make a hand visible to all players
+
+**Choices:**
+- `choice(seat, question, options)` - Ask player to choose from a list of strings
+
+**Game State Queries:**
+- `hasCard(seat, suit, value)` - Check if a seat has won a specific card
+- `cardGone(seat, suit, value)` - Check if a card has been won by someone else
+- `displaySimple(met, completable)` - Return status icon HTML
+- `displayThreatCard(seat, met, completable)` - Return threat card status HTML
+
+#### Examples
+
+**Good: Using generic methods**
+```typescript
+// Fatty Bolger gives cards using the reusable giveCard() method
+setup: async (game, seat, _setupContext) => {
+  for (const otherSeat of game.seats) {
+    if (otherSeat.seatIndex !== seat.seatIndex) {
+      await game.giveCard(seat, otherSeat);
+    }
+  }
+  game.tricksToPlay += 1; // Character-specific logic stays in setup
+}
+```
+
+**Bad: Character-specific methods**
+```typescript
+// DON'T DO THIS - no character-specific methods in Game class
+game.fattyGiveCards(seat);  // ❌ Too specific
+game.gandalfSetup(seat);     // ❌ Too specific
+```
 
 ### UI Features
 - Real-time game log with scrolling
@@ -147,10 +203,11 @@ The `Game` class tracks:
 - Ensure 1 of Rings is never the lost card
 - Verify Frodo cannot exchange 1 of Rings
 - Test Gandalf's optional lost card choice
-- Confirm game ends when 3+ players have empty hands
+- Confirm game ends when all tricks have been played (check `game.tricksToPlay`)
 - Validate each character's objective checking logic
 - **1-player mode**: Verify 1 of Rings is always in initially revealed cards
 - **1-player mode**: Confirm each seat reveals exactly 1 card per trick
 - **Pyramid mode**: Ensure cards only reveal after trick completion, not immediately when played
+- **Fatty Bolger**: Verify one extra trick is played and players with empty hands pass correctly
 
 ALWAYS: Correct any errors in CLAUDE.md.
