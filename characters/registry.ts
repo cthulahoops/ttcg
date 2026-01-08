@@ -1,11 +1,39 @@
 // Character Registry
 // All character definitions in one place
 
-const Frodo = {
+import type { Seat } from "../seat";
+import type { Suit } from "../types";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Game = any; // Will be properly typed when game.ts is converted
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SetupContext = any;
+
+interface CharacterObjective {
+  text?: string;
+  getText?: (game: Game) => string;
+  check: (game: Game, seat: Seat) => boolean;
+  isCompletable: (game: Game, seat: Seat) => boolean;
+}
+
+interface CharacterDisplay {
+  renderStatus: (game: Game, seat: Seat) => string;
+}
+
+interface CharacterDefinition {
+  name: string;
+  setupText: string;
+  threatSuit?: Suit;
+  setup: (game: Game, seat: Seat, setupContext: SetupContext) => Promise<void>;
+  objective: CharacterObjective;
+  display: CharacterDisplay;
+}
+
+const Frodo: CharacterDefinition = {
   name: "Frodo",
   setupText: "No setup action",
 
-  setup: async (game, seat, setupContext) => {
+  setup: async (_game, _seat, _setupContext) => {
     // No setup action
   },
 
@@ -24,7 +52,7 @@ const Frodo = {
       const myRings = seat
         .getAllWonCards()
         .filter((c) => c.suit === "rings").length;
-      const othersRings = game.seats.reduce((total, s) => {
+      const othersRings = game.seats.reduce((total: number, s: Seat) => {
         if (s.seatIndex !== seat.seatIndex) {
           return (
             total + s.getAllWonCards().filter((c) => c.suit === "rings").length
@@ -48,7 +76,7 @@ const Frodo = {
       if (ringCards.length > 0) {
         const ringList = ringCards
           .map((c) => c.value)
-          .sort((a, b) => a - b)
+          .sort((a: number, b: number) => a - b)
           .join(", ");
         return `${icon} Rings: ${ringList}`;
       } else {
@@ -58,19 +86,19 @@ const Frodo = {
   },
 };
 
-const Gandalf = {
+const Gandalf: CharacterDefinition = {
   name: "Gandalf",
   setupText: "Optionally take the lost card, then exchange with Frodo",
 
   setup: async (game, seat, setupContext) => {
     await game.offerLostCard(seat);
-    await game.exchange(seat, setupContext, (c) => c === "Frodo");
+    await game.exchange(seat, setupContext, (c: string) => c === "Frodo");
   },
 
   objective: {
     text: "Win at least one trick",
-    check: (game, seat) => seat.getTrickCount() >= 1,
-    isCompletable: (game, seat) => true, // Always possible
+    check: (_game, seat) => seat.getTrickCount() >= 1,
+    isCompletable: (_game, _seat) => true, // Always possible
   },
 
   display: {
@@ -81,23 +109,23 @@ const Gandalf = {
   },
 };
 
-const Merry = {
+const Merry: CharacterDefinition = {
   name: "Merry",
   setupText: "Exchange with Frodo, Pippin, or Sam",
 
   setup: async (game, seat, setupContext) => {
-    await game.exchange(seat, setupContext, (c) =>
+    await game.exchange(seat, setupContext, (c: string) =>
       ["Frodo", "Pippin", "Sam"].includes(c),
     );
   },
 
   objective: {
     text: "Win exactly one or two tricks",
-    check: (game, seat) => {
+    check: (_game, seat) => {
       const count = seat.getTrickCount();
       return count === 1 || count === 2;
     },
-    isCompletable: (game, seat) => seat.getTrickCount() < 3,
+    isCompletable: (_game, seat) => seat.getTrickCount() < 3,
   },
 
   display: {
@@ -109,29 +137,29 @@ const Merry = {
   },
 };
 
-const Celeborn = {
+const Celeborn: CharacterDefinition = {
   name: "Celeborn",
   setupText: "Exchange with any player",
 
   setup: async (game, seat, setupContext) => {
-    await game.exchange(seat, setupContext, (c) => true); // Any player
+    await game.exchange(seat, setupContext, (_c: string) => true); // Any player
   },
 
   objective: {
     text: "Win at least three cards of the same rank",
-    check: (game, seat) => {
-      const rankCounts = {};
+    check: (_game, seat) => {
+      const rankCounts: Record<number, number> = {};
       seat.getAllWonCards().forEach((card) => {
         rankCounts[card.value] = (rankCounts[card.value] || 0) + 1;
       });
       return Object.values(rankCounts).some((count) => count >= 3);
     },
-    isCompletable: (game, seat) => true, // Hard to determine early
+    isCompletable: (_game, _seat) => true, // Hard to determine early
   },
 
   display: {
     renderStatus: (game, seat) => {
-      const rankCounts = {};
+      const rankCounts: Record<number, number> = {};
       seat.getAllWonCards().forEach((card) => {
         rankCounts[card.value] = (rankCounts[card.value] || 0) + 1;
       });
@@ -140,7 +168,7 @@ const Celeborn = {
 
       // Show ranks with counts >= 2
       const ranksWithCounts = Object.entries(rankCounts)
-        .filter(([rank, count]) => count >= 2)
+        .filter(([_rank, count]) => count >= 2)
         .map(([rank, count]) => `${rank}:${count}`)
         .join(", ");
 
@@ -149,12 +177,12 @@ const Celeborn = {
   },
 };
 
-const Pippin = {
+const Pippin: CharacterDefinition = {
   name: "Pippin",
   setupText: "Exchange with Frodo, Merry, or Sam",
 
   setup: async (game, seat, setupContext) => {
-    await game.exchange(seat, setupContext, (c) =>
+    await game.exchange(seat, setupContext, (c: string) =>
       ["Frodo", "Merry", "Sam"].includes(c),
     );
   },
@@ -162,20 +190,20 @@ const Pippin = {
   objective: {
     text: "Win the fewest (or joint fewest) tricks",
     check: (game, seat) => {
-      const allCounts = game.seats.map((s) => s.getTrickCount());
+      const allCounts = game.seats.map((s: Seat) => s.getTrickCount());
       const minCount = Math.min(...allCounts);
       return seat.getTrickCount() === minCount;
     },
     isCompletable: (game, seat) => {
-      const allCounts = game.seats.map((s) => s.getTrickCount());
+      const allCounts = game.seats.map((s: Seat) => s.getTrickCount());
       const myCount = seat.getTrickCount();
 
       let totalGap = 0;
-      const totalTricks = gameState.seats.length === 3 ? 12 : 9;
+      const totalTricks = game.seats.length === 3 ? 12 : 9;
       let tricksPlayed = 0;
       for (const otherTricks of allCounts) {
         if (otherTricks < myCount) {
-          totalGap += trickCount - otherTricks;
+          totalGap += myCount - otherTricks;
         }
         tricksPlayed += otherTricks;
       }
@@ -194,12 +222,12 @@ const Pippin = {
   },
 };
 
-const Boromir = {
+const Boromir: CharacterDefinition = {
   name: "Boromir",
   setupText: "Exchange with anyone except Frodo",
 
   setup: async (game, seat, setupContext) => {
-    await game.exchange(seat, setupContext, (c) => c !== "Frodo");
+    await game.exchange(seat, setupContext, (c: string) => c !== "Frodo");
   },
 
   objective: {
@@ -227,7 +255,7 @@ const Boromir = {
   },
 };
 
-const Sam = {
+const Sam: CharacterDefinition = {
   name: "Sam",
   threatSuit: "hills",
   setupText:
@@ -237,7 +265,7 @@ const Sam = {
     await game.drawThreatCard(seat, Sam.threatSuit, {
       exclude: game.lostCard?.value,
     });
-    await game.exchange(seat, setupContext, (c) =>
+    await game.exchange(seat, setupContext, (c: string) =>
       ["Frodo", "Merry", "Pippin"].includes(c),
     );
   },
@@ -263,7 +291,7 @@ const Sam = {
   },
 };
 
-const Gimli = {
+const Gimli: CharacterDefinition = {
   name: "Gimli",
   threatSuit: "mountains",
   setupText:
@@ -273,7 +301,7 @@ const Gimli = {
     await game.drawThreatCard(seat, Gimli.threatSuit, {
       exclude: game.lostCard?.value,
     });
-    await game.exchange(seat, setupContext, (c) =>
+    await game.exchange(seat, setupContext, (c: string) =>
       ["Legolas", "Aragorn"].includes(c),
     );
   },
@@ -299,7 +327,7 @@ const Gimli = {
   },
 };
 
-const Legolas = {
+const Legolas: CharacterDefinition = {
   name: "Legolas",
   threatSuit: "forests",
   setupText: "Draw a Forests threat card, then exchange with Gimli or Aragorn",
@@ -308,7 +336,7 @@ const Legolas = {
     await game.drawThreatCard(seat, Legolas.threatSuit, {
       exclude: game.lostCard?.value,
     });
-    await game.exchange(seat, setupContext, (c) =>
+    await game.exchange(seat, setupContext, (c: string) =>
       ["Gimli", "Aragorn"].includes(c),
     );
   },
@@ -334,24 +362,24 @@ const Legolas = {
   },
 };
 
-const Aragorn = {
+const Aragorn: CharacterDefinition = {
   name: "Aragorn",
   setupText: "Choose a threat card, then exchange with Gimli or Legolas",
 
   setup: async (game, seat, setupContext) => {
     await game.chooseThreatCard(seat);
-    await game.exchange(seat, setupContext, (c) =>
+    await game.exchange(seat, setupContext, (c: string) =>
       ["Gimli", "Legolas"].includes(c),
     );
   },
 
   objective: {
     text: "Win exactly the number of tricks shown on your threat card",
-    check: (game, seat) => {
+    check: (_game, seat) => {
       if (!seat.threatCard) return false;
       return seat.getTrickCount() === seat.threatCard;
     },
-    isCompletable: (game, seat) => {
+    isCompletable: (_game, seat) => {
       if (!seat.threatCard) return true;
       const target = seat.threatCard;
       const current = seat.getTrickCount();
@@ -372,18 +400,18 @@ const Aragorn = {
   },
 };
 
-const Goldberry = {
+const Goldberry: CharacterDefinition = {
   name: "Goldberry",
   setupText: "Turn your hand face-up (visible to all players)",
 
-  setup: async (game, seat, setupContext) => {
-    game.revealHand(seat); // ⚠️ NEW API METHOD NEEDED
+  setup: async (game, seat, _setupContext) => {
+    game.revealHand(seat);
     // No exchange
   },
 
   objective: {
     text: "Win exactly three tricks in a row and no other tricks",
-    check: (game, seat) => {
+    check: (_game, seat) => {
       const trickNumbers = seat.tricksWon
         .map((t) => t.number)
         .sort((a, b) => a - b);
@@ -396,11 +424,9 @@ const Goldberry = {
         trickNumbers[2] === trickNumbers[1] + 1
       );
     },
-    isCompletable: (game, seat) => {
+    isCompletable: (_game, seat) => {
       const trickCount = seat.getTrickCount();
       if (trickCount > 3) return false; // Already won too many
-
-      const trickNumbers = seat.tricksWon.map((t) => t.number);
 
       if (trickCount === 0) return true; // Haven't started yet
 
@@ -420,18 +446,18 @@ const Goldberry = {
   },
 };
 
-const Glorfindel = {
+const Glorfindel: CharacterDefinition = {
   name: "Glorfindel",
   setupText: "Optionally take the lost card",
 
-  setup: async (game, seat, setupContext) => {
+  setup: async (game, seat, _setupContext) => {
     await game.offerLostCard(seat);
     // No exchange
   },
 
   objective: {
     text: "Win every Shadows card",
-    check: (game, seat) => {
+    check: (_game, seat) => {
       const shadowsCards = seat
         .getAllWonCards()
         .filter((c) => c.suit === "shadows");
@@ -462,7 +488,7 @@ const Glorfindel = {
   },
 };
 
-const Galadriel = {
+const Galadriel: CharacterDefinition = {
   name: "Galadriel",
   setupText: "Exchange with either the lost card or Gandalf",
 
@@ -473,30 +499,30 @@ const Galadriel = {
     ]);
 
     if (choice === "Lost Card") {
-      await game.exchangeWithLostCard(seat, setupContext); // ⚠️ NEW API METHOD NEEDED
+      await game.exchangeWithLostCard(seat, setupContext);
     } else {
-      await game.exchange(seat, setupContext, (c) => c === "Gandalf");
+      await game.exchange(seat, setupContext, (c: string) => c === "Gandalf");
     }
   },
 
   objective: {
     text: "Win neither the fewest nor the most tricks",
     check: (game, seat) => {
-      const allCounts = game.seats.map((s) => s.getTrickCount());
+      const allCounts = game.seats.map((s: Seat) => s.getTrickCount());
       const minCount = Math.min(...allCounts);
       const maxCount = Math.max(...allCounts);
       const myCount = seat.getTrickCount();
       return myCount !== minCount && myCount !== maxCount;
     },
     isCompletable: (game, seat) => {
-      const allCounts = game.seats.map((s) => s.getTrickCount());
+      const allCounts = game.seats.map((s: Seat) => s.getTrickCount());
       const minCount = Math.min(...allCounts);
       const maxCount = Math.max(...allCounts);
       const myCount = seat.getTrickCount();
 
       // If we're sole min or sole max, it's impossible
-      const minSeats = allCounts.filter((c) => c === minCount).length;
-      const maxSeats = allCounts.filter((c) => c === maxCount).length;
+      const minSeats = allCounts.filter((c: number) => c === minCount).length;
+      const maxSeats = allCounts.filter((c: number) => c === maxCount).length;
 
       if (myCount === minCount && minSeats === 1) return false;
       if (myCount === maxCount && maxSeats === 1) return false;
@@ -514,7 +540,7 @@ const Galadriel = {
   },
 };
 
-export const characterRegistry = new Map([
+export const characterRegistry = new Map<string, CharacterDefinition>([
   [Frodo.name, Frodo],
   [Gandalf.name, Gandalf],
   [Merry.name, Merry],

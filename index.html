@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trick Taking Game</title>
+    <link rel="stylesheet" href="game.css">
+</head>
+<body>
+    <h1>Trick Taking Game</h1>
+
+    <div class="container">
+        <div class="main-content">
+            <div class="controls">
+                <label for="playerCount">Players:</label>
+                <select id="playerCount">
+                    <option value="1">1 Player (Solitaire)</option>
+                    <option value="2">2 Players (with Pyramid)</option>
+                    <option value="3">3 Players</option>
+                    <option value="4" selected>4 Players</option>
+                </select>
+                <button onclick="newGame()">New Game</button>
+            </div>
+
+            <div class="game-status" id="gameStatus">Click "New Game" to start</div>
+
+            <!-- Unified Dialog Area -->
+            <section id="dialogArea" class="dialog-area" style="display: none;">
+                <div class="dialog-content">
+                    <h3 id="dialogTitle"></h3>
+                    <div id="dialogMessage" class="dialog-message"></div>
+                    <div id="dialogChoices" class="dialog-buttons"></div>
+                    <div id="dialogInfo" class="dialog-info"></div>
+                </div>
+            </section>
+
+            <section class="trick-area">
+                <h2>Current Trick</h2>
+                <div class="trick-cards" id="trickCards"></div>
+            </section>
+
+            <div class="players">
+                <section class="player" data-player="1">
+                    <h3 id="playerName1">Player 1</h3>
+                    <div class="objective" id="objective1"></div>
+                    <div class="tricks-won" id="tricks1">Tricks: 0</div>
+                    <div class="objective-status" id="objectiveStatus1"></div>
+                    <div class="hand" id="player1"></div>
+                </section>
+                <section class="player" data-player="2">
+                    <h3 id="playerName2">Player 2</h3>
+                    <div class="objective" id="objective2"></div>
+                    <div class="tricks-won" id="tricks2">Tricks: 0</div>
+                    <div class="objective-status" id="objectiveStatus2"></div>
+                    <div class="hand" id="player2"></div>
+                </section>
+                <section class="player" data-player="3">
+                    <h3 id="playerName3">Player 3</h3>
+                    <div class="objective" id="objective3"></div>
+                    <div class="tricks-won" id="tricks3">Tricks: 0</div>
+                    <div class="objective-status" id="objectiveStatus3"></div>
+                    <div class="hand" id="player3"></div>
+                </section>
+                <section class="player" data-player="4">
+                    <h3 id="playerName4">Player 4</h3>
+                    <div class="objective" id="objective4"></div>
+                    <div class="tricks-won" id="tricks4">Tricks: 0</div>
+                    <div class="objective-status" id="objectiveStatus4"></div>
+                    <div class="hand" id="player4"></div>
+                </section>
+            </div>
+
+            <section class="lost-card-section">
+                <h2>Lost Card</h2>
+                <div id="lostCard"></div>
+            </section>
+        </div>
+
+        <div class="sidebar">
+            <section class="section game-log">
+                <h2>Game Log</h2>
+                <div id="gameLog"></div>
+            </section>
+        </div>
+    </div>
+
+    <script type="module" src="/game.ts"></script>
+</body>
+</html>
