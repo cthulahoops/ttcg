@@ -25,6 +25,266 @@ const threatCardSuits = {
   Legolas: "forests",
 };
 
+// ===== GAME CLASS =====
+
+class Game {
+  constructor(playerCount, numCharacters, seats, lostCard, startPlayer) {
+    this.playerCount = playerCount;
+    this.numCharacters = numCharacters;
+    this.seats = seats;
+    this.currentTrick = [];
+    this.currentPlayer = startPlayer;
+    this.currentTrickNumber = 0;
+    this.leadSuit = null;
+    this.ringsBroken = false;
+    this.availableCharacters = [];
+    this.lostCard = lostCard;
+    this.lastTrickWinner = null;
+    this.threatDeck = [1, 2, 3, 4, 5, 6, 7];
+
+    // Shuffle the threat deck
+    this.threatDeck = shuffleDeck(
+      this.threatDeck.map((v) => ({ value: v })),
+    ).map((c) => c.value);
+  }
+
+  // ===== GAME API METHODS FOR CHARACTER SETUP/OBJECTIVES =====
+
+  // Generic choice method
+  async choice(seat, question, options) {
+    return await seat.controller.choice({
+      title: question,
+      message: question,
+      buttons: options.map((opt) => ({ label: opt, value: opt })),
+    });
+  }
+
+  // Offer lost card (optional take)
+  async offerLostCard(seat) {
+    if (!this.lostCard) return;
+
+    const shouldTake = await seat.controller.choice({
+      title: `${seat.character} - Lost Card`,
+      message: `Take the lost card (${this.lostCard.value} of ${this.lostCard.suit})?`,
+      buttons: [
+        { label: "Yes", value: true },
+        { label: "No", value: false },
+      ],
+    });
+
+    if (shouldTake) {
+      seat.hand.addCard(this.lostCard);
+      addToGameLog(`${seat.getDisplayName()} takes the lost card`);
+      displayHands(this, this.seats);
+    }
+  }
+
+  // Exchange with lost card (swap one card)
+  async exchangeWithLostCard(seat, setupContext) {
+    if (!this.lostCard) return;
+
+    // Choose card to exchange
+    const cards = seat.hand.getCards();
+    const sortedCards = sortHand(cards);
+
+    const cardToGive = await seat.controller.chooseCard({
+      title: `${seat.character} - Exchange with Lost Card`,
+      message: `Choose a card to exchange with the lost card (${this.lostCard.value} of ${this.lostCard.suit})`,
+      availableCards: sortedCards,
+    });
+
+    // Swap cards
+    seat.hand.removeCard(cardToGive);
+    seat.hand.addCard(this.lostCard);
+    this.lostCard = cardToGive;
+
+    addToGameLog(`${seat.getDisplayName()} exchanges with the lost card`);
+    displayHands(this, this.seats);
+  }
+
+  // Reveal hand (make visible to all)
+  revealHand(seat) {
+    // This would need to modify the hand to be always visible
+    // For now, just log it
+    addToGameLog(
+      `${seat.getDisplayName()}'s hand is now visible to all players`,
+    );
+    seat.hand = seat.hand.revealed();
+  }
+
+  // Draw threat card
+  async drawThreatCard(seat, targetSuit, options = {}) {
+    if (this.threatDeck.length === 0) {
+      addToGameLog(`${seat.getDisplayName()} - No threat cards remaining!`);
+      throw new Error("Threat deck is empty!");
+    }
+
+    let threatCard;
+    const exclude = options.exclude;
+
+    // Keep drawing until we get a valid card
+    do {
+      if (this.threatDeck.length === 0) {
+        addToGameLog(
+          `${seat.getDisplayName()} - No valid threat cards remaining!`,
+        );
+        throw new Error("Threat deck is empty!");
+      }
+      threatCard = this.threatDeck.shift();
+    } while (exclude !== undefined && threatCard === exclude);
+
+    seat.threatCard = threatCard;
+    addToGameLog(
+      `${seat.getDisplayName()} draws threat card: ${threatCard}`,
+      true,
+    );
+    updateGameStatus(
+      this,
+      `${seat.getDisplayName()} draws threat card ${threatCard}`,
+    );
+    updateTricksDisplay(this);
+  }
+
+  // Choose threat card
+  async chooseThreatCard(seat) {
+    if (this.threatDeck.length === 0) {
+      addToGameLog(`${seat.getDisplayName()} - No threat cards available!`);
+      throw new Error("Threat deck is empty!");
+    }
+
+    const availableCards = this.threatDeck.slice(0, 3); // Show first 3 options
+
+    const choice = await seat.controller.choice({
+      title: `${seat.character} - Choose Threat Card`,
+      message: "Choose a threat card:",
+      buttons: availableCards.map((value) => ({ label: `${value}`, value })),
+    });
+
+    // Remove chosen card from deck
+    const index = this.threatDeck.indexOf(choice);
+    if (index > -1) {
+      this.threatDeck.splice(index, 1);
+    }
+
+    seat.threatCard = choice;
+    addToGameLog(
+      `${seat.getDisplayName()} chooses threat card: ${choice}`,
+      true,
+    );
+    updateGameStatus(
+      this,
+      `${seat.getDisplayName()} chooses threat card ${choice}`,
+    );
+    updateTricksDisplay(this);
+  }
+
+  // Exchange with another player (predicate-based)
+  async exchange(seat, setupContext, canExchangeWith) {
+    // In 1-player mode, check if exchange already made
+    if (this.playerCount === 1 && setupContext.exchangeMade) {
+      return;
+    }
+
+    // Find valid exchange partners
+    const validPlayers = [];
+    for (const otherSeat of this.seats) {
+      if (otherSeat.seatIndex !== seat.seatIndex && otherSeat.character) {
+        if (canExchangeWith(otherSeat.character)) {
+          validPlayers.push(otherSeat.seatIndex);
+        }
+      }
+    }
+
+    if (validPlayers.length === 0) {
+      addToGameLog(`${seat.getDisplayName()} has no valid exchange partners`);
+      return;
+    }
+
+    // In 1-player mode, ask if player wants to exchange
+    if (this.playerCount === 1) {
+      const targetDescription =
+        validPlayers.length === 1
+          ? this.seats[validPlayers[0]].character
+          : validPlayers.map((p) => this.seats[p].character).join(" or ");
+
+      const wantsToExchange = await seat.controller.choice({
+        title: `${seat.character} - Exchange?`,
+        message: `Do you want ${seat.character} to exchange with ${targetDescription}?`,
+        buttons: [
+          { label: "Yes, Exchange", value: true },
+          { label: "No, Skip", value: false },
+        ],
+      });
+
+      if (!wantsToExchange) {
+        return;
+      }
+    }
+
+    // Choose target player
+    let targetPlayerIndex;
+    if (validPlayers.length === 1) {
+      targetPlayerIndex = validPlayers[0];
+    } else {
+      const choices = validPlayers.map((p) => ({
+        label: this.seats[p].character,
+        value: p,
+      }));
+
+      targetPlayerIndex = await seat.controller.choice({
+        title: `${seat.character} - Choose Exchange Partner`,
+        message: "Choose who to exchange with:",
+        buttons: choices,
+      });
+    }
+
+    // Perform exchange
+    await performExchange(this, seat.seatIndex, targetPlayerIndex);
+
+    // Mark exchange as made in 1-player mode
+    if (this.playerCount === 1) {
+      setupContext.exchangeMade = true;
+    }
+  }
+
+  // Check if seat has won a specific card
+  hasCard(seat, suit, value) {
+    return seat
+      .getAllWonCards()
+      .some((card) => card.suit === suit && card.value === value);
+  }
+
+  // Check if card has been won by someone else
+  cardGone(seat, suit, value) {
+    for (const otherSeat of this.seats) {
+      if (otherSeat.seatIndex !== seat.seatIndex) {
+        if (this.hasCard(otherSeat, suit, value)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  // Display simple status icon
+  displaySimple(met, completable) {
+    if (met) {
+      return '<span class="success">✓</span>';
+    } else if (!completable) {
+      return '<span class="fail">✗ (impossible)</span>';
+    } else {
+      return '<span class="fail">✗</span>';
+    }
+  }
+
+  // Display threat card status
+  displayThreatCard(seat, met, completable) {
+    const icon = this.displaySimple(met, completable);
+    const threatCard = seat.threatCard ? seat.threatCard : "none";
+    return `${icon} Threat: ${threatCard}`;
+  }
+}
+
 // ===== ASYNC HELPERS =====
 
 // ===== GAME FUNCTIONS =====
@@ -853,262 +1113,15 @@ async function newGame() {
   const availableCharacters = shuffleDeck(allCharacters).slice(0, 4);
   availableCharacters.push("Frodo");
 
-  // Create game state locally
-  const gameState = {
-    playerCount: playerCount,
-    numCharacters: numCharacters,
-    seats: seats,
-    currentTrick: [],
-    currentPlayer: startPlayer,
-    currentTrickNumber: 0,
-    leadSuit: null,
-    ringsBroken: false,
-    availableCharacters: availableCharacters,
-    lostCard: lostCard, // Store the lost card
-    lastTrickWinner: null, // Track who won the most recent trick
-    threatDeck: [1, 2, 3, 4, 5, 6, 7], // Threat deck (shuffled later)
-  };
-
-  // Shuffle the threat deck
-  gameState.threatDeck = shuffleDeck(
-    gameState.threatDeck.map((v) => ({ value: v })),
-  ).map((c) => c.value);
-
-  // ===== GAME API METHODS FOR CHARACTER SETUP/OBJECTIVES =====
-
-  // Generic choice method
-  gameState.choice = async (seat, question, options) => {
-    return await seat.controller.choice({
-      title: question,
-      message: question,
-      buttons: options.map((opt) => ({ label: opt, value: opt })),
-    });
-  };
-
-  // Offer lost card (optional take)
-  gameState.offerLostCard = async (seat) => {
-    if (!gameState.lostCard) return;
-
-    const shouldTake = await seat.controller.choice({
-      title: `${seat.character} - Lost Card`,
-      message: `Take the lost card (${gameState.lostCard.value} of ${gameState.lostCard.suit})?`,
-      buttons: [
-        { label: "Yes", value: true },
-        { label: "No", value: false },
-      ],
-    });
-
-    if (shouldTake) {
-      seat.hand.addCard(gameState.lostCard);
-      addToGameLog(`${seat.getDisplayName()} takes the lost card`);
-      displayHands(gameState, gameState.seats);
-    }
-  };
-
-  // Exchange with lost card (swap one card)
-  gameState.exchangeWithLostCard = async (seat, setupContext) => {
-    if (!gameState.lostCard) return;
-
-    // Choose card to exchange
-    const cards = seat.hand.getCards();
-    const sortedCards = sortHand(cards);
-
-    const cardToGive = await seat.controller.chooseCard({
-      title: `${seat.character} - Exchange with Lost Card`,
-      message: `Choose a card to exchange with the lost card (${gameState.lostCard.value} of ${gameState.lostCard.suit})`,
-      availableCards: sortedCards,
-    });
-
-    // Swap cards
-    seat.hand.removeCard(cardToGive);
-    seat.hand.addCard(gameState.lostCard);
-    gameState.lostCard = cardToGive;
-
-    addToGameLog(`${seat.getDisplayName()} exchanges with the lost card`);
-    displayHands(gameState, gameState.seats);
-  };
-
-  // Reveal hand (make visible to all)
-  gameState.revealHand = (seat) => {
-    // This would need to modify the hand to be always visible
-    // For now, just log it
-    addToGameLog(
-      `${seat.getDisplayName()}'s hand is now visible to all players`,
-    );
-    seat.hand = seat.hand.revealed();
-  };
-
-  // Draw threat card
-  gameState.drawThreatCard = async (seat, targetSuit, options = {}) => {
-    if (gameState.threatDeck.length === 0) {
-      addToGameLog(`${seat.getDisplayName()} - No threat cards remaining!`);
-      throw new Error("Threat deck is empty!");
-    }
-
-    let threatCard;
-    const exclude = options.exclude;
-
-    // Keep drawing until we get a valid card
-    do {
-      if (gameState.threatDeck.length === 0) {
-        addToGameLog(
-          `${seat.getDisplayName()} - No valid threat cards remaining!`,
-        );
-        throw new Error("Threat deck is empty!");
-      }
-      threatCard = gameState.threatDeck.shift();
-    } while (exclude !== undefined && threatCard === exclude);
-
-    seat.threatCard = threatCard;
-    addToGameLog(
-      `${seat.getDisplayName()} draws threat card: ${threatCard}`,
-      true,
-    );
-    updateGameStatus(
-      gameState,
-      `${seat.getDisplayName()} draws threat card ${threatCard}`,
-    );
-    updateTricksDisplay(gameState);
-  };
-
-  // Choose threat card
-  gameState.chooseThreatCard = async (seat) => {
-    if (gameState.threatDeck.length === 0) {
-      addToGameLog(`${seat.getDisplayName()} - No threat cards available!`);
-      throw new Error("Threat deck is empty!");
-    }
-
-    const availableCards = gameState.threatDeck.slice(0, 3); // Show first 3 options
-
-    const choice = await seat.controller.choice({
-      title: `${seat.character} - Choose Threat Card`,
-      message: "Choose a threat card:",
-      buttons: availableCards.map((value) => ({ label: `${value}`, value })),
-    });
-
-    // Remove chosen card from deck
-    const index = gameState.threatDeck.indexOf(choice);
-    if (index > -1) {
-      gameState.threatDeck.splice(index, 1);
-    }
-
-    seat.threatCard = choice;
-    addToGameLog(
-      `${seat.getDisplayName()} chooses threat card: ${choice}`,
-      true,
-    );
-    updateGameStatus(
-      gameState,
-      `${seat.getDisplayName()} chooses threat card ${choice}`,
-    );
-    updateTricksDisplay(gameState);
-  };
-
-  // Exchange with another player (predicate-based)
-  gameState.exchange = async (seat, setupContext, canExchangeWith) => {
-    // In 1-player mode, check if exchange already made
-    if (gameState.playerCount === 1 && setupContext.exchangeMade) {
-      return;
-    }
-
-    // Find valid exchange partners
-    const validPlayers = [];
-    for (const otherSeat of gameState.seats) {
-      if (otherSeat.seatIndex !== seat.seatIndex && otherSeat.character) {
-        if (canExchangeWith(otherSeat.character)) {
-          validPlayers.push(otherSeat.seatIndex);
-        }
-      }
-    }
-
-    if (validPlayers.length === 0) {
-      addToGameLog(`${seat.getDisplayName()} has no valid exchange partners`);
-      return;
-    }
-
-    // In 1-player mode, ask if player wants to exchange
-    if (gameState.playerCount === 1) {
-      const targetDescription =
-        validPlayers.length === 1
-          ? gameState.seats[validPlayers[0]].character
-          : validPlayers.map((p) => gameState.seats[p].character).join(" or ");
-
-      const wantsToExchange = await seat.controller.choice({
-        title: `${seat.character} - Exchange?`,
-        message: `Do you want ${seat.character} to exchange with ${targetDescription}?`,
-        buttons: [
-          { label: "Yes, Exchange", value: true },
-          { label: "No, Skip", value: false },
-        ],
-      });
-
-      if (!wantsToExchange) {
-        return;
-      }
-    }
-
-    // Choose target player
-    let targetPlayerIndex;
-    if (validPlayers.length === 1) {
-      targetPlayerIndex = validPlayers[0];
-    } else {
-      const choices = validPlayers.map((p) => ({
-        label: gameState.seats[p].character,
-        value: p,
-      }));
-
-      targetPlayerIndex = await seat.controller.choice({
-        title: `${seat.character} - Choose Exchange Partner`,
-        message: "Choose who to exchange with:",
-        buttons: choices,
-      });
-    }
-
-    // Perform exchange
-    await performExchange(gameState, seat.seatIndex, targetPlayerIndex);
-
-    // Mark exchange as made in 1-player mode
-    if (gameState.playerCount === 1) {
-      setupContext.exchangeMade = true;
-    }
-  };
-
-  // Check if seat has won a specific card
-  gameState.hasCard = (seat, suit, value) => {
-    return seat
-      .getAllWonCards()
-      .some((card) => card.suit === suit && card.value === value);
-  };
-
-  // Check if card has been won by someone else
-  gameState.cardGone = (seat, suit, value) => {
-    for (const otherSeat of gameState.seats) {
-      if (otherSeat.seatIndex !== seat.seatIndex) {
-        if (gameState.hasCard(otherSeat, suit, value)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  };
-
-  // Display simple status icon
-  gameState.displaySimple = (met, completable) => {
-    if (met) {
-      return '<span class="success">✓</span>';
-    } else if (!completable) {
-      return '<span class="fail">✗ (impossible)</span>';
-    } else {
-      return '<span class="fail">✗</span>';
-    }
-  };
-
-  // Display threat card status
-  gameState.displayThreatCard = (seat, met, completable) => {
-    const icon = gameState.displaySimple(met, completable);
-    const threatCard = seat.threatCard ? seat.threatCard : "none";
-    return `${icon} Threat: ${threatCard}`;
-  };
+  // Create game instance
+  const gameState = new Game(
+    playerCount,
+    numCharacters,
+    seats,
+    lostCard,
+    startPlayer,
+  );
+  gameState.availableCharacters = availableCharacters;
 
   // Clear trick display
   document.getElementById("trickCards").innerHTML = "";
