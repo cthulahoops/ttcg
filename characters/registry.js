@@ -420,6 +420,100 @@ const Goldberry = {
   },
 };
 
+const Glorfindel = {
+  name: "Glorfindel",
+  setupText: "Optionally take the lost card",
+
+  setup: async (game, seat, setupContext) => {
+    await game.offerLostCard(seat);
+    // No exchange
+  },
+
+  objective: {
+    text: "Win every Shadows card",
+    check: (game, seat) => {
+      const shadowsCards = seat
+        .getAllWonCards()
+        .filter((c) => c.suit === "shadows");
+      return shadowsCards.length === 8; // All shadows cards (1-8)
+    },
+    isCompletable: (game, seat) => {
+      // Check if any shadows card has been won by someone else
+      for (let value = 1; value <= 8; value++) {
+        if (game.cardGone(seat, "shadows", value)) {
+          return false;
+        }
+      }
+      return true;
+    },
+  },
+
+  display: {
+    renderStatus: (game, seat) => {
+      const shadowsCards = seat
+        .getAllWonCards()
+        .filter((c) => c.suit === "shadows");
+      const met = Glorfindel.objective.check(game, seat);
+      const completable = Glorfindel.objective.isCompletable(game, seat);
+      const icon = game.displaySimple(met, completable);
+
+      return `${icon} Shadows: ${shadowsCards.length}/8`;
+    },
+  },
+};
+
+const Galadriel = {
+  name: "Galadriel",
+  setupText: "Exchange with either the lost card or Gandalf",
+
+  setup: async (game, seat, setupContext) => {
+    const choice = await game.choice(seat, "Exchange with?", [
+      "Lost Card",
+      "Gandalf",
+    ]);
+
+    if (choice === "Lost Card") {
+      await game.exchangeWithLostCard(seat, setupContext); // ⚠️ NEW API METHOD NEEDED
+    } else {
+      await game.exchange(seat, setupContext, (c) => c === "Gandalf");
+    }
+  },
+
+  objective: {
+    text: "Win neither the fewest nor the most tricks",
+    check: (game, seat) => {
+      const allCounts = game.seats.map((s) => s.getTrickCount());
+      const minCount = Math.min(...allCounts);
+      const maxCount = Math.max(...allCounts);
+      const myCount = seat.getTrickCount();
+      return myCount !== minCount && myCount !== maxCount;
+    },
+    isCompletable: (game, seat) => {
+      const allCounts = game.seats.map((s) => s.getTrickCount());
+      const minCount = Math.min(...allCounts);
+      const maxCount = Math.max(...allCounts);
+      const myCount = seat.getTrickCount();
+
+      // If we're sole min or sole max, it's impossible
+      const minSeats = allCounts.filter((c) => c === minCount).length;
+      const maxSeats = allCounts.filter((c) => c === maxCount).length;
+
+      if (myCount === minCount && minSeats === 1) return false;
+      if (myCount === maxCount && maxSeats === 1) return false;
+
+      return true;
+    },
+  },
+
+  display: {
+    renderStatus: (game, seat) => {
+      const met = Galadriel.objective.check(game, seat);
+      const completable = Galadriel.objective.isCompletable(game, seat);
+      return game.displaySimple(met, completable);
+    },
+  },
+};
+
 export const characterRegistry = new Map([
   [Frodo.name, Frodo],
   [Gandalf.name, Gandalf],
@@ -432,6 +526,8 @@ export const characterRegistry = new Map([
   [Legolas.name, Legolas],
   [Aragorn.name, Aragorn],
   [Goldberry.name, Goldberry],
+  [Glorfindel.name, Glorfindel],
+  [Galadriel.name, Galadriel],
 ]);
 
 export const allCharacterNames = Array.from(characterRegistry.keys());
