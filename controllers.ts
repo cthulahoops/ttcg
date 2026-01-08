@@ -1,8 +1,6 @@
 import { delay, createCardElement } from "./utils";
 import type { Card, ChoiceOptions } from "./types";
 
-let currentDialogResolver: ((value: unknown) => void) | null = null;
-
 abstract class Controller {
   async choice(_options: ChoiceOptions): Promise<unknown> {
     throw new Error("Abstract");
@@ -46,9 +44,6 @@ export class HumanController extends Controller {
       const dialogChoices = document.getElementById("dialogChoices")!;
       const dialogInfo = document.getElementById("dialogInfo")!;
 
-      // Store resolver for potential cleanup
-      currentDialogResolver = resolve;
-
       // Set content
       dialogTitle.textContent = title;
       dialogMessage.textContent = message;
@@ -57,26 +52,23 @@ export class HumanController extends Controller {
       // Clear and populate buttons
       dialogChoices.innerHTML = "";
       if (buttons.length > 0) {
-        buttons.forEach(
-          ({ label, value, onClick, disabled = false }) => {
-            const button = document.createElement("button");
-            button.textContent = label;
-            button.disabled = disabled;
+        buttons.forEach(({ label, value, onClick, disabled = false }) => {
+          const button = document.createElement("button");
+          button.textContent = label;
+          button.disabled = disabled;
 
-            // Support both new value-based and old onClick-based patterns during transition
-            button.onclick = () => {
-              hideDialog();
-              currentDialogResolver = null;
-              if (value !== undefined) {
-                resolve(value);
-              } else if (onClick) {
-                // Fallback for old pattern during transition
-                onClick();
-              }
-            };
-            dialogChoices.appendChild(button);
-          },
-        );
+          // Support both new value-based and old onClick-based patterns during transition
+          button.onclick = () => {
+            hideDialog();
+            if (value !== undefined) {
+              resolve(value);
+            } else if (onClick) {
+              // Fallback for old pattern during transition
+              onClick();
+            }
+          };
+          dialogChoices.appendChild(button);
+        });
       }
 
       if (cards.length > 0) {
@@ -85,7 +77,6 @@ export class HumanController extends Controller {
           const cardElement = createCardElement(card, true, null);
           cardElement.onclick = () => {
             hideDialog();
-            currentDialogResolver = null;
             resolve(card);
           };
           dialogChoices.appendChild(cardElement);
@@ -125,10 +116,7 @@ export class HumanController extends Controller {
 }
 
 export class AIController extends Controller {
-  async choice({
-    buttons = [],
-    cards = [],
-  }: ChoiceOptions): Promise<unknown> {
+  async choice({ buttons = [], cards = [] }: ChoiceOptions): Promise<unknown> {
     await delay(100);
     if (buttons.length > 0) {
       return randomChoice(buttons).value;
@@ -152,6 +140,4 @@ function randomChoice<T>(items: T[]): T {
 
 function hideDialog(): void {
   document.getElementById("dialogArea")!.style.display = "none";
-  // Clear the resolver to prevent hanging promises
-  currentDialogResolver = null;
 }
