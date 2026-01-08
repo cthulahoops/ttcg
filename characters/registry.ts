@@ -556,8 +556,7 @@ const GildorInglorian: CharacterDefinition = {
       }
 
       // Find the last card played by this seat
-      const lastCardPlayed =
-        seat.playedCards[seat.playedCards.length - 1];
+      const lastCardPlayed = seat.playedCards[seat.playedCards.length - 1];
 
       return lastCardPlayed && lastCardPlayed.suit === "forests";
     },
@@ -585,7 +584,7 @@ const GildorInglorian: CharacterDefinition = {
         // Show forests cards remaining in hand
         const availableCards = seat.hand!.getAvailableCards();
         const forestsInHand = availableCards.filter(
-          (c) => c.suit === "forests"
+          (c) => c.suit === "forests",
         ).length;
         return `${icon} Forests: ${forestsInHand} in hand`;
       }
@@ -596,8 +595,7 @@ const GildorInglorian: CharacterDefinition = {
 const FarmerMaggot: CharacterDefinition = {
   name: "Farmer Maggot",
   threatSuit: "hills",
-  setupText:
-    "Draw a Hills threat card, then exchange with Merry or Pippin",
+  setupText: "Draw a Hills threat card, then exchange with Merry or Pippin",
 
   setup: async (game, seat, setupContext) => {
     await game.drawThreatCard(seat, FarmerMaggot.threatSuit, {
@@ -628,7 +626,13 @@ const FarmerMaggot: CharacterDefinition = {
       // Count how many cards of the threat rank are still available
       // (not won by any player, not the lost card)
       let matchingAvailable = 0;
-      const suits: Suit[] = ["mountains", "shadows", "forests", "hills", "rings"];
+      const suits: Suit[] = [
+        "mountains",
+        "shadows",
+        "forests",
+        "hills",
+        "rings",
+      ];
 
       for (const suit of suits) {
         // Check if this rank exists in this suit (1-8 for normal suits, 1-5 for rings)
@@ -699,6 +703,92 @@ const FattyBolger: CharacterDefinition = {
   },
 };
 
+const TomBombadil: CharacterDefinition = {
+  name: "Tom Bombadil",
+  setupText: "Take the lost card, then exchange with Frodo",
+
+  setup: async (game, seat, setupContext) => {
+    await game.offerLostCard(seat);
+    await game.exchange(seat, setupContext, (c: string) => c === "Frodo");
+  },
+
+  objective: {
+    text: "Win 3 or more cards matching the suit of a card left in hand at the end of round",
+    check: (_game, seat) => {
+      // Must have at least one card left in hand
+      const cardsInHand = seat.hand!.getAvailableCards();
+      if (cardsInHand.length === 0) return false;
+
+      // Count cards won by suit
+      const wonBySuit: Record<Suit, number> = {
+        mountains: 0,
+        shadows: 0,
+        forests: 0,
+        hills: 0,
+        rings: 0,
+      };
+
+      seat.getAllWonCards().forEach((card) => {
+        wonBySuit[card.suit] = (wonBySuit[card.suit] || 0) + 1;
+      });
+
+      // Check if any suit in hand has 3+ won cards
+      for (const card of cardsInHand) {
+        if (wonBySuit[card.suit] >= 3) {
+          return true;
+        }
+      }
+
+      return false;
+    },
+    isCompletable: (game, seat) => {
+      if (game.finished) {
+        return TomBombadil.objective.check(game, seat);
+      }
+
+      // TODO: Implement proper completability check
+      // (need to check if we can still win 3+ cards of suits in hand)
+      return true;
+    },
+  },
+
+  display: {
+    renderStatus: (game, seat) => {
+      const met = TomBombadil.objective.check(game, seat);
+      const completable = TomBombadil.objective.isCompletable(game, seat);
+      const icon = game.displaySimple(met, completable);
+
+      // Show suit counts with 2+ cards
+      const wonBySuit: Record<Suit, number> = {
+        mountains: 0,
+        shadows: 0,
+        forests: 0,
+        hills: 0,
+        rings: 0,
+      };
+
+      seat.getAllWonCards().forEach((card) => {
+        wonBySuit[card.suit] = (wonBySuit[card.suit] || 0) + 1;
+      });
+
+      const suitSymbols: Record<Suit, string> = {
+        mountains: "⛰️",
+        shadows: "👁️",
+        forests: "🌲",
+        hills: "🏔️",
+        rings: "💍",
+      };
+
+      const countsDisplay = (Object.keys(wonBySuit) as Suit[])
+        .filter((suit) => wonBySuit[suit] >= 2)
+        .map((suit) => `${suitSymbols[suit]}:${wonBySuit[suit]}`)
+        .join(" ");
+
+      return countsDisplay ? `${icon} ${countsDisplay}` : icon;
+    },
+  },
+};
+
 export const characterRegistry = new Map<string, CharacterDefinition>([
   [Frodo.name, Frodo],
   [Gandalf.name, Gandalf],
@@ -716,6 +806,7 @@ export const characterRegistry = new Map<string, CharacterDefinition>([
   [GildorInglorian.name, GildorInglorian],
   [FarmerMaggot.name, FarmerMaggot],
   [FattyBolger.name, FattyBolger],
+  [TomBombadil.name, TomBombadil],
 ]);
 
 export const allCharacterNames = Array.from(characterRegistry.keys());

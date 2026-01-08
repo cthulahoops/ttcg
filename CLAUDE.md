@@ -63,6 +63,7 @@ Characters are defined in `characters/registry.ts` with their objectives and set
 14. **Gildor Inglorian** - Play a forests card in final trick
 15. **Farmer Maggot** - Win at least two cards matching the threat card rank
 16. **Fatty Bolger** - Win exactly one trick
+17. **Tom Bombadil** - Win 3 or more cards matching the suit of a card left in hand at the end of round
 
 ### Character Setup Actions
 Each character has a specific setup action defined in their CharacterDefinition. Common patterns:
