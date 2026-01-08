@@ -11,6 +11,7 @@ export class Seat {
   characterDef: CharacterDefinition | null;
   threatCard: number | null;
   tricksWon: Trick[];
+  playedCards: Card[];
   controller: Controller;
   isPyramid: boolean;
 
@@ -21,6 +22,7 @@ export class Seat {
     this.characterDef = null; // Character definition from registry (cached)
     this.threatCard = null; // Threat card number or null
     this.tricksWon = []; // Array of { number: number, cards: Card[] }
+    this.playedCards = []; // Array of cards played by this seat
     this.controller = controller; // "human" | "ai"
     this.isPyramid = false; // Flag for 2-player pyramid seat
   }
