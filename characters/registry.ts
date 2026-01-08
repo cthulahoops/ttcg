@@ -663,6 +663,42 @@ const FarmerMaggot: CharacterDefinition = {
   },
 };
 
+const FattyBolger: CharacterDefinition = {
+  name: "Fatty Bolger",
+  setupText: "Give a card to every other character (don't take any back)",
+
+  setup: async (game, seat, _setupContext) => {
+    // Give a card to each other character
+    for (const otherSeat of game.seats) {
+      if (otherSeat.seatIndex !== seat.seatIndex) {
+        const availableCards = seat.hand!.getAvailableCards();
+        if (availableCards.length === 0) {
+          break; // No more cards to give
+        }
+
+        await game.giveCard(seat, otherSeat);
+      }
+    }
+
+    // One extra trick will be played
+    game.tricksToPlay += 1;
+  },
+
+  objective: {
+    text: "Win exactly one trick",
+    check: (_game, seat) => seat.getTrickCount() === 1,
+    isCompletable: (_game, seat) => seat.getTrickCount() <= 1,
+  },
+
+  display: {
+    renderStatus: (game, seat) => {
+      const met = FattyBolger.objective.check(game, seat);
+      const completable = FattyBolger.objective.isCompletable(game, seat);
+      return game.displaySimple(met, completable);
+    },
+  },
+};
+
 export const characterRegistry = new Map<string, CharacterDefinition>([
   [Frodo.name, Frodo],
   [Gandalf.name, Gandalf],
@@ -679,6 +715,7 @@ export const characterRegistry = new Map<string, CharacterDefinition>([
   [Galadriel.name, Galadriel],
   [GildorInglorian.name, GildorInglorian],
   [FarmerMaggot.name, FarmerMaggot],
+  [FattyBolger.name, FattyBolger],
 ]);
 
 export const allCharacterNames = Array.from(characterRegistry.keys());
