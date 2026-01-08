@@ -61,6 +61,7 @@ Characters are defined in `characters/registry.ts` with their objectives and set
 12. **Glorfindel** - Win every Shadows card
 13. **Galadriel** - Win neither the fewest nor the most tricks
 14. **Gildor Inglorian** - Play a forests card in final trick
+15. **Farmer Maggot** - Win at least two cards matching the threat card rank
 
 ### Character Setup Actions
 Each character has a specific setup action defined in their CharacterDefinition. Common patterns:

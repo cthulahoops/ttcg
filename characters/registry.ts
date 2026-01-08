@@ -593,6 +593,76 @@ const GildorInglorian: CharacterDefinition = {
   },
 };
 
+const FarmerMaggot: CharacterDefinition = {
+  name: "Farmer Maggot",
+  threatSuit: "hills",
+  setupText:
+    "Draw a Hills threat card, then exchange with Merry or Pippin",
+
+  setup: async (game, seat, setupContext) => {
+    await game.drawThreatCard(seat, FarmerMaggot.threatSuit, {
+      exclude: game.lostCard?.value,
+    });
+    await game.exchange(seat, setupContext, (c: string) =>
+      ["Merry", "Pippin"].includes(c),
+    );
+  },
+
+  objective: {
+    text: "Win at least two cards matching the threat card rank",
+    check: (_game, seat) => {
+      if (!seat.threatCard) return false;
+      const matchingCards = seat
+        .getAllWonCards()
+        .filter((c) => c.value === seat.threatCard);
+      return matchingCards.length >= 2;
+    },
+    isCompletable: (game, seat) => {
+      if (!seat.threatCard) return true;
+
+      // Count how many cards of the threat rank we've won
+      const matchingWon = seat
+        .getAllWonCards()
+        .filter((c) => c.value === seat.threatCard).length;
+
+      // Count how many cards of the threat rank are still available
+      // (not won by any player, not the lost card)
+      let matchingAvailable = 0;
+      const suits: Suit[] = ["mountains", "shadows", "forests", "hills", "rings"];
+
+      for (const suit of suits) {
+        // Check if this rank exists in this suit (1-8 for normal suits, 1-5 for rings)
+        const maxValue = suit === "rings" ? 5 : 8;
+        if (seat.threatCard <= maxValue) {
+          // Check if this card is gone
+          if (!game.cardGone(seat, suit, seat.threatCard)) {
+            matchingAvailable++;
+          }
+        }
+      }
+
+      return matchingWon + matchingAvailable >= 2;
+    },
+  },
+
+  display: {
+    renderStatus: (game, seat) => {
+      if (!seat.threatCard) {
+        return game.displaySimple(false, true);
+      }
+
+      const matchingCards = seat
+        .getAllWonCards()
+        .filter((c) => c.value === seat.threatCard);
+      const met = FarmerMaggot.objective.check(game, seat);
+      const completable = FarmerMaggot.objective.isCompletable(game, seat);
+      const icon = game.displaySimple(met, completable);
+
+      return `${icon} Threat: ${seat.threatCard}, Won: ${matchingCards.length}/2`;
+    },
+  },
+};
+
 export const characterRegistry = new Map<string, CharacterDefinition>([
   [Frodo.name, Frodo],
   [Gandalf.name, Gandalf],
@@ -608,6 +678,7 @@ export const characterRegistry = new Map<string, CharacterDefinition>([
   [Glorfindel.name, Glorfindel],
   [Galadriel.name, Galadriel],
   [GildorInglorian.name, GildorInglorian],
+  [FarmerMaggot.name, FarmerMaggot],
 ]);
 
 export const allCharacterNames = Array.from(characterRegistry.keys());
