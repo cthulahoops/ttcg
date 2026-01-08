@@ -78,25 +78,25 @@ class Game {
     question: string,
     options: string[],
   ): Promise<string> {
-    return (await seat.controller.choice({
+    return await seat.controller.chooseButton({
       title: question,
       message: question,
       buttons: options.map((opt) => ({ label: opt, value: opt })),
-    })) as string;
+    });
   }
 
   // Offer lost card (optional take)
   async offerLostCard(seat: Seat): Promise<void> {
     if (!this.lostCard) return;
 
-    const shouldTake = (await seat.controller.choice({
+    const shouldTake = await seat.controller.chooseButton({
       title: `${seat.character} - Lost Card`,
       message: `Take the lost card (${this.lostCard.value} of ${this.lostCard.suit})?`,
       buttons: [
         { label: "Yes", value: true },
         { label: "No", value: false },
       ],
-    })) as boolean;
+    });
 
     if (shouldTake) {
       seat.hand!.addCard(this.lostCard);
@@ -118,11 +118,11 @@ class Game {
       : seat.hand!.getAllCards();
     const sortedCards = sortHand(cards);
 
-    const cardToGive = (await seat.controller.choice({
+    const cardToGive = await seat.controller.chooseCard({
       title: `${seat.character} - Exchange with Lost Card`,
       message: `Choose a card to exchange with the lost card (${this.lostCard.value} of ${this.lostCard.suit})`,
       cards: sortedCards,
-    })) as Card;
+    });
 
     // Swap cards
     seat.hand!.removeCard(cardToGive);
@@ -189,11 +189,11 @@ class Game {
 
     const availableCards = this.threatDeck.slice(0, 3); // Show first 3 options
 
-    const choice = (await seat.controller.choice({
+    const choice = await seat.controller.chooseButton({
       title: `${seat.character} - Choose Threat Card`,
       message: "Choose a threat card:",
       buttons: availableCards.map((value) => ({ label: `${value}`, value })),
-    })) as number;
+    });
 
     // Remove chosen card from deck
     const index = this.threatDeck.indexOf(choice);
@@ -246,14 +246,14 @@ class Game {
           ? this.seats[validPlayers[0]].character!
           : validPlayers.map((p) => this.seats[p].character).join(" or ");
 
-      const wantsToExchange = (await seat.controller.choice({
+      const wantsToExchange = await seat.controller.chooseButton({
         title: `${seat.character} - Exchange?`,
         message: `Do you want ${seat.character} to exchange with ${targetDescription}?`,
         buttons: [
           { label: "Yes, Exchange", value: true },
           { label: "No, Skip", value: false },
         ],
-      })) as boolean;
+      });
 
       if (!wantsToExchange) {
         return;
@@ -265,16 +265,16 @@ class Game {
     if (validPlayers.length === 1) {
       targetPlayerIndex = validPlayers[0];
     } else {
-      const choices: ChoiceButton[] = validPlayers.map((p) => ({
+      const choices: ChoiceButton<number>[] = validPlayers.map((p) => ({
         label: this.seats[p].character!,
         value: p,
       }));
 
-      targetPlayerIndex = (await seat.controller.choice({
+      targetPlayerIndex = await seat.controller.chooseButton({
         title: `${seat.character} - Choose Exchange Partner`,
         message: "Choose who to exchange with:",
         buttons: choices,
-      })) as number;
+      });
     }
 
     // Perform exchange
@@ -476,11 +476,11 @@ async function chooseCardToGive(
     message += " (Frodo cannot give away the 1 of Rings)";
   }
 
-  const selectedCard = (await gameState.seats[fromPlayer].controller.choice({
+  const selectedCard = await gameState.seats[fromPlayer].controller.chooseCard({
     title: "Choose Card to Exchange",
     message,
     cards: playableCards,
-  })) as Card;
+  });
 
   return selectedCard;
 }
@@ -507,11 +507,11 @@ async function chooseCardToReturn(
     message += " (Frodo cannot give away the 1 of Rings)";
   }
 
-  const selectedCard = (await gameState.seats[fromPlayer].controller.choice({
+  const selectedCard = await gameState.seats[fromPlayer].controller.chooseCard({
     title: "Choose Card to Return",
     message,
     cards: playableCards,
-  })) as Card;
+  });
 
   return selectedCard;
 }
@@ -874,16 +874,16 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
     );
 
     if (oneRingPlay) {
-      const useTrump = (await gameState.seats[
+      const useTrump = await gameState.seats[
         oneRingPlay.playerIndex
-      ].controller.choice({
+      ].controller.chooseButton({
         title: "You played the 1 of Rings!",
         message: "Do you want to use it as trump to win this trick?",
         buttons: [
           { label: "Yes, Win Trick", value: true },
           { label: "No, Play Normal", value: false },
         ],
-      })) as boolean;
+      });
       oneRingPlay.isTrump = useTrump;
       displayTrick(gameState);
     }
@@ -991,7 +991,7 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
     highlightActivePlayer(playerIndex);
 
     // Build character buttons
-    const buttons: ChoiceButton[] = gameState.availableCharacters.map(
+    const buttons: ChoiceButton<string>[] = gameState.availableCharacters.map(
       (char) => ({
         label: char,
         value: char,
@@ -999,11 +999,11 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
     );
 
     // Ask controller to choose
-    const character = (await gameState.seats[playerIndex].controller.choice({
+    const character = await gameState.seats[playerIndex].controller.chooseButton({
       title: `${getPlayerDisplayName(gameState, playerIndex)} - Choose Your Character`,
       message: "Select a character to play as",
       buttons,
-    })) as string;
+    });
 
     // Assign character
     addToGameLog(
