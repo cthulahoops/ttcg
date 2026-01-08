@@ -43,6 +43,7 @@ class Game {
   lostCard: Card | null;
   lastTrickWinner: number | null;
   threatDeck: number[];
+  tricksToPlay: number;
 
   constructor(
     playerCount: number,
@@ -63,6 +64,7 @@ class Game {
     this.lostCard = lostCard;
     this.lastTrickWinner = null;
     this.threatDeck = [1, 2, 3, 4, 5, 6, 7];
+    this.tricksToPlay = numCharacters === 3 ? 12 : 9;
 
     // Shuffle the threat deck
     this.threatDeck = shuffleDeck(
@@ -329,6 +331,38 @@ class Game {
     const icon = this.displaySimple(met, completable);
     const threatCard = seat.threatCard ? seat.threatCard : "none";
     return `${icon} Threat: ${threatCard}`;
+  }
+
+  // Give a card from one seat to another
+  async giveCard(fromSeat: Seat, toSeat: Seat): Promise<void> {
+    const availableCards = fromSeat.hand!.getAvailableCards();
+
+    if (availableCards.length === 0) {
+      throw new Error(`${fromSeat.getDisplayName()} has no cards to give`);
+    }
+
+    const sortedCards = availableCards.sort((a, b) => {
+      if (a.suit !== b.suit) {
+        const suitOrder = ["rings", "mountains", "shadows", "forests", "hills"];
+        return suitOrder.indexOf(a.suit) - suitOrder.indexOf(b.suit);
+      }
+      return a.value - b.value;
+    });
+
+    const cardToGive = await fromSeat.controller.chooseCard({
+      title: `${fromSeat.character} - Give Card`,
+      message: `Choose a card to give to ${toSeat.getDisplayName()}`,
+      cards: sortedCards,
+    });
+
+    // Transfer the card
+    fromSeat.hand!.removeCard(cardToGive);
+    toSeat.hand!.addCard(cardToGive);
+
+    addToGameLog(
+      `${fromSeat.getDisplayName()} gives ${cardToGive.value} of ${cardToGive.suit} to ${toSeat.getDisplayName()}`,
+    );
+    displayHands(this, this.seats);
   }
 }
 
@@ -744,12 +778,8 @@ function checkForImpossibleObjectives(gameState: Game): void {
 }
 
 function isGameOver(gameState: Game): boolean {
-  // Game ends when (numCharacters - 1) players have no cards
-  const playersWithNoCards = gameState.seats.filter((seat) =>
-    seat.hand!.isEmpty(),
-  ).length;
-
-  if (playersWithNoCards >= gameState.numCharacters - 1) {
+  // Game ends when we've played all the tricks
+  if (gameState.currentTrickNumber >= gameState.tricksToPlay) {
     return true;
   }
 
@@ -853,6 +883,12 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
     // Play cards from each player in turn
     for (let i = 0; i < gameState.numCharacters; i++) {
       const playerIndex = (trickLeader + i) % gameState.numCharacters;
+
+      // Skip players with no cards
+      if (gameState.seats[playerIndex].hand!.isEmpty()) {
+        addToGameLog(`${getPlayerDisplayName(gameState, playerIndex)} passes (no cards)`);
+        continue;
+      }
 
       highlightActivePlayer(playerIndex);
       updateGameStatus(
