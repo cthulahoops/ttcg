@@ -70,6 +70,14 @@ class Game {
     ).map((c) => c.value);
   }
 
+  get finished(): boolean {
+    // Game is finished when (numCharacters - 1) players have no cards
+    const playersWithNoCards = this.seats.filter((seat) =>
+      seat.hand!.isEmpty(),
+    ).length;
+    return playersWithNoCards >= this.numCharacters - 1;
+  }
+
   // ===== GAME API METHODS FOR CHARACTER SETUP/OBJECTIVES =====
 
   // Generic choice method
@@ -791,6 +799,9 @@ async function playSelectedCard(
 ): Promise<void> {
   // Remove card from hand
   gameState.seats[playerIndex].hand!.removeCard(card);
+
+  // Track played card
+  gameState.seats[playerIndex].playedCards.push(card);
 
   // Add to current trick
   gameState.currentTrick.push({ playerIndex, card, isTrump: false });

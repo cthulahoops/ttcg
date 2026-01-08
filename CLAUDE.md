@@ -6,10 +6,13 @@ This is a Lord of the Rings-themed trick-taking card game implemented as a singl
 ## Project Structure
 - **game.html** - Main HTML structure and layout
 - **game.css** - All styling and visual design
-- **game.js** - Game logic, AI, and interactivity
-- **hands.js** - Hand class implementations (PlayerHand, PyramidHand, SolitaireHand, HiddenHand)
-- **utils.js** - Utility functions for card sorting and rendering
-- **seat.js** - Seat class for managing player state
+- **game.ts** - Game logic and main game loop
+- **hands.ts** - Hand class implementations (PlayerHand, PyramidHand, SolitaireHand, HiddenHand)
+- **utils.ts** - Utility functions for card sorting and rendering
+- **seat.ts** - Seat class for managing player state
+- **controllers.ts** - Controller implementations (HumanController, AIController)
+- **types.ts** - TypeScript type definitions
+- **characters/registry.ts** - Character definitions and registry
 
 ## Game Modes
 
@@ -43,16 +46,29 @@ This is a Lord of the Rings-themed trick-taking card game implemented as a singl
 - Cards per player: 9 (4-player), 12 (3-player)
 
 ### Characters and Objectives
-1. **Frodo** - Win at least two ring cards
+Characters are defined in `characters/registry.ts` with their objectives and setup actions. Examples include:
+1. **Frodo** - Win at least two ring cards (four in 3-player)
 2. **Gandalf** - Win at least one trick
 3. **Merry** - Win exactly one or two tricks
 4. **Celeborn** - Win at least three cards of the same rank
+5. **Pippin** - Win the fewest (or joint fewest) tricks
+6. **Boromir** - Win the last trick; do NOT win the 1 of Rings
+7. **Sam** - Win the Hills card matching your threat card
+8. **Gimli** - Win the Mountains card matching your threat card
+9. **Legolas** - Win the Forests card matching your threat card
+10. **Aragorn** - Win exactly the number of tricks shown on your threat card
+11. **Goldberry** - Win exactly three tricks in a row and no other tricks
+12. **Glorfindel** - Win every Shadows card
+13. **Galadriel** - Win neither the fewest nor the most tricks
+14. **Gildor Inglorian** - Play a forests card in final trick
 
 ### Character Setup Actions
-- **Frodo**: No setup action
-- **Gandalf**: Optionally take the Lost card, then exchange with Frodo
-- **Merry**: Exchange with Frodo
-- **Celeborn**: Exchange with any player
+Each character has a specific setup action defined in their CharacterDefinition. Common patterns:
+- Exchange cards with specific characters (Frodo, Gandalf, etc.)
+- Optionally take the lost card
+- Draw threat cards
+- Choose threat cards
+- Reveal hand face-up
 
 ### Special Rules
 - **1 of Rings**: Can be used as trump to automatically win a trick (player chooses)
@@ -77,20 +93,31 @@ All hands implement:
 - `render(domElement, isPlayable, onClick)` - Render the hand to DOM
 
 ### Key Functions
-- `newGame()` - Initializes a new game, deals cards, starts character assignment
-- `playCard(playerIndex, card)` - Handles card playing logic and trick progression
-- `determineTrickWinner()` - Calculates trick winner and checks for game end
-- `checkObjective(playerIndex)` - Evaluates if a player has met their character's win condition
-- `startSetupPhase()` - Manages character-specific setup actions
+- `newGame()` - Initializes a new game, deals cards, creates Game instance
+- `runGame()` - Orchestrates the game flow: character assignment, setup, and trick-taking phases
+- `playSelectedCard()` - Handles card playing logic, updates seat.playedCards and current trick
+- `determineTrickWinner()` - Calculates trick winner based on lead suit and trump
+- `isObjectiveCompletable()` - Evaluates if a seat's objective is still achievable
+- `runSetupPhase()` - Manages character-specific setup actions
 - `displayHands()` - Renders player hands (shows human's cards, hides AI cards)
 - `updateTricksDisplay()` - Updates objective tracking UI
 
-### Game State Object
-The `gameState` object tracks:
+### Seat Class
+The `Seat` class represents a player position with:
+- `hand` - Hand instance (PlayerHand, PyramidHand, SolitaireHand, or HiddenHand)
+- `character` - Assigned character name
+- `tricksWon` - Array of tricks won by this seat
+- `playedCards` - Array of all cards played by this seat (in order)
+- `controller` - HumanController or AIController
+- `isPyramid` - Flag for 2-player pyramid seat
+
+### Game Class
+The `Game` class tracks:
 - Player hands, tricks won, current trick
 - Character assignments and available characters
 - Setup phase state and card exchanges
 - Trump choice status and lost card
+- `finished` getter - Returns true when game is over
 
 ### UI Features
 - Real-time game log with scrolling
@@ -121,3 +148,5 @@ The `gameState` object tracks:
 - **1-player mode**: Verify 1 of Rings is always in initially revealed cards
 - **1-player mode**: Confirm each seat reveals exactly 1 card per trick
 - **Pyramid mode**: Ensure cards only reveal after trick completion, not immediately when played
+
+ALWAYS: Correct any errors in CLAUDE.md.

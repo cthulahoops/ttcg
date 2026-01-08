@@ -540,6 +540,59 @@ const Galadriel: CharacterDefinition = {
   },
 };
 
+const GildorInglorian: CharacterDefinition = {
+  name: "Gildor Inglorian",
+  setupText: "Exchange with Frodo",
+
+  setup: async (game, seat, setupContext) => {
+    await game.exchange(seat, setupContext, (c: string) => c === "Frodo");
+  },
+
+  objective: {
+    text: "Play a forests card in final trick",
+    check: (game, seat) => {
+      if (!game.finished) {
+        return false; // Final trick hasn't been played yet
+      }
+
+      // Find the last card played by this seat
+      const lastCardPlayed =
+        seat.playedCards[seat.playedCards.length - 1];
+
+      return lastCardPlayed && lastCardPlayed.suit === "forests";
+    },
+    isCompletable: (game, seat) => {
+      if (game.finished) {
+        return GildorInglorian.objective.check(game, seat);
+      }
+
+      // Still completable if player has forests cards in hand
+      const availableCards = seat.hand!.getAvailableCards();
+      return availableCards.some((c) => c.suit === "forests");
+    },
+  },
+
+  display: {
+    renderStatus: (game, seat) => {
+      const met = GildorInglorian.objective.check(game, seat);
+      const completable = GildorInglorian.objective.isCompletable(game, seat);
+      const icon = game.displaySimple(met, completable);
+
+      if (game.finished) {
+        // Final trick played
+        return `${icon} Final trick played`;
+      } else {
+        // Show forests cards remaining in hand
+        const availableCards = seat.hand!.getAvailableCards();
+        const forestsInHand = availableCards.filter(
+          (c) => c.suit === "forests"
+        ).length;
+        return `${icon} Forests: ${forestsInHand} in hand`;
+      }
+    },
+  },
+};
+
 export const characterRegistry = new Map<string, CharacterDefinition>([
   [Frodo.name, Frodo],
   [Gandalf.name, Gandalf],
@@ -554,6 +607,7 @@ export const characterRegistry = new Map<string, CharacterDefinition>([
   [Goldberry.name, Goldberry],
   [Glorfindel.name, Glorfindel],
   [Galadriel.name, Galadriel],
+  [GildorInglorian.name, GildorInglorian],
 ]);
 
 export const allCharacterNames = Array.from(characterRegistry.keys());
