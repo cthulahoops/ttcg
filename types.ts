@@ -17,19 +17,25 @@ export interface Trick {
 
 export type Controller = HumanController | AIController;
 
-export interface ChoiceButton {
+export interface ChoiceButton<T> {
   label: string;
-  value: unknown;
+  value: T;
   onClick?: () => void;
   disabled?: boolean;
   grid?: boolean;
 }
 
-export interface ChoiceOptions {
+export interface ChoiceButtonOptions<T> {
   title: string;
   message: string;
-  buttons?: ChoiceButton[];
-  cards?: Card[];
+  buttons: ChoiceButton<T>[];
+  info?: string;
+}
+
+export interface ChoiceCardOptions {
+  title: string;
+  message: string;
+  cards: Card[];
   info?: string;
 }
 
