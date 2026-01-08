@@ -129,6 +129,9 @@ The `Game` class tracks:
 
 ## Development Notes
 
+### Commands
+- **Type checking**: Use `npm run check` (NOT `npm run build`) to verify TypeScript types without building
+
 ### AI Behavior
 - Plays random legal moves (no strategy)
 - Always uses 1 of Rings as trump when played
