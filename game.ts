@@ -332,10 +332,6 @@ function getPlayerDisplayName(gameState: Game, playerIndex: number): string {
   return gameState.seats[playerIndex].getDisplayName();
 }
 
-function findSeatByCharacter(gameState: Game, characterName: string): number {
-  return gameState.seats.findIndex((seat) => seat.character === characterName);
-}
-
 function addToGameLog(message: string, important: boolean = false): void {
   const logDiv = document.getElementById("gameLog")!;
   const entry = document.createElement("div");
@@ -370,19 +366,17 @@ function createDeck(): Card[] {
   return deck;
 }
 
-// Unused helper function (kept for potential future use)
-// function _findPlayerWithCard(gameState: Game, suit: Suit, value: number): number {
-//   for (const seat of gameState.seats) {
-//     if (
-//       seat.hand!
-//         .getAllCards()
-//         .some((card) => card.suit === suit && card.value === value)
-//     ) {
-//       return seat.seatIndex;
-//     }
-//   }
-//   return -1;
-// }
+function findPlayerWithCard(hands: Card[][], needle: Card): number {
+  const idx = hands.findIndex((hand: Card[]) =>
+    hand.some(
+      (card) => card.suit === needle.suit && card.value === needle.value,
+    ),
+  );
+  if (idx < 0) {
+    throw new Error("Needle not found");
+  }
+  return idx;
+}
 
 function isLegalMove(
   gameState: Game,
@@ -458,45 +452,6 @@ function updatePlayerHeadings(gameState: Game): void {
     }
   }
 }
-
-// ===== SETUP PHASE =====
-
-// Unused helper function (kept for potential future use)
-// function _getValidExchangePlayers(gameState: Game, playerIndex: number, exchangeRule: null | string[] | { except: string[] }): number[] {
-//   // Returns an array of player indices that are valid exchange targets
-//   let validPlayers: number[] = [];
-//
-//   if (exchangeRule === null) {
-//     // Can exchange with anyone
-//     for (const seat of gameState.seats) {
-//       if (seat.seatIndex !== playerIndex) {
-//         validPlayers.push(seat.seatIndex);
-//       }
-//     }
-//   } else if (Array.isArray(exchangeRule)) {
-//     // Can only exchange with specific characters
-//     validPlayers = exchangeRule
-//       .map((charName) => findSeatByCharacter(gameState, charName))
-//       .filter(
-//         (p) => p !== -1 && p !== playerIndex && p < gameState.numCharacters,
-//       );
-//   } else if (exchangeRule.except) {
-//     // Can exchange with anyone except specific characters
-//     const excludedPlayers = exchangeRule.except.map((charName) =>
-//       findSeatByCharacter(gameState, charName),
-//     );
-//     for (const seat of gameState.seats) {
-//       if (
-//         seat.seatIndex !== playerIndex &&
-//         !excludedPlayers.includes(seat.seatIndex)
-//       ) {
-//         validPlayers.push(seat.seatIndex);
-//       }
-//     }
-//   }
-//
-//   return validPlayers;
-// }
 
 // ===== EXCHANGE HELPER FUNCTIONS =====
 
@@ -644,7 +599,6 @@ function getGameOverMessage(gameState: Game): string {
   const objectiveWinners: number[] = [];
 
   for (const seat of gameState.seats) {
-    const _character = seat.character;
     const trickCount = seat.getTrickCount();
     const objectiveMet = checkObjective(gameState, seat);
 
@@ -676,8 +630,6 @@ function getGameOverMessage(gameState: Game): string {
 function updateTricksDisplay(gameState: Game): void {
   for (const seat of gameState.seats) {
     const trickCount = seat.getTrickCount();
-    const _character = seat.character;
-    const _wonCards = seat.getAllWonCards();
 
     // Update trick count
     document.getElementById(`tricks${seat.seatIndex + 1}`)!.textContent =
@@ -1136,13 +1088,10 @@ async function newGame(): Promise<void> {
   }
 
   // Find who has the 1 of rings before creating hands
-  let startPlayer = -1;
-  for (let p = 0; p < numCharacters; p++) {
-    if (playerCards[p].some((c) => c.suit === "rings" && c.value === 1)) {
-      startPlayer = p;
-      break;
-    }
-  }
+  const startPlayer = findPlayerWithCard(playerCards, {
+    suit: "rings",
+    value: 1,
+  });
 
   // Initialize Seat instances with their dealt cards
   const seats: Seat[] = [];
