@@ -7,8 +7,6 @@
     <link rel="stylesheet" href="game.css">
 </head>
 <body>
-    <h1>Trick Taking Game</h1>
-
     <div class="container">
         <div class="main-content">
             <div class="controls">
@@ -34,51 +32,64 @@
                 </div>
             </section>
 
-            <section class="trick-area">
-                <h2>Current Trick</h2>
-                <div class="trick-cards" id="trickCards"></div>
-            </section>
+            <div class="two-column">
+                <section class="trick-area">
+                    <h2>Current Trick</h2>
+                    <div class="trick-cards" id="trickCards"></div>
+                </section>
 
-            <div class="players">
-                <section class="player" data-player="1">
-                    <h3 id="playerName1">Player 1</h3>
-                    <div class="objective" id="objective1"></div>
-                    <div class="tricks-won" id="tricks1">Tricks: 0</div>
-                    <div class="objective-status" id="objectiveStatus1"></div>
-                    <div class="hand" id="player1"></div>
-                </section>
-                <section class="player" data-player="2">
-                    <h3 id="playerName2">Player 2</h3>
-                    <div class="objective" id="objective2"></div>
-                    <div class="tricks-won" id="tricks2">Tricks: 0</div>
-                    <div class="objective-status" id="objectiveStatus2"></div>
-                    <div class="hand" id="player2"></div>
-                </section>
-                <section class="player" data-player="3">
-                    <h3 id="playerName3">Player 3</h3>
-                    <div class="objective" id="objective3"></div>
-                    <div class="tricks-won" id="tricks3">Tricks: 0</div>
-                    <div class="objective-status" id="objectiveStatus3"></div>
-                    <div class="hand" id="player3"></div>
-                </section>
-                <section class="player" data-player="4">
-                    <h3 id="playerName4">Player 4</h3>
-                    <div class="objective" id="objective4"></div>
-                    <div class="tricks-won" id="tricks4">Tricks: 0</div>
-                    <div class="objective-status" id="objectiveStatus4"></div>
-                    <div class="hand" id="player4"></div>
+                <section class="lost-card-section">
+                    <h2>Lost Card</h2>
+                    <div id="lostCard"></div>
                 </section>
             </div>
 
-            <section class="lost-card-section">
-                <h2>Lost Card</h2>
-                <div id="lostCard"></div>
-            </section>
+            <div class="players">
+                <section class="player" data-player="1">
+                    <div>
+                        <h3 id="playerName1">Player 1</h3>
+                        <div class="objective" id="objective1"></div>
+                        <div class="tricks-won" id="tricks1">Tricks: 0</div>
+                        <div class="objective-status" id="objectiveStatus1"></div>
+                    </div>
+                    <div class="hand" id="player1"></div>
+                </section>
+                <section class="player" data-player="2">
+                    <div>
+                        <h3 id="playerName2">Player 2</h3>
+                        <div class="objective" id="objective2"></div>
+                        <div class="tricks-won" id="tricks2">Tricks: 0</div>
+                        <div class="objective-status" id="objectiveStatus2"></div>
+                    </div>
+                    <div class="hand" id="player2"></div>
+                </section>
+                <section class="player" data-player="3">
+                    <div>
+                        <h3 id="playerName3">Player 3</h3>
+                        <div class="objective" id="objective3"></div>
+                        <div class="tricks-won" id="tricks3">Tricks: 0</div>
+                        <div class="objective-status" id="objectiveStatus3"></div>
+                    </div>
+                    <div class="hand" id="player3"></div>
+                </section>
+                <section class="player" data-player="4">
+                    <div>
+                        <h3 id="playerName4">Player 4</h3>
+                        <div class="objective" id="objective4"></div>
+                        <div class="tricks-won" id="tricks4">Tricks: 0</div>
+                        <div class="objective-status" id="objectiveStatus4"></div>
+                    </div>
+                    <div class="hand" id="player4"></div>
+                </section>
+            </div>
         </div>
 
         <div class="sidebar">
             <section class="section game-log">
-                <h2>Game Log</h2>
+                <div class="game-log-header">
+                    <h2>Game Log</h2>
+                    <button onclick="copyGameLog()" class="copy-log-button">Copy Log</button>
+                </div>
                 <div id="gameLog"></div>
             </section>
         </div>
