@@ -886,7 +886,9 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
 
       // Skip players with no cards
       if (gameState.seats[playerIndex].hand!.isEmpty()) {
-        addToGameLog(`${getPlayerDisplayName(gameState, playerIndex)} passes (no cards)`);
+        addToGameLog(
+          `${getPlayerDisplayName(gameState, playerIndex)} passes (no cards)`,
+        );
         continue;
       }
 
@@ -1046,7 +1048,9 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
     );
 
     // Ask controller to choose
-    const character = await gameState.seats[playerIndex].controller.chooseButton({
+    const character = await gameState.seats[
+      playerIndex
+    ].controller.chooseButton({
       title: `${getPlayerDisplayName(gameState, playerIndex)} - Choose Your Character`,
       message: "Select a character to play as",
       buttons,
