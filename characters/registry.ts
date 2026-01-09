@@ -196,18 +196,16 @@ const Pippin: CharacterDefinition = {
       const allCounts = game.seats.map((s: Seat) => s.getTrickCount());
       const myCount = seat.getTrickCount();
 
+      // Calculate total gap: how many more tricks does Pippin have than players with fewer?
       let totalGap = 0;
-      const totalTricks = game.seats.length === 3 ? 12 : 9;
-      let tricksPlayed = 0;
       for (const otherTricks of allCounts) {
         if (otherTricks < myCount) {
           totalGap += myCount - otherTricks;
         }
-        tricksPlayed += otherTricks;
       }
 
-      const remainingTricks = totalTricks - tricksPlayed;
-      return totalGap <= remainingTricks;
+      // Can still complete if other players can catch up with remaining tricks
+      return totalGap <= game.tricksRemaining();
     },
   },
 
