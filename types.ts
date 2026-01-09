@@ -5,10 +5,11 @@ import type { Seat } from "./seat";
 
 export type Suit = "mountains" | "shadows" | "forests" | "hills" | "rings";
 
-export interface Card {
-  value: number;
-  suit: Suit;
-}
+type BaseCard<T> = { suit: T; value: number };
+
+export type Card = BaseCard<Suit>;
+export type ThreatCard = BaseCard<"threat">;
+export type AnyCard = Card | ThreatCard;
 
 export interface Trick {
   number: number;
@@ -32,10 +33,10 @@ export interface ChoiceButtonOptions<T> {
   info?: string;
 }
 
-export interface ChoiceCardOptions {
+export interface ChoiceCardOptions<T extends AnyCard = AnyCard> {
   title: string;
   message: string;
-  cards: Card[];
+  cards: T[];
   info?: string;
 }
 

@@ -6,11 +6,22 @@ import {
   HiddenHand,
   SolitaireHand,
 } from "./hands.js";
-import { shuffleDeck, sortHand, createCardElement, delay } from "./utils.js";
+import {
+  shuffleDeck,
+  sortHand,
+  createCardElement,
+  delay,
+} from "./utils.js";
 import { Seat } from "./seat.js";
 import { HumanController, AIController } from "./controllers.js";
 import { characterRegistry, allCharacterNames } from "./characters/registry.js";
-import type { Card, Suit, Controller, ChoiceButton } from "./types";
+import type {
+  Card,
+  Suit,
+  ThreatCard,
+  Controller,
+  ChoiceButton,
+} from "./types";
 
 // All possible characters in the game (except Frodo who is automatically assigned)
 const allCharacters = allCharacterNames.filter((name) => name !== "Frodo");
@@ -197,28 +208,34 @@ class Game {
       throw new Error("Threat deck is empty!");
     }
 
-    const availableCards = this.threatDeck.slice(0, 3); // Show first 3 options
+    const availableCards = [...this.threatDeck.slice(0, 3)];
 
-    const choice = await seat.controller.chooseButton({
+    // Convert threat card numbers to ThreatCard objects
+    const threatCards: ThreatCard[] = availableCards.map((value) => ({
+      value,
+      suit: "threat",
+    }));
+
+    const choice = await seat.controller.chooseCard({
       title: `${seat.character} - Choose Threat Card`,
       message: "Choose a threat card:",
-      buttons: availableCards.map((value) => ({ label: `${value}`, value })),
+      cards: threatCards,
     });
 
     // Remove chosen card from deck
-    const index = this.threatDeck.indexOf(choice);
+    const index = this.threatDeck.indexOf(choice.value);
     if (index > -1) {
       this.threatDeck.splice(index, 1);
     }
 
-    seat.threatCard = choice;
+    seat.threatCard = choice.value;
     addToGameLog(
-      `${seat.getDisplayName()} chooses threat card: ${choice}`,
+      `${seat.getDisplayName()} chooses threat card: ${choice.value}`,
       true,
     );
     updateGameStatus(
       this,
-      `${seat.getDisplayName()} chooses threat card ${choice}`,
+      `${seat.getDisplayName()} chooses threat card ${choice.value}`,
     );
     updateTricksDisplay(this);
   }
@@ -327,10 +344,8 @@ class Game {
   }
 
   // Display threat card status
-  displayThreatCard(seat: Seat, met: boolean, completable: boolean): string {
-    const icon = this.displaySimple(met, completable);
-    const threatCard = seat.threatCard ? seat.threatCard : "none";
-    return `${icon} Threat: ${threatCard}`;
+  displayThreatCard(_seat: Seat, met: boolean, completable: boolean): string {
+    return this.displaySimple(met, completable);
   }
 
   // Give a card from one seat to another
@@ -689,6 +704,18 @@ function updateTricksDisplay(gameState: Game): void {
     }
 
     statusDiv.innerHTML = characterDef.display.renderStatus(gameState, seat);
+
+    // Update threat card display
+    const threatCardDiv = document.getElementById(
+      `threatCard${seat.seatIndex + 1}`,
+    )!;
+    threatCardDiv.innerHTML = "";
+
+    if (seat.threatCard !== null) {
+      threatCardDiv.appendChild(
+        createCardElement({ suit: "threat", value: seat.threatCard }),
+      );
+    }
   }
 }
 
@@ -706,8 +733,8 @@ function displayTrick(gameState: Game): void {
       getPlayerDisplayName(gameState, play.playerIndex) +
       (play.isTrump ? " (TRUMP)" : "");
 
-    trickCardDiv.appendChild(labelDiv);
     trickCardDiv.appendChild(createCardElement(play.card));
+    trickCardDiv.appendChild(labelDiv);
     trickDiv.appendChild(trickCardDiv);
   });
 }
@@ -1182,7 +1209,7 @@ async function newGame(): Promise<void> {
     );
   }
 
-  const availableCharacters = shuffleDeck(allCharacters).slice(0, 4);
+  const availableCharacters = shuffleDeck(allCharacters); // .slice(0, 4);
   availableCharacters.push("Frodo");
 
   // Create game instance
