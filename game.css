@@ -1,6 +1,10 @@
 :root {
-    --card-width: 80px;
-    --card-height: 120px;
+    --card-width: 60px;
+    --card-height: 90px;
+}
+
+* {
+    box-sizing: border-box;
 }
 
 body {
@@ -20,6 +24,14 @@ body {
 .main-content {
     flex: 1;
     min-width: 0;
+    display: grid;
+    gap: 10px;
+}
+
+.two-column {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
 }
 
 .sidebar {
@@ -49,25 +61,29 @@ section h3 {
 /* Lost Card Section */
 .lost-card-section {
     text-align: center;
-    margin-top: 30px;
-    margin-bottom: 30px;
 }
 
 .players {
     display: grid;
-    gap: 20px;
-    margin-top: 30px;
+    gap: 10px;
 }
 
-.hand {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+.player, .trick-area, .lost-card-section  {
+    display: grid;
+    grid-template-columns: 20rem 1fr;
+    gap: 5px;
+}
+
+.hand:not(.pyramid-hand) {
+    display: grid;
+    --grid-gap: 5px;
+    gap: var(--grid-gap);
+    grid-template-columns: repeat(auto-fill, var(--card-width));
 }
 
 .card {
-    width: 60px;
-    height: 85px;
+    width: var(--card-width);
+    height: var(--card-height);
     border: 2px solid #333;
     border-radius: 5px;
     background-color: #fff;
@@ -154,14 +170,6 @@ button {
 
 button:hover {
     background-color: #ffed4e;
-}
-
-/* Trick Area */
-.trick-area {
-    text-align: center;
-    margin-top: 30px;
-    margin-bottom: 30px;
-    min-height: 150px;
 }
 
 .trick-cards {
@@ -325,8 +333,27 @@ button:hover {
     top: 20px;
 }
 
+.game-log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
 .game-log h2 {
     font-size: 18px;
+    margin-bottom: 0;
+}
+
+.copy-log-button {
+    padding: 5px 10px;
+    font-size: 12px;
+    background-color: #4a7023;
+    color: #fff;
+}
+
+.copy-log-button:hover {
+    background-color: #5a8030;
 }
 
 .log-entry {
@@ -354,9 +381,10 @@ body[data-player-count="2"] .player:has(#player4) {
 /* Pyramid display styles */
 .pyramid-hand {
     display: grid;
-    grid-auto-columns: calc(var(--card-width) / 2 - 5px);
-    grid-auto-rows: calc(var(--card-height) / 2 - 5px);
-    gap: 5px;
+    --grid-gap: 5px;
+    grid-auto-columns: calc((var(--card-width) - var(--grid-gap)) / 2);
+    grid-auto-rows: calc((var(--card-height)  - var(--grid-gap)) / 2);
+    gap: var(--grid-gap);
 }
 
 .pyramid-hand > .card {
