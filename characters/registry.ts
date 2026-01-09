@@ -3,9 +3,8 @@
 
 import type { Seat } from "../seat";
 import type { Suit } from "../types";
+import type { Game } from "../game";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Game = any; // Will be properly typed when game.ts is converted
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SetupContext = any;
 
@@ -23,7 +22,6 @@ interface CharacterDisplay {
 interface CharacterDefinition {
   name: string;
   setupText: string;
-  threatSuit?: Suit;
   setup: (game: Game, seat: Seat, setupContext: SetupContext) => Promise<void>;
   objective: CharacterObjective;
   display: CharacterDisplay;
@@ -257,12 +255,11 @@ const Boromir: CharacterDefinition = {
 
 const Sam: CharacterDefinition = {
   name: "Sam",
-  threatSuit: "hills",
   setupText:
     "Draw a Hills threat card, then exchange with Frodo, Merry, or Pippin",
 
   setup: async (game, seat, setupContext) => {
-    await game.drawThreatCard(seat, Sam.threatSuit, {
+    await game.drawThreatCard(seat, {
       exclude: game.lostCard?.value,
     });
     await game.exchange(seat, setupContext, (c: string) =>
@@ -274,11 +271,11 @@ const Sam: CharacterDefinition = {
     text: "Win the Hills card matching your threat card",
     check: (game, seat) => {
       if (!seat.threatCard) return false;
-      return game.hasCard(seat, Sam.threatSuit, seat.threatCard);
+      return game.hasCard(seat, "hills", seat.threatCard);
     },
     isCompletable: (game, seat) => {
       if (!seat.threatCard) return true;
-      return !game.cardGone(seat, Sam.threatSuit, seat.threatCard);
+      return !game.cardGone(seat, "hills", seat.threatCard);
     },
   },
 
@@ -293,12 +290,11 @@ const Sam: CharacterDefinition = {
 
 const Gimli: CharacterDefinition = {
   name: "Gimli",
-  threatSuit: "mountains",
   setupText:
     "Draw a Mountains threat card, then exchange with Legolas or Aragorn",
 
   setup: async (game, seat, setupContext) => {
-    await game.drawThreatCard(seat, Gimli.threatSuit, {
+    await game.drawThreatCard(seat, {
       exclude: game.lostCard?.value,
     });
     await game.exchange(seat, setupContext, (c: string) =>
@@ -310,11 +306,11 @@ const Gimli: CharacterDefinition = {
     text: "Win the Mountains card matching your threat card",
     check: (game, seat) => {
       if (!seat.threatCard) return false;
-      return game.hasCard(seat, Gimli.threatSuit, seat.threatCard);
+      return game.hasCard(seat, "mountains", seat.threatCard);
     },
     isCompletable: (game, seat) => {
       if (!seat.threatCard) return true;
-      return !game.cardGone(seat, Gimli.threatSuit, seat.threatCard);
+      return !game.cardGone(seat, "mountains", seat.threatCard);
     },
   },
 
@@ -329,11 +325,10 @@ const Gimli: CharacterDefinition = {
 
 const Legolas: CharacterDefinition = {
   name: "Legolas",
-  threatSuit: "forests",
   setupText: "Draw a Forests threat card, then exchange with Gimli or Aragorn",
 
   setup: async (game, seat, setupContext) => {
-    await game.drawThreatCard(seat, Legolas.threatSuit, {
+    await game.drawThreatCard(seat, {
       exclude: game.lostCard?.value,
     });
     await game.exchange(seat, setupContext, (c: string) =>
@@ -345,11 +340,11 @@ const Legolas: CharacterDefinition = {
     text: "Win the Forests card matching your threat card",
     check: (game, seat) => {
       if (!seat.threatCard) return false;
-      return game.hasCard(seat, Legolas.threatSuit, seat.threatCard);
+      return game.hasCard(seat, "forests", seat.threatCard);
     },
     isCompletable: (game, seat) => {
       if (!seat.threatCard) return true;
-      return !game.cardGone(seat, Legolas.threatSuit, seat.threatCard);
+      return !game.cardGone(seat, "forests", seat.threatCard);
     },
   },
 
@@ -426,16 +421,43 @@ const Goldberry: CharacterDefinition = {
     },
     isCompletable: (game, seat) => {
       const trickCount = seat.getTrickCount();
-      if (trickCount > 3) return false; // Already won too many
 
-      if (trickCount === 0) {
-        trickCount + 3 < game.tricksToPlay;
+      // Already won too many
+      if (trickCount > 3) return false;
+
+      // Already won exactly 3 - just check if they're consecutive
+      if (trickCount === 3) {
+        return Goldberry.objective.check(game, seat);
       }
 
-      // Check if current tricks are consecutive from some starting point
-      // and if we can still win exactly 3 consecutive
-      // (Complex logic - simplified here)
-      return true;
+      // Haven't won any yet - need at least 3 tricks remaining
+      if (trickCount === 0) {
+        return game.tricksRemaining() >= 3;
+      }
+
+      // Won 1 or 2 tricks - check if they're consecutive and we can complete the run
+      const trickNumbers = seat.tricksWon
+        .map((t) => t.number)
+        .sort((a, b) => a - b);
+
+      // Check if currently won tricks are consecutive
+      for (let i = 1; i < trickNumbers.length; i++) {
+        if (trickNumbers[i] !== trickNumbers[i - 1] + 1) {
+          return false;
+        }
+      }
+
+      // Tricks are consecutive. Check if we can still complete a run of 3.
+      const maxTrickWon = trickNumbers[trickNumbers.length - 1];
+
+      // If the next required trick has already been played, it's impossible
+      if (game.currentTrickNumber > maxTrickWon + 1) {
+        return false;
+      }
+
+      // Check if there are enough tricks remaining to reach 3 total
+      const tricksNeeded = 3 - trickCount;
+      return game.tricksRemaining() >= tricksNeeded;
     },
   },
 
@@ -597,13 +619,10 @@ const GildorInglorian: CharacterDefinition = {
 
 const FarmerMaggot: CharacterDefinition = {
   name: "Farmer Maggot",
-  threatSuit: "hills",
   setupText: "Draw a Hills threat card, then exchange with Merry or Pippin",
 
   setup: async (game, seat, setupContext) => {
-    await game.drawThreatCard(seat, FarmerMaggot.threatSuit, {
-      exclude: game.lostCard?.value,
-    });
+    await game.drawThreatCard(seat);
     await game.exchange(seat, setupContext, (c: string) =>
       ["Merry", "Pippin"].includes(c),
     );

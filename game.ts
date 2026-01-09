@@ -41,7 +41,7 @@ interface GameSetupContext {
 
 // ===== GAME CLASS =====
 
-class Game {
+export class Game {
   playerCount: number;
   numCharacters: number;
   seats: Seat[];
@@ -167,7 +167,6 @@ class Game {
   // Draw threat card
   async drawThreatCard(
     seat: Seat,
-    _targetSuit: Suit,
     options: { exclude?: number } = {},
   ): Promise<void> {
     if (this.threatDeck.length === 0) {
@@ -328,6 +327,11 @@ class Game {
       }
     }
     return false;
+  }
+
+  // Get number of tricks remaining to be played
+  tricksRemaining(): number {
+    return this.tricksToPlay - this.currentTrickNumber;
   }
 
   // Display simple status icon
