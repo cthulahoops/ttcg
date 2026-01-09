@@ -48,7 +48,7 @@ export function createCardElement(
 
   const suitDiv = document.createElement("div");
   suitDiv.className = "suit";
-  suitDiv.textContent = card.suit === "threat" ? "THREAT" : card.suit;
+  suitDiv.textContent = card.suit;
 
   cardDiv.appendChild(valueDiv);
   cardDiv.appendChild(suitDiv);
