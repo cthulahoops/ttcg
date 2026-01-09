@@ -46,24 +46,10 @@ This is a Lord of the Rings-themed trick-taking card game implemented as a singl
 - Cards per player: 9 (4-player), 12 (3-player)
 
 ### Characters and Objectives
-Characters are defined in `characters/registry.ts` with their objectives and setup actions. Examples include:
-1. **Frodo** - Win at least two ring cards (four in 3-player)
-2. **Gandalf** - Win at least one trick
-3. **Merry** - Win exactly one or two tricks
-4. **Celeborn** - Win at least three cards of the same rank
-5. **Pippin** - Win the fewest (or joint fewest) tricks
-6. **Boromir** - Win the last trick; do NOT win the 1 of Rings
-7. **Sam** - Win the Hills card matching your threat card
-8. **Gimli** - Win the Mountains card matching your threat card
-9. **Legolas** - Win the Forests card matching your threat card
-10. **Aragorn** - Win exactly the number of tricks shown on your threat card
-11. **Goldberry** - Win exactly three tricks in a row and no other tricks
-12. **Glorfindel** - Win every Shadows card
-13. **Galadriel** - Win neither the fewest nor the most tricks
-14. **Gildor Inglorian** - Play a forests card in final trick
-15. **Farmer Maggot** - Win at least two cards matching the threat card rank
-16. **Fatty Bolger** - Win exactly one trick
-17. **Tom Bombadil** - Win 3 or more cards matching the suit of a card left in hand at the end of round
+
+The rules for characters are in `rules/characters.md`
+
+Characters are defined in `characters/registry.ts` with their objectives and setup actions.
 
 ### Character Setup Actions
 Each character has a specific setup action defined in their CharacterDefinition. Common patterns:
