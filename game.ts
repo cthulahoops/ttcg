@@ -1221,6 +1221,29 @@ function resetPlayerHeadings(): void {
   }
 }
 
+function copyGameLog(): void {
+  const logDiv = document.getElementById("gameLog")!;
+  const logEntries = Array.from(logDiv.querySelectorAll(".log-entry"));
+  const logText = logEntries.map((entry) => entry.textContent).join("\n");
+
+  navigator.clipboard.writeText(logText).then(
+    () => {
+      // Temporarily change button text to show success
+      const button = document.querySelector(
+        ".copy-log-button",
+      ) as HTMLButtonElement;
+      const originalText = button.textContent;
+      button.textContent = "Copied!";
+      setTimeout(() => {
+        button.textContent = originalText;
+      }, 1500);
+    },
+    (err) => {
+      console.error("Failed to copy log:", err);
+    },
+  );
+}
+
 // Expose functions to global scope for inline event handlers
 (window as any).newGame = () => {
   newGame().catch((error) => {
@@ -1229,3 +1252,4 @@ function resetPlayerHeadings(): void {
     statusDiv.textContent = "Error starting game. Check console for details.";
   });
 };
+(window as any).copyGameLog = copyGameLog;
