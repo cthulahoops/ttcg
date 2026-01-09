@@ -208,10 +208,8 @@ class Game {
       throw new Error("Threat deck is empty!");
     }
 
-    const availableCards = [...this.threatDeck.slice(0, 3)];
-
     // Convert threat card numbers to ThreatCard objects
-    const threatCards: ThreatCard[] = availableCards.map((value) => ({
+    const threatCards: ThreatCard[] = this.threatDeck.map((value) => ({
       value,
       suit: "threat",
     }));
