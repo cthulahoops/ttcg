@@ -9,23 +9,22 @@
 
 body {
     font-family: Arial, sans-serif;
-    margin: 20px;
+    margin: 0;
     background-color: #2d5016;
     color: #fff;
 }
 
 .container {
-    display: flex;
+    display: grid;
     gap: 20px;
-    flex-direction: column;
+    max-width: calc(min(1400px, 100% - 40px));
+    margin: 0 auto;
 }
 
 @media (width >= 1000px) {
     .container {
-        max-width: 1400px;
-        margin: 0 auto;
+        grid-template-columns: 1fr 300px;
         align-items: start;
-        flex-direction: row;
     }
 }
 
@@ -36,15 +35,10 @@ body {
     gap: 10px;
 }
 
-.two-column {
+.display-columns {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr auto;
     gap: 10px;
-}
-
-.sidebar {
-    min-width: 300px;
-    flex-shrink: 0;
 }
 
 h1 {
@@ -190,10 +184,9 @@ button:hover {
 }
 
 .trick-cards {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, var(--card-width));
+    gap: 5px;
 }
 
 .trick-card {
@@ -209,6 +202,8 @@ button:hover {
 .card.clickable {
     cursor: pointer;
     transition: transform 0.2s;
+    outline: 2px solid #ababcc;
+    border-color: #333399;
 }
 
 .card.clickable:hover {

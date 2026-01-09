@@ -9,17 +9,6 @@
 <body>
     <div class="container">
         <div class="main-content">
-            <div class="controls">
-                <label for="playerCount">Players:</label>
-                <select id="playerCount">
-                    <option value="1">1 Player (Solitaire)</option>
-                    <option value="2">2 Players (with Pyramid)</option>
-                    <option value="3">3 Players</option>
-                    <option value="4" selected>4 Players</option>
-                </select>
-                <button onclick="newGame()">New Game</button>
-            </div>
-
             <div class="game-status" id="gameStatus">Click "New Game" to start</div>
 
             <!-- Unified Dialog Area -->
@@ -32,7 +21,7 @@
                 </div>
             </section>
 
-            <div class="two-column">
+            <div class="display-columns">
                 <section class="trick-area">
                     <h2>Current Trick</h2>
                     <div class="trick-cards" id="trickCards"></div>
@@ -85,6 +74,17 @@
         </div>
 
         <div class="sidebar">
+            <div class="controls">
+                <label for="playerCount">Players:</label>
+                <select id="playerCount">
+                    <option value="1">1 Player (Solitaire)</option>
+                    <option value="2">2 Players (with Pyramid)</option>
+                    <option value="3">3 Players</option>
+                    <option value="4" selected>4 Players</option>
+                </select>
+                <button onclick="newGame()">New Game</button>
+            </div>
+
             <section class="section game-log">
                 <div class="game-log-header">
                     <h2>Game Log</h2>

@@ -32,10 +32,10 @@ export class HumanController extends Controller {
     buttons,
     info = "",
   }: ChoiceButtonOptions<T>): Promise<T> {
-    // If only one choice, make it automatically
-    if (buttons.length === 1) {
-      return buttons[0].value;
-    }
+    // // If only one choice, make it automatically
+    // if (buttons.length === 1) {
+    //   return buttons[0].value;
+    // }
 
     return new Promise((resolve) => {
       const dialogArea = document.getElementById("dialogArea")!;
@@ -79,11 +79,11 @@ export class HumanController extends Controller {
     message,
     cards,
     info = "",
-  }: ChoiceCardOptions): Promise<Card> {
-    // If only one choice, make it automatically
-    if (cards.length === 1) {
-      return cards[0];
-    }
+  }: ChoiceCardOptions): Promise<AnyCard> {
+    // // If only one choice, make it automatically
+    // if (cards.length === 1) {
+    //   return cards[0];
+    // }
 
     return new Promise((resolve) => {
       const dialogArea = document.getElementById("dialogArea")!;
@@ -120,7 +120,7 @@ export class HumanController extends Controller {
   ): Promise<Card> {
     // If only one card available, select it automatically
     if (availableCards.length === 1) {
-      return availableCards[0];
+      // return availableCards[0];
     }
 
     // Render cards with selection enabled
