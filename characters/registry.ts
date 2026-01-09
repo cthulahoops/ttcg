@@ -424,11 +424,13 @@ const Goldberry: CharacterDefinition = {
         trickNumbers[2] === trickNumbers[1] + 1
       );
     },
-    isCompletable: (_game, seat) => {
+    isCompletable: (game, seat) => {
       const trickCount = seat.getTrickCount();
       if (trickCount > 3) return false; // Already won too many
 
-      if (trickCount === 0) return true; // Haven't started yet
+      if (trickCount === 0) {
+        trickCount + 3 < game.tricksToPlay;
+      }
 
       // Check if current tricks are consecutive from some starting point
       // and if we can still win exactly 3 consecutive
@@ -515,6 +517,7 @@ const Galadriel: CharacterDefinition = {
       return myCount !== minCount && myCount !== maxCount;
     },
     isCompletable: (game, seat) => {
+      // TODO This is horribly broken.
       const allCounts = game.seats.map((s: Seat) => s.getTrickCount());
       const minCount = Math.min(...allCounts);
       const maxCount = Math.max(...allCounts);
@@ -789,6 +792,371 @@ const TomBombadil: CharacterDefinition = {
   },
 };
 
+const BarlimanButterbur: CharacterDefinition = {
+  name: "Barliman Butterbur",
+  setupText: "Exchange with any player",
+
+  setup: async (game, seat, setupContext) => {
+    await game.exchange(seat, setupContext, (_c: string) => true); // Any player
+  },
+
+  objective: {
+    text: "Win at least one of the last three tricks",
+    check: (game, seat) => {
+      return seat.tricksWon.some((t) => t.number >= game.tricksToPlay - 3);
+    },
+    isCompletable: () => {
+      return true;
+    },
+  },
+
+  display: {
+    renderStatus: (game, seat) => {
+      const met = BarlimanButterbur.objective.check(game, seat);
+      const completable = BarlimanButterbur.objective.isCompletable(game, seat);
+      return game.displaySimple(met, completable);
+    },
+  },
+};
+
+const BillThePony: CharacterDefinition = {
+  name: "Bill the Pony",
+  setupText: "Exchange simultaneously with Sam and Frodo",
+
+  setup: async (game, seat, setupContext) => {
+    // TODO: Implement true simultaneous exchanges where both cards are selected before any exchanges resolve
+    // For now, exchange sequentially
+    await game.exchange(seat, setupContext, (c: string) => c === "Sam");
+    await game.exchange(seat, setupContext, (c: string) => c === "Frodo");
+  },
+
+  objective: {
+    text: "Win exactly one trick",
+    check: (_game, seat) => seat.getTrickCount() === 1,
+    isCompletable: (_game, seat) => seat.getTrickCount() <= 1,
+  },
+
+  display: {
+    renderStatus: (game, seat) => {
+      const met = BillThePony.objective.check(game, seat);
+      const completable = BillThePony.objective.isCompletable(game, seat);
+      return game.displaySimple(met, completable);
+    },
+  },
+};
+
+const Elrond: CharacterDefinition = {
+  name: "Elrond",
+  setupText: "Everyone simultaneously passes 1 card to the right",
+
+  setup: async (game, _seat, _setupContext) => {
+    // TODO: Implement true simultaneous selection where all cards are chosen before any are passed
+    // For now, pass sequentially around the circle
+    for (let i = 0; i < game.seats.length; i++) {
+      const fromSeat = game.seats[i];
+      const toSeat = game.seats[(i + 1) % game.seats.length];
+      await game.giveCard(fromSeat, toSeat);
+    }
+  },
+
+  objective: {
+    text: "Every character must win a ring card",
+    check: (game, _seat) => {
+      // Check that every seat has won at least one ring card
+      return game.seats.every((s: Seat) => {
+        const ringCards = s.getAllWonCards().filter((c) => c.suit === "rings");
+        return ringCards.length >= 1;
+      });
+    },
+    isCompletable: (game, _seat) => {
+      // Count how many seats still need a ring card
+      const seatsNeedingRing = game.seats.filter((s: Seat) => {
+        const ringCards = s.getAllWonCards().filter((c) => c.suit === "rings");
+        return ringCards.length === 0;
+      }).length;
+
+      // Count how many ring cards are still available
+      const totalRingCardsWon = game.seats.reduce(
+        (total: number, s: Seat) =>
+          total + s.getAllWonCards().filter((c) => c.suit === "rings").length,
+        0,
+      );
+      const ringsRemaining = 5 - totalRingCardsWon;
+
+      // Can still complete if there are at least as many rings remaining as seats needing them
+      return ringsRemaining >= seatsNeedingRing;
+    },
+  },
+
+  display: {
+    renderStatus: (game, seat) => {
+      const seatsWithRings = game.seats.filter((s: Seat) => {
+        const ringCards = s.getAllWonCards().filter((c) => c.suit === "rings");
+        return ringCards.length >= 1;
+      }).length;
+
+      const met = Elrond.objective.check(game, seat);
+      const completable = Elrond.objective.isCompletable(game, seat);
+      const icon = game.displaySimple(met, completable);
+
+      return `${icon} Seats with rings: ${seatsWithRings}/${game.seats.length}`;
+    },
+  },
+};
+
+const Arwen: CharacterDefinition = {
+  name: "Arwen",
+  setupText: "Exchange with Elrond or Aragorn",
+
+  setup: async (game, seat, setupContext) => {
+    await game.exchange(seat, setupContext, (c: string) =>
+      ["Elrond", "Aragorn"].includes(c),
+    );
+  },
+
+  objective: {
+    text: "Win the most forests cards",
+    check: (game, seat) => {
+      const myCounts = seat
+        .getAllWonCards()
+        .filter((c) => c.suit === "forests").length;
+
+      // Check if this seat has strictly more than all others
+      return game.seats.every((s: Seat) => {
+        if (s.seatIndex === seat.seatIndex) return true;
+        const theirCounts = s
+          .getAllWonCards()
+          .filter((c) => c.suit === "forests").length;
+        return myCounts > theirCounts;
+      });
+    },
+    isCompletable: (game, seat) => {
+      const myCounts = seat
+        .getAllWonCards()
+        .filter((c) => c.suit === "forests").length;
+
+      // Count forests cards won by others
+      const othersMaxCounts = Math.max(
+        ...game.seats
+          .filter((s: Seat) => s.seatIndex !== seat.seatIndex)
+          .map(
+            (s: Seat) =>
+              s.getAllWonCards().filter((c) => c.suit === "forests").length,
+          ),
+      );
+
+      // Count forests cards remaining
+      const totalForestsWon = game.seats.reduce(
+        (total: number, s: Seat) =>
+          total + s.getAllWonCards().filter((c) => c.suit === "forests").length,
+        0,
+      );
+      const forestsRemaining = 8 - totalForestsWon;
+
+      // Can complete if: my current + all remaining > others' max
+      return myCounts + forestsRemaining > othersMaxCounts;
+    },
+  },
+
+  display: {
+    renderStatus: (game, seat) => {
+      const myCounts = seat
+        .getAllWonCards()
+        .filter((c) => c.suit === "forests").length;
+      const met = Arwen.objective.check(game, seat);
+      const completable = Arwen.objective.isCompletable(game, seat);
+      const icon = game.displaySimple(met, completable);
+
+      return `${icon} Forests: ${myCounts}`;
+    },
+  },
+};
+
+const Gloin: CharacterDefinition = {
+  name: "Gloin",
+  setupText: "Exchange with Bilbo or Gimli",
+
+  setup: async (game, seat, setupContext) => {
+    await game.exchange(seat, setupContext, (c: string) =>
+      ["Bilbo Baggins", "Gimli"].includes(c),
+    );
+  },
+
+  objective: {
+    text: "Win the most mountains cards",
+    check: (game, seat) => {
+      const myCounts = seat
+        .getAllWonCards()
+        .filter((c) => c.suit === "mountains").length;
+
+      // Check if this seat has strictly more than all others
+      return game.seats.every((s: Seat) => {
+        if (s.seatIndex === seat.seatIndex) return true;
+        const theirCounts = s
+          .getAllWonCards()
+          .filter((c) => c.suit === "mountains").length;
+        return myCounts > theirCounts;
+      });
+    },
+    isCompletable: (game, seat) => {
+      const myCounts = seat
+        .getAllWonCards()
+        .filter((c) => c.suit === "mountains").length;
+
+      // Count mountains cards won by others
+      const othersMaxCounts = Math.max(
+        ...game.seats
+          .filter((s: Seat) => s.seatIndex !== seat.seatIndex)
+          .map(
+            (s: Seat) =>
+              s.getAllWonCards().filter((c) => c.suit === "mountains").length,
+          ),
+      );
+
+      // Count mountains cards remaining
+      const totalMountainsWon = game.seats.reduce(
+        (total: number, s: Seat) =>
+          total +
+          s.getAllWonCards().filter((c) => c.suit === "mountains").length,
+        0,
+      );
+      const mountainsRemaining = 8 - totalMountainsWon;
+
+      // Can complete if: my current + all remaining > others' max
+      return myCounts + mountainsRemaining > othersMaxCounts;
+    },
+  },
+
+  display: {
+    renderStatus: (game, seat) => {
+      const myCounts = seat
+        .getAllWonCards()
+        .filter((c) => c.suit === "mountains").length;
+      const met = Gloin.objective.check(game, seat);
+      const completable = Gloin.objective.isCompletable(game, seat);
+      const icon = game.displaySimple(met, completable);
+
+      return `${icon} Mountains: ${myCounts}`;
+    },
+  },
+};
+
+const BilboBaggins: CharacterDefinition = {
+  name: "Bilbo Baggins",
+  setupText: "No setup action",
+
+  setup: async (_game, _seat, _setupContext) => {
+    // No setup action
+    // TODO: Implement "choose next leader" mechanic during trick-taking
+    // When Bilbo wins a trick, he may choose who leads the next trick
+  },
+
+  objective: {
+    text: "Win 3 or more tricks; do NOT win the 1 of Rings",
+    check: (game, seat) => {
+      const trickCount = seat.getTrickCount();
+      const hasOneRing = game.hasCard(seat, "rings", 1);
+      return trickCount >= 3 && !hasOneRing;
+    },
+    isCompletable: (game, seat) => {
+      // Impossible if already has 1 of Rings
+      return !game.hasCard(seat, "rings", 1);
+    },
+  },
+
+  display: {
+    renderStatus: (game, seat) => {
+      const trickCount = seat.getTrickCount();
+      const hasOneRing = game.hasCard(seat, "rings", 1);
+      const met = BilboBaggins.objective.check(game, seat);
+      const completable = BilboBaggins.objective.isCompletable(game, seat);
+      const icon = game.displaySimple(met, completable);
+
+      const tricksIcon = trickCount >= 3 ? "✓" : `${trickCount}/3`;
+      const oneRingIcon = hasOneRing ? "✗ (has 1-Ring)" : "✓";
+      return `${icon} Tricks: ${tricksIcon}, 1-Ring: ${oneRingIcon}`;
+    },
+  },
+};
+
+const Gwaihir: CharacterDefinition = {
+  name: "Gwaihir",
+  setupText: "Exchange with Gandalf twice",
+
+  setup: async (game, seat, setupContext) => {
+    await game.exchange(seat, setupContext, (c: string) => c === "Gandalf");
+    await game.exchange(seat, setupContext, (c: string) => c === "Gandalf");
+  },
+
+  objective: {
+    text: "Win at least two tricks containing a mountain card",
+    check: (_game, seat) => {
+      const tricksWithMountains = seat.tricksWon.filter((trick) =>
+        trick.cards.some((c) => c.suit === "mountains"),
+      );
+      return tricksWithMountains.length >= 2;
+    },
+    isCompletable: (_game, _seat) => {
+      // Hard to determine without knowing remaining mountains distribution
+      // Simplified: always completable
+      return true;
+    },
+  },
+
+  display: {
+    renderStatus: (game, seat) => {
+      const tricksWithMountains = seat.tricksWon.filter((trick) =>
+        trick.cards.some((c) => c.suit === "mountains"),
+      );
+      const met = Gwaihir.objective.check(game, seat);
+      const completable = Gwaihir.objective.isCompletable(game, seat);
+      const icon = game.displaySimple(met, completable);
+
+      return `${icon} Tricks with mountains: ${tricksWithMountains.length}/2`;
+    },
+  },
+};
+
+const Shadowfax: CharacterDefinition = {
+  name: "Shadowfax",
+  setupText:
+    "Set one card aside (may return it to hand at any point, must return if hand empty)",
+
+  setup: async (_game, _seat, _setupContext) => {
+    // TODO: Implement card aside mechanic
+    // This requires tracking a "set aside" card that can be returned to hand
+    // For now, no action taken
+  },
+
+  objective: {
+    text: "Win at least two tricks containing a hills card",
+    check: (_game, seat) => {
+      const tricksWithHills = seat.tricksWon.filter((trick) =>
+        trick.cards.some((c) => c.suit === "hills"),
+      );
+      return tricksWithHills.length >= 2;
+    },
+    isCompletable: (_game, _seat) => {
+      // Hard to determine without knowing remaining hills distribution
+      // Simplified: always completable
+      return true;
+    },
+  },
+
+  display: {
+    renderStatus: (game, seat) => {
+      const tricksWithHills = seat.tricksWon.filter((trick) =>
+        trick.cards.some((c) => c.suit === "hills"),
+      );
+      const met = Shadowfax.objective.check(game, seat);
+      const completable = Shadowfax.objective.isCompletable(game, seat);
+      const icon = game.displaySimple(met, completable);
+
+      return `${icon} Tricks with hills: ${tricksWithHills.length}/2`;
+    },
+  },
+};
+
 export const characterRegistry = new Map<string, CharacterDefinition>([
   [Frodo.name, Frodo],
   [Gandalf.name, Gandalf],
@@ -807,6 +1175,14 @@ export const characterRegistry = new Map<string, CharacterDefinition>([
   [FarmerMaggot.name, FarmerMaggot],
   [FattyBolger.name, FattyBolger],
   [TomBombadil.name, TomBombadil],
+  [BarlimanButterbur.name, BarlimanButterbur],
+  [BillThePony.name, BillThePony],
+  [Elrond.name, Elrond],
+  [Arwen.name, Arwen],
+  [Gloin.name, Gloin],
+  [BilboBaggins.name, BilboBaggins],
+  [Gwaihir.name, Gwaihir],
+  [Shadowfax.name, Shadowfax],
 ]);
 
 export const allCharacterNames = Array.from(characterRegistry.keys());
