@@ -1,9 +1,9 @@
 // ===== UTILITY FUNCTIONS =====
 
-import type { Card, Suit } from "./types";
+import type { Card, Suit, AnyCard } from "./types";
 
 // Re-export for convenience
-export type { Card, Suit };
+export type { Card, AnyCard };
 
 export function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -29,7 +29,7 @@ export function sortHand(cards: Card[]): Card[] {
 }
 
 export function createCardElement(
-  card: Card,
+  card: AnyCard,
   clickable = false,
   clickHandler: (() => void) | null = null,
 ): HTMLDivElement {
@@ -48,7 +48,7 @@ export function createCardElement(
 
   const suitDiv = document.createElement("div");
   suitDiv.className = "suit";
-  suitDiv.textContent = card.suit;
+  suitDiv.textContent = card.suit === "threat" ? "THREAT" : card.suit;
 
   cardDiv.appendChild(valueDiv);
   cardDiv.appendChild(suitDiv);

@@ -1,12 +1,19 @@
 import { delay, createCardElement } from "./utils";
-import type { Card, ChoiceButtonOptions, ChoiceCardOptions } from "./types";
+import type {
+  Card,
+  AnyCard,
+  ChoiceButtonOptions,
+  ChoiceCardOptions,
+} from "./types";
 
 abstract class Controller {
   async chooseButton<T>(_options: ChoiceButtonOptions<T>): Promise<T> {
     throw new Error("Abstract");
   }
 
-  async chooseCard(_options: ChoiceCardOptions): Promise<Card> {
+  async chooseCard<T extends AnyCard = AnyCard>(
+    _options: ChoiceCardOptions<T>,
+  ): Promise<T> {
     throw new Error("Abstract");
   }
 
@@ -74,12 +81,12 @@ export class HumanController extends Controller {
     });
   }
 
-  async chooseCard({
+  async chooseCard<T extends AnyCard = AnyCard>({
     title,
     message,
     cards,
     info = "",
-  }: ChoiceCardOptions): Promise<AnyCard> {
+  }: ChoiceCardOptions<T>): Promise<T> {
     // // If only one choice, make it automatically
     // if (cards.length === 1) {
     //   return cards[0];
@@ -147,7 +154,9 @@ export class AIController extends Controller {
     return randomChoice(buttons).value;
   }
 
-  async chooseCard({ cards }: ChoiceCardOptions): Promise<Card> {
+  async chooseCard<T extends AnyCard = AnyCard>({
+    cards,
+  }: ChoiceCardOptions<T>): Promise<T> {
     await delay(100);
     return randomChoice(cards);
   }

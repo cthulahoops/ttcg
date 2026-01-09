@@ -131,6 +131,11 @@ section h3 {
     border-color: #ff6f00;
 }
 
+.card.threat {
+    background: linear-gradient(135deg, #3a0000 0%, #5a0000 100%);
+    color: #fff;
+}
+
 .suit {
     font-size: 10px;
     text-transform: uppercase;
@@ -256,6 +261,10 @@ button:hover {
     font-size: 13px;
     margin-top: 5px;
     color: #aed581;
+}
+
+.threat-card-area {
+    margin-top: 5px;
 }
 
 .objective-status .success {
