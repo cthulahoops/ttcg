@@ -454,7 +454,7 @@ const Glorfindel: CharacterDefinition = {
 
   setup: async (game, seat, _setupContext) => {
     await game.offerLostCard(seat);
-    // No exchange
+    // TODO: Lost card isn't properly taken from the lost card area..
   },
 
   objective: {
