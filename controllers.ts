@@ -51,12 +51,10 @@ export class HumanController extends Controller {
       const dialogChoices = document.getElementById("dialogChoices")!;
       const dialogInfo = document.getElementById("dialogInfo")!;
 
-      // Set content
       dialogTitle.textContent = title;
       dialogMessage.textContent = message;
       dialogInfo.textContent = info;
 
-      // Clear and populate buttons
       dialogChoices.innerHTML = "";
       buttons.forEach(({ label, value, onClick, disabled = false }) => {
         const button = document.createElement("button");
@@ -76,7 +74,6 @@ export class HumanController extends Controller {
         dialogChoices.appendChild(button);
       });
 
-      // Show dialog
       dialogArea.style.display = "block";
     });
   }
@@ -99,15 +96,12 @@ export class HumanController extends Controller {
       const dialogChoices = document.getElementById("dialogChoices")!;
       const dialogInfo = document.getElementById("dialogInfo")!;
 
-      // Set content
       dialogTitle.textContent = title;
       dialogMessage.textContent = message;
       dialogInfo.textContent = info;
 
-      // Clear and populate cards
       dialogChoices.innerHTML = "";
       cards.forEach((card) => {
-        // Create DOM element from card object
         const cardElement = createCardElement(card, true, null);
         cardElement.onclick = () => {
           hideDialog();
@@ -116,7 +110,6 @@ export class HumanController extends Controller {
         dialogChoices.appendChild(cardElement);
       });
 
-      // Show dialog
       dialogArea.style.display = "block";
     });
   }
@@ -125,16 +118,13 @@ export class HumanController extends Controller {
     availableCards: Card[],
     renderCards: () => void,
   ): Promise<Card> {
-    // If only one card available, select it automatically
     if (availableCards.length === 1) {
       // return availableCards[0];
     }
 
-    // Render cards with selection enabled
     renderCards();
 
     return new Promise((resolve) => {
-      // Store resolver to be called when user clicks a card
       this._cardSelectionResolver = resolve;
     });
   }

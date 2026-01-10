@@ -19,11 +19,9 @@ export function sortHand(cards: Card[]): Card[] {
   };
 
   return cards.sort((a, b) => {
-    // First sort by suit
     if (suitOrder[a.suit] !== suitOrder[b.suit]) {
       return suitOrder[a.suit] - suitOrder[b.suit];
     }
-    // Then by value within the same suit
     return a.value - b.value;
   });
 }

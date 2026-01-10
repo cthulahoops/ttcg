@@ -17,7 +17,6 @@ export abstract class Hand {
   abstract getAllCards(): Card[];
   abstract onTrickComplete(): void;
 
-  // Some hands expose this method (PlayerHand, HiddenHand)
   getCards?(): Card[];
 
   revealed(): Hand {
@@ -125,7 +124,6 @@ export class PyramidHand extends Hand {
     this._extraCards = [];
     this._revealCallback = null;
 
-    // Initialize with cards
     cards.forEach((card, idx) => {
       if (idx < 12) {
         this._positions[idx] = card;
@@ -152,7 +150,6 @@ export class PyramidHand extends Hand {
   }
 
   removeCard(card: Card): boolean {
-    // Check extra cards first
     const extraIndex = this._extraCards.findIndex(
       (c) => c.suit === card.suit && c.value === card.value,
     );
@@ -161,7 +158,6 @@ export class PyramidHand extends Hand {
       return true;
     }
 
-    // Check pyramid positions
     const posIndex = this._positions.findIndex(
       (c) => c && c.suit === card.suit && c.value === card.value,
     );
@@ -236,24 +232,21 @@ export class PyramidHand extends Hand {
   }
 
   private _getCoveringIndices(cardIndex: number): number[] {
-    // Bottom row (7-11): not covered
     if (cardIndex >= 7 && cardIndex <= 11) return [];
 
-    // Middle row (3-6): covered by bottom row
     if (cardIndex >= 3 && cardIndex <= 6) {
       const row1Position = cardIndex - 3;
       const covering: number[] = [];
-      covering.push(row1Position + 7); // Left covering card
-      covering.push(row1Position + 8); // Right covering card
+      covering.push(row1Position + 7);
+      covering.push(row1Position + 8);
       return covering;
     }
 
-    // Top row (0-2): covered by middle row
     if (cardIndex >= 0 && cardIndex <= 2) {
       const row0Position = cardIndex;
       const covering: number[] = [];
-      covering.push(row0Position + 3); // Left covering card
-      covering.push(row0Position + 4); // Right covering card
+      covering.push(row0Position + 3);
+      covering.push(row0Position + 4);
       return covering;
     }
 
@@ -331,7 +324,6 @@ export class PyramidHand extends Hand {
       }
     });
 
-    // Render extra cards
     this._extraCards.forEach((card, idx) => {
       const canPlay = isPlayable(card);
       const cardElement = createCardElement(
@@ -415,13 +407,11 @@ export class HiddenHand extends Hand {
     }
   }
 
-  // Expose wrapped hand for direct access if needed
   unwrap(): PlayerHand {
     return this._wrappedHand;
   }
 
   onTrickComplete(): void {
-    // Delegate to wrapped hand
     this._wrappedHand.onTrickComplete();
   }
 }
@@ -434,13 +424,11 @@ export class SolitaireHand extends Hand {
     super();
     // Ensure 1 of Rings is in the initially revealed cards
     SolitaireHand._ensureOneRingRevealed(cards);
-    // Initialize with first 4 cards revealed, rest hidden
     this._revealedCards = cards.slice(0, 4);
     this._hiddenCards = cards.slice(4);
   }
 
   private static _ensureOneRingRevealed(cards: Card[]): void {
-    // Swap 1 of Rings to one of the first 4 positions if needed
     const oneRingIndex = cards.findIndex(
       (c) => c.suit === "rings" && c.value === 1,
     );
@@ -455,7 +443,6 @@ export class SolitaireHand extends Hand {
   }
 
   removeCard(card: Card): boolean {
-    // Try to remove from revealed cards first
     const revealedIndex = this._revealedCards.findIndex(
       (c) => c.suit === card.suit && c.value === card.value,
     );
@@ -464,7 +451,6 @@ export class SolitaireHand extends Hand {
       return true;
     }
 
-    // Try to remove from hidden cards
     const hiddenIndex = this._hiddenCards.findIndex(
       (c) => c.suit === card.suit && c.value === card.value,
     );
@@ -477,7 +463,6 @@ export class SolitaireHand extends Hand {
   }
 
   getAvailableCards(): Card[] {
-    // Only revealed cards are available to play
     return [...this._revealedCards];
   }
 
@@ -494,7 +479,6 @@ export class SolitaireHand extends Hand {
   }
 
   onTrickComplete(): void {
-    // Reveal one more card after each trick (if any hidden cards remain)
     if (this._hiddenCards.length > 0) {
       const cardToReveal = this._hiddenCards.shift()!;
       this._revealedCards.push(cardToReveal);
@@ -510,7 +494,6 @@ export class SolitaireHand extends Hand {
     domElement.classList.remove("pyramid-hand");
     domElement.classList.add("solitaire-hand");
 
-    // Render revealed cards
     this._revealedCards.forEach((card) => {
       const canPlay = isPlayable(card);
       const cardElement = createCardElement(
@@ -526,7 +509,6 @@ export class SolitaireHand extends Hand {
       domElement.appendChild(cardElement);
     });
 
-    // Render hidden cards as face-down
     this._hiddenCards.forEach(() => {
       const cardBack = document.createElement("div");
       cardBack.className = "card hidden";

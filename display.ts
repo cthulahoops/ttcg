@@ -1,7 +1,6 @@
 // Type-only imports (no runtime circular dependency)
 import type { Game } from "./game.js";
 
-// Runtime imports
 import type { AnyCard, Card } from "./types.js";
 import type { Seat } from "./seat.js";
 import type { HumanController } from "./controllers.js";
@@ -44,7 +43,6 @@ export function displayHands(
 ): void {
   highlightActivePlayer(gameState.currentPlayer);
 
-  // Display each player's hand
   for (const seat of seats) {
     const canSelectCard =
       activePlayer !== undefined && seat.seatIndex === activePlayer;
@@ -102,11 +100,9 @@ export function updateTricksDisplay(gameState: Game): void {
   for (const seat of gameState.seats) {
     const trickCount = seat.getTrickCount();
 
-    // Update trick count
     document.getElementById(`tricks${seat.seatIndex + 1}`)!.textContent =
       `Tricks: ${trickCount}`;
 
-    // Update objective status
     const statusDiv = document.getElementById(
       `objectiveStatus${seat.seatIndex + 1}`,
     )!;
@@ -119,7 +115,6 @@ export function updateTricksDisplay(gameState: Game): void {
 
     statusDiv.innerHTML = characterDef.display.renderStatus(gameState, seat);
 
-    // Update threat card display
     const threatCardDiv = document.getElementById(
       `threatCard${seat.seatIndex + 1}`,
     )!;
@@ -219,7 +214,6 @@ export function copyGameLog(): void {
 
   navigator.clipboard.writeText(logText).then(
     () => {
-      // Temporarily change button text to show success
       const button = document.querySelector(
         ".copy-log-button",
       ) as HTMLButtonElement;
