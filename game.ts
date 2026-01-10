@@ -39,6 +39,13 @@ interface GameSetupContext {
   exchangeMade?: boolean;
 }
 
+export interface Exchange {
+  fromSeat: Seat;
+  toSeat: Seat;
+  cardFromFirst: Card;
+  cardFromSecond: Card;
+}
+
 // ===== GAME CLASS =====
 
 export class Game {
@@ -240,38 +247,37 @@ export class Game {
     updateTricksDisplay(this);
   }
 
-  // Exchange with another player (predicate-based)
-  async exchange(
+  // Setup an exchange (choose cards) without executing it
+  async setupExchange(
     seat: Seat,
     setupContext: GameSetupContext,
     canExchangeWith: (character: string) => boolean,
-  ): Promise<void> {
-    // In 1-player mode, check if exchange already made
+  ): Promise<Exchange | null> {
+    // Check if exchange already made in 1-player mode
     if (this.playerCount === 1 && setupContext.exchangeMade) {
-      return;
+      return null;
     }
 
     // Find valid exchange partners
-    const validPlayers: number[] = [];
+    const validPlayers: Seat[] = [];
     for (const otherSeat of this.seats) {
       if (otherSeat.seatIndex !== seat.seatIndex && otherSeat.character) {
         if (canExchangeWith(otherSeat.character)) {
-          validPlayers.push(otherSeat.seatIndex);
+          validPlayers.push(otherSeat);
         }
       }
     }
 
     if (validPlayers.length === 0) {
-      addToGameLog(`${seat.getDisplayName()} has no valid exchange partners`);
-      return;
+      return null;
     }
 
     // In 1-player mode, ask if player wants to exchange
     if (this.playerCount === 1) {
       const targetDescription =
         validPlayers.length === 1
-          ? this.seats[validPlayers[0]].character!
-          : validPlayers.map((p) => this.seats[p].character).join(" or ");
+          ? validPlayers[0].character!
+          : validPlayers.map((p) => p.character).join(" or ");
 
       const wantsToExchange = await seat.controller.chooseButton({
         title: `${seat.character} - Exchange?`,
@@ -283,33 +289,118 @@ export class Game {
       });
 
       if (!wantsToExchange) {
-        return;
+        return null;
       }
     }
 
     // Choose target player
-    let targetPlayerIndex: number;
+    let targetSeat: Seat;
     if (validPlayers.length === 1) {
-      targetPlayerIndex = validPlayers[0];
+      targetSeat = validPlayers[0];
     } else {
       const choices: ChoiceButton<number>[] = validPlayers.map((p) => ({
-        label: this.seats[p].character!,
-        value: p,
+        label: p.character!,
+        value: p.seatIndex,
       }));
 
-      targetPlayerIndex = await seat.controller.chooseButton({
+      const targetIndex = await seat.controller.chooseButton({
         title: `${seat.character} - Choose Exchange Partner`,
         message: "Choose who to exchange with:",
         buttons: choices,
       });
+
+      targetSeat = this.seats[targetIndex];
     }
 
-    // Perform exchange
-    await performExchange(this, seat.seatIndex, targetPlayerIndex);
+    // First player chooses card to give
+    const availableFrom = seat.hand!.getAvailableCards();
+    const isFrodoFrom = seat.character === "Frodo";
+    const playableFrom = isFrodoFrom
+      ? availableFrom.filter(
+          (card) => !(card.suit === "rings" && card.value === 1),
+        )
+      : availableFrom;
+
+    let messageFrom = `Choose a card to give to ${targetSeat.getDisplayName()}`;
+    if (isFrodoFrom) {
+      messageFrom += " (Frodo cannot give away the 1 of Rings)";
+    }
+
+    const cardFromFirst = await seat.controller.chooseCard({
+      title: `${seat.character} - Exchange with ${targetSeat.character}`,
+      message: messageFrom,
+      cards: sortHand(playableFrom),
+    });
+
+    // Second player chooses card to give (without seeing what they'll receive)
+    const availableTo = targetSeat.hand!.getAvailableCards();
+    const isFrodoTo = targetSeat.character === "Frodo";
+    const playableTo = isFrodoTo
+      ? availableTo.filter(
+          (card) => !(card.suit === "rings" && card.value === 1),
+        )
+      : availableTo;
+
+    let messageTo = `Choose a card to give to ${seat.getDisplayName()}`;
+    if (isFrodoTo) {
+      messageTo += " (Frodo cannot give away the 1 of Rings)";
+    }
+
+    const cardFromSecond = await targetSeat.controller.chooseCard({
+      title: `${targetSeat.character} - Exchange with ${seat.character}`,
+      message: messageTo,
+      cards: sortHand(playableTo),
+    });
+
+    return {
+      fromSeat: seat,
+      toSeat: targetSeat,
+      cardFromFirst,
+      cardFromSecond,
+    };
+  }
+
+  // Complete an exchange (execute the card transfers and mark as made)
+  completeExchange(exchange: Exchange, setupContext: GameSetupContext): void {
+    const { fromSeat, toSeat, cardFromFirst, cardFromSecond } = exchange;
+
+    // Remove cards from both hands
+    fromSeat.hand!.removeCard(cardFromFirst);
+    toSeat.hand!.removeCard(cardFromSecond);
+
+    // Add cards to opposite hands
+    fromSeat.hand!.addCard(cardFromSecond);
+    toSeat.hand!.addCard(cardFromFirst);
+
+    // Log the exchanges
+    addToGameLog(
+      `${fromSeat.getDisplayName()} gives ${cardFromFirst.value} of ${cardFromFirst.suit} to ${toSeat.getDisplayName()}`,
+    );
+    addToGameLog(
+      `${toSeat.getDisplayName()} gives ${cardFromSecond.value} of ${cardFromSecond.suit} to ${fromSeat.getDisplayName()}`,
+    );
 
     // Mark exchange as made in 1-player mode
     if (this.playerCount === 1) {
       setupContext.exchangeMade = true;
+    }
+  }
+
+  // Exchange with another player (predicate-based convenience method)
+  async exchange(
+    seat: Seat,
+    setupContext: GameSetupContext,
+    canExchangeWith: (character: string) => boolean,
+  ): Promise<void> {
+    const exchangeSetup = await this.setupExchange(
+      seat,
+      setupContext,
+      canExchangeWith,
+    );
+
+    if (exchangeSetup) {
+      this.completeExchange(exchangeSetup, setupContext);
+      displayHands(this, this.seats);
     }
   }
 
@@ -519,136 +610,6 @@ function updatePlayerHeadings(gameState: Game): void {
 
 // ===== EXCHANGE HELPER FUNCTIONS =====
 
-async function chooseCardToGive(
-  gameState: Game,
-  fromPlayer: number,
-  toPlayer: number,
-): Promise<Card> {
-  const isFrodo = gameState.seats[fromPlayer].character === "Frodo";
-
-  const availableCards = gameState.seats[fromPlayer].hand!.getAvailableCards();
-  const sortedCards = sortHand([...availableCards]);
-
-  // Filter out 1 of Rings if Frodo (only pass playable cards)
-  const playableCards = sortedCards.filter((card) => {
-    const isOneRing = card.suit === "rings" && card.value === 1;
-    return !isFrodo || !isOneRing;
-  });
-
-  let message = `Select a card to give to ${getPlayerDisplayName(gameState, toPlayer)}`;
-  if (isFrodo) {
-    message += " (Frodo cannot give away the 1 of Rings)";
-  }
-
-  const selectedCard = await gameState.seats[fromPlayer].controller.chooseCard({
-    title: "Choose Card to Exchange",
-    message,
-    cards: playableCards,
-  });
-
-  return selectedCard;
-}
-
-async function chooseCardToReturn(
-  gameState: Game,
-  fromPlayer: number,
-  _toPlayer: number,
-  receivedCard: Card,
-): Promise<Card> {
-  const isFrodo = gameState.seats[fromPlayer].character === "Frodo";
-
-  const availableCards = gameState.seats[fromPlayer].hand!.getAvailableCards();
-  const tempHand = sortHand([...availableCards, receivedCard]);
-
-  // Filter out 1 of Rings if Frodo (only pass playable cards)
-  const playableCards = tempHand.filter((card) => {
-    const isOneRing = card.suit === "rings" && card.value === 1;
-    return !isFrodo || !isOneRing;
-  });
-
-  let message = `You received ${receivedCard.value} of ${receivedCard.suit}. Select a card to give back`;
-  if (isFrodo) {
-    message += " (Frodo cannot give away the 1 of Rings)";
-  }
-
-  const selectedCard = await gameState.seats[fromPlayer].controller.chooseCard({
-    title: "Choose Card to Return",
-    message,
-    cards: playableCards,
-  });
-
-  return selectedCard;
-}
-
-async function performExchange(
-  gameState: Game,
-  fromPlayer: number,
-  toPlayer: number,
-): Promise<void> {
-  updateGameStatus(
-    gameState,
-    `${getPlayerDisplayName(gameState, fromPlayer)} exchanges with ${getPlayerDisplayName(gameState, toPlayer)}`,
-  );
-  // Step 1: Give card
-  const cardToGive = await chooseCardToGive(gameState, fromPlayer, toPlayer);
-  gameState.seats[fromPlayer].hand!.removeCard(cardToGive);
-
-  // Only log if human player is involved
-  if (fromPlayer === 0 || toPlayer === 0) {
-    addToGameLog(
-      `${getPlayerDisplayName(gameState, fromPlayer)} gives ${cardToGive.value} of ${cardToGive.suit} to ${getPlayerDisplayName(gameState, toPlayer)}`,
-    );
-  } else {
-    addToGameLog(
-      `${getPlayerDisplayName(gameState, fromPlayer)} exchanges with ${getPlayerDisplayName(gameState, toPlayer)}`,
-    );
-  }
-
-  updateGameStatus(
-    gameState,
-    `${getPlayerDisplayName(gameState, fromPlayer)} gives ${cardToGive.value} of ${cardToGive.suit} to ${getPlayerDisplayName(gameState, toPlayer)}`,
-  );
-  displayHands(gameState, gameState.seats);
-
-  // Step 2: Return card
-  const cardToReturn = await chooseCardToReturn(
-    gameState,
-    toPlayer,
-    fromPlayer,
-    cardToGive,
-  );
-
-  // Check if this is the card that was just given
-  const isReceivedCard =
-    cardToReturn.suit === cardToGive.suit &&
-    cardToReturn.value === cardToGive.value;
-
-  if (!isReceivedCard) {
-    // Remove from toPlayer's hand
-    gameState.seats[toPlayer].hand!.removeCard(cardToReturn);
-  }
-
-  // Add card to fromPlayer's hand
-  gameState.seats[fromPlayer].hand!.addCard(cardToReturn);
-
-  // Add the originally exchanged card to toPlayer's hand (if they didn't return it)
-  if (!isReceivedCard) {
-    gameState.seats[toPlayer].hand!.addCard(cardToGive);
-  }
-
-  // Only log return details if human player is involved
-  if (fromPlayer === 0 || toPlayer === 0) {
-    addToGameLog(
-      `${getPlayerDisplayName(gameState, toPlayer)} returns ${cardToReturn.value} of ${cardToReturn.suit}`,
-    );
-  }
-
-  updateGameStatus(
-    gameState,
-    `${getPlayerDisplayName(gameState, toPlayer)} returns ${cardToReturn.value} of ${cardToReturn.suit}`,
-  );
-  displayHands(gameState, gameState.seats);
-}
 
 function checkObjective(gameState: Game, seat: Seat): boolean {
   return seat.characterDef!.objective.check(gameState, seat);
