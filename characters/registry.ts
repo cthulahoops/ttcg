@@ -372,15 +372,15 @@ const Aragorn: CharacterDefinition = {
       if (!seat.threatCard) return false;
       return seat.getTrickCount() === seat.threatCard;
     },
-    isCompletable: (_game, seat) => {
+    isCompletable: (game, seat) => {
       if (!seat.threatCard) return true;
       const target = seat.threatCard;
       const current = seat.getTrickCount();
       // Impossible if already over target
       if (current > target) return false;
-      // Otherwise check if gap is closeable
-      // (Need to implement proper remaining tricks calculation)
-      return true; // Simplified for now
+      // Check if there are enough tricks remaining to reach target
+      const tricksNeeded = target - current;
+      return game.tricksRemaining() >= tricksNeeded;
     },
   },
 
