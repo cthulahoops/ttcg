@@ -846,10 +846,75 @@ const BillThePony: CharacterDefinition = {
   setupText: "Exchange simultaneously with Sam and Frodo",
 
   setup: async (game, seat, setupContext) => {
-    // TODO: Implement true simultaneous exchanges where both cards are selected before any exchanges resolve
-    // For now, exchange sequentially
-    await game.exchange(seat, setupContext, (c: string) => c === "Sam");
-    await game.exchange(seat, setupContext, (c: string) => c === "Frodo");
+    // Check if already exchanged (in 1-player mode, this counts as Bill's one exchange)
+    if (setupContext.exchangeMade) {
+      return;
+    }
+
+    // Find Sam and Frodo
+    const samSeat = game.seats.find((s) => s.character === "Sam");
+    const frodoSeat = game.seats.find((s) => s.character === "Frodo");
+
+    if (!samSeat || !frodoSeat) {
+      throw new Error("Bill the Pony requires both Sam and Frodo in the game");
+    }
+
+    // Phase 1: All three players choose cards simultaneously
+    const billToSam = await seat.controller.chooseCard({
+      title: `${seat.character} - Exchange with Sam`,
+      message: "Choose a card to give to Sam",
+      cards: sortHand(seat.hand!.getAvailableCards()),
+    });
+
+    const billToFrodo = await seat.controller.chooseCard({
+      title: `${seat.character} - Exchange with Frodo`,
+      message: "Choose a card to give to Frodo",
+      cards: sortHand(
+        seat.hand!.getAvailableCards().filter((c) => c !== billToSam),
+      ),
+    });
+
+    const samToBill = await samSeat.controller.chooseCard({
+      title: `${samSeat.character} - Exchange with Bill`,
+      message: "Choose a card to give to Bill the Pony",
+      cards: sortHand(samSeat.hand!.getAvailableCards()),
+    });
+
+    const frodoToBill = await frodoSeat.controller.chooseCard({
+      title: `${frodoSeat.character} - Exchange with Bill`,
+      message: "Choose a card to give to Bill the Pony",
+      cards: sortHand(frodoSeat.hand!.getAvailableCards()),
+    });
+
+    // Phase 2: Execute all exchanges simultaneously
+    seat.hand!.removeCard(billToSam);
+    seat.hand!.removeCard(billToFrodo);
+    samSeat.hand!.removeCard(samToBill);
+    frodoSeat.hand!.removeCard(frodoToBill);
+
+    seat.hand!.addCard(samToBill);
+    seat.hand!.addCard(frodoToBill);
+    samSeat.hand!.addCard(billToSam);
+    frodoSeat.hand!.addCard(billToFrodo);
+
+    // Log all exchanges
+    game.log(
+      `${seat.getDisplayName()} gives ${billToSam.value} of ${billToSam.suit} to ${samSeat.getDisplayName()}`,
+    );
+    game.log(
+      `${samSeat.getDisplayName()} gives ${samToBill.value} of ${samToBill.suit} to ${seat.getDisplayName()}`,
+    );
+    game.log(
+      `${seat.getDisplayName()} gives ${billToFrodo.value} of ${billToFrodo.suit} to ${frodoSeat.getDisplayName()}`,
+    );
+    game.log(
+      `${frodoSeat.getDisplayName()} gives ${frodoToBill.value} of ${frodoToBill.suit} to ${seat.getDisplayName()}`,
+    );
+
+    game.refreshDisplay();
+
+    // Mark exchanges as made for all three participants
+    setupContext.exchangeMade = true;
   },
 
   objective: {
