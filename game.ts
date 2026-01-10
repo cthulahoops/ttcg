@@ -337,6 +337,16 @@ export class Game {
     return this.tricksToPlay - this.currentTrickNumber;
   }
 
+  // Log a message to the game log
+  log(message: string, secret: boolean = false): void {
+    addToGameLog(message, secret);
+  }
+
+  // Refresh the display after making changes
+  refreshDisplay(): void {
+    displayHands(this, this.seats);
+  }
+
   // Display simple status icon
   displaySimple(met: boolean, completable: boolean): string {
     if (met) {
@@ -361,18 +371,10 @@ export class Game {
       throw new Error(`${fromSeat.getDisplayName()} has no cards to give`);
     }
 
-    const sortedCards = availableCards.sort((a, b) => {
-      if (a.suit !== b.suit) {
-        const suitOrder = ["rings", "mountains", "shadows", "forests", "hills"];
-        return suitOrder.indexOf(a.suit) - suitOrder.indexOf(b.suit);
-      }
-      return a.value - b.value;
-    });
-
     const cardToGive = await fromSeat.controller.chooseCard({
       title: `${fromSeat.character} - Give Card`,
       message: `Choose a card to give to ${toSeat.getDisplayName()}`,
-      cards: sortedCards,
+      cards: sortHand(availableCards),
     });
 
     // Transfer the card
