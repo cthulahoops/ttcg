@@ -89,7 +89,7 @@ const Gandalf: CharacterDefinition = {
   setupText: "Optionally take the lost card, then exchange with Frodo",
 
   setup: async (game, seat, setupContext) => {
-    await game.offerLostCard(seat);
+    await game.takeLostCard(seat);
     await game.exchange(seat, setupContext, (c: string) => c === "Frodo");
   },
 
@@ -473,8 +473,7 @@ const Glorfindel: CharacterDefinition = {
   setupText: "Optionally take the lost card",
 
   setup: async (game, seat, _setupContext) => {
-    await game.offerLostCard(seat);
-    // TODO: Lost card isn't properly taken from the lost card area..
+    await game.takeLostCard(seat);
   },
 
   objective: {
@@ -733,7 +732,7 @@ const TomBombadil: CharacterDefinition = {
   setupText: "Take the lost card, then exchange with Frodo",
 
   setup: async (game, seat, setupContext) => {
-    await game.offerLostCard(seat);
+    await game.takeLostCard(seat);
     await game.exchange(seat, setupContext, (c: string) => c === "Frodo");
   },
 
