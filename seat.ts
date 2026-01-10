@@ -30,7 +30,6 @@ export class Seat {
   // Display helper - encapsulates complex display logic
   getDisplayName(): string {
     if (this.character) {
-      // Use character name if assigned
       if (this.controller.constructor.name === "HumanController") {
         return `${this.character} (You)`;
       } else if (this.isPyramid) {
@@ -39,13 +38,11 @@ export class Seat {
         return this.character;
       }
     } else {
-      // Fall back to position name
       const baseName = `Player ${this.seatIndex + 1}`;
       return this.seatIndex === 0 ? `${baseName} (You)` : baseName;
     }
   }
 
-  // Trick management helpers
   addTrick(number: number, cards: Card[]): void {
     this.tricksWon.push({
       number: number,
@@ -58,7 +55,6 @@ export class Seat {
   }
 
   getAllWonCards(): Card[] {
-    // Flatten all cards from all tricks
     return this.tricksWon.flatMap((trick) => trick.cards);
   }
 }

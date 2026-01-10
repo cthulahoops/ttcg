@@ -32,7 +32,6 @@ const Frodo: CharacterDefinition = {
   setupText: "No setup action",
 
   setup: async (_game, _seat, _setupContext) => {
-    // No setup action
   },
 
   objective: {
@@ -164,7 +163,6 @@ const Celeborn: CharacterDefinition = {
       const met = Celeborn.objective.check(game, seat);
       const icon = game.displaySimple(met, true);
 
-      // Show ranks with counts >= 2
       const ranksWithCounts = Object.entries(rankCounts)
         .filter(([_rank, count]) => count >= 2)
         .map(([rank, count]) => `${rank}:${count}`)
@@ -399,7 +397,6 @@ const Goldberry: CharacterDefinition = {
 
   setup: async (game, seat, _setupContext) => {
     game.revealHand(seat);
-    // No exchange
   },
 
   objective: {
@@ -411,7 +408,6 @@ const Goldberry: CharacterDefinition = {
 
       if (trickNumbers.length !== 3) return false;
 
-      // Check if consecutive
       return (
         trickNumbers[1] === trickNumbers[0] + 1 &&
         trickNumbers[2] === trickNumbers[1] + 1
@@ -420,40 +416,32 @@ const Goldberry: CharacterDefinition = {
     isCompletable: (game, seat) => {
       const trickCount = seat.getTrickCount();
 
-      // Already won too many
       if (trickCount > 3) return false;
 
-      // Already won exactly 3 - just check if they're consecutive
       if (trickCount === 3) {
         return Goldberry.objective.check(game, seat);
       }
 
-      // Haven't won any yet - need at least 3 tricks remaining
       if (trickCount === 0) {
         return game.tricksRemaining() >= 3;
       }
 
-      // Won 1 or 2 tricks - check if they're consecutive and we can complete the run
       const trickNumbers = seat.tricksWon
         .map((t) => t.number)
         .sort((a, b) => a - b);
 
-      // Check if currently won tricks are consecutive
       for (let i = 1; i < trickNumbers.length; i++) {
         if (trickNumbers[i] !== trickNumbers[i - 1] + 1) {
           return false;
         }
       }
 
-      // Tricks are consecutive. Check if we can still complete a run of 3.
       const maxTrickWon = trickNumbers[trickNumbers.length - 1];
 
-      // If the next required trick has already been played, it's impossible
       if (game.currentTrickNumber > maxTrickWon + 1) {
         return false;
       }
 
-      // Check if there are enough tricks remaining to reach 3 total
       const tricksNeeded = 3 - trickCount;
       return game.tricksRemaining() >= tricksNeeded;
     },
@@ -485,7 +473,6 @@ const Glorfindel: CharacterDefinition = {
       return shadowsCards.length === 8; // All shadows cards (1-8)
     },
     isCompletable: (game, seat) => {
-      // Check if any shadows card has been won by someone else
       for (let value = 1; value <= 8; value++) {
         if (game.cardGone(seat, "shadows", value)) {
           return false;
@@ -605,10 +592,8 @@ const GildorInglorian: CharacterDefinition = {
       const icon = game.displaySimple(met, completable);
 
       if (game.finished) {
-        // Final trick played
         return `${icon} Final trick played`;
       } else {
-        // Show forests cards remaining in hand
         const availableCards = seat.hand!.getAvailableCards();
         const forestsInHand = availableCards.filter(
           (c) => c.suit === "forests",
@@ -642,13 +627,10 @@ const FarmerMaggot: CharacterDefinition = {
     isCompletable: (game, seat) => {
       if (!seat.threatCard) return true;
 
-      // Count how many cards of the threat rank we've won
       const matchingWon = seat
         .getAllWonCards()
         .filter((c) => c.value === seat.threatCard).length;
 
-      // Count how many cards of the threat rank are still available
-      // (not won by any player, not the lost card)
       let matchingAvailable = 0;
       const suits: Suit[] = [
         "mountains",
@@ -659,10 +641,8 @@ const FarmerMaggot: CharacterDefinition = {
       ];
 
       for (const suit of suits) {
-        // Check if this rank exists in this suit (1-8 for normal suits, 1-5 for rings)
         const maxValue = suit === "rings" ? 5 : 8;
         if (seat.threatCard <= maxValue) {
-          // Check if this card is gone
           if (!game.cardGone(seat, suit, seat.threatCard)) {
             matchingAvailable++;
           }
@@ -696,24 +676,21 @@ const FattyBolger: CharacterDefinition = {
   setupText: "Give a card to every other character (don't take any back)",
 
   setup: async (game, seat, _setupContext) => {
-    // In 1-player mode, reveal hand at start of setup
     if (game.numCharacters === 1) {
       game.revealHand(seat);
     }
 
-    // Give a card to each other character
     for (const otherSeat of game.seats) {
       if (otherSeat.seatIndex !== seat.seatIndex) {
         const availableCards = seat.hand!.getAvailableCards();
         if (availableCards.length === 0) {
-          break; // No more cards to give
+          break;
         }
 
         await game.giveCard(seat, otherSeat);
       }
     }
 
-    // One extra trick will be played
     game.tricksToPlay += 1;
   },
 
@@ -744,11 +721,9 @@ const TomBombadil: CharacterDefinition = {
   objective: {
     text: "Win 3 or more cards matching the suit of a card left in hand at the end of round",
     check: (_game, seat) => {
-      // Must have at least one card left in hand
       const cardsInHand = seat.hand!.getAvailableCards();
       if (cardsInHand.length === 0) return false;
 
-      // Count cards won by suit
       const wonBySuit: Record<Suit, number> = {
         mountains: 0,
         shadows: 0,
@@ -761,7 +736,6 @@ const TomBombadil: CharacterDefinition = {
         wonBySuit[card.suit] = (wonBySuit[card.suit] || 0) + 1;
       });
 
-      // Check if any suit in hand has 3+ won cards
       for (const card of cardsInHand) {
         if (wonBySuit[card.suit] >= 3) {
           return true;
@@ -787,7 +761,6 @@ const TomBombadil: CharacterDefinition = {
       const completable = TomBombadil.objective.isCompletable(game, seat);
       const icon = game.displaySimple(met, completable);
 
-      // Show suit counts with 2+ cards
       const wonBySuit: Record<Suit, number> = {
         mountains: 0,
         shadows: 0,
@@ -850,7 +823,6 @@ const BillThePony: CharacterDefinition = {
   setupText: "Exchange simultaneously with Sam and Frodo",
 
   setup: async (game, seat, setupContext) => {
-    // Phase 1: Setup all exchanges
     const samExchange = await game.setupExchange(
       seat,
       setupContext,
@@ -862,7 +834,6 @@ const BillThePony: CharacterDefinition = {
       (c) => c === "Frodo",
     );
 
-    // Phase 2: Complete all exchanges simultaneously
     if (samExchange) {
       game.completeExchange(samExchange, setupContext);
     }
@@ -896,7 +867,6 @@ const Elrond: CharacterDefinition = {
   setupText: "Everyone simultaneously passes 1 card to the right",
 
   setup: async (game, _seat, _setupContext) => {
-    // Phase 1: All players choose cards simultaneously
     const cardsToPass: Card[] = [];
     for (let i = 0; i < game.seats.length; i++) {
       const seat = game.seats[i];
@@ -910,7 +880,6 @@ const Elrond: CharacterDefinition = {
       cardsToPass.push(card);
     }
 
-    // Phase 2: Execute all transfers simultaneously
     for (let i = 0; i < game.seats.length; i++) {
       game.seats[i].hand!.removeCard(cardsToPass[i]);
     }
@@ -926,20 +895,17 @@ const Elrond: CharacterDefinition = {
   objective: {
     text: "Every character must win a ring card",
     check: (game, _seat) => {
-      // Check that every seat has won at least one ring card
       return game.seats.every((s: Seat) => {
         const ringCards = s.getAllWonCards().filter((c) => c.suit === "rings");
         return ringCards.length >= 1;
       });
     },
     isCompletable: (game, _seat) => {
-      // Count how many seats still need a ring card
       const seatsNeedingRing = game.seats.filter((s: Seat) => {
         const ringCards = s.getAllWonCards().filter((c) => c.suit === "rings");
         return ringCards.length === 0;
       }).length;
 
-      // Count how many ring cards are still available
       const totalRingCardsWon = game.seats.reduce(
         (total: number, s: Seat) =>
           total + s.getAllWonCards().filter((c) => c.suit === "rings").length,
@@ -947,7 +913,6 @@ const Elrond: CharacterDefinition = {
       );
       const ringsRemaining = 5 - totalRingCardsWon;
 
-      // Can still complete if there are at least as many rings remaining as seats needing them
       return ringsRemaining >= seatsNeedingRing;
     },
   },
@@ -999,7 +964,6 @@ const Arwen: CharacterDefinition = {
         .getAllWonCards()
         .filter((c) => c.suit === "forests").length;
 
-      // Count forests cards won by others
       const othersMaxCounts = Math.max(
         ...game.seats
           .filter((s: Seat) => s.seatIndex !== seat.seatIndex)
@@ -1009,7 +973,6 @@ const Arwen: CharacterDefinition = {
           ),
       );
 
-      // Count forests cards remaining
       const totalForestsWon = game.seats.reduce(
         (total: number, s: Seat) =>
           total + s.getAllWonCards().filter((c) => c.suit === "forests").length,
@@ -1017,7 +980,6 @@ const Arwen: CharacterDefinition = {
       );
       const forestsRemaining = 8 - totalForestsWon;
 
-      // Can complete if: my current + all remaining > others' max
       return myCounts + forestsRemaining > othersMaxCounts;
     },
   },
@@ -1067,7 +1029,6 @@ const Gloin: CharacterDefinition = {
         .getAllWonCards()
         .filter((c) => c.suit === "mountains").length;
 
-      // Count mountains cards won by others
       const othersMaxCounts = Math.max(
         ...game.seats
           .filter((s: Seat) => s.seatIndex !== seat.seatIndex)
@@ -1077,7 +1038,6 @@ const Gloin: CharacterDefinition = {
           ),
       );
 
-      // Count mountains cards remaining
       const totalMountainsWon = game.seats.reduce(
         (total: number, s: Seat) =>
           total +
@@ -1086,7 +1046,6 @@ const Gloin: CharacterDefinition = {
       );
       const mountainsRemaining = 8 - totalMountainsWon;
 
-      // Can complete if: my current + all remaining > others' max
       return myCounts + mountainsRemaining > othersMaxCounts;
     },
   },
@@ -1110,7 +1069,6 @@ const BilboBaggins: CharacterDefinition = {
   setupText: "No setup action",
 
   setup: async (_game, _seat, _setupContext) => {
-    // No setup action
     // TODO: Implement "choose next leader" mechanic during trick-taking
     // When Bilbo wins a trick, he may choose who leads the next trick
   },
