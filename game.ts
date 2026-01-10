@@ -9,9 +9,22 @@ import {
 import {
   shuffleDeck,
   sortHand,
-  createCardElement,
   delay,
 } from "./utils.js";
+import {
+  addToGameLog,
+  clearGameLog,
+  copyGameLog,
+  displayHands,
+  displayTrick,
+  getPlayerDisplayName,
+  highlightActivePlayer,
+  updateGameStatus,
+  updateLostCardDisplay,
+  updatePlayerHeadings,
+  updateTricksDisplay,
+  resetPlayerHeadings,
+} from "./display.js";
 import { Seat } from "./seat.js";
 import { HumanController, AIController } from "./controllers.js";
 import { characterRegistry, allCharacterNames } from "./characters/registry.js";
@@ -28,7 +41,7 @@ const allCharacters = allCharacterNames.filter((name) => name !== "Frodo");
 
 // ===== INTERFACES =====
 
-interface TrickPlay {
+export interface TrickPlay {
   playerIndex: number;
   card: Card;
   isTrump: boolean;
@@ -130,7 +143,7 @@ export class Game {
       seat.hand!.addCard(this.lostCard);
       this.lostCard = null;
       addToGameLog(`${seat.getDisplayName()} takes the lost card`);
-      displayHands(this, this.seats);
+      displayHands(this, this.seats, isLegalMove);
       updateLostCardDisplay(this);
     }
   }
@@ -160,7 +173,7 @@ export class Game {
     this.lostCard = cardToGive;
 
     addToGameLog(`${seat.getDisplayName()} exchanges with the lost card`);
-    displayHands(this, this.seats);
+    displayHands(this, this.seats, isLegalMove);
     updateLostCardDisplay(this);
   }
 
@@ -400,7 +413,7 @@ export class Game {
 
     if (exchangeSetup) {
       this.completeExchange(exchangeSetup, setupContext);
-      displayHands(this, this.seats);
+      displayHands(this, this.seats, isLegalMove);
     }
   }
 
@@ -435,7 +448,7 @@ export class Game {
 
   // Refresh the display after making changes
   refreshDisplay(): void {
-    displayHands(this, this.seats);
+    displayHands(this, this.seats, isLegalMove);
   }
 
   // Display simple status icon
@@ -475,32 +488,12 @@ export class Game {
     addToGameLog(
       `${fromSeat.getDisplayName()} gives ${cardToGive.value} of ${cardToGive.suit} to ${toSeat.getDisplayName()}`,
     );
-    displayHands(this, this.seats);
+    displayHands(this, this.seats, isLegalMove);
   }
 }
 
-// ===== ASYNC HELPERS =====
-
 // ===== GAME FUNCTIONS =====
 
-function getPlayerDisplayName(gameState: Game, playerIndex: number): string {
-  return gameState.seats[playerIndex].getDisplayName();
-}
-
-function addToGameLog(message: string, important: boolean = false): void {
-  const logDiv = document.getElementById("gameLog")!;
-  const entry = document.createElement("div");
-  entry.className = "log-entry" + (important ? " important" : "");
-  entry.textContent = message;
-  logDiv.appendChild(entry);
-
-  // Auto-scroll to bottom
-  logDiv.scrollTop = logDiv.scrollHeight;
-}
-
-function clearGameLog(): void {
-  document.getElementById("gameLog")!.innerHTML = "";
-}
 
 function createDeck(): Card[] {
   const deck: Card[] = [];
@@ -572,42 +565,6 @@ function getLegalMoves(gameState: Game, playerIndex: number): Card[] {
   );
 }
 
-function updatePlayerHeadings(gameState: Game): void {
-  for (const seat of gameState.seats) {
-    const nameElement = document.getElementById(
-      `playerName${seat.seatIndex + 1}`,
-    )!;
-    const objectiveElement = document.getElementById(
-      `objective${seat.seatIndex + 1}`,
-    )!;
-    const character = seat.character;
-
-    if (character) {
-      if (seat.seatIndex === 0) {
-        // Human player - show "You"
-        nameElement.textContent = `${character} (You)`;
-      } else if (seat.isPyramid) {
-        // Pyramid player - indicate it's the pyramid
-        nameElement.textContent = `${character} (Pyramid)`;
-      } else {
-        // AI players - show character name
-        nameElement.textContent = character;
-      }
-
-      if (seat.characterDef) {
-        let objective: string;
-        if (seat.characterDef.objective?.getText) {
-          objective = seat.characterDef.objective.getText(gameState);
-        } else {
-          objective = seat.characterDef.objective.text!;
-        }
-
-        objectiveElement.textContent = `Goal: ${objective}`;
-      }
-    }
-  }
-}
-
 // ===== EXCHANGE HELPER FUNCTIONS =====
 
 
@@ -650,119 +607,6 @@ function getGameOverMessage(gameState: Game): string {
   }
 
   return message;
-}
-
-function updateLostCardDisplay(gameState: Game): void {
-  const lostCardDiv = document.getElementById("lostCard")!;
-  lostCardDiv.innerHTML = "";
-
-  if (gameState.lostCard) {
-    lostCardDiv.appendChild(createCardElement(gameState.lostCard));
-  }
-}
-
-function updateTricksDisplay(gameState: Game): void {
-  for (const seat of gameState.seats) {
-    const trickCount = seat.getTrickCount();
-
-    // Update trick count
-    document.getElementById(`tricks${seat.seatIndex + 1}`)!.textContent =
-      `Tricks: ${trickCount}`;
-
-    // Update objective status
-    const statusDiv = document.getElementById(
-      `objectiveStatus${seat.seatIndex + 1}`,
-    )!;
-
-    const characterDef = seat.characterDef;
-    if (!characterDef) {
-      statusDiv.innerHTML = "";
-      continue;
-    }
-
-    statusDiv.innerHTML = characterDef.display.renderStatus(gameState, seat);
-
-    // Update threat card display
-    const threatCardDiv = document.getElementById(
-      `threatCard${seat.seatIndex + 1}`,
-    )!;
-    threatCardDiv.innerHTML = "";
-
-    if (seat.threatCard !== null) {
-      threatCardDiv.appendChild(
-        createCardElement({ suit: "threat", value: seat.threatCard }),
-      );
-    }
-  }
-}
-
-function displayTrick(gameState: Game): void {
-  const trickDiv = document.getElementById("trickCards")!;
-  trickDiv.innerHTML = "";
-
-  gameState.currentTrick.forEach((play) => {
-    const trickCardDiv = document.createElement("div");
-    trickCardDiv.className = "trick-card";
-
-    const labelDiv = document.createElement("div");
-    labelDiv.className = "player-label";
-    labelDiv.textContent =
-      getPlayerDisplayName(gameState, play.playerIndex) +
-      (play.isTrump ? " (TRUMP)" : "");
-
-    trickCardDiv.appendChild(createCardElement(play.card));
-    trickCardDiv.appendChild(labelDiv);
-    trickDiv.appendChild(trickCardDiv);
-  });
-}
-
-function highlightActivePlayer(activePlayer: number): void {
-  document.querySelectorAll(".player").forEach((div) => {
-    if ((div as HTMLElement).dataset.player === String(activePlayer + 1)) {
-      div.classList.add("active");
-    } else {
-      div.classList.remove("active");
-    }
-  });
-}
-
-function displayHands(
-  gameState: Game,
-  seats: Seat[],
-  activePlayer?: number,
-): void {
-  highlightActivePlayer(gameState.currentPlayer);
-
-  // Display each player's hand
-  for (const seat of seats) {
-    const canSelectCard =
-      activePlayer !== undefined && seat.seatIndex === activePlayer;
-
-    seat.hand!.render(
-      document.getElementById(`player${seat.seatIndex + 1}`)!,
-      (card) => canSelectCard && isLegalMove(gameState, seat.seatIndex, card),
-      (card) => {
-        if (canSelectCard) {
-          (seat.controller as HumanController).resolveCardSelection!(card);
-        }
-      },
-    );
-  }
-}
-
-function updateGameStatus(
-  gameState: Game,
-  message: string | null = null,
-): void {
-  const statusDiv = document.getElementById("gameStatus")!;
-
-  if (message) {
-    statusDiv.textContent = message;
-  } else if (gameState.currentPlayer === 0) {
-    statusDiv.textContent = "Your turn! Click a card to play.";
-  } else {
-    statusDiv.textContent = `${getPlayerDisplayName(gameState, gameState.currentPlayer)}'s turn...`;
-  }
 }
 
 // ===== NEW GAME LOOP FUNCTIONS =====
@@ -865,7 +709,7 @@ async function selectCardFromPlayer(
 
   const controller = gameState.seats[playerIndex].controller;
   const renderCards = () =>
-    displayHands(gameState, gameState.seats, playerIndex);
+    displayHands(gameState, gameState.seats, isLegalMove, playerIndex);
 
   return await controller.selectCard(legalMoves, renderCards);
 }
@@ -879,8 +723,7 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
     gameState.currentTrick = [];
     gameState.leadSuit = null;
 
-    // Clear trick display
-    document.getElementById("trickCards")!.innerHTML = "";
+    displayTrick(gameState);
 
     addToGameLog(`--- Trick ${gameState.currentTrickNumber + 1} ---`);
 
@@ -918,7 +761,7 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
       await playSelectedCard(gameState, playerIndex, selectedCard);
 
       displayTrick(gameState);
-      displayHands(gameState, gameState.seats); // Redisplay with no active player
+      displayHands(gameState, gameState.seats, isLegalMove); // Redisplay with no active player
     }
 
     // Check for 1 of Rings trump decision
@@ -964,7 +807,7 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
       seat.hand!.onTrickComplete();
     }
 
-    displayHands(gameState, gameState.seats);
+    displayHands(gameState, gameState.seats, isLegalMove);
     updateTricksDisplay(gameState);
 
     // Check for impossible objectives
@@ -1035,7 +878,7 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
   }
 
   updatePlayerHeadings(gameState);
-  displayHands(gameState, gameState.seats);
+  displayHands(gameState, gameState.seats, isLegalMove);
 
   // Loop through remaining players
   for (let i = 1; i < gameState.numCharacters; i++) {
@@ -1074,7 +917,7 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
     updatePlayerHeadings(gameState);
   }
 
-  displayHands(gameState, gameState.seats);
+  displayHands(gameState, gameState.seats, isLegalMove);
 }
 
 async function runGame(gameState: Game): Promise<void> {
@@ -1120,11 +963,6 @@ async function newGame(): Promise<void> {
     // Deal lost card
     lostCard = deck.shift()!;
   } while (lostCard.suit === "rings" && lostCard.value === 1);
-
-  // Display the lost card
-  const lostCardDiv = document.getElementById("lostCard")!;
-  lostCardDiv.innerHTML = "";
-  lostCardDiv.appendChild(createCardElement(lostCard));
 
   // Deal cards to temporary arrays first
   const playerCards: Card[][] = Array.from({ length: numCharacters }, () => []);
@@ -1199,11 +1037,8 @@ async function newGame(): Promise<void> {
   );
   gameState.availableCharacters = availableCharacters;
 
-  // Clear trick display
-  document.getElementById("trickCards")!.innerHTML = "";
-
-  // Reset tricks won display
   updateTricksDisplay(gameState);
+  updateLostCardDisplay(gameState);
 
   // Reset player headings
   resetPlayerHeadings();
@@ -1214,42 +1049,10 @@ async function newGame(): Promise<void> {
   addToGameLog(`Lost card: ${lostCard.value} of ${lostCard.suit}`);
 
   // Display initial state
-  displayHands(gameState, gameState.seats);
+  displayHands(gameState, gameState.seats, isLegalMove);
 
   // Run the game loop
   await runGame(gameState);
-}
-
-function resetPlayerHeadings(): void {
-  for (let p = 0; p < 4; p++) {
-    const nameElement = document.getElementById(`playerName${p + 1}`)!;
-    const objectiveElement = document.getElementById(`objective${p + 1}`)!;
-    nameElement.textContent = `Player ${p + 1}`;
-    objectiveElement.textContent = "";
-  }
-}
-
-function copyGameLog(): void {
-  const logDiv = document.getElementById("gameLog")!;
-  const logEntries = Array.from(logDiv.querySelectorAll(".log-entry"));
-  const logText = logEntries.map((entry) => entry.textContent).join("\n");
-
-  navigator.clipboard.writeText(logText).then(
-    () => {
-      // Temporarily change button text to show success
-      const button = document.querySelector(
-        ".copy-log-button",
-      ) as HTMLButtonElement;
-      const originalText = button.textContent;
-      button.textContent = "Copied!";
-      setTimeout(() => {
-        button.textContent = originalText;
-      }, 1500);
-    },
-    (err) => {
-      console.error("Failed to copy log:", err);
-    },
-  );
 }
 
 // Expose functions to global scope for inline event handlers
