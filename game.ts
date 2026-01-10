@@ -106,8 +106,8 @@ export class Game {
     });
   }
 
-  // Offer lost card (optional take)
-  async offerLostCard(seat: Seat): Promise<void> {
+  // Take lost card (optional in ongoing mode to avoid impossible objectives)
+  async takeLostCard(seat: Seat): Promise<void> {
     if (!this.lostCard) return;
 
     const shouldTake = await seat.controller.chooseButton({
@@ -121,12 +121,14 @@ export class Game {
 
     if (shouldTake) {
       seat.hand!.addCard(this.lostCard);
+      this.lostCard = null;
       addToGameLog(`${seat.getDisplayName()} takes the lost card`);
       displayHands(this, this.seats);
+      updateLostCardDisplay(this);
     }
   }
 
-  // Exchange with lost card (swap one card)
+  // Exchange with lost card (swap one card, optional in ongoing mode)
   async exchangeWithLostCard(
     seat: Seat,
     _setupContext: GameSetupContext,
@@ -152,6 +154,7 @@ export class Game {
 
     addToGameLog(`${seat.getDisplayName()} exchanges with the lost card`);
     displayHands(this, this.seats);
+    updateLostCardDisplay(this);
   }
 
   // Reveal hand (make visible to all)
@@ -684,6 +687,15 @@ function getGameOverMessage(gameState: Game): string {
   }
 
   return message;
+}
+
+function updateLostCardDisplay(gameState: Game): void {
+  const lostCardDiv = document.getElementById("lostCard")!;
+  lostCardDiv.innerHTML = "";
+
+  if (gameState.lostCard) {
+    lostCardDiv.appendChild(createCardElement(gameState.lostCard));
+  }
 }
 
 function updateTricksDisplay(gameState: Game): void {
