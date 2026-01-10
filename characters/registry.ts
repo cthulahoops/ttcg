@@ -2,8 +2,9 @@
 // All character definitions in one place
 
 import type { Seat } from "../seat";
-import type { Suit } from "../types";
+import type { Card, Suit } from "../types";
 import type { Game } from "../game";
+import { sortHand } from "../utils";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SetupContext = any;
@@ -871,13 +872,31 @@ const Elrond: CharacterDefinition = {
   setupText: "Everyone simultaneously passes 1 card to the right",
 
   setup: async (game, _seat, _setupContext) => {
-    // TODO: Implement true simultaneous selection where all cards are chosen before any are passed
-    // For now, pass sequentially around the circle
+    // Phase 1: All players choose cards simultaneously
+    const cardsToPass: Card[] = [];
     for (let i = 0; i < game.seats.length; i++) {
-      const fromSeat = game.seats[i];
-      const toSeat = game.seats[(i + 1) % game.seats.length];
-      await game.giveCard(fromSeat, toSeat);
+      const seat = game.seats[i];
+      const availableCards = seat.hand!.getAvailableCards();
+
+      const card = await seat.controller.chooseCard({
+        title: `${seat.character} - Pass to Right`,
+        message: "Choose a card to pass to the player on your right",
+        cards: availableCards,
+      });
+      cardsToPass.push(card);
     }
+
+    // Phase 2: Execute all transfers simultaneously
+    for (let i = 0; i < game.seats.length; i++) {
+      game.seats[i].hand!.removeCard(cardsToPass[i]);
+    }
+    for (let i = 0; i < game.seats.length; i++) {
+      const toSeat = game.seats[(i + 1) % game.seats.length];
+      toSeat.hand!.addCard(cardsToPass[i]);
+    }
+
+    game.log("Everyone passes a card to the right");
+    game.refreshDisplay();
   },
 
   objective: {
