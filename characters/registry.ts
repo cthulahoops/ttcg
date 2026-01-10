@@ -537,20 +537,25 @@ const Galadriel: CharacterDefinition = {
       return myCount !== minCount && myCount !== maxCount;
     },
     isCompletable: (game, seat) => {
-      // TODO This is horribly broken.
       const allCounts = game.seats.map((s: Seat) => s.getTrickCount());
       const minCount = Math.min(...allCounts);
       const maxCount = Math.max(...allCounts);
       const myCount = seat.getTrickCount();
 
-      // If we're sole min or sole max, it's impossible
-      const minSeats = allCounts.filter((c: number) => c === minCount).length;
-      const maxSeats = allCounts.filter((c: number) => c === maxCount).length;
+      // Optimistic assumption: currentMin stays finalMin
+      // Galadriel needs to be at least currentMin + 1
+      const targetGaladriel = Math.max(minCount + 1, myCount);
 
-      if (myCount === minCount && minSeats === 1) return false;
-      if (myCount === maxCount && maxSeats === 1) return false;
+      // Someone needs to be above Galadriel for max
+      const targetMax = Math.max(maxCount, targetGaladriel + 1);
 
-      return true;
+      // Calculate tricks needed to reach this state
+      const tricksNeededForGaladriel = targetGaladriel - myCount;
+      const tricksNeededForMax = targetMax - maxCount;
+
+      return (
+        tricksNeededForGaladriel + tricksNeededForMax <= game.tricksRemaining()
+      );
     },
   },
 
