@@ -436,37 +436,6 @@ export class Game {
 
 
 // ===== GAME FUNCTIONS =====
-
-
-function createDeck(): Card[] {
-  const deck: Card[] = [];
-  const normalSuits: Suit[] = ["mountains", "shadows", "forests", "hills"];
-
-  for (const suit of normalSuits) {
-    for (let value = 1; value <= 8; value++) {
-      deck.push({ suit, value });
-    }
-  }
-
-  for (let value = 1; value <= 5; value++) {
-    deck.push({ suit: "rings", value });
-  }
-
-  return deck;
-}
-
-function findPlayerWithCard(hands: Card[][], needle: Card): number {
-  const idx = hands.findIndex((hand: Card[]) =>
-    hand.some(
-      (card) => card.suit === needle.suit && card.value === needle.value,
-    ),
-  );
-  if (idx < 0) {
-    throw new Error("Needle not found");
-  }
-  return idx;
-}
-
 function isLegalMove(
   gameState: Game,
   playerIndex: number,
@@ -806,7 +775,14 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
   }
 }
 
-async function runGame(gameState: Game): Promise<void> {
+export async function runGame(gameState: Game): Promise<void> {
+  gameState.notifyStateChange();
+
+  const lostCard = gameState.lostCard!;
+
+  gameState.log("=== NEW GAME STARTED ===", true);
+  gameState.log(`Lost card: ${lostCard.value} of ${lostCard.suit}`);
+
   await runCharacterAssignment(gameState);
   await runSetupPhase(gameState);
   await runTrickTakingPhase(gameState);

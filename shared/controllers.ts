@@ -23,20 +23,27 @@ export abstract class Controller {
 }
 
 export class AIController extends Controller {
+    private delay;
+
+    constructor(delay: number) {
+        super()
+        this.delay = delay;
+    }
+
   async chooseButton<T>({ buttons }: ChoiceButtonOptions<T>): Promise<T> {
-    await delay(100);
+    await delay(this.delay);
     return randomChoice(buttons).value;
   }
 
   async chooseCard<T extends AnyCard = AnyCard>({
     cards,
   }: ChoiceCardOptions<T>): Promise<T> {
-    await delay(100);
+    await delay(this.delay);
     return randomChoice(cards);
   }
 
   async selectCard(availableCards: Card[]): Promise<Card> {
-    await delay(800);
+    await delay(this.delay);
     return randomChoice(availableCards);
   }
 }
