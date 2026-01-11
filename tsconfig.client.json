@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.shared.json",
+  "compilerOptions": {
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "noEmit": true
+  },
+  "include": ["client", "shared"],
+  "references": [{ "path": "./tsconfig.shared.json" }]
+}
