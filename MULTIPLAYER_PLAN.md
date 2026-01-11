@@ -21,97 +21,675 @@ This plan adds network multiplayer to the trick-taking game while **preserving t
 
 ---
 
-## Part 1: Core Architecture
+## Part 1: Technology Selection
 
-### 1.1 Network Controller
+### 1.1 Real-Time Communication Libraries
+
+#### Option A: Socket.IO ✅ **RECOMMENDED**
+
+**Why Socket.IO is Better for This Project:**
+
+```typescript
+// Client
+import { io } from 'socket.io-client';
+const socket = io('https://your-server.com');
+
+// Clean event-based API
+socket.emit('selectCard', { card: selectedCard });
+socket.on('stateUpdate', (gameState) => { /* render */ });
+
+// Server
+import { Server } from 'socket.io';
+const io = new Server(3000);
+
+// Built-in room management
+io.to(roomCode).emit('stateUpdate', gameState);
+```
+
+**Advantages:**
+- ✅ **Automatic Reconnection**: Built-in exponential backoff, maintains connection through network issues
+- ✅ **Room Management**: First-class support for game rooms (`socket.join(roomCode)`, `io.to(roomCode).emit()`)
+- ✅ **Event-Based API**: Cleaner than manual JSON parsing (`socket.on('eventName')` vs `switch(message.type)`)
+- ✅ **Fallback Transports**: Auto-degrades to long polling if WebSocket blocked by corporate firewall
+- ✅ **Acknowledgments**: Can wait for confirmation that message was received: `socket.emit('move', data, (ack) => {})`
+- ✅ **TypeScript Support**: Excellent type safety with typed events
+- ✅ **Battle-Tested**: Used by Microsoft, Trello, and millions of apps
+- ✅ **Binary Support**: Can send ArrayBuffers for optimized state deltas
+- ✅ **Namespace Support**: Can separate lobby vs game connections
+
+**Disadvantages:**
+- ❌ Larger bundle size: ~52KB minified (vs 0KB for native WebSocket)
+- ❌ Slightly more latency overhead (~5-10ms) due to protocol wrapping
+- ❌ Requires Socket.IO on both client and server (can't use with generic WebSocket server)
+
+**Bundle Size Analysis:**
+```
+socket.io-client: 52KB minified
+ws (raw WebSocket): 0KB (browser native)
+Difference: 52KB = ~0.15s on 3G connection (acceptable for turn-based game)
+```
+
+**Code Example - Type-Safe Events:**
+```typescript
+// shared/events.ts
+interface ServerToClientEvents {
+  stateUpdate: (state: SerializedGameState) => void;
+  requestInput: (request: InputRequest) => void;
+  playerJoined: (playerName: string) => void;
+  error: (message: string) => void;
+}
+
+interface ClientToServerEvents {
+  joinRoom: (roomCode: string) => void;
+  selectCard: (card: Card) => void;
+  chooseButton: (value: string) => void;
+}
+
+// Client
+const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(serverUrl);
+socket.on('stateUpdate', (state) => {
+  // `state` is fully typed!
+});
+
+// Server
+const io = new Server<ClientToServerEvents, ServerToClientEvents>();
+```
+
+**Reconnection Handling (Free with Socket.IO):**
+```typescript
+socket.on('disconnect', (reason) => {
+  if (reason === 'io server disconnect') {
+    // Server kicked us, manually reconnect
+    socket.connect();
+  }
+  // Otherwise auto-reconnects with exponential backoff
+});
+
+socket.on('connect', () => {
+  // Rejoin room after reconnection
+  if (currentRoomCode) {
+    socket.emit('rejoinRoom', currentRoomCode, currentSeatIndex);
+  }
+});
+```
+
+#### Option B: Raw WebSocket (ws library)
+
+**When to Use:**
+- Minimal bundle size is critical
+- Very simple protocol (only 2-3 message types)
+- Don't need room management
+- Building a learning project
+
+**Code Example:**
+```typescript
+// Client (browser native)
+const ws = new WebSocket('ws://localhost:8080');
+ws.onmessage = (event) => {
+  const message = JSON.parse(event.data);
+  switch(message.type) {
+    case 'STATE_UPDATE': handleStateUpdate(message); break;
+    // ... manual routing
+  }
+};
+
+// Server
+import { WebSocketServer } from 'ws';
+const wss = new WebSocketServer({ port: 8080 });
+wss.on('connection', (ws) => {
+  ws.on('message', (data) => {
+    // Manual message parsing, routing, room management
+  });
+});
+```
+
+**Disadvantages for This Project:**
+- ❌ No automatic reconnection (must implement manually)
+- ❌ No built-in rooms (must track `roomCode → Set<WebSocket>` manually)
+- ❌ Must parse JSON and route messages yourself
+- ❌ No fallback if WebSocket blocked by firewall
+- ❌ No acknowledgment support
+
+**Verdict:** Raw WebSocket adds ~200 lines of boilerplate that Socket.IO provides for free. The 52KB cost is worth it.
+
+#### Option C: WebRTC (peer-to-peer)
+
+**Best For:**
+- Video/audio chat
+- File transfer
+- Ultra-low latency (<20ms)
+- No server dependency after signaling
+
+**Code Example:**
+```typescript
+// Requires signaling server first
+const pc = new RTCPeerConnection();
+const channel = pc.createDataChannel('game');
+
+channel.onmessage = (event) => {
+  const message = JSON.parse(event.data);
+  // Handle message
+};
+```
+
+**Why Not for This Project:**
+- ❌ **Complex Setup**: Requires STUN/TURN servers, signaling, ICE negotiation
+- ❌ **NAT Traversal Issues**: ~10-15% of connections fail due to strict NATs
+- ❌ **Hard to Debug**: Connection issues are cryptic
+- ❌ **Overkill**: Don't need <20ms latency for turn-based game (100ms is fine)
+- ❌ **4-Player Mesh**: Each player needs 3 WebRTC connections (complex)
+
+**Verdict:** Too complex for the benefit. Only consider if building real-time action game.
+
+#### Option D: Partykit / PartyServer
+
+**What It Is:**
+Platform for building multiplayer apps with automatic scaling, room management, and persistence.
+
+```typescript
+// server/party.ts
+export default class GameParty implements Party.Server {
+  constructor(public party: Party.Party) {}
+
+  onConnect(conn: Party.Connection) {
+    // New player joined
+  }
+
+  onMessage(message: string, sender: Party.Connection) {
+    // Broadcast to room
+    this.party.broadcast(message, [sender.id]);
+  }
+}
+```
+
+**Advantages:**
+- ✅ Zero-config deployment
+- ✅ Automatic room persistence
+- ✅ Built-in scaling (rooms distributed across servers)
+- ✅ Hibernation (rooms sleep when empty, wake on join)
+- ✅ WebSocket + HTTP API
+
+**Disadvantages:**
+- ❌ **Vendor Lock-In**: Can't easily self-host or migrate
+- ❌ **Cost**: Free tier limited (100 rooms, then $10/month)
+- ❌ **Less Control**: Can't customize server infra
+- ❌ **Debugging**: Harder to debug remote deployment issues
+
+**Verdict:** Great for rapid prototyping or if you don't want to manage servers. But Socket.IO gives more control.
+
+#### Option E: Colyseus (Game Server Framework)
+
+**What It Is:**
+Framework specifically for multiplayer games with state synchronization.
+
+```typescript
+// Define game state schema
+class GameState extends Schema {
+  @type("number") currentPlayer: number;
+  @type([Player]) players = new ArraySchema<Player>();
+}
+
+class GameRoom extends Room<GameState> {
+  onCreate() {
+    this.setState(new GameState());
+  }
+
+  onMessage(client, message) {
+    // Handle player actions
+  }
+}
+```
+
+**Advantages:**
+- ✅ **State Sync**: Automatic delta encoding (only send changed fields)
+- ✅ **Schema-Based**: Define state structure, auto-serialize
+- ✅ **Game-Specific**: Built for turn-based and real-time games
+- ✅ **Matchmaking**: Built-in lobby and matchmaking
+- ✅ **Client SDKs**: JavaScript, Unity, Cocos, Defold
+
+**Disadvantages:**
+- ❌ **Learning Curve**: New framework to learn (Schema, Room lifecycle)
+- ❌ **Opinionated**: Must structure code around Colyseus patterns
+- ❌ **Bundle Size**: Client SDK is ~80KB (larger than Socket.IO)
+- ❌ **Overkill**: We already have clean state management (Game class)
+
+**Verdict:** Best if building from scratch or need automatic state sync. For this project, our existing architecture is cleaner.
+
+#### Option F: Server-Sent Events (SSE)
+
+**What It Is:**
+One-way server → client push over HTTP.
+
+```typescript
+// Server
+res.writeHead(200, {
+  'Content-Type': 'text/event-stream',
+  'Cache-Control': 'no-cache'
+});
+res.write(`data: ${JSON.stringify(gameState)}\n\n`);
+
+// Client
+const eventSource = new EventSource('/game-stream');
+eventSource.onmessage = (event) => {
+  const state = JSON.parse(event.data);
+};
+```
+
+**Why Not:**
+- ❌ **One-Way Only**: Client → server requires separate POST requests
+- ❌ **No Binary**: Text-only protocol
+- ❌ **Limited Browser Support**: Max 6 concurrent connections per domain
+
+**Verdict:** Not suitable for bidirectional game communication.
+
+---
+
+### 1.2 Technology Recommendation Matrix
+
+| Feature | Socket.IO | Raw WS | WebRTC | Partykit | Colyseus |
+|---------|-----------|--------|---------|----------|----------|
+| **Auto Reconnect** | ✅ Built-in | ❌ Manual | ⚠️ Complex | ✅ Yes | ✅ Yes |
+| **Room Management** | ✅ Native | ❌ Manual | ❌ N/A | ✅ Native | ✅ Native |
+| **Bundle Size** | 52KB | 0KB | ~100KB | ~60KB | ~80KB |
+| **Learning Curve** | Low | Low | High | Medium | High |
+| **Latency** | ~50ms | ~40ms | ~10ms | ~60ms | ~50ms |
+| **Fallback Transport** | ✅ Yes | ❌ No | ❌ No | ✅ Yes | ✅ Yes |
+| **Self-Hostable** | ✅ Yes | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| **Type Safety** | ✅✅ Excellent | ⚠️ Manual | ⚠️ Manual | ✅ Good | ✅✅ Excellent |
+| **State Sync** | ❌ Manual | ❌ Manual | ❌ Manual | ⚠️ Basic | ✅✅ Auto |
+
+**Final Recommendation: Socket.IO**
+- Best balance of features vs complexity
+- 52KB is negligible for modern web
+- Saves 200+ lines of boilerplate code
+- Production-ready with great TypeScript support
+
+---
+
+### 1.3 Server Hosting Options
+
+#### Option A: Render (Free Tier) ✅ **RECOMMENDED FOR MVP**
+
+**Specs:**
+- Free: 750 hours/month (enough for 24/7 uptime)
+- Auto-deploy from GitHub
+- HTTPS + WebSocket support
+- Sleeps after 15min inactivity (wakes in ~30s)
+- 512MB RAM, shared CPU
+
+**Pros:**
+- ✅ Zero cost for development
+- ✅ One-click deploy
+- ✅ Auto-SSL certificates
+- ✅ Great for testing
+
+**Cons:**
+- ❌ Cold starts (30s wake time) - bad UX for first player
+- ❌ Sleep kills active games
+- ❌ Single region (US or EU)
+
+**Deploy:**
+```bash
+# render.yaml
+services:
+  - type: web
+    name: ttcg-server
+    env: node
+    buildCommand: cd server && npm install
+    startCommand: cd server && npm start
+    healthCheckPath: /health
+```
+
+#### Option B: Railway ($5-10/month)
+
+**Specs:**
+- Always-on (no sleep)
+- $5/month base + usage
+- 8GB RAM, 8 vCPU shared
+- Multiple regions
+- WebSocket support
+
+**Pros:**
+- ✅ No cold starts
+- ✅ Better performance
+- ✅ Usage-based pricing (scales down when idle)
+
+**Cons:**
+- ❌ Costs money
+- ❌ Must monitor costs
+
+#### Option C: Fly.io (Pay-as-you-go)
+
+**Specs:**
+- Free tier: 3 shared-CPU VMs, 160GB bandwidth
+- Global edge network
+- ~$2-5/month for small game server
+
+**Pros:**
+- ✅ Multi-region (low latency worldwide)
+- ✅ No sleep (within free tier)
+- ✅ Great WebSocket support
+
+**Cons:**
+- ❌ More complex config
+- ❌ Pricing can be unpredictable
+
+#### Option D: Cloudflare Workers + Durable Objects
+
+**What It Is:**
+Serverless WebSocket handlers that run on Cloudflare's edge.
+
+```typescript
+export default {
+  async fetch(request, env) {
+    const upgradeHeader = request.headers.get('Upgrade');
+    if (upgradeHeader === 'websocket') {
+      // Handle WebSocket
+      return handleWebSocket(request, env);
+    }
+  }
+}
+```
+
+**Pros:**
+- ✅ Global edge (ultra-low latency)
+- ✅ Free tier: 1M requests/month
+- ✅ Auto-scaling
+- ✅ No server management
+
+**Cons:**
+- ❌ **Complex**: Different mental model (actors/durable objects)
+- ❌ **Limitations**: 128MB memory, 30s CPU time
+- ❌ **Lock-In**: Cloudflare-specific
+
+**Verdict:** Overkill for initial launch. Consider for scale (1000+ concurrent games).
+
+#### Option E: Self-Hosted (VPS)
+
+**Providers:**
+- DigitalOcean: $4/month (1GB RAM)
+- Linode: $5/month
+- Hetzner: €3.79/month
+
+**Pros:**
+- ✅ Full control
+- ✅ Predictable costs
+- ✅ Can install custom tools
+
+**Cons:**
+- ❌ Must manage server (updates, security, monitoring)
+- ❌ Single region (unless pay for multiple)
+- ❌ No auto-scaling
+
+**Verdict:** Best for experienced developers who want full control.
+
+---
+
+### 1.4 State Synchronization Strategies
+
+#### Strategy A: Full State Broadcast (Simple) ✅ **START HERE**
+
+**How It Works:**
+- Host sends complete game state after every action
+- Guests replace their entire state
+
+**Code:**
+```typescript
+// After every action
+socket.emit('stateUpdate', game.serialize());
+```
+
+**State Size Estimate:**
+```
+Typical game state:
+- 4 players × 9 cards × 50 bytes = 1.8KB
+- Trick history: ~500 bytes
+- Metadata: ~200 bytes
+Total: ~2.5KB per update
+
+Over full game:
+- 36 card plays × 2.5KB = 90KB total
+- ~2KB/second during active play
+```
+
+**Pros:**
+- ✅ Simplest to implement (20 lines of code)
+- ✅ Can't get out of sync (always overwrite)
+- ✅ Easy to debug (just log the state)
+- ✅ 2.5KB is tiny for modern internet
+
+**Cons:**
+- ❌ Sends redundant data (most state unchanged)
+- ❌ Bandwidth scales with state size
+
+**Verdict:** Perfect for MVP. 2.5KB every few seconds is negligible.
+
+#### Strategy B: Delta Encoding (Optimization)
+
+**How It Works:**
+- Only send fields that changed since last update
+- Guest applies patch to existing state
+
+**Code:**
+```typescript
+// After card play
+const delta = {
+  type: 'CARD_PLAYED',
+  seatIndex: 2,
+  card: { suit: 'Mountains', value: 5 },
+  currentTrick: [...game.currentTrick]
+};
+socket.emit('stateDelta', delta);
+```
+
+**Typical Delta Sizes:**
+```
+- Card played: ~100 bytes
+- Trick won: ~200 bytes
+- Character assigned: ~50 bytes
+
+Savings: 100 bytes vs 2500 bytes = 96% reduction
+```
+
+**Pros:**
+- ✅ 25× smaller messages
+- ✅ Lower latency (less to send)
+- ✅ Better for mobile/slow connections
+
+**Cons:**
+- ❌ More complex (must handle each delta type)
+- ❌ Can get out of sync (need periodic full sync)
+- ❌ Harder to debug
+
+**Verdict:** Optimize later if bandwidth becomes an issue (unlikely).
+
+#### Strategy C: Operational Transform (Advanced)
+
+**What It Is:**
+Algorithm for handling concurrent edits (like Google Docs).
+
+**Why Not:**
+- ❌ Turn-based game has no concurrent edits
+- ❌ Massive complexity for no benefit
+
+**Verdict:** Not applicable to turn-based games.
+
+---
+
+### 1.5 Final Technology Stack
+
+**Recommended Stack:**
+
+```
+Frontend:
+├── TypeScript (existing)
+├── socket.io-client (52KB)
+└── No framework (vanilla JS/DOM)
+
+Backend:
+├── Node.js 20 LTS
+├── socket.io (server)
+├── TypeScript
+└── Express (for health checks, static files)
+
+Hosting:
+├── Render (free tier for MVP)
+└── Migrate to Railway/Fly.io for production
+
+State Sync:
+├── Full state broadcast initially
+└── Add delta encoding if needed (unlikely)
+
+Development:
+├── tsx (TypeScript executor)
+├── nodemon (auto-reload)
+└── Playwright (E2E tests)
+```
+
+**package.json (server):**
+```json
+{
+  "name": "ttcg-server",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon --exec tsx src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "socket.io": "^4.7.2",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0",
+    "tsx": "^4.7.0",
+    "nodemon": "^3.0.2"
+  }
+}
+```
+
+---
+
+## Part 2: Core Architecture
+
+### 2.1 Network Controller (Socket.IO)
 
 Create a new `NetworkController` class that implements the same `Controller` interface:
 
 ```typescript
 // network.ts
-export class NetworkController extends Controller {
-  private ws: WebSocket;
-  private seatIndex: number;
+import { io, Socket } from 'socket.io-client';
+import type { ServerToClientEvents, ClientToServerEvents } from '../shared/events';
+import type { Controller, ChoiceButtonOptions, ChoiceCardOptions, Card } from './types';
 
-  constructor(ws: WebSocket, seatIndex: number) {
+export class NetworkController extends Controller {
+  private socket: Socket<ServerToClientEvents, ClientToServerEvents>;
+  private seatIndex: number;
+  private responseHandlers: Map<string, (value: any) => void>;
+
+  constructor(socket: Socket<ServerToClientEvents, ClientToServerEvents>, seatIndex: number) {
     super();
-    this.ws = ws;
+    this.socket = socket;
     this.seatIndex = seatIndex;
+    this.responseHandlers = new Map();
+
+    // Listen for input responses from server
+    this.socket.on('inputResponse', ({ requestId, value }) => {
+      const handler = this.responseHandlers.get(requestId);
+      if (handler) {
+        handler(value);
+        this.responseHandlers.delete(requestId);
+      }
+    });
   }
 
   // Wait for remote player to choose a button
   async chooseButton<T>(options: ChoiceButtonOptions<T>): Promise<T> {
     return new Promise((resolve) => {
-      const requestId = generateId();
+      const requestId = this.generateId();
 
-      // Send choice request to remote player
-      this.ws.send(JSON.stringify({
-        type: 'CHOOSE_BUTTON_REQUEST',
-        requestId,
+      // Send request to server, which forwards to remote player
+      this.socket.emit('requestInput', {
         seatIndex: this.seatIndex,
+        requestId,
+        inputType: 'chooseButton',
         options: {
           title: options.title,
           message: options.message,
-          buttons: options.buttons.map(b => ({ label: b.label, valueId: b.value })),
+          buttons: options.buttons.map(b => ({
+            label: b.label,
+            value: b.value
+          })),
           info: options.info
         }
-      }));
+      });
 
       // Register handler for response
-      this.registerResponseHandler(requestId, resolve);
+      this.responseHandlers.set(requestId, resolve);
     });
   }
 
   // Wait for remote player to choose a card
   async chooseCard<T>(options: ChoiceCardOptions<T>): Promise<T> {
     return new Promise((resolve) => {
-      const requestId = generateId();
+      const requestId = this.generateId();
 
-      this.ws.send(JSON.stringify({
-        type: 'CHOOSE_CARD_REQUEST',
-        requestId,
+      this.socket.emit('requestInput', {
         seatIndex: this.seatIndex,
+        requestId,
+        inputType: 'chooseCard',
         options: {
           title: options.title,
           message: options.message,
-          cards: options.cards,  // Serialized cards
+          cards: options.cards,
           info: options.info
         }
-      }));
+      });
 
-      this.registerResponseHandler(requestId, resolve);
+      this.responseHandlers.set(requestId, resolve);
     });
   }
 
   // Wait for remote player to select a card from their hand
   async selectCard(availableCards: Card[], renderCards: () => void): Promise<Card> {
     return new Promise((resolve) => {
-      const requestId = generateId();
+      const requestId = this.generateId();
 
       // Don't call renderCards - remote player has their own display
 
-      this.ws.send(JSON.stringify({
-        type: 'SELECT_CARD_REQUEST',
-        requestId,
+      this.socket.emit('requestInput', {
         seatIndex: this.seatIndex,
-        availableCards: availableCards
-      }));
+        requestId,
+        inputType: 'selectCard',
+        options: { availableCards }
+      });
 
-      this.registerResponseHandler(requestId, resolve);
+      this.responseHandlers.set(requestId, resolve);
     });
   }
 
-  private registerResponseHandler(requestId: string, resolve: (value: any) => void): void {
-    // Store resolver in map, keyed by requestId
-    // When response message arrives, call resolve() and remove from map
+  private generateId(): string {
+    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  // Cleanup when controller is no longer needed
+  dispose(): void {
+    this.responseHandlers.clear();
   }
 }
 ```
 
+**Key Improvements with Socket.IO:**
+- ✅ **Type-Safe Events**: `socket.emit('requestInput', ...)` is fully typed
+- ✅ **Cleaner API**: No manual JSON parsing or message type switching
+- ✅ **Built-in Event Routing**: Socket.IO handles message delivery to right handler
+- ✅ **Auto Reconnection**: If connection drops, Socket.IO reconnects automatically
+
 **Key Insight**: The `NetworkController` has the **exact same interface** as `HumanController` and `AIController`. The game loop doesn't know or care whether it's waiting for:
 - A DOM click event (HumanController)
 - A random AI delay (AIController)
-- A network message (NetworkController)
+- A Socket.IO message (NetworkController)
 
 All it sees is an async method that returns a Promise!
 
@@ -282,171 +860,339 @@ serializeForSeat(viewerSeatIndex: number): SerializedGameState {
 
 ---
 
-## Part 3: Server Implementation
+## Part 3: Server Implementation (Socket.IO)
 
-### 3.1 Game Server (Node.js + WebSocket)
+### 3.1 Game Server with Socket.IO
 
-Create a simple Node.js server that hosts game rooms:
+Create a Socket.IO server with clean room management:
 
 ```typescript
-// server/gameServer.ts
-import { WebSocketServer, WebSocket } from 'ws';
+// server/src/server.ts
+import express from 'express';
+import { createServer } from 'http';
+import { Server, Socket } from 'socket.io';
+import type { ServerToClientEvents, ClientToServerEvents } from '../shared/events';
+
+const app = express();
+const httpServer = createServer(app);
+
+const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
+  cors: {
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    methods: ['GET', 'POST']
+  },
+  // Ping timeout: disconnect if no pong within 20s
+  pingTimeout: 20000,
+  // Ping interval: check connection every 25s
+  pingInterval: 25000
+});
 
 interface GameRoom {
   roomCode: string;
-  hostSocket: WebSocket | null;
-  guestSockets: Map<number, WebSocket>;  // seatIndex → socket
-  playerCount: number;
+  hostSocketId: string;
+  playerSockets: Map<number, string>; // seatIndex → socketId
+  playerNames: Map<number, string>;    // seatIndex → playerName
+  maxPlayers: number;
   started: boolean;
+  createdAt: number;
 }
 
 const rooms = new Map<string, GameRoom>();
 
-const wss = new WebSocketServer({ port: 8080 });
+// Health check endpoint (for hosting platforms)
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', rooms: rooms.size });
+});
 
-wss.on('connection', (ws: WebSocket) => {
-  ws.on('message', (data: string) => {
-    const message = JSON.parse(data);
+io.on('connection', (socket: Socket) => {
+  console.log(`Client connected: ${socket.id}`);
 
-    switch (message.type) {
-      case 'CREATE_GAME':
-        handleCreateGame(ws, message);
-        break;
+  // Host creates a new game
+  socket.on('createGame', ({ playerCount, playerName }, callback) => {
+    const roomCode = generateRoomCode();
 
-      case 'JOIN_GAME':
-        handleJoinGame(ws, message);
-        break;
+    const room: GameRoom = {
+      roomCode,
+      hostSocketId: socket.id,
+      playerSockets: new Map([[0, socket.id]]), // Host is seat 0
+      playerNames: new Map([[0, playerName]]),
+      maxPlayers: playerCount,
+      started: false,
+      createdAt: Date.now()
+    };
 
-      case 'INPUT_RESPONSE':
-        // Guest sent input → forward to host
-        handleInputResponse(ws, message);
-        break;
+    rooms.set(roomCode, room);
+    socket.join(roomCode);
 
-      case 'CHOOSE_BUTTON_REQUEST':
-      case 'CHOOSE_CARD_REQUEST':
-      case 'SELECT_CARD_REQUEST':
-        // Host requests input from guest → forward to specific guest
-        handleInputRequest(ws, message);
-        break;
+    // Store room code on socket for cleanup
+    socket.data.roomCode = roomCode;
+    socket.data.seatIndex = 0;
 
-      case 'STATE_UPDATE':
-        // Host sent state update → broadcast to all guests
-        handleStateUpdate(ws, message);
-        break;
+    console.log(`Room created: ${roomCode} by ${playerName}`);
+
+    callback({ success: true, roomCode, seatIndex: 0 });
+  });
+
+  // Guest joins existing game
+  socket.on('joinGame', ({ roomCode, playerName }, callback) => {
+    const room = rooms.get(roomCode);
+
+    if (!room) {
+      callback({ success: false, error: 'Room not found' });
+      return;
+    }
+
+    if (room.started) {
+      callback({ success: false, error: 'Game already started' });
+      return;
+    }
+
+    if (room.playerSockets.size >= room.maxPlayers) {
+      callback({ success: false, error: 'Room is full' });
+      return;
+    }
+
+    // Assign next available seat
+    const seatIndex = room.playerSockets.size;
+    room.playerSockets.set(seatIndex, socket.id);
+    room.playerNames.set(seatIndex, playerName);
+
+    socket.join(roomCode);
+    socket.data.roomCode = roomCode;
+    socket.data.seatIndex = seatIndex;
+
+    console.log(`${playerName} joined room ${roomCode} as seat ${seatIndex}`);
+
+    // Notify all players in room
+    io.to(roomCode).emit('playerJoined', {
+      seatIndex,
+      playerName,
+      totalPlayers: room.playerSockets.size,
+      playerNames: Array.from(room.playerNames.values())
+    });
+
+    // Check if room is full
+    if (room.playerSockets.size === room.maxPlayers) {
+      room.started = true;
+      io.to(roomCode).emit('gameReady');
+      console.log(`Room ${roomCode} is full, starting game`);
+    }
+
+    callback({
+      success: true,
+      seatIndex,
+      playerNames: Array.from(room.playerNames.values())
+    });
+  });
+
+  // Reconnect to existing game
+  socket.on('rejoinGame', ({ roomCode, seatIndex }, callback) => {
+    const room = rooms.get(roomCode);
+
+    if (!room) {
+      callback({ success: false, error: 'Room not found' });
+      return;
+    }
+
+    // Update socket mapping
+    room.playerSockets.set(seatIndex, socket.id);
+    socket.join(roomCode);
+    socket.data.roomCode = roomCode;
+    socket.data.seatIndex = seatIndex;
+
+    console.log(`Player ${seatIndex} reconnected to room ${roomCode}`);
+
+    // Host should re-send current state
+    const hostSocketId = room.hostSocketId;
+    io.to(hostSocketId).emit('playerReconnected', { seatIndex });
+
+    callback({ success: true });
+  });
+
+  // Forward state updates from host to all guests
+  socket.on('stateUpdate', (state) => {
+    const roomCode = socket.data.roomCode;
+    if (!roomCode) return;
+
+    // Broadcast to everyone except sender (host)
+    socket.to(roomCode).emit('stateUpdate', state);
+  });
+
+  // Forward input requests from host to specific guest
+  socket.on('requestInput', ({ seatIndex, requestId, inputType, options }) => {
+    const roomCode = socket.data.roomCode;
+    const room = rooms.get(roomCode);
+    if (!room) return;
+
+    const targetSocketId = room.playerSockets.get(seatIndex);
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('requestInput', {
+        requestId,
+        inputType,
+        options
+      });
+    }
+  });
+
+  // Forward input responses from guest to host
+  socket.on('inputResponse', ({ requestId, value }) => {
+    const roomCode = socket.data.roomCode;
+    const room = rooms.get(roomCode);
+    if (!room) return;
+
+    const hostSocketId = room.hostSocketId;
+    io.to(hostSocketId).emit('inputResponse', {
+      requestId,
+      seatIndex: socket.data.seatIndex,
+      value
+    });
+  });
+
+  // Handle disconnection
+  socket.on('disconnect', () => {
+    console.log(`Client disconnected: ${socket.id}`);
+
+    const roomCode = socket.data.roomCode;
+    const seatIndex = socket.data.seatIndex;
+
+    if (roomCode) {
+      const room = rooms.get(roomCode);
+      if (room) {
+        // Notify other players
+        socket.to(roomCode).emit('playerDisconnected', { seatIndex });
+
+        // If host disconnected, end the game
+        if (socket.id === room.hostSocketId) {
+          console.log(`Host disconnected from room ${roomCode}, cleaning up`);
+          io.to(roomCode).emit('gameEnded', { reason: 'Host disconnected' });
+          rooms.delete(roomCode);
+        }
+        // Guest will auto-reconnect if they come back
+      }
     }
   });
 });
 
-function handleCreateGame(ws: WebSocket, message: any): void {
-  const roomCode = generateRoomCode();
+// Cleanup old rooms every 10 minutes
+setInterval(() => {
+  const now = Date.now();
+  const ROOM_TIMEOUT = 2 * 60 * 60 * 1000; // 2 hours
 
-  rooms.set(roomCode, {
-    roomCode,
-    hostSocket: ws,
-    guestSockets: new Map(),
-    playerCount: message.playerCount,
-    started: false
-  });
+  for (const [roomCode, room] of rooms.entries()) {
+    if (now - room.createdAt > ROOM_TIMEOUT) {
+      console.log(`Cleaning up old room: ${roomCode}`);
+      rooms.delete(roomCode);
+    }
+  }
+}, 10 * 60 * 1000);
 
-  ws.send(JSON.stringify({
-    type: 'GAME_CREATED',
-    roomCode
-  }));
-}
-
-function handleJoinGame(ws: WebSocket, message: any): void {
-  const room = rooms.get(message.roomCode);
-
-  if (!room) {
-    ws.send(JSON.stringify({ type: 'ERROR', message: 'Room not found' }));
-    return;
+function generateRoomCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // No ambiguous chars
+  let code = '';
+  for (let i = 0; i < 4; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
   }
 
-  if (room.guestSockets.size >= room.playerCount - 1) {
-    ws.send(JSON.stringify({ type: 'ERROR', message: 'Room full' }));
-    return;
+  // Ensure uniqueness
+  if (rooms.has(code)) {
+    return generateRoomCode();
   }
 
-  // Assign next available seat
-  const seatIndex = room.guestSockets.size + 1;
-  room.guestSockets.set(seatIndex, ws);
-
-  ws.send(JSON.stringify({
-    type: 'SEAT_ASSIGNMENT',
-    seatIndex,
-    roomCode: room.roomCode
-  }));
-
-  // Notify host that a player joined
-  room.hostSocket?.send(JSON.stringify({
-    type: 'PLAYER_JOINED',
-    seatIndex,
-    totalPlayers: room.guestSockets.size + 1
-  }));
-
-  // If room is full, start the game
-  if (room.guestSockets.size === room.playerCount - 1) {
-    room.started = true;
-    room.hostSocket?.send(JSON.stringify({ type: 'START_GAME' }));
-  }
+  return code;
 }
 
-function handleInputRequest(hostWs: WebSocket, message: any): void {
-  // Find the room where this host belongs
-  const room = findRoomByHost(hostWs);
-  if (!room) return;
-
-  // Forward request to the specific guest
-  const guestSocket = room.guestSockets.get(message.seatIndex);
-  if (guestSocket) {
-    guestSocket.send(JSON.stringify(message));
-  }
-}
-
-function handleInputResponse(guestWs: WebSocket, message: any): void {
-  // Find the room where this guest belongs
-  const room = findRoomByGuest(guestWs);
-  if (!room) return;
-
-  // Forward response back to host
-  room.hostSocket?.send(JSON.stringify(message));
-}
-
-function handleStateUpdate(hostWs: WebSocket, message: any): void {
-  const room = findRoomByHost(hostWs);
-  if (!room) return;
-
-  // Broadcast to all guests
-  room.guestSockets.forEach((guestSocket) => {
-    guestSocket.send(JSON.stringify(message));
-  });
-}
+const PORT = process.env.PORT || 3000;
+httpServer.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
 ```
 
-**Key Design**:
-- **Minimal Server Logic**: The server is a dumb relay—it just forwards messages between host and guests
-- **Host Authority**: All game logic runs on the host's browser; server doesn't validate moves
-- **Simple Room System**: Room codes (e.g., "ABCD") identify game sessions
+**Key Improvements with Socket.IO:**
+- ✅ **No manual JSON parsing**: Event-based API (`socket.on('createGame')`)
+- ✅ **Built-in rooms**: `socket.join(roomCode)`, `io.to(roomCode).emit()`
+- ✅ **Auto reconnection**: Client reconnects automatically, we just update socket mapping
+- ✅ **Callbacks**: Can acknowledge messages (`callback({ success: true })`)
+- ✅ **Type safety**: Full TypeScript support for events
+- ✅ **Connection metadata**: `socket.data` stores room and seat info
 
-### 3.2 Deployment Options
+### 3.2 Shared Event Types
 
-**Option A: Peer-to-Peer (WebRTC)**
-- No server needed (after initial signaling)
-- Lower latency
-- More complex to implement
-- Works for 2-player games
+Create type-safe event definitions shared between client and server:
 
-**Option B: Centralized Server (Recommended)**
-- Simple to implement
-- Works for 2-4 players
-- Can run on free tier (Render, Railway, Fly.io)
-- ~100ms latency acceptable for turn-based game
+```typescript
+// shared/events.ts
+import type { Card, SerializedGameState } from '../types';
 
-**Option C: Local Network (No Internet)**
-- Host runs a local WebSocket server
-- Players connect via LAN IP address
-- Great for offline play
-- No deployment needed
+// Server → Client events
+export interface ServerToClientEvents {
+  // Lobby events
+  playerJoined: (data: {
+    seatIndex: number;
+    playerName: string;
+    totalPlayers: number;
+    playerNames: string[];
+  }) => void;
+
+  playerDisconnected: (data: { seatIndex: number }) => void;
+
+  playerReconnected: (data: { seatIndex: number }) => void;
+
+  gameReady: () => void;
+
+  gameEnded: (data: { reason: string }) => void;
+
+  // Game events
+  stateUpdate: (state: SerializedGameState) => void;
+
+  requestInput: (data: {
+    requestId: string;
+    inputType: 'selectCard' | 'chooseButton' | 'chooseCard';
+    options: any;
+  }) => void;
+
+  inputResponse: (data: {
+    requestId: string;
+    seatIndex: number;
+    value: any;
+  }) => void;
+
+  error: (message: string) => void;
+}
+
+// Client → Server events
+export interface ClientToServerEvents {
+  // Lobby events
+  createGame: (
+    data: { playerCount: number; playerName: string },
+    callback: (result: { success: boolean; roomCode?: string; seatIndex?: number; error?: string }) => void
+  ) => void;
+
+  joinGame: (
+    data: { roomCode: string; playerName: string },
+    callback: (result: { success: boolean; seatIndex?: number; playerNames?: string[]; error?: string }) => void
+  ) => void;
+
+  rejoinGame: (
+    data: { roomCode: string; seatIndex: number },
+    callback: (result: { success: boolean; error?: string }) => void
+  ) => void;
+
+  // Game events
+  stateUpdate: (state: SerializedGameState) => void;
+
+  requestInput: (data: {
+    seatIndex: number;
+    requestId: string;
+    inputType: 'selectCard' | 'chooseButton' | 'chooseCard';
+    options: any;
+  }) => void;
+
+  inputResponse: (data: {
+    requestId: string;
+    value: any;
+  }) => void;
+}
+```
 
 ---
 
