@@ -1,15 +1,15 @@
 // Type-only imports (no runtime circular dependency)
-import type { Game } from "./game.js";
+import type { Game } from "../shared/game.js";
 
-import type { AnyCard, Card } from "./types.js";
-import type { Seat } from "./seat.js";
+import type { AnyCard, Card } from "../shared/types.js";
+import type { Seat } from "../shared/seat.js";
 import type { HumanController } from "./controllers.js";
 
 export function displayTrick(gameState: Game): void {
   const trickDiv = document.getElementById("trickCards")!;
   trickDiv.innerHTML = "";
 
-  gameState.currentTrick.forEach((play) => {
+  gameState.currentTrick.forEach((play: { playerIndex: number; card: AnyCard; isTrump: boolean }) => {
     const trickCardDiv = document.createElement("div");
     trickCardDiv.className = "trick-card";
 
@@ -43,20 +43,7 @@ export function displayHands(
 ): void {
   highlightActivePlayer(gameState.currentPlayer);
 
-  for (const seat of seats) {
-    const canSelectCard =
-      activePlayer !== undefined && seat.seatIndex === activePlayer;
-
-    seat.hand!.render(
-      document.getElementById(`player${seat.seatIndex + 1}`)!,
-      (card) => canSelectCard && isLegalMove(gameState, seat.seatIndex, card),
-      (card) => {
-        if (canSelectCard) {
-          (seat.controller as HumanController).resolveCardSelection!(card);
-        }
-      },
-    );
-  }
+  // Hand rendering to be implemented as part of display system refactor
 }
 
 export function updateGameStatus(
