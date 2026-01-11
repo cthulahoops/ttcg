@@ -1,1 +1,1 @@
-{"root":["./server/game-server.ts","./server/room-manager.ts","./server/server.ts","./shared/controllers.ts","./shared/game.ts","./shared/hands.ts","./shared/seat.ts","./shared/types.ts","./shared/utils.ts","./shared/characters/registry.ts"],"errors":true,"version":"5.9.3"}
+{"root":["./server/game-server.ts","./server/room-manager.ts","./server/server.ts","./shared/controllers.ts","./shared/game.ts","./shared/hands.ts","./shared/seat.ts","./shared/types.ts","./shared/utils.ts","./shared/characters/registry.ts"],"version":"5.9.3"}

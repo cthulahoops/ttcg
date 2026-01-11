@@ -100,7 +100,13 @@ export function updateTricksDisplay(gameState: Game): void {
       continue;
     }
 
-    statusDiv.innerHTML = characterDef.display.renderStatus(gameState, seat);
+    const status = characterDef.display.renderStatus(gameState, seat);
+    const icon = status.met
+      ? '<span class="success">✓</span>'
+      : status.completable
+        ? '<span class="fail">✗</span>'
+        : '<span class="fail">✗ (impossible)</span>';
+    statusDiv.innerHTML = status.details ? `${icon} ${status.details}` : icon;
 
     const threatCardDiv = document.getElementById(
       `threatCard${seat.seatIndex + 1}`,

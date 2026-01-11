@@ -2,7 +2,7 @@
 // All character definitions in one place
 
 import type { Seat } from "../seat.js";
-import type { Card, Suit } from "../types.js";
+import type { Card, Suit, CharacterStatus } from "../types.js";
 import type { Game } from "../game.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16,7 +16,7 @@ interface CharacterObjective {
 }
 
 interface CharacterDisplay {
-  renderStatus: (game: Game, seat: Seat) => string;
+  renderStatus: (game: Game, seat: Seat) => CharacterStatus;
 }
 
 interface CharacterDefinition {
@@ -68,17 +68,19 @@ const Frodo: CharacterDefinition = {
       const ringsNeeded = game.numCharacters === 3 ? 4 : 2;
       const met = ringCards.length >= ringsNeeded;
       const completable = Frodo.objective.isCompletable(game, seat);
-      const icon = game.displaySimple(met, completable);
 
+      let details: string;
       if (ringCards.length > 0) {
         const ringList = ringCards
           .map((c) => c.value)
           .sort((a: number, b: number) => a - b)
           .join(", ");
-        return `${icon} Rings: ${ringList}`;
+        details = `Rings: ${ringList}`;
       } else {
-        return `${icon} Rings: none`;
+        details = "Rings: none";
       }
+
+      return { met, completable, details };
     },
   },
 };
@@ -161,14 +163,17 @@ const Celeborn: CharacterDefinition = {
         rankCounts[card.value] = (rankCounts[card.value] || 0) + 1;
       });
       const met = Celeborn.objective.check(game, seat);
-      const icon = game.displaySimple(met, true);
 
       const ranksWithCounts = Object.entries(rankCounts)
         .filter(([_rank, count]) => count >= 2)
         .map(([rank, count]) => `${rank}:${count}`)
         .join(", ");
 
-      return ranksWithCounts ? `${icon} ${ranksWithCounts}` : icon;
+      return {
+        met,
+        completable: true,
+        details: ranksWithCounts || undefined,
+      };
     },
   },
 };
@@ -240,11 +245,12 @@ const Boromir: CharacterDefinition = {
       const hasOneRing = game.hasCard(seat, "rings", 1);
       const met = Boromir.objective.check(game, seat);
       const completable = Boromir.objective.isCompletable(game, seat);
-      const icon = game.displaySimple(met, completable);
 
       const lastIcon = wonLast ? "✓" : "✗";
       const oneRingIcon = hasOneRing ? "✗ (has 1-Ring)" : "✓";
-      return `${icon} Last: ${lastIcon}, 1-Ring: ${oneRingIcon}`;
+      const details = `Last: ${lastIcon}, 1-Ring: ${oneRingIcon}`;
+
+      return { met, completable, details };
     },
   },
 };
@@ -489,9 +495,12 @@ const Glorfindel: CharacterDefinition = {
         .filter((c: Card) => c.suit === "shadows");
       const met = Glorfindel.objective.check(game, seat);
       const completable = Glorfindel.objective.isCompletable(game, seat);
-      const icon = game.displaySimple(met, completable);
 
-      return `${icon} Shadows: ${shadowsCards.length}/8`;
+      return {
+        met,
+        completable,
+        details: `Shadows: ${shadowsCards.length}/8`,
+      };
     },
   },
 };
@@ -589,17 +598,19 @@ const GildorInglorian: CharacterDefinition = {
     renderStatus: (game, seat) => {
       const met = GildorInglorian.objective.check(game, seat);
       const completable = GildorInglorian.objective.isCompletable(game, seat);
-      const icon = game.displaySimple(met, completable);
 
+      let details: string;
       if (game.finished) {
-        return `${icon} Final trick played`;
+        details = "Final trick played";
       } else {
         const availableCards = seat.hand!.getAvailableCards();
         const forestsInHand = availableCards.filter(
           (c) => c.suit === "forests",
         ).length;
-        return `${icon} Forests: ${forestsInHand} in hand`;
+        details = `Forests: ${forestsInHand} in hand`;
       }
+
+      return { met, completable, details };
     },
   },
 };
@@ -664,9 +675,12 @@ const FarmerMaggot: CharacterDefinition = {
         .filter((c) => c.value === seat.threatCard);
       const met = FarmerMaggot.objective.check(game, seat);
       const completable = FarmerMaggot.objective.isCompletable(game, seat);
-      const icon = game.displaySimple(met, completable);
 
-      return `${icon} Threat: ${seat.threatCard}, Won: ${matchingCards.length}/2`;
+      return {
+        met,
+        completable,
+        details: `Threat: ${seat.threatCard}, Won: ${matchingCards.length}/2`,
+      };
     },
   },
 };
@@ -759,7 +773,6 @@ const TomBombadil: CharacterDefinition = {
     renderStatus: (game, seat) => {
       const met = TomBombadil.objective.check(game, seat);
       const completable = TomBombadil.objective.isCompletable(game, seat);
-      const icon = game.displaySimple(met, completable);
 
       const wonBySuit: Record<Suit, number> = {
         mountains: 0,
@@ -786,7 +799,11 @@ const TomBombadil: CharacterDefinition = {
         .map((suit) => `${suitSymbols[suit]}:${wonBySuit[suit]}`)
         .join(" ");
 
-      return countsDisplay ? `${icon} ${countsDisplay}` : icon;
+      return {
+        met,
+        completable,
+        details: countsDisplay || undefined,
+      };
     },
   },
 };
@@ -926,9 +943,12 @@ const Elrond: CharacterDefinition = {
 
       const met = Elrond.objective.check(game, seat);
       const completable = Elrond.objective.isCompletable(game, seat);
-      const icon = game.displaySimple(met, completable);
 
-      return `${icon} Seats with rings: ${seatsWithRings}/${game.seats.length}`;
+      return {
+        met,
+        completable,
+        details: `Seats with rings: ${seatsWithRings}/${game.seats.length}`,
+      };
     },
   },
 };
@@ -991,9 +1011,12 @@ const Arwen: CharacterDefinition = {
         .filter((c: Card) => c.suit === "forests").length;
       const met = Arwen.objective.check(game, seat);
       const completable = Arwen.objective.isCompletable(game, seat);
-      const icon = game.displaySimple(met, completable);
 
-      return `${icon} Forests: ${myCounts}`;
+      return {
+        met,
+        completable,
+        details: `Forests: ${myCounts}`,
+      };
     },
   },
 };
@@ -1057,9 +1080,12 @@ const Gloin: CharacterDefinition = {
         .filter((c: Card) => c.suit === "mountains").length;
       const met = Gloin.objective.check(game, seat);
       const completable = Gloin.objective.isCompletable(game, seat);
-      const icon = game.displaySimple(met, completable);
 
-      return `${icon} Mountains: ${myCounts}`;
+      return {
+        met,
+        completable,
+        details: `Mountains: ${myCounts}`,
+      };
     },
   },
 };
@@ -1092,11 +1118,12 @@ const BilboBaggins: CharacterDefinition = {
       const hasOneRing = game.hasCard(seat, "rings", 1);
       const met = BilboBaggins.objective.check(game, seat);
       const completable = BilboBaggins.objective.isCompletable(game, seat);
-      const icon = game.displaySimple(met, completable);
 
       const tricksIcon = trickCount >= 3 ? "✓" : `${trickCount}/3`;
       const oneRingIcon = hasOneRing ? "✗ (has 1-Ring)" : "✓";
-      return `${icon} Tricks: ${tricksIcon}, 1-Ring: ${oneRingIcon}`;
+      const details = `Tricks: ${tricksIcon}, 1-Ring: ${oneRingIcon}`;
+
+      return { met, completable, details };
     },
   },
 };
@@ -1132,9 +1159,12 @@ const Gwaihir: CharacterDefinition = {
       );
       const met = Gwaihir.objective.check(game, seat);
       const completable = Gwaihir.objective.isCompletable(game, seat);
-      const icon = game.displaySimple(met, completable);
 
-      return `${icon} Tricks with mountains: ${tricksWithMountains.length}/2`;
+      return {
+        met,
+        completable,
+        details: `Tricks with mountains: ${tricksWithMountains.length}/2`,
+      };
     },
   },
 };
@@ -1172,9 +1202,12 @@ const Shadowfax: CharacterDefinition = {
       );
       const met = Shadowfax.objective.check(game, seat);
       const completable = Shadowfax.objective.isCompletable(game, seat);
-      const icon = game.displaySimple(met, completable);
 
-      return `${icon} Tricks with hills: ${tricksWithHills.length}/2`;
+      return {
+        met,
+        completable,
+        details: `Tricks with hills: ${tricksWithHills.length}/2`,
+      };
     },
   },
 };

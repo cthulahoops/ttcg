@@ -17,10 +17,7 @@ export abstract class Controller {
     throw new Error("Abstract");
   }
 
-  async selectCard(
-    _availableCards: Card[],
-    _renderCards: () => void,
-  ): Promise<Card> {
+  async selectCard(_availableCards: Card[]): Promise<Card> {
     throw new Error("Abstract");
   }
 }
@@ -39,7 +36,6 @@ export class AIController extends Controller {
   }
 
   async selectCard(availableCards: Card[]): Promise<Card> {
-    // AI doesn't need to render - callbacks not needed
     await delay(800);
     return randomChoice(availableCards);
   }

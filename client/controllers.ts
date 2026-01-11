@@ -86,15 +86,10 @@ export class HumanController extends Controller {
     });
   }
 
-  async selectCard(
-    availableCards: Card[],
-    renderCards: () => void,
-  ): Promise<Card> {
+  async selectCard(availableCards: Card[]): Promise<Card> {
     if (availableCards.length === 1) {
       // return availableCards[0];
     }
-
-    renderCards();
 
     return new Promise((resolve) => {
       this._cardSelectionResolver = resolve;

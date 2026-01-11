@@ -45,6 +45,12 @@ export interface SetupContext {
   exchangeMade?: boolean;
 }
 
+export interface CharacterStatus {
+  met: boolean;
+  completable: boolean;
+  details?: string;
+}
+
 export interface CharacterDefinition {
   name: string;
   setupText: string;
@@ -61,6 +67,6 @@ export interface CharacterDefinition {
   };
   display: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    renderStatus: (game: any, seat: Seat) => string;
+    renderStatus: (game: any, seat: Seat) => CharacterStatus;
   };
 }
