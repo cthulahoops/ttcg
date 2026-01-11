@@ -4,14 +4,21 @@
   "type": "module",
   "description": "Lord of the Rings-themed trick-taking card game",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "tsx watch server/server.ts",
+    "dev:client": "vite",
+    "build": "tsc -b",
     "preview": "vite preview",
-    "check": "tsc --noEmit"
+    "check": "tsc -b --noEmit"
   },
   "keywords": [],
   "author": "",
   "license": "None",
+  "dependencies": {
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3"
+  },
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/node": "^25.0.3",
@@ -19,10 +26,5 @@
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.1"
-  },
-  "dependencies": {
-    "express": "^5.2.1",
-    "socket.io": "^4.8.3",
-    "socket.io-client": "^4.8.3"
   }
 }
