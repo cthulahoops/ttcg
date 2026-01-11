@@ -1,7 +1,7 @@
 // ===== SHARED TYPE DEFINITIONS =====
 
-import type { HumanController, AIController } from "./controllers";
-import type { Seat } from "./seat";
+import type { Controller, AIController } from "./controllers.js";
+import type { Seat } from "./seat.js";
 
 export type Suit = "mountains" | "shadows" | "forests" | "hills" | "rings";
 
@@ -16,7 +16,7 @@ export interface Trick {
   cards: Card[];
 }
 
-export type Controller = HumanController | AIController;
+export { Controller, AIController };
 
 export interface ChoiceButton<T> {
   label: string;

@@ -1,30 +1,9 @@
-// ===== UTILITY FUNCTIONS =====
+// ===== CLIENT-SPECIFIC UTILITY FUNCTIONS =====
+// (DOM functions - only for browser)
 
-import type { Card, Suit, AnyCard } from "./types";
-
-// Re-export for convenience
-export type { Card, AnyCard };
-
-export function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-export function sortHand(cards: Card[]): Card[] {
-  const suitOrder: Record<Suit, number> = {
-    mountains: 0,
-    shadows: 1,
-    forests: 2,
-    hills: 3,
-    rings: 4,
-  };
-
-  return cards.sort((a, b) => {
-    if (suitOrder[a.suit] !== suitOrder[b.suit]) {
-      return suitOrder[a.suit] - suitOrder[b.suit];
-    }
-    return a.value - b.value;
-  });
-}
+import type { AnyCard } from "../shared/types.js";
+// Re-export pure utilities from shared
+export { delay, sortHand, shuffleDeck } from "../shared/utils.js";
 
 export function createCardElement(
   card: AnyCard,
@@ -52,13 +31,4 @@ export function createCardElement(
   cardDiv.appendChild(suitDiv);
 
   return cardDiv;
-}
-
-export function shuffleDeck<T>(deck: T[]): T[] {
-  const shuffled = [...deck];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
 }

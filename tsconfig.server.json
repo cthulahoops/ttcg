@@ -3,12 +3,8 @@
     "target": "ES2020",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "outDir": "./dist",
-    "rootDir": ".",
     "strict": true,
-    "esModuleInterop": true,
-    "composite": true
+    "esModuleInterop": true
   },
-  "include": ["server", "shared"],
-  "references": [{ "path": "./tsconfig.shared.json" }]
+  "include": ["server", "shared"]
 }

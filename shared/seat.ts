@@ -1,8 +1,8 @@
 // ===== SEAT CLASS =====
 // Represents a player position/seat in the game
 
-import type { Hand } from "./hands";
-import type { Card, Trick, Controller, CharacterDefinition } from "./types";
+import type { Hand } from "./hands.js";
+import type { Card, Trick, Controller, CharacterDefinition } from "./types.js";
 
 export class Seat {
   seatIndex: number;

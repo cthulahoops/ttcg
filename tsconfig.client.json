@@ -1,9 +1,11 @@
 {
-  "extends": "./tsconfig.shared.json",
   "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "moduleResolution": "bundler",
+    "strict": true,
     "noEmit": true
   },
-  "include": ["client", "shared"],
-  "references": [{ "path": "./tsconfig.shared.json" }]
+  "include": ["client", "shared"]
 }

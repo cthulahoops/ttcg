@@ -1,7 +1,7 @@
 // ===== HAND CLASSES =====
 
-import { sortHand, createCardElement } from "./utils";
-import type { Card } from "./types";
+import { sortHand } from "./utils.js";
+import type { Card } from "./types.js";
 
 export abstract class Hand {
   abstract addCard(card: Card): void;
@@ -9,11 +9,6 @@ export abstract class Hand {
   abstract getAvailableCards(): Card[];
   abstract isEmpty(): boolean;
   abstract getSize(): number;
-  abstract render(
-    domElement: HTMLElement,
-    isPlayable: (card: Card) => boolean,
-    onClick: (card: Card) => void,
-  ): void;
   abstract getAllCards(): Card[];
   abstract onTrickComplete(): void;
 
@@ -65,32 +60,6 @@ export class PlayerHand extends Hand {
 
   getCards(): Card[] {
     return [...this._cards];
-  }
-
-  render(
-    domElement: HTMLElement,
-    isPlayable: (card: Card) => boolean,
-    onClick: (card: Card) => void,
-  ): void {
-    domElement.innerHTML = "";
-    domElement.classList.remove("pyramid-hand");
-
-    const sorted = sortHand([...this._cards]);
-
-    sorted.forEach((card) => {
-      const canPlay = isPlayable(card);
-      const cardElement = createCardElement(
-        card,
-        canPlay,
-        canPlay ? () => onClick(card) : null,
-      );
-
-      if (!canPlay) {
-        cardElement.classList.add("disabled");
-      }
-
-      domElement.appendChild(cardElement);
-    });
   }
 
   onTrickComplete(): void {
@@ -263,87 +232,6 @@ export class PyramidHand extends Hand {
     return uncovered;
   }
 
-  render(
-    domElement: HTMLElement,
-    isPlayable: (card: Card) => boolean,
-    onClick: (card: Card) => void,
-  ): void {
-    domElement.innerHTML = "";
-    domElement.classList.add("pyramid-hand");
-
-    const uncoveredIndices = this._getUncoveredIndices();
-    const rows = [
-      { start: 0, count: 3 }, // Top row
-      { start: 3, count: 4 }, // Middle row
-      { start: 7, count: 5 }, // Bottom row
-    ];
-
-    rows.forEach((rowInfo, rowIdx) => {
-      for (let colIdx = 0; colIdx < rowInfo.count; colIdx++) {
-        const cardIdx = rowInfo.start + colIdx;
-        const card = this._positions[cardIdx];
-
-        if (!card) continue;
-
-        const isFaceUp = this._faceUp[cardIdx];
-        const isUncovered = uncoveredIndices.includes(cardIdx);
-
-        let cardElement: HTMLDivElement;
-
-        if (isFaceUp) {
-          const canPlay = isPlayable(card);
-          cardElement = createCardElement(
-            card,
-            canPlay,
-            canPlay ? () => onClick(card) : null,
-          );
-
-          cardElement.classList.add(
-            isUncovered ? "pyramid-uncovered" : "pyramid-covered",
-          );
-
-          if (!canPlay) {
-            cardElement.classList.add("disabled");
-          }
-        } else {
-          // Face-down card
-          cardElement = document.createElement("div");
-          cardElement.className = "card pyramid-face-down";
-          if (!isUncovered) cardElement.classList.add("pyramid-covered");
-
-          const valueDiv = document.createElement("div");
-          valueDiv.className = "value";
-          valueDiv.textContent = "?";
-          cardElement.appendChild(valueDiv);
-        }
-
-        cardElement.style.gridRow = `${rowIdx + 1} / span 2`;
-        cardElement.style.gridColumn = `${2 * colIdx + (3 - rowIdx)} / span 2`;
-
-        domElement.appendChild(cardElement);
-      }
-    });
-
-    this._extraCards.forEach((card, idx) => {
-      const canPlay = isPlayable(card);
-      const cardElement = createCardElement(
-        card,
-        canPlay,
-        canPlay ? () => onClick(card) : null,
-      );
-      cardElement.classList.add("pyramid-extra");
-
-      if (!canPlay) {
-        cardElement.classList.add("disabled");
-      }
-
-      cardElement.style.gridRow = `${3} / span 2`;
-      cardElement.style.gridColumn = `${2 * (idx + 5) + 1} / span 2`;
-
-      domElement.appendChild(cardElement);
-    });
-  }
-
   onTrickComplete(): void {
     // Reveal newly uncovered cards after trick is complete
     this._revealNewlyUncoveredCards();
@@ -384,27 +272,6 @@ export class HiddenHand extends Hand {
 
   getCards(): Card[] {
     return this._wrappedHand.getCards();
-  }
-
-  render(
-    domElement: HTMLElement,
-    _isPlayable: (card: Card) => boolean,
-    _onClick: (card: Card) => void,
-  ): void {
-    domElement.innerHTML = "";
-    domElement.classList.remove("pyramid-hand");
-
-    const handSize = this.getSize();
-
-    for (let i = 0; i < handSize; i++) {
-      const cardBack = document.createElement("div");
-      cardBack.className = "card hidden";
-      const valueDiv = document.createElement("div");
-      valueDiv.className = "value";
-      valueDiv.textContent = "?";
-      cardBack.appendChild(valueDiv);
-      domElement.appendChild(cardBack);
-    }
   }
 
   unwrap(): PlayerHand {
@@ -483,40 +350,5 @@ export class SolitaireHand extends Hand {
       const cardToReveal = this._hiddenCards.shift()!;
       this._revealedCards.push(cardToReveal);
     }
-  }
-
-  render(
-    domElement: HTMLElement,
-    isPlayable: (card: Card) => boolean,
-    onClick: (card: Card) => void,
-  ): void {
-    domElement.innerHTML = "";
-    domElement.classList.remove("pyramid-hand");
-    domElement.classList.add("solitaire-hand");
-
-    this._revealedCards.forEach((card) => {
-      const canPlay = isPlayable(card);
-      const cardElement = createCardElement(
-        card,
-        canPlay,
-        canPlay ? () => onClick(card) : null,
-      );
-
-      if (!canPlay) {
-        cardElement.classList.add("disabled");
-      }
-
-      domElement.appendChild(cardElement);
-    });
-
-    this._hiddenCards.forEach(() => {
-      const cardBack = document.createElement("div");
-      cardBack.className = "card hidden";
-      const valueDiv = document.createElement("div");
-      valueDiv.className = "value";
-      valueDiv.textContent = "?";
-      cardBack.appendChild(valueDiv);
-      domElement.appendChild(cardBack);
-    });
   }
 }

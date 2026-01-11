@@ -10,22 +10,8 @@ import {
   sortHand,
   delay,
 } from "./utils.js";
-import {
-  addToGameLog,
-  clearGameLog,
-  copyGameLog,
-  displayHands,
-  displayTrick,
-  getPlayerDisplayName,
-  highlightActivePlayer,
-  updateGameStatus,
-  updateLostCardDisplay,
-  updatePlayerHeadings,
-  updateTricksDisplay,
-  resetPlayerHeadings,
-} from "./display.js";
 import { Seat } from "./seat.js";
-import { HumanController, AIController } from "./controllers.js";
+import { AIController } from "./controllers.js";
 import { characterRegistry, allCharacterNames } from "./characters/registry.js";
 import type {
   Card,
@@ -33,7 +19,7 @@ import type {
   ThreatCard,
   Controller,
   ChoiceButton,
-} from "./types";
+} from "./types.js";
 
 // All possible characters in the game (except Frodo who is automatically assigned)
 const allCharacters = allCharacterNames.filter((name) => name !== "Frodo");
@@ -458,6 +444,24 @@ export class Game {
   }
 }
 
+// ===== STUB DISPLAY FUNCTIONS =====
+// These are placeholder implementations that get called but do nothing
+// In the browser, these are overridden by the actual display functions from client/display.ts
+function addToGameLog(_msg: string, _important?: boolean) {}
+function displayHands(_game: any, _seats: any, _isPlayable?: any, _activePlayer?: any) {}
+function displayTrick(_game: any) {}
+function getPlayerDisplayName(gameState: Game, playerIndex: number): string {
+  return gameState.seats[playerIndex].getDisplayName();
+}
+function highlightActivePlayer(_playerIndex: number) {}
+function updateGameStatus(_gameState: Game, _msg?: string) {}
+function updateTricksDisplay(_gameState: Game) {}
+function updateLostCardDisplay(_gameState: Game) {}
+function updatePlayerHeadings(_gameState: Game) {}
+function resetPlayerHeadings() {}
+function clearGameLog() {}
+function copyGameLog() {}
+
 // ===== GAME FUNCTIONS =====
 
 
@@ -854,109 +858,3 @@ async function runGame(gameState: Game): Promise<void> {
 }
 
 // ===== END NEW GAME LOOP FUNCTIONS =====
-
-async function newGame(): Promise<void> {
-  const playerCount = parseInt(
-    (document.getElementById("playerCount") as HTMLSelectElement).value,
-  );
-  let numCharacters: number;
-  if (playerCount === 1) {
-    numCharacters = 4;
-  } else if (playerCount === 2) {
-    numCharacters = 3;
-  } else {
-    numCharacters = playerCount;
-  }
-  const cardsPerPlayer = numCharacters === 3 ? 12 : 9;
-
-  document.body.setAttribute("data-player-count", playerCount.toString());
-
-  let deck: Card[], lostCard: Card;
-
-  do {
-    deck = shuffleDeck(createDeck());
-    lostCard = deck.shift()!;
-  } while (lostCard.suit === "rings" && lostCard.value === 1);
-
-  const playerCards: Card[][] = Array.from({ length: numCharacters }, () => []);
-  for (let i = 0; i < cardsPerPlayer; i++) {
-    for (let p = 0; p < numCharacters; p++) {
-      playerCards[p].push(deck.shift()!);
-    }
-  }
-
-  let pyramidPlayerIndex: number | null = null;
-  if (playerCount === 2) {
-    pyramidPlayerIndex = Math.random() < 0.5 ? 1 : 2;
-  }
-
-  const startPlayer = findPlayerWithCard(playerCards, {
-    suit: "rings",
-    value: 1,
-  });
-
-  const seats: Seat[] = [];
-  for (let i = 0; i < numCharacters; i++) {
-    const controller: Controller =
-      playerCount === 1 || i === 0 ? new HumanController() : new AIController();
-    const seat = new Seat(i, controller);
-
-    if (playerCount === 1) {
-      seat.hand = new SolitaireHand(playerCards[i]);
-    } else if (i === pyramidPlayerIndex) {
-      seat.hand = new PyramidHand(playerCards[i]);
-      seat.isPyramid = true;
-    } else if (i === 0) {
-      seat.hand = new PlayerHand(playerCards[i]);
-    } else {
-      seat.hand = new HiddenHand(playerCards[i]);
-    }
-
-    seats.push(seat);
-  }
-
-  if (pyramidPlayerIndex !== null) {
-    (seats[pyramidPlayerIndex].hand as PyramidHand).onCardRevealed(
-      (index: number, card: Card) => {
-        addToGameLog(
-          `Card at position ${index} in pyramid is revealed: ${card.value} of ${card.suit}`,
-        );
-      },
-    );
-  }
-
-  const availableCharacters = shuffleDeck(allCharacters); // .slice(0, 4);
-  availableCharacters.push("Frodo");
-
-  const gameState = new Game(
-    playerCount,
-    numCharacters,
-    seats,
-    lostCard,
-    startPlayer,
-  );
-  gameState.availableCharacters = availableCharacters;
-
-  updateTricksDisplay(gameState);
-  updateLostCardDisplay(gameState);
-
-  resetPlayerHeadings();
-
-  clearGameLog();
-  addToGameLog("=== NEW GAME STARTED ===", true);
-  addToGameLog(`Lost card: ${lostCard.value} of ${lostCard.suit}`);
-
-  displayHands(gameState, gameState.seats, isLegalMove);
-
-  await runGame(gameState);
-}
-
-// Expose functions to global scope for inline event handlers
-(window as any).newGame = () => {
-  newGame().catch((error) => {
-    console.error("Error in newGame:", error);
-    const statusDiv = document.getElementById("gameStatus")!;
-    statusDiv.textContent = "Error starting game. Check console for details.";
-  });
-};
-(window as any).copyGameLog = copyGameLog;
