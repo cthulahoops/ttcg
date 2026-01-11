@@ -1,8 +1,8 @@
 // Type-only imports (no runtime circular dependency)
-import type { Game } from "../shared/game.js";
+import type { Game } from "@shared/game.ts";
 
-import type { AnyCard, Card } from "../shared/types.js";
-import type { Seat } from "../shared/seat.js";
+import type { AnyCard, Card } from "@shared/types.ts";
+import type { Seat } from "@shared/seat.ts";
 import type { HumanController } from "./controllers.js";
 
 export function displayTrick(gameState: Game): void {

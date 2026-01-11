@@ -1,29 +1,29 @@
 import {
      shuffleDeck
-} from "../shared/utils.js";
+} from "@shared/utils";
 import {
     runGame,
     Game
-} from "../shared/game.js";
+} from "@shared/game";
 
 import {
     ProxyController,
     Controller
-} from "../shared/controllers.js";
+} from "@shared/controllers";
 
 import {
     Card, Suit
-} from "../shared/types.js";
+} from "@shared/types";
 
 import {
     Seat
-} from "../shared/seat.js";
+} from "@shared/seat";
 
 import {
     SolitaireHand, HiddenHand, PlayerHand, PyramidHand
-} from "../shared/hands.js";
+} from "@shared/hands";
 
-import { characterRegistry, allCharacterNames } from "../shared/characters/registry.js";
+import { characterRegistry, allCharacterNames } from "@shared/characters/registry";
 
 // All possible characters in the game (except Frodo who is automatically assigned)
 const allCharacters = allCharacterNames.filter((name) => name !== "Frodo");

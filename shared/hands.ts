@@ -1,7 +1,7 @@
 // ===== HAND CLASSES =====
 
-import { sortHand } from "./utils.js";
-import type { Card } from "./types.js";
+import { sortHand } from "./utils";
+import type { Card } from "./types";
 
 export abstract class Hand {
   abstract addCard(card: Card): void;

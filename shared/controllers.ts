@@ -1,10 +1,10 @@
-import { delay } from "./utils.js";
+import { delay } from "./utils";
 import type {
   Card,
   AnyCard,
   ChoiceButtonOptions,
   ChoiceCardOptions,
-} from "./types.js";
+} from "./types";
 
 export abstract class Controller {
   async chooseButton<T>(_options: ChoiceButtonOptions<T>): Promise<T> {

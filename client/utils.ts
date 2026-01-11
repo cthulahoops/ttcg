@@ -1,9 +1,9 @@
 // ===== CLIENT-SPECIFIC UTILITY FUNCTIONS =====
 // (DOM functions - only for browser)
 
-import type { AnyCard } from "../shared/types.js";
+import type { AnyCard } from "@shared/types";
 // Re-export pure utilities from shared
-export { delay, sortHand, shuffleDeck } from "../shared/utils.js";
+export { delay, sortHand, shuffleDeck } from "@shared/utils";
 
 export function createCardElement(
   card: AnyCard,

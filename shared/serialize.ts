@@ -3,13 +3,13 @@
 // This is the single place to control what data is sent to clients
 // and to implement information hiding/filtering.
 
-import type { Game, TrickPlay } from "./game.js";
-import type { Seat } from "./seat.js";
+import type { Game, TrickPlay } from "./game";
+import type { Seat } from "./seat";
 import type {
   SerializedGame,
   SerializedSeat,
   SerializedTrickPlay,
-} from "./serialized.js";
+} from "./serialized";
 
 /**
  * Serialize a Seat for a specific viewing seat.

@@ -1,12 +1,9 @@
 // Character Registry
 // All character definitions in one place
 
-import type { Seat } from "../seat.js";
-import type { Card, Suit, CharacterStatus } from "../types.js";
-import type { Game } from "../game.js";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SetupContext = any;
+import type { Seat } from "../seat";
+import type { Card, Suit, CharacterStatus } from "../types";
+import type { Game, GameSetupContext } from "../game";
 
 interface CharacterObjective {
   text?: string;
@@ -22,7 +19,7 @@ interface CharacterDisplay {
 interface CharacterDefinition {
   name: string;
   setupText: string;
-  setup: (game: Game, seat: Seat, setupContext: SetupContext) => Promise<void>;
+  setup: (game: Game, seat: Seat, setupContext: GameSetupContext) => Promise<void>;
   objective: CharacterObjective;
   display: CharacterDisplay;
 }

@@ -1,7 +1,7 @@
 // server/smoke.ts
-import { newGame } from "./game-server.js";
-import { Game, runGame } from "../shared/game.js";
-import { AIController } from "../shared/controllers.js";
+import { newGame } from "./game-server";
+import { Game, runGame } from "@shared/game";
+import { AIController } from "@shared/controllers";
 
 
 const controllers: AIController[] = [];

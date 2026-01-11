@@ -1,7 +1,7 @@
 // ===== PURE UTILITY FUNCTIONS =====
 // (No DOM dependencies - safe for both server and client)
 
-import type { Card, Suit } from "./types.js";
+import type { Card, Suit } from "./types";
 
 export function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));

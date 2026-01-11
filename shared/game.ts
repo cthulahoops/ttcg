@@ -4,22 +4,22 @@ import {
   PyramidHand,
   HiddenHand,
   SolitaireHand,
-} from "./hands.js";
+} from "./hands";
 import {
   shuffleDeck,
   sortHand,
   delay,
-} from "./utils.js";
-import { Seat } from "./seat.js";
-import { AIController, ProxyController } from "./controllers.js";
-import { characterRegistry, allCharacterNames } from "./characters/registry.js";
+} from "./utils";
+import { Seat } from "./seat";
+import { AIController, ProxyController } from "./controllers";
+import { characterRegistry, allCharacterNames } from "./characters/registry";
 import type {
   Card,
   Suit,
   ThreatCard,
   Controller,
   ChoiceButton,
-} from "./types.js";
+} from "./types";
 
 // All possible characters in the game (except Frodo who is automatically assigned)
 const allCharacters = allCharacterNames.filter((name) => name !== "Frodo");
@@ -32,7 +32,7 @@ export interface TrickPlay {
   isTrump: boolean;
 }
 
-interface GameSetupContext {
+export interface GameSetupContext {
   frodoSeat: Seat | null;
   exchangeMade?: boolean;
 }

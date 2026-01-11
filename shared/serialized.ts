@@ -2,7 +2,7 @@
 // These types define the boundary for what data gets sent over the network,
 // preventing accidental transmission of large object graphs or sensitive data.
 
-import type { Card, Suit, Trick } from "./types.js";
+import type { Card, Suit, Trick } from "./types";
 
 /**
  * Serialized representation of a trick play.

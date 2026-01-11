@@ -1,7 +1,7 @@
 // ===== SHARED TYPE DEFINITIONS =====
 
-import type { Controller, AIController } from "./controllers.js";
-import type { Seat } from "./seat.js";
+import type { Controller, AIController } from "./controllers";
+import type { Seat } from "./seat";
 
 export type Suit = "mountains" | "shadows" | "forests" | "hills" | "rings";
 
