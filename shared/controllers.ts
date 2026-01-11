@@ -48,6 +48,35 @@ export class AIController extends Controller {
   }
 }
 
+export class ProxyController extends Controller {
+    private realController: Controller | undefined;
+
+    setController(controller: Controller) {
+        this.realController = controller;
+    }
+
+  chooseButton<T>(options: ChoiceButtonOptions<T>): Promise<T> {
+      if (!this.realController) {
+          throw new Error("Controller must be assigned!");
+      }
+      return this.realController.chooseButton(options)
+  }
+
+  chooseCard<T extends AnyCard = AnyCard>(options: ChoiceCardOptions<T>): Promise<T> {
+      if (!this.realController) {
+          throw new Error("Controller must be assigned!");
+      }
+    return this.realController.chooseCard(options)
+  }
+
+  selectCard(availableCards: Card[]): Promise<Card> {
+      if (!this.realController) {
+          throw new Error("Controller must be assigned!");
+      }
+    return this.realController.selectCard(availableCards)
+  }
+}
+
 function randomChoice<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)];
 }

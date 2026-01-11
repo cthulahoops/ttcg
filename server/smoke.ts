@@ -5,7 +5,7 @@ import { AIController } from "../shared/controllers.js";
 
 
 const controllers: AIController[] = [];
-for (let i = 0; i < 3; i++) {
+for (let i = 0; i < 2; i++) {
   controllers.push(new AIController(0));
 }
 

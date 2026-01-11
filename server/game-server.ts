@@ -7,6 +7,7 @@ import {
 } from "../shared/game.js";
 
 import {
+    ProxyController,
     Controller
 } from "../shared/controllers.js";
 
@@ -30,15 +31,24 @@ const allCharacters = allCharacterNames.filter((name) => name !== "Frodo");
 export function newGame(controllers: Controller[]): Game {
   const playerCount = controllers.length;
 
-  let numCharacters: number;
-  if (playerCount === 1) {
-    numCharacters = 4;
-  } else if (playerCount === 2) {
-    numCharacters = 3;
-  } else {
-    numCharacters = playerCount;
+  if (playerCount == 1) {
+      controllers.push(controllers[0]);
+      controllers.push(controllers[0]);
+      controllers.push(controllers[0]);
   }
-  const cardsPerPlayer = numCharacters === 3 ? 12 : 9;
+
+  let pyramidController;
+  if (playerCount == 2) {
+      pyramidController = new ProxyController();
+      controllers.push(pyramidController);
+  }
+
+  shuffleDeck(controllers);
+
+  const numCharacters = controllers.length;
+
+  const cardsPerPlayer = 36 / numCharacters;
+
 
 //  document.body.setAttribute("data-player-count", playerCount.toString());
 
@@ -56,11 +66,6 @@ export function newGame(controllers: Controller[]): Game {
     }
   }
 
-  let pyramidPlayerIndex: number | null = null;
-  if (playerCount === 2) {
-    pyramidPlayerIndex = Math.random() < 0.5 ? 1 : 2;
-  }
-
   const startPlayer = findPlayerWithCard(playerCards, {
     suit: "rings",
     value: 1,
@@ -74,7 +79,7 @@ export function newGame(controllers: Controller[]): Game {
 
     if (playerCount === 1) {
       seat.hand = new SolitaireHand(playerCards[i]);
-    } else if (i === pyramidPlayerIndex) {
+    } else if (controller === pyramidController) {
       seat.hand = new PyramidHand(playerCards[i]);
       seat.isPyramid = true;
     } else if (i === 0) {

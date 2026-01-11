@@ -11,7 +11,7 @@ import {
   delay,
 } from "./utils.js";
 import { Seat } from "./seat.js";
-import { AIController } from "./controllers.js";
+import { AIController, ProxyController } from "./controllers.js";
 import { characterRegistry, allCharacterNames } from "./characters/registry.js";
 import type {
   Card,
@@ -721,17 +721,16 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
   gameState.notifyStateChange();
 
   if (gameState.playerCount === 2) {
-    const pyramidIndex = gameState.seats.findIndex((s) => s.isPyramid);
+    const pyramid = gameState.seats.find((s) => s.controller instanceof ProxyController)!;
     let pyramidControllerIndex: number;
 
-    if (startPlayer === pyramidIndex) {
+    if (startPlayer === pyramid.seatIndex) {
       pyramidControllerIndex = (startPlayer + 2) % 3;
     } else {
       pyramidControllerIndex = startPlayer;
     }
 
-    gameState.seats[pyramidIndex].controller =
-      gameState.seats[pyramidControllerIndex].controller;
+    (gameState.seats[pyramid.seatIndex].controller as ProxyController).setController( gameState.seats[pyramidControllerIndex].controller);
 
     gameState.log(
       `Pyramid will be controlled by ${gameState.seats[pyramidControllerIndex].getDisplayName()}`,
