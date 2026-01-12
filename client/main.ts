@@ -1,5 +1,6 @@
 import type { ClientMessage, ServerMessage, Player } from "../shared/protocol.js";
-import type { SerializedGame } from "../shared/serialized.js";
+import type { SerializedGame, SerializedPlayerHand, SerializedPyramidHand, SerializedSolitaireHand } from "../shared/serialized.js";
+import type { Card } from "../shared/types.js";
 
 // Client state
 let ws: WebSocket | null = null;
@@ -228,42 +229,12 @@ function updatePlayersDisplay() {
     // Update hand display
     const handElement = document.getElementById(`player${playerNum}Hand`);
     if (handElement && seat.hand) {
-      handElement.innerHTML = "";
-
-      if (seat.hand.type === "player" || seat.hand.type === "solitaire") {
-        // Render cards array (Card or "hidden")
-        seat.hand.cards.forEach((card) => {
-          if (card === "hidden") {
-            const cardBack = document.createElement("div");
-            cardBack.className = "card card-back";
-            handElement.appendChild(cardBack);
-          } else {
-            handElement.appendChild(createCardElement(card, false));
-          }
-        });
+      if (seat.hand.type === "player") {
+        renderPlayerHand(seat.hand, handElement);
+      } else if (seat.hand.type === "solitaire") {
+        renderSolitaireHand(seat.hand, handElement);
       } else if (seat.hand.type === "pyramid") {
-        // For pyramid, render positions and extra cards
-        // TODO: Implement proper pyramid layout
-        seat.hand.positions.forEach((card) => {
-          if (card === null) {
-            // Empty position - don't render anything
-          } else if (card === "hidden") {
-            const cardBack = document.createElement("div");
-            cardBack.className = "card card-back";
-            handElement.appendChild(cardBack);
-          } else {
-            handElement.appendChild(createCardElement(card, false));
-          }
-        });
-        seat.hand.extraCards.forEach((card) => {
-          if (card === "hidden") {
-            const cardBack = document.createElement("div");
-            cardBack.className = "card card-back";
-            handElement.appendChild(cardBack);
-          } else {
-            handElement.appendChild(createCardElement(card, false));
-          }
-        });
+        renderPyramidHand(seat.hand, handElement);
       }
     }
 
@@ -323,6 +294,98 @@ function createCardElement(card: { suit: string; value: number }, clickable = fa
   cardDiv.appendChild(suitDiv);
 
   return cardDiv;
+}
+
+function createCardBack(): HTMLDivElement {
+  const cardBack = document.createElement("div");
+  cardBack.className = "card hidden";
+  const valueDiv = document.createElement("div");
+  valueDiv.className = "value";
+  valueDiv.textContent = "?";
+  cardBack.appendChild(valueDiv);
+  return cardBack;
+}
+
+function renderPlayerHand(hand: SerializedPlayerHand, domElement: HTMLElement): void {
+  domElement.innerHTML = "";
+  domElement.classList.remove("pyramid-hand", "solitaire-hand");
+
+  hand.cards.forEach((card) => {
+    if (card === "hidden") {
+      domElement.appendChild(createCardBack());
+    } else {
+      domElement.appendChild(createCardElement(card, false));
+    }
+  });
+}
+
+function renderSolitaireHand(hand: SerializedSolitaireHand, domElement: HTMLElement): void {
+  domElement.innerHTML = "";
+  domElement.classList.remove("pyramid-hand");
+  domElement.classList.add("solitaire-hand");
+
+  hand.cards.forEach((card) => {
+    if (card === "hidden") {
+      domElement.appendChild(createCardBack());
+    } else {
+      domElement.appendChild(createCardElement(card, false));
+    }
+  });
+}
+
+function renderPyramidHand(hand: SerializedPyramidHand, domElement: HTMLElement): void {
+  domElement.innerHTML = "";
+  domElement.classList.add("pyramid-hand");
+
+  const rows = [
+    { start: 0, count: 3 }, // Top row
+    { start: 3, count: 4 }, // Middle row
+    { start: 7, count: 5 }, // Bottom row
+  ];
+
+  rows.forEach((rowInfo, rowIdx) => {
+    for (let colIdx = 0; colIdx < rowInfo.count; colIdx++) {
+      const cardIdx = rowInfo.start + colIdx;
+      const card = hand.positions[cardIdx];
+
+      if (card === null) continue; // Empty position
+
+      let cardElement: HTMLDivElement;
+
+      if (card === "hidden") {
+        // Face-down card
+        cardElement = document.createElement("div");
+        cardElement.className = "card pyramid-face-down";
+
+        const valueDiv = document.createElement("div");
+        valueDiv.className = "value";
+        valueDiv.textContent = "?";
+        cardElement.appendChild(valueDiv);
+      } else {
+        // Face-up card
+        cardElement = createCardElement(card, false);
+      }
+
+      // Position using CSS grid
+      cardElement.style.gridRow = `${rowIdx + 1} / span 2`;
+      cardElement.style.gridColumn = `${2 * colIdx + (3 - rowIdx)} / span 2`;
+
+      domElement.appendChild(cardElement);
+    }
+  });
+
+  // Render extra cards
+  hand.extraCards.forEach((card, idx) => {
+    const cardElement = card === "hidden"
+      ? createCardBack()
+      : createCardElement(card, false);
+    cardElement.classList.add("pyramid-extra");
+
+    cardElement.style.gridRow = `${3} / span 2`;
+    cardElement.style.gridColumn = `${2 * (idx + 5) + 1} / span 2`;
+
+    domElement.appendChild(cardElement);
+  });
 }
 
 // Initialize everything after DOM loads
