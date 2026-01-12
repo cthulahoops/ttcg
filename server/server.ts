@@ -153,12 +153,24 @@ async function handleStartGame(ws: ServerWebSocket<WSData>) {
 }
 
 Bun.serve<WSData>({
-  port: 3000,
+  port: process.env.PORT ? parseInt(process.env.PORT) : 3000,
 
   fetch(req, server) {
     // WebSocket upgrade - data will be set in open handler
     if (server.upgrade(req, { data: { socketId: "" } })) return;
-    return new Response("OK");
+
+    // Serve static files from dist/
+    const url = new URL(req.url);
+    const filePath = url.pathname === "/" ? "/index.html" : url.pathname;
+
+    try {
+      const file = Bun.file(`./dist${filePath}`);
+      return new Response(file);
+    } catch {
+      // If file not found, return index.html for client-side routing
+      const index = Bun.file("./dist/index.html");
+      return new Response(index);
+    }
   },
 
   websocket: {
@@ -210,3 +222,5 @@ Bun.serve<WSData>({
     },
   },
 });
+
+console.log(`Server running on port ${process.env.PORT || 3000}`);
