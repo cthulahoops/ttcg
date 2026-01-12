@@ -61,6 +61,7 @@ export function serializeGameForSeat(
     seats: game.seats.map((seat) => serializeSeat(seat, seatIndex)),
     currentTrick: game.currentTrick.map(serializeTrickPlay),
     currentPlayer: game.currentPlayer,
+    leadPlayer: game.leadPlayer,
     currentTrickNumber: game.currentTrickNumber,
     leadSuit: game.leadSuit,
     ringsBroken: game.ringsBroken,

@@ -66,6 +66,7 @@ export interface SerializedGame {
   seats: SerializedSeat[];
   currentTrick: SerializedTrickPlay[];
   currentPlayer: number;
+  leadPlayer: number;
   currentTrickNumber: number;
   leadSuit: Suit | null;
   ringsBroken: boolean;

@@ -51,6 +51,7 @@ export class Game {
   seats: Seat[];
   currentTrick: TrickPlay[];
   currentPlayer: number;
+  leadPlayer: number;
   currentTrickNumber: number;
   leadSuit: Suit | null;
   ringsBroken: boolean;
@@ -74,6 +75,7 @@ export class Game {
     this.seats = seats;
     this.currentTrick = [];
     this.currentPlayer = startPlayer;
+    this.leadPlayer = startPlayer;
     this.currentTrickNumber = 0;
     this.leadSuit = null;
     this.ringsBroken = false;
@@ -605,7 +607,7 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
 
   while (!isGameOver(gameState)) {
     // === TRICK LOOP ===
-    const trickLeader = gameState.currentPlayer;
+    const trickLeader = gameState.leadPlayer;
     gameState.currentTrick = [];
     gameState.leadSuit = null;
     gameState.notifyStateChange();
@@ -679,7 +681,7 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
 
     checkForImpossibleObjectives(gameState);
 
-    gameState.currentPlayer = winnerIndex;
+    gameState.leadPlayer = winnerIndex;
   }
 }
 
@@ -687,12 +689,12 @@ async function runSetupPhase(gameState: Game): Promise<void> {
   gameState.log("=== SETUP PHASE ===", true);
 
   const setupContext: GameSetupContext = {
-    frodoSeat: gameState.seats[gameState.currentPlayer] || null,
+    frodoSeat: gameState.seats[gameState.leadPlayer] || null,
     exchangeMade: false,
   };
 
   for (let i = 0; i < gameState.numCharacters; i++) {
-    const playerIndex = (gameState.currentPlayer + i) % gameState.numCharacters;
+    const playerIndex = (gameState.leadPlayer + i) % gameState.numCharacters;
 
     gameState.currentPlayer = playerIndex;
     gameState.notifyStateChange();
@@ -706,7 +708,7 @@ async function runSetupPhase(gameState: Game): Promise<void> {
 async function runCharacterAssignment(gameState: Game): Promise<void> {
   gameState.log("=== CHARACTER ASSIGNMENT ===", true);
 
-  const startPlayer = gameState.currentPlayer; // Player with 1 of Rings
+  const startPlayer = gameState.leadPlayer; // Player with 1 of Rings
 
   gameState.log(
     `${gameState.seats[startPlayer].getDisplayName()} gets Frodo (has 1 of Rings)`,
