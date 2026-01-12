@@ -19,6 +19,7 @@ interface Room {
   started: boolean;          // false for MVP, reserved for future
   createdAt: number;         // Timestamp for cleanup
   seatToPlayer: Map<number, string>; // Seat index to player ID mapping
+  controllers: Map<string, NetworkController>; // Player ID to controller mapping
 }
 
 export class RoomManager {
@@ -230,7 +231,13 @@ export class RoomManager {
 
     // Create a NetworkController for each player and build seat-to-player mapping
     const playerList = Array.from(room.players.values());
-    const controllers = playerList.map(() => new NetworkController());
+    const controllers = playerList.map((player) => {
+      const controller = new NetworkController((message) => {
+        sendToPlayer(player.playerId, JSON.stringify(message));
+      });
+      room.controllers.set(player.playerId, controller);
+      return controller;
+    });
 
     // Map seat indices to player IDs (in the same order as controllers)
     playerList.forEach((player, index) => {
@@ -275,6 +282,37 @@ export class RoomManager {
     } while (this.rooms.has(code));
 
     return code;
+  }
+
+  /**
+   * Handle a decision response from a player
+   * @param socketId - The socket ID of the player sending the response
+   * @param requestId - The request ID this response is for
+   * @param response - The decision response data
+   * @throws Error if player is not in a room or not in a game
+   */
+  handleDecisionResponse(socketId: string, requestId: string, response: any): void {
+    const lookup = this.socketToPlayer.get(socketId);
+    if (!lookup) {
+      throw new Error("Not in a room");
+    }
+
+    const { roomCode, playerId } = lookup;
+    const room = this.rooms.get(roomCode);
+    if (!room) {
+      throw new Error("Room not found");
+    }
+
+    if (!room.started) {
+      throw new Error("Game not started");
+    }
+
+    const controller = room.controllers.get(playerId);
+    if (!controller) {
+      throw new Error("Controller not found");
+    }
+
+    controller.handleResponse(requestId, response);
   }
 
   /**

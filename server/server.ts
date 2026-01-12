@@ -158,14 +158,22 @@ Bun.serve<WSData>({
       if (msg.type === "ping") {
         const reply: ServerMessage = { type: "pong" };
         ws.send(JSON.stringify(reply));
-      } else if (msg.type === "create_room") {
-        handleCreateRoom(ws, msg);
       } else if (msg.type === "join_room") {
         handleJoinRoom(ws, msg);
       } else if (msg.type === "leave_room") {
         handleLeaveRoom(ws);
       } else if (msg.type === "start_game") {
         handleStartGame(ws);
+      } else if (msg.type === "decision_response") {
+        try {
+          roomManager.handleDecisionResponse(ws.data.socketId, msg.requestId, msg.response);
+        } catch (error) {
+          const errorMsg: ServerMessage = {
+            type: "error",
+            message: error instanceof Error ? error.message : "Failed to handle decision response",
+          };
+          ws.send(JSON.stringify(errorMsg));
+        }
       }
     },
 
