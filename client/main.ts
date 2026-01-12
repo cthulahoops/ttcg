@@ -58,10 +58,10 @@ let playersList: HTMLElement;
 let gameStatus: SerializedGame | null = null;
 
 function connectWebSocket() {
-  // Connect to WebSocket server on port 3000
+  // Connect to WebSocket server on the same host
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const host = window.location.hostname;
-  const wsUrl = `${protocol}//${host}:3000`;
+  const host = window.location.host; // includes port if present
+  const wsUrl = `${protocol}//${host}`;
 
   ws = new WebSocket(wsUrl);
 
