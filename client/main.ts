@@ -69,6 +69,8 @@ function handleServerMessage(message: ServerMessage) {
       currentRoomCode = message.roomCode;
       currentPlayerId = message.playerId;
       players = message.players;
+      // Update URL fragment with room code
+      window.location.hash = message.roomCode;
       showRoomLobby();
       updatePlayersList();
       break;
@@ -129,6 +131,8 @@ function showLobbyMenu() {
   currentRoomCode = null;
   currentPlayerId = null;
   players = [];
+  // Clear URL fragment when leaving room
+  window.location.hash = "";
   showError("");
 }
 
@@ -370,6 +374,12 @@ function initialize() {
       joinRoomBtn.click();
     }
   });
+
+  // Check for room code in URL fragment
+  const urlFragment = window.location.hash.slice(1); // Remove the '#'
+  if (urlFragment && urlFragment.length === 4) {
+    roomCodeInput.value = urlFragment.toUpperCase();
+  }
 
   // Connect WebSocket
   connectWebSocket();
