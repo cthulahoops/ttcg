@@ -61,6 +61,12 @@ function handleJoinRoom(ws: ServerWebSocket<WSData>, msg: { roomCode: string; pl
           state: serializedGame,
         };
         ws.send(JSON.stringify(gameStateMsg));
+
+        // Resend any pending decision requests
+        const controller = room.controllers.get(playerId);
+        if (controller) {
+          controller.resendPendingRequests();
+        }
       }
     }
 

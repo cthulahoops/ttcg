@@ -10,6 +10,8 @@ import type { ServerMessage } from "../shared/protocol";
 interface PendingRequest {
   resolve: (value: any) => void;
   reject: (error: Error) => void;
+  requestId: string;
+  decision: any;
 }
 
 export class NetworkController extends Controller {
@@ -34,13 +36,27 @@ export class NetworkController extends Controller {
   }
 
   /**
+   * Resend all pending decision requests
+   * Called when a player reconnects to ensure they receive any decisions they missed
+   */
+  resendPendingRequests(): void {
+    for (const pending of this.pendingRequests.values()) {
+      this.sendMessage({
+        type: "decision_request",
+        requestId: pending.requestId,
+        decision: pending.decision,
+      });
+    }
+  }
+
+  /**
    * Send a decision request and wait for response
    */
   private async sendRequest<T>(decision: any): Promise<T> {
     const requestId = crypto.randomUUID();
 
     const promise = new Promise<T>((resolve, reject) => {
-      this.pendingRequests.set(requestId, { resolve, reject });
+      this.pendingRequests.set(requestId, { resolve, reject, requestId, decision });
     });
 
     this.sendMessage({

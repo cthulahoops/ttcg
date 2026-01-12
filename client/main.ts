@@ -108,6 +108,10 @@ function handleServerMessage(message: ServerMessage) {
       updateGameDisplay();
       break;
 
+    case "decision_request":
+      handleDecisionRequest(message.requestId, message.decision);
+      break;
+
     case "error":
       showError(message.message);
       break;
@@ -123,6 +127,108 @@ function sendMessage(message: ClientMessage) {
     showError("Not connected to server");
   }
 }
+
+// Handle decision requests from server
+function handleDecisionRequest(requestId: string, decision: any) {
+  switch (decision.type) {
+    case "choose_button":
+      showChooseButtonDialog(requestId, decision.options);
+      break;
+    case "choose_card":
+      showChooseCardDialog(requestId, decision.options);
+      break;
+    case "select_card":
+      enableCardSelection(requestId, decision.availableCards);
+      break;
+  }
+}
+
+// Send decision response back to server
+function sendDecisionResponse(requestId: string, response: any) {
+  sendMessage({
+    type: "decision_response",
+    requestId,
+    response,
+  });
+}
+
+// Show button choice dialog
+function showChooseButtonDialog(requestId: string, options: any) {
+  const dialogArea = document.getElementById("dialogArea")!;
+  const dialogTitle = document.getElementById("dialogTitle")!;
+  const dialogMessage = document.getElementById("dialogMessage")!;
+  const dialogChoices = document.getElementById("dialogChoices")!;
+  const dialogInfo = document.getElementById("dialogInfo")!;
+
+  dialogTitle.textContent = options.title || "";
+  dialogMessage.textContent = options.message || "";
+  dialogInfo.textContent = options.info || "";
+
+  dialogChoices.innerHTML = "";
+  options.buttons.forEach((button: any) => {
+    const buttonElement = document.createElement("button");
+    buttonElement.textContent = button.label;
+    buttonElement.disabled = button.disabled || false;
+
+    buttonElement.onclick = () => {
+      hideDialog();
+      sendDecisionResponse(requestId, button.value);
+    };
+    dialogChoices.appendChild(buttonElement);
+  });
+
+  dialogArea.style.display = "block";
+}
+
+// Show card choice dialog
+function showChooseCardDialog(requestId: string, options: any) {
+  const dialogArea = document.getElementById("dialogArea")!;
+  const dialogTitle = document.getElementById("dialogTitle")!;
+  const dialogMessage = document.getElementById("dialogMessage")!;
+  const dialogChoices = document.getElementById("dialogChoices")!;
+  const dialogInfo = document.getElementById("dialogInfo")!;
+
+  dialogTitle.textContent = options.title || "";
+  dialogMessage.textContent = options.message || "";
+  dialogInfo.textContent = options.info || "";
+
+  dialogChoices.innerHTML = "";
+  options.cards.forEach((card: Card) => {
+    const cardElement = createCardElement(card, true);
+    cardElement.onclick = () => {
+      hideDialog();
+      sendDecisionResponse(requestId, card);
+    };
+    dialogChoices.appendChild(cardElement);
+  });
+
+  dialogArea.style.display = "block";
+}
+
+// Enable card selection from player's hand
+function enableCardSelection(requestId: string, availableCards: Card[]) {
+  // This will be handled by making cards in the hand clickable
+  // For now, we'll store the requestId and available cards globally
+  // and handle clicks on cards in the hand
+  currentCardSelectionRequest = {
+    requestId,
+    availableCards,
+  };
+
+  // Update the display to make available cards clickable
+  updateGameDisplay();
+}
+
+// Hide dialog
+function hideDialog(): void {
+  document.getElementById("dialogArea")!.style.display = "none";
+}
+
+// Card selection state
+let currentCardSelectionRequest: {
+  requestId: string;
+  availableCards: Card[];
+} | null = null;
 
 // UI Functions
 function showError(message: string) {
@@ -275,7 +381,11 @@ function updateLostCardDisplay() {
   }
 }
 
-function createCardElement(card: { suit: string; value: number }, clickable = false): HTMLDivElement {
+function createCardElement(
+  card: { suit: string; value: number },
+  clickable = false,
+  onClick?: () => void
+): HTMLDivElement {
   const cardDiv = document.createElement("div");
   cardDiv.className = `card ${card.suit}`;
   if (clickable) {
@@ -292,6 +402,10 @@ function createCardElement(card: { suit: string; value: number }, clickable = fa
 
   cardDiv.appendChild(valueDiv);
   cardDiv.appendChild(suitDiv);
+
+  if (onClick) {
+    cardDiv.onclick = onClick;
+  }
 
   return cardDiv;
 }
@@ -314,9 +428,33 @@ function renderPlayerHand(hand: SerializedPlayerHand, domElement: HTMLElement): 
     if (card === "hidden") {
       domElement.appendChild(createCardBack());
     } else {
-      domElement.appendChild(createCardElement(card, false));
+      // Check if card is selectable
+      const isSelectable = !!(currentCardSelectionRequest &&
+        currentCardSelectionRequest.availableCards.some(
+          (c) => c.suit === card.suit && c.value === card.value
+        ));
+
+      const cardElement = createCardElement(
+        card,
+        isSelectable,
+        isSelectable
+          ? () => handleCardClick(card)
+          : undefined
+      );
+      domElement.appendChild(cardElement);
     }
   });
+}
+
+// Handle card click during selection
+function handleCardClick(card: Card) {
+  if (currentCardSelectionRequest) {
+    const requestId = currentCardSelectionRequest.requestId;
+    currentCardSelectionRequest = null;
+    sendDecisionResponse(requestId, card);
+    // Update display to remove clickable state
+    updateGameDisplay();
+  }
 }
 
 function renderSolitaireHand(hand: SerializedSolitaireHand, domElement: HTMLElement): void {
@@ -328,7 +466,20 @@ function renderSolitaireHand(hand: SerializedSolitaireHand, domElement: HTMLElem
     if (card === "hidden") {
       domElement.appendChild(createCardBack());
     } else {
-      domElement.appendChild(createCardElement(card, false));
+      // Check if card is selectable
+      const isSelectable = !!(currentCardSelectionRequest &&
+        currentCardSelectionRequest.availableCards.some(
+          (c) => c.suit === card.suit && c.value === card.value
+        ));
+
+      const cardElement = createCardElement(
+        card,
+        isSelectable,
+        isSelectable
+          ? () => handleCardClick(card)
+          : undefined
+      );
+      domElement.appendChild(cardElement);
     }
   });
 }
@@ -362,8 +513,20 @@ function renderPyramidHand(hand: SerializedPyramidHand, domElement: HTMLElement)
         valueDiv.textContent = "?";
         cardElement.appendChild(valueDiv);
       } else {
+        // Check if card is selectable
+        const isSelectable = !!(currentCardSelectionRequest &&
+          currentCardSelectionRequest.availableCards.some(
+            (c) => c.suit === card.suit && c.value === card.value
+          ));
+
         // Face-up card
-        cardElement = createCardElement(card, false);
+        cardElement = createCardElement(
+          card,
+          isSelectable,
+          isSelectable
+            ? () => handleCardClick(card)
+            : undefined
+        );
       }
 
       // Position using CSS grid
@@ -376,11 +539,27 @@ function renderPyramidHand(hand: SerializedPyramidHand, domElement: HTMLElement)
 
   // Render extra cards
   hand.extraCards.forEach((card, idx) => {
-    const cardElement = card === "hidden"
-      ? createCardBack()
-      : createCardElement(card, false);
-    cardElement.classList.add("pyramid-extra");
+    let cardElement: HTMLDivElement;
 
+    if (card === "hidden") {
+      cardElement = createCardBack();
+    } else {
+      // Check if card is selectable
+      const isSelectable = !!(currentCardSelectionRequest &&
+        currentCardSelectionRequest.availableCards.some(
+          (c) => c.suit === card.suit && c.value === card.value
+        ));
+
+      cardElement = createCardElement(
+        card,
+        isSelectable,
+        isSelectable
+          ? () => handleCardClick(card)
+          : undefined
+      );
+    }
+
+    cardElement.classList.add("pyramid-extra");
     cardElement.style.gridRow = `${3} / span 2`;
     cardElement.style.gridColumn = `${2 * (idx + 5) + 1} / span 2`;
 
