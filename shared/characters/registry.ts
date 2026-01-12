@@ -2,11 +2,8 @@
 // All character definitions in one place
 
 import type { Seat } from "../seat";
-import type { Card, Suit } from "../types";
-import type { Game } from "../game";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SetupContext = any;
+import type { Card, Suit, CharacterStatus } from "../types";
+import type { Game, GameSetupContext } from "../game";
 
 interface CharacterObjective {
   text?: string;
@@ -16,13 +13,13 @@ interface CharacterObjective {
 }
 
 interface CharacterDisplay {
-  renderStatus: (game: Game, seat: Seat) => string;
+  renderStatus: (game: Game, seat: Seat) => CharacterStatus;
 }
 
 interface CharacterDefinition {
   name: string;
   setupText: string;
-  setup: (game: Game, seat: Seat, setupContext: SetupContext) => Promise<void>;
+  setup: (game: Game, seat: Seat, setupContext: GameSetupContext) => Promise<void>;
   objective: CharacterObjective;
   display: CharacterDisplay;
 }
@@ -41,18 +38,18 @@ const Frodo: CharacterDefinition = {
     },
     check: (game, seat) => {
       const ringsNeeded = game.numCharacters === 3 ? 4 : 2;
-      const ringCards = seat.getAllWonCards().filter((c) => c.suit === "rings");
+      const ringCards = seat.getAllWonCards().filter((c: Card) => c.suit === "rings");
       return ringCards.length >= ringsNeeded;
     },
     isCompletable: (game, seat) => {
       const ringsNeeded = game.numCharacters === 3 ? 4 : 2;
       const myRings = seat
         .getAllWonCards()
-        .filter((c) => c.suit === "rings").length;
+        .filter((c: Card) => c.suit === "rings").length;
       const othersRings = game.seats.reduce((total: number, s: Seat) => {
         if (s.seatIndex !== seat.seatIndex) {
           return (
-            total + s.getAllWonCards().filter((c) => c.suit === "rings").length
+            total + s.getAllWonCards().filter((c: Card) => c.suit === "rings").length
           );
         }
         return total;
@@ -64,21 +61,23 @@ const Frodo: CharacterDefinition = {
 
   display: {
     renderStatus: (game, seat) => {
-      const ringCards = seat.getAllWonCards().filter((c) => c.suit === "rings");
+      const ringCards = seat.getAllWonCards().filter((c: Card) => c.suit === "rings");
       const ringsNeeded = game.numCharacters === 3 ? 4 : 2;
       const met = ringCards.length >= ringsNeeded;
       const completable = Frodo.objective.isCompletable(game, seat);
-      const icon = game.displaySimple(met, completable);
 
+      let details: string;
       if (ringCards.length > 0) {
         const ringList = ringCards
           .map((c) => c.value)
           .sort((a: number, b: number) => a - b)
           .join(", ");
-        return `${icon} Rings: ${ringList}`;
+        details = `Rings: ${ringList}`;
       } else {
-        return `${icon} Rings: none`;
+        details = "Rings: none";
       }
+
+      return { met, completable, details };
     },
   },
 };
@@ -146,7 +145,7 @@ const Celeborn: CharacterDefinition = {
     text: "Win at least three cards of the same rank",
     check: (_game, seat) => {
       const rankCounts: Record<number, number> = {};
-      seat.getAllWonCards().forEach((card) => {
+      seat.getAllWonCards().forEach((card: Card) => {
         rankCounts[card.value] = (rankCounts[card.value] || 0) + 1;
       });
       return Object.values(rankCounts).some((count) => count >= 3);
@@ -157,18 +156,21 @@ const Celeborn: CharacterDefinition = {
   display: {
     renderStatus: (game, seat) => {
       const rankCounts: Record<number, number> = {};
-      seat.getAllWonCards().forEach((card) => {
+      seat.getAllWonCards().forEach((card: Card) => {
         rankCounts[card.value] = (rankCounts[card.value] || 0) + 1;
       });
       const met = Celeborn.objective.check(game, seat);
-      const icon = game.displaySimple(met, true);
 
       const ranksWithCounts = Object.entries(rankCounts)
         .filter(([_rank, count]) => count >= 2)
         .map(([rank, count]) => `${rank}:${count}`)
         .join(", ");
 
-      return ranksWithCounts ? `${icon} ${ranksWithCounts}` : icon;
+      return {
+        met,
+        completable: true,
+        details: ranksWithCounts || undefined,
+      };
     },
   },
 };
@@ -240,11 +242,12 @@ const Boromir: CharacterDefinition = {
       const hasOneRing = game.hasCard(seat, "rings", 1);
       const met = Boromir.objective.check(game, seat);
       const completable = Boromir.objective.isCompletable(game, seat);
-      const icon = game.displaySimple(met, completable);
 
       const lastIcon = wonLast ? "✓" : "✗";
       const oneRingIcon = hasOneRing ? "✗ (has 1-Ring)" : "✓";
-      return `${icon} Last: ${lastIcon}, 1-Ring: ${oneRingIcon}`;
+      const details = `Last: ${lastIcon}, 1-Ring: ${oneRingIcon}`;
+
+      return { met, completable, details };
     },
   },
 };
@@ -403,8 +406,8 @@ const Goldberry: CharacterDefinition = {
     text: "Win exactly three tricks in a row and no other tricks",
     check: (_game, seat) => {
       const trickNumbers = seat.tricksWon
-        .map((t) => t.number)
-        .sort((a, b) => a - b);
+        .map((t: { number: number; cards: Card[] }) => t.number)
+        .sort((a: number, b: number) => a - b);
 
       if (trickNumbers.length !== 3) return false;
 
@@ -427,8 +430,8 @@ const Goldberry: CharacterDefinition = {
       }
 
       const trickNumbers = seat.tricksWon
-        .map((t) => t.number)
-        .sort((a, b) => a - b);
+        .map((t: { number: number; cards: Card[] }) => t.number)
+        .sort((a: number, b: number) => a - b);
 
       for (let i = 1; i < trickNumbers.length; i++) {
         if (trickNumbers[i] !== trickNumbers[i - 1] + 1) {
@@ -469,7 +472,7 @@ const Glorfindel: CharacterDefinition = {
     check: (_game, seat) => {
       const shadowsCards = seat
         .getAllWonCards()
-        .filter((c) => c.suit === "shadows");
+        .filter((c: Card) => c.suit === "shadows");
       return shadowsCards.length === 8; // All shadows cards (1-8)
     },
     isCompletable: (game, seat) => {
@@ -486,12 +489,15 @@ const Glorfindel: CharacterDefinition = {
     renderStatus: (game, seat) => {
       const shadowsCards = seat
         .getAllWonCards()
-        .filter((c) => c.suit === "shadows");
+        .filter((c: Card) => c.suit === "shadows");
       const met = Glorfindel.objective.check(game, seat);
       const completable = Glorfindel.objective.isCompletable(game, seat);
-      const icon = game.displaySimple(met, completable);
 
-      return `${icon} Shadows: ${shadowsCards.length}/8`;
+      return {
+        met,
+        completable,
+        details: `Shadows: ${shadowsCards.length}/8`,
+      };
     },
   },
 };
@@ -581,7 +587,7 @@ const GildorInglorian: CharacterDefinition = {
 
       // Still completable if player has forests cards in hand
       const availableCards = seat.hand!.getAvailableCards();
-      return availableCards.some((c) => c.suit === "forests");
+      return availableCards.some((c: Card) => c.suit === "forests");
     },
   },
 
@@ -589,17 +595,19 @@ const GildorInglorian: CharacterDefinition = {
     renderStatus: (game, seat) => {
       const met = GildorInglorian.objective.check(game, seat);
       const completable = GildorInglorian.objective.isCompletable(game, seat);
-      const icon = game.displaySimple(met, completable);
 
+      let details: string;
       if (game.finished) {
-        return `${icon} Final trick played`;
+        details = "Final trick played";
       } else {
         const availableCards = seat.hand!.getAvailableCards();
         const forestsInHand = availableCards.filter(
           (c) => c.suit === "forests",
         ).length;
-        return `${icon} Forests: ${forestsInHand} in hand`;
+        details = `Forests: ${forestsInHand} in hand`;
       }
+
+      return { met, completable, details };
     },
   },
 };
@@ -664,9 +672,12 @@ const FarmerMaggot: CharacterDefinition = {
         .filter((c) => c.value === seat.threatCard);
       const met = FarmerMaggot.objective.check(game, seat);
       const completable = FarmerMaggot.objective.isCompletable(game, seat);
-      const icon = game.displaySimple(met, completable);
 
-      return `${icon} Threat: ${seat.threatCard}, Won: ${matchingCards.length}/2`;
+      return {
+        met,
+        completable,
+        details: `Threat: ${seat.threatCard}, Won: ${matchingCards.length}/2`,
+      };
     },
   },
 };
@@ -732,7 +743,7 @@ const TomBombadil: CharacterDefinition = {
         rings: 0,
       };
 
-      seat.getAllWonCards().forEach((card) => {
+      seat.getAllWonCards().forEach((card: Card) => {
         wonBySuit[card.suit] = (wonBySuit[card.suit] || 0) + 1;
       });
 
@@ -759,7 +770,6 @@ const TomBombadil: CharacterDefinition = {
     renderStatus: (game, seat) => {
       const met = TomBombadil.objective.check(game, seat);
       const completable = TomBombadil.objective.isCompletable(game, seat);
-      const icon = game.displaySimple(met, completable);
 
       const wonBySuit: Record<Suit, number> = {
         mountains: 0,
@@ -769,7 +779,7 @@ const TomBombadil: CharacterDefinition = {
         rings: 0,
       };
 
-      seat.getAllWonCards().forEach((card) => {
+      seat.getAllWonCards().forEach((card: Card) => {
         wonBySuit[card.suit] = (wonBySuit[card.suit] || 0) + 1;
       });
 
@@ -786,7 +796,11 @@ const TomBombadil: CharacterDefinition = {
         .map((suit) => `${suitSymbols[suit]}:${wonBySuit[suit]}`)
         .join(" ");
 
-      return countsDisplay ? `${icon} ${countsDisplay}` : icon;
+      return {
+        met,
+        completable,
+        details: countsDisplay || undefined,
+      };
     },
   },
 };
@@ -896,19 +910,19 @@ const Elrond: CharacterDefinition = {
     text: "Every character must win a ring card",
     check: (game, _seat) => {
       return game.seats.every((s: Seat) => {
-        const ringCards = s.getAllWonCards().filter((c) => c.suit === "rings");
+        const ringCards = s.getAllWonCards().filter((c: Card) => c.suit === "rings");
         return ringCards.length >= 1;
       });
     },
     isCompletable: (game, _seat) => {
       const seatsNeedingRing = game.seats.filter((s: Seat) => {
-        const ringCards = s.getAllWonCards().filter((c) => c.suit === "rings");
+        const ringCards = s.getAllWonCards().filter((c: Card) => c.suit === "rings");
         return ringCards.length === 0;
       }).length;
 
       const totalRingCardsWon = game.seats.reduce(
         (total: number, s: Seat) =>
-          total + s.getAllWonCards().filter((c) => c.suit === "rings").length,
+          total + s.getAllWonCards().filter((c: Card) => c.suit === "rings").length,
         0,
       );
       const ringsRemaining = 5 - totalRingCardsWon;
@@ -920,15 +934,18 @@ const Elrond: CharacterDefinition = {
   display: {
     renderStatus: (game, seat) => {
       const seatsWithRings = game.seats.filter((s: Seat) => {
-        const ringCards = s.getAllWonCards().filter((c) => c.suit === "rings");
+        const ringCards = s.getAllWonCards().filter((c: Card) => c.suit === "rings");
         return ringCards.length >= 1;
       }).length;
 
       const met = Elrond.objective.check(game, seat);
       const completable = Elrond.objective.isCompletable(game, seat);
-      const icon = game.displaySimple(met, completable);
 
-      return `${icon} Seats with rings: ${seatsWithRings}/${game.seats.length}`;
+      return {
+        met,
+        completable,
+        details: `Seats with rings: ${seatsWithRings}/${game.seats.length}`,
+      };
     },
   },
 };
@@ -948,34 +965,34 @@ const Arwen: CharacterDefinition = {
     check: (game, seat) => {
       const myCounts = seat
         .getAllWonCards()
-        .filter((c) => c.suit === "forests").length;
+        .filter((c: Card) => c.suit === "forests").length;
 
       // Check if this seat has strictly more than all others
       return game.seats.every((s: Seat) => {
         if (s.seatIndex === seat.seatIndex) return true;
         const theirCounts = s
           .getAllWonCards()
-          .filter((c) => c.suit === "forests").length;
+          .filter((c: Card) => c.suit === "forests").length;
         return myCounts > theirCounts;
       });
     },
     isCompletable: (game, seat) => {
       const myCounts = seat
         .getAllWonCards()
-        .filter((c) => c.suit === "forests").length;
+        .filter((c: Card) => c.suit === "forests").length;
 
       const othersMaxCounts = Math.max(
         ...game.seats
           .filter((s: Seat) => s.seatIndex !== seat.seatIndex)
           .map(
             (s: Seat) =>
-              s.getAllWonCards().filter((c) => c.suit === "forests").length,
+              s.getAllWonCards().filter((c: Card) => c.suit === "forests").length,
           ),
       );
 
       const totalForestsWon = game.seats.reduce(
         (total: number, s: Seat) =>
-          total + s.getAllWonCards().filter((c) => c.suit === "forests").length,
+          total + s.getAllWonCards().filter((c: Card) => c.suit === "forests").length,
         0,
       );
       const forestsRemaining = 8 - totalForestsWon;
@@ -988,12 +1005,15 @@ const Arwen: CharacterDefinition = {
     renderStatus: (game, seat) => {
       const myCounts = seat
         .getAllWonCards()
-        .filter((c) => c.suit === "forests").length;
+        .filter((c: Card) => c.suit === "forests").length;
       const met = Arwen.objective.check(game, seat);
       const completable = Arwen.objective.isCompletable(game, seat);
-      const icon = game.displaySimple(met, completable);
 
-      return `${icon} Forests: ${myCounts}`;
+      return {
+        met,
+        completable,
+        details: `Forests: ${myCounts}`,
+      };
     },
   },
 };
@@ -1013,35 +1033,35 @@ const Gloin: CharacterDefinition = {
     check: (game, seat) => {
       const myCounts = seat
         .getAllWonCards()
-        .filter((c) => c.suit === "mountains").length;
+        .filter((c: Card) => c.suit === "mountains").length;
 
       // Check if this seat has strictly more than all others
       return game.seats.every((s: Seat) => {
         if (s.seatIndex === seat.seatIndex) return true;
         const theirCounts = s
           .getAllWonCards()
-          .filter((c) => c.suit === "mountains").length;
+          .filter((c: Card) => c.suit === "mountains").length;
         return myCounts > theirCounts;
       });
     },
     isCompletable: (game, seat) => {
       const myCounts = seat
         .getAllWonCards()
-        .filter((c) => c.suit === "mountains").length;
+        .filter((c: Card) => c.suit === "mountains").length;
 
       const othersMaxCounts = Math.max(
         ...game.seats
           .filter((s: Seat) => s.seatIndex !== seat.seatIndex)
           .map(
             (s: Seat) =>
-              s.getAllWonCards().filter((c) => c.suit === "mountains").length,
+              s.getAllWonCards().filter((c: Card) => c.suit === "mountains").length,
           ),
       );
 
       const totalMountainsWon = game.seats.reduce(
         (total: number, s: Seat) =>
           total +
-          s.getAllWonCards().filter((c) => c.suit === "mountains").length,
+          s.getAllWonCards().filter((c: Card) => c.suit === "mountains").length,
         0,
       );
       const mountainsRemaining = 8 - totalMountainsWon;
@@ -1054,12 +1074,15 @@ const Gloin: CharacterDefinition = {
     renderStatus: (game, seat) => {
       const myCounts = seat
         .getAllWonCards()
-        .filter((c) => c.suit === "mountains").length;
+        .filter((c: Card) => c.suit === "mountains").length;
       const met = Gloin.objective.check(game, seat);
       const completable = Gloin.objective.isCompletable(game, seat);
-      const icon = game.displaySimple(met, completable);
 
-      return `${icon} Mountains: ${myCounts}`;
+      return {
+        met,
+        completable,
+        details: `Mountains: ${myCounts}`,
+      };
     },
   },
 };
@@ -1092,11 +1115,12 @@ const BilboBaggins: CharacterDefinition = {
       const hasOneRing = game.hasCard(seat, "rings", 1);
       const met = BilboBaggins.objective.check(game, seat);
       const completable = BilboBaggins.objective.isCompletable(game, seat);
-      const icon = game.displaySimple(met, completable);
 
       const tricksIcon = trickCount >= 3 ? "✓" : `${trickCount}/3`;
       const oneRingIcon = hasOneRing ? "✗ (has 1-Ring)" : "✓";
-      return `${icon} Tricks: ${tricksIcon}, 1-Ring: ${oneRingIcon}`;
+      const details = `Tricks: ${tricksIcon}, 1-Ring: ${oneRingIcon}`;
+
+      return { met, completable, details };
     },
   },
 };
@@ -1113,8 +1137,8 @@ const Gwaihir: CharacterDefinition = {
   objective: {
     text: "Win at least two tricks containing a mountain card",
     check: (_game, seat) => {
-      const tricksWithMountains = seat.tricksWon.filter((trick) =>
-        trick.cards.some((c) => c.suit === "mountains"),
+      const tricksWithMountains = seat.tricksWon.filter((trick: { number: number; cards: Card[] }) =>
+        trick.cards.some((c: Card) => c.suit === "mountains"),
       );
       return tricksWithMountains.length >= 2;
     },
@@ -1127,14 +1151,17 @@ const Gwaihir: CharacterDefinition = {
 
   display: {
     renderStatus: (game, seat) => {
-      const tricksWithMountains = seat.tricksWon.filter((trick) =>
-        trick.cards.some((c) => c.suit === "mountains"),
+      const tricksWithMountains = seat.tricksWon.filter((trick: { number: number; cards: Card[] }) =>
+        trick.cards.some((c: Card) => c.suit === "mountains"),
       );
       const met = Gwaihir.objective.check(game, seat);
       const completable = Gwaihir.objective.isCompletable(game, seat);
-      const icon = game.displaySimple(met, completable);
 
-      return `${icon} Tricks with mountains: ${tricksWithMountains.length}/2`;
+      return {
+        met,
+        completable,
+        details: `Tricks with mountains: ${tricksWithMountains.length}/2`,
+      };
     },
   },
 };
@@ -1153,7 +1180,7 @@ const Shadowfax: CharacterDefinition = {
   objective: {
     text: "Win at least two tricks containing a hills card",
     check: (_game, seat) => {
-      const tricksWithHills = seat.tricksWon.filter((trick) =>
+      const tricksWithHills = seat.tricksWon.filter((trick: { number: number; cards: Card[] }) =>
         trick.cards.some((c) => c.suit === "hills"),
       );
       return tricksWithHills.length >= 2;
@@ -1167,14 +1194,17 @@ const Shadowfax: CharacterDefinition = {
 
   display: {
     renderStatus: (game, seat) => {
-      const tricksWithHills = seat.tricksWon.filter((trick) =>
+      const tricksWithHills = seat.tricksWon.filter((trick: { number: number; cards: Card[] }) =>
         trick.cards.some((c) => c.suit === "hills"),
       );
       const met = Shadowfax.objective.check(game, seat);
       const completable = Shadowfax.objective.isCompletable(game, seat);
-      const icon = game.displaySimple(met, completable);
 
-      return `${icon} Tricks with hills: ${tricksWithHills.length}/2`;
+      return {
+        met,
+        completable,
+        details: `Tricks with hills: ${tricksWithHills.length}/2`,
+      };
     },
   },
 };

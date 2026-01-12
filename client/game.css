@@ -426,3 +426,151 @@ body[data-player-count="2"] .player:has(#player4) {
 .card.pyramid-extra {
     border-color: #ff6f00;
 }
+
+/* Lobby Screen Styles */
+.lobby-screen {
+    min-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+}
+
+.lobby-screen h1 {
+    color: #ffd700;
+    margin-bottom: 40px;
+    font-size: 2.5em;
+}
+
+.lobby-menu,
+.room-lobby {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 30px;
+    max-width: 500px;
+    width: 100%;
+}
+
+.lobby-menu h2,
+.room-lobby h2 {
+    color: #ffd700;
+    text-align: center;
+    margin-top: 0;
+}
+
+.lobby-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.lobby-form input {
+    padding: 12px;
+    font-size: 16px;
+    border: 2px solid #4a6b2a;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+}
+
+.lobby-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.join-room-group {
+    display: flex;
+    gap: 10px;
+}
+
+.join-room-group input {
+    flex: 1;
+}
+
+.primary-btn,
+.secondary-btn {
+    padding: 12px 24px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.primary-btn {
+    background: #4a6b2a;
+    color: white;
+}
+
+.primary-btn:hover:not(:disabled) {
+    background: #5a8b3a;
+}
+
+.primary-btn:disabled {
+    background: #666;
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.secondary-btn {
+    background: #8b4a4a;
+    color: white;
+}
+
+.secondary-btn:hover {
+    background: #ab5a5a;
+}
+
+.lobby-error {
+    color: #ff6b6b;
+    text-align: center;
+    margin-top: 15px;
+    min-height: 20px;
+}
+
+.room-info {
+    text-align: center;
+    margin: 20px 0;
+    color: #aaa;
+}
+
+.players-list {
+    margin: 20px 0;
+}
+
+.players-list h3 {
+    color: #ffd700;
+    margin-bottom: 15px;
+}
+
+#playersList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#playersList li {
+    padding: 10px;
+    margin: 5px 0;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#playersList li.disconnected {
+    opacity: 0.5;
+}
+
+#playersList li::before {
+    content: "👤";
+    font-size: 18px;
+}
+
+#playersList li.disconnected::before {
+    content: "💤";
+}

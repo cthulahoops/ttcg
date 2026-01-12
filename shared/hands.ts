@@ -1,7 +1,13 @@
 // ===== HAND CLASSES =====
 
-import { sortHand, createCardElement } from "./utils";
+import { sortHand } from "./utils";
 import type { Card } from "./types";
+import type {
+  SerializedHand,
+  SerializedPlayerHand,
+  SerializedPyramidHand,
+  SerializedSolitaireHand,
+} from "./serialized";
 
 export abstract class Hand {
   abstract addCard(card: Card): void;
@@ -9,27 +15,27 @@ export abstract class Hand {
   abstract getAvailableCards(): Card[];
   abstract isEmpty(): boolean;
   abstract getSize(): number;
-  abstract render(
-    domElement: HTMLElement,
-    isPlayable: (card: Card) => boolean,
-    onClick: (card: Card) => void,
-  ): void;
   abstract getAllCards(): Card[];
   abstract onTrickComplete(): void;
+  abstract serializeForViewer(isOwnSeat: boolean): SerializedHand;
 
   getCards?(): Card[];
 
-  revealed(): Hand {
-    return new PlayerHand(this.getAllCards());
-  }
+  abstract reveal(): void;
 }
 
 export class PlayerHand extends Hand {
   private _cards: Card[];
+  private _revealed: boolean;
 
   constructor(cards: Card[] = []) {
     super();
     this._cards = [...cards];
+    this._revealed = false;
+  }
+
+  reveal() {
+    this._revealed = true;
   }
 
   addCard(card: Card): void {
@@ -67,34 +73,17 @@ export class PlayerHand extends Hand {
     return [...this._cards];
   }
 
-  render(
-    domElement: HTMLElement,
-    isPlayable: (card: Card) => boolean,
-    onClick: (card: Card) => void,
-  ): void {
-    domElement.innerHTML = "";
-    domElement.classList.remove("pyramid-hand");
-
-    const sorted = sortHand([...this._cards]);
-
-    sorted.forEach((card) => {
-      const canPlay = isPlayable(card);
-      const cardElement = createCardElement(
-        card,
-        canPlay,
-        canPlay ? () => onClick(card) : null,
-      );
-
-      if (!canPlay) {
-        cardElement.classList.add("disabled");
-      }
-
-      domElement.appendChild(cardElement);
-    });
-  }
-
   onTrickComplete(): void {
     // No-op for PlayerHand
+  }
+
+  serializeForViewer(isOwnSeat: boolean): SerializedPlayerHand {
+    return {
+      type: "player",
+      cards: isOwnSeat
+        ? sortHand([...this._cards])
+        : this._cards.map(() => "hidden"),
+    };
   }
 }
 
@@ -133,11 +122,10 @@ export class PyramidHand extends Hand {
     });
   }
 
-  revealed(): Hand {
+  reveal(): void {
     for (let i = 0; i < this._faceUp.length; i++) {
       this._faceUp[i] = true;
     }
-    return this;
   }
 
   addCard(card: Card): void {
@@ -263,162 +251,37 @@ export class PyramidHand extends Hand {
     return uncovered;
   }
 
-  render(
-    domElement: HTMLElement,
-    isPlayable: (card: Card) => boolean,
-    onClick: (card: Card) => void,
-  ): void {
-    domElement.innerHTML = "";
-    domElement.classList.add("pyramid-hand");
-
-    const uncoveredIndices = this._getUncoveredIndices();
-    const rows = [
-      { start: 0, count: 3 }, // Top row
-      { start: 3, count: 4 }, // Middle row
-      { start: 7, count: 5 }, // Bottom row
-    ];
-
-    rows.forEach((rowInfo, rowIdx) => {
-      for (let colIdx = 0; colIdx < rowInfo.count; colIdx++) {
-        const cardIdx = rowInfo.start + colIdx;
-        const card = this._positions[cardIdx];
-
-        if (!card) continue;
-
-        const isFaceUp = this._faceUp[cardIdx];
-        const isUncovered = uncoveredIndices.includes(cardIdx);
-
-        let cardElement: HTMLDivElement;
-
-        if (isFaceUp) {
-          const canPlay = isPlayable(card);
-          cardElement = createCardElement(
-            card,
-            canPlay,
-            canPlay ? () => onClick(card) : null,
-          );
-
-          cardElement.classList.add(
-            isUncovered ? "pyramid-uncovered" : "pyramid-covered",
-          );
-
-          if (!canPlay) {
-            cardElement.classList.add("disabled");
-          }
-        } else {
-          // Face-down card
-          cardElement = document.createElement("div");
-          cardElement.className = "card pyramid-face-down";
-          if (!isUncovered) cardElement.classList.add("pyramid-covered");
-
-          const valueDiv = document.createElement("div");
-          valueDiv.className = "value";
-          valueDiv.textContent = "?";
-          cardElement.appendChild(valueDiv);
-        }
-
-        cardElement.style.gridRow = `${rowIdx + 1} / span 2`;
-        cardElement.style.gridColumn = `${2 * colIdx + (3 - rowIdx)} / span 2`;
-
-        domElement.appendChild(cardElement);
-      }
-    });
-
-    this._extraCards.forEach((card, idx) => {
-      const canPlay = isPlayable(card);
-      const cardElement = createCardElement(
-        card,
-        canPlay,
-        canPlay ? () => onClick(card) : null,
-      );
-      cardElement.classList.add("pyramid-extra");
-
-      if (!canPlay) {
-        cardElement.classList.add("disabled");
-      }
-
-      cardElement.style.gridRow = `${3} / span 2`;
-      cardElement.style.gridColumn = `${2 * (idx + 5) + 1} / span 2`;
-
-      domElement.appendChild(cardElement);
-    });
-  }
-
   onTrickComplete(): void {
     // Reveal newly uncovered cards after trick is complete
     this._revealNewlyUncoveredCards();
   }
-}
 
-export class HiddenHand extends Hand {
-  private _wrappedHand: PlayerHand;
+  serializeForViewer(isOwnSeat: boolean): SerializedPyramidHand {
+    // Pyramid is always visible (it's meant to be seen by all)
+    // But face-down cards are hidden until revealed
+    const positions = this._positions.map((card, idx) => {
+      if (card === null) return null;
+      return this._faceUp[idx] ? card : "hidden";
+    });
 
-  constructor(cards: Card[] = []) {
-    super();
-    this._wrappedHand = new PlayerHand(cards);
-  }
-
-  addCard(card: Card): void {
-    this._wrappedHand.addCard(card);
-  }
-
-  removeCard(card: Card): boolean {
-    return this._wrappedHand.removeCard(card);
-  }
-
-  getAvailableCards(): Card[] {
-    return this._wrappedHand.getAvailableCards();
-  }
-
-  isEmpty(): boolean {
-    return this._wrappedHand.isEmpty();
-  }
-
-  getSize(): number {
-    return this._wrappedHand.getSize();
-  }
-
-  getAllCards(): Card[] {
-    return this._wrappedHand.getAllCards();
-  }
-
-  getCards(): Card[] {
-    return this._wrappedHand.getCards();
-  }
-
-  render(
-    domElement: HTMLElement,
-    _isPlayable: (card: Card) => boolean,
-    _onClick: (card: Card) => void,
-  ): void {
-    domElement.innerHTML = "";
-    domElement.classList.remove("pyramid-hand");
-
-    const handSize = this.getSize();
-
-    for (let i = 0; i < handSize; i++) {
-      const cardBack = document.createElement("div");
-      cardBack.className = "card hidden";
-      const valueDiv = document.createElement("div");
-      valueDiv.className = "value";
-      valueDiv.textContent = "?";
-      cardBack.appendChild(valueDiv);
-      domElement.appendChild(cardBack);
-    }
-  }
-
-  unwrap(): PlayerHand {
-    return this._wrappedHand;
-  }
-
-  onTrickComplete(): void {
-    this._wrappedHand.onTrickComplete();
+    return {
+      type: "pyramid",
+      positions: positions as (Card | "hidden" | null)[],
+      extraCards: this._extraCards, // Extra cards are face-up
+    };
   }
 }
 
 export class SolitaireHand extends Hand {
   private _revealedCards: Card[];
   private _hiddenCards: Card[];
+
+  reveal() {
+    for (const card of this._hiddenCards) {
+      this._revealedCards.push(card);
+    }
+    this._hiddenCards = [];
+  }
 
   constructor(cards: Card[] = []) {
     super();
@@ -485,38 +348,17 @@ export class SolitaireHand extends Hand {
     }
   }
 
-  render(
-    domElement: HTMLElement,
-    isPlayable: (card: Card) => boolean,
-    onClick: (card: Card) => void,
-  ): void {
-    domElement.innerHTML = "";
-    domElement.classList.remove("pyramid-hand");
-    domElement.classList.add("solitaire-hand");
+  serializeForViewer(isOwnSeat: boolean): SerializedSolitaireHand {
+    // In solitaire mode, all seats are controlled by the same player
+    // So we always show revealed cards and hide the hidden ones
+    const cards: (Card | "hidden")[] = [
+      ...this._revealedCards,
+      ...this._hiddenCards.map(() => "hidden" as const),
+    ];
 
-    this._revealedCards.forEach((card) => {
-      const canPlay = isPlayable(card);
-      const cardElement = createCardElement(
-        card,
-        canPlay,
-        canPlay ? () => onClick(card) : null,
-      );
-
-      if (!canPlay) {
-        cardElement.classList.add("disabled");
-      }
-
-      domElement.appendChild(cardElement);
-    });
-
-    this._hiddenCards.forEach(() => {
-      const cardBack = document.createElement("div");
-      cardBack.className = "card hidden";
-      const valueDiv = document.createElement("div");
-      valueDiv.className = "value";
-      valueDiv.textContent = "?";
-      cardBack.appendChild(valueDiv);
-      domElement.appendChild(cardBack);
-    });
+    return {
+      type: "solitaire",
+      cards,
+    };
   }
 }

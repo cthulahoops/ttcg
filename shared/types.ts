@@ -1,7 +1,8 @@
 // ===== SHARED TYPE DEFINITIONS =====
 
-import type { HumanController, AIController } from "./controllers";
+import type { Controller, AIController } from "./controllers";
 import type { Seat } from "./seat";
+import type { Game } from "./game";
 
 export type Suit = "mountains" | "shadows" | "forests" | "hills" | "rings";
 
@@ -16,7 +17,7 @@ export interface Trick {
   cards: Card[];
 }
 
-export type Controller = HumanController | AIController;
+export { Controller, AIController };
 
 export interface ChoiceButton<T> {
   label: string;
@@ -45,6 +46,12 @@ export interface SetupContext {
   exchangeMade?: boolean;
 }
 
+export interface CharacterStatus {
+  met: boolean;
+  completable: boolean;
+  details?: string;
+}
+
 export interface CharacterDefinition {
   name: string;
   setupText: string;
@@ -60,7 +67,6 @@ export interface CharacterDefinition {
     isCompletable: (game: any, seat: Seat) => boolean;
   };
   display: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    renderStatus: (game: any, seat: Seat) => string;
+    renderStatus: (game: Game, seat: Seat) => CharacterStatus;
   };
 }

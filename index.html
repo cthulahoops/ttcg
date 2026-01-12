@@ -4,11 +4,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trick Taking Game</title>
-    <link rel="stylesheet" href="game.css">
+    <link rel="stylesheet" href="client/game.css">
 </head>
 <body>
     <div class="container">
-        <div class="main-content">
+        <!-- Lobby Screen -->
+        <div id="lobbyScreen" class="lobby-screen">
+            <h1>Trick Taking Card Game</h1>
+
+            <div id="lobbyMenu" class="lobby-menu">
+                <h2>Join a Game</h2>
+                <div class="lobby-form">
+                    <input type="text" id="playerNameInput" placeholder="Your Name" maxlength="20">
+                    <div class="join-room-group">
+                        <input type="text" id="roomCodeInput" placeholder="Room Code (4 letters)" maxlength="4" style="text-transform: uppercase;">
+                        <button id="generateCodeBtn" class="secondary-btn">Random Code</button>
+                    </div>
+                    <button id="joinRoomBtn" class="primary-btn">Join Room</button>
+                </div>
+                <div id="lobbyError" class="lobby-error"></div>
+            </div>
+
+            <div id="roomLobby" class="room-lobby" style="display: none;">
+                <h2>Room: <span id="roomCodeDisplay"></span></h2>
+                <div class="room-info">
+                    <p>Share this room code with other players</p>
+                </div>
+                <div class="players-list">
+                    <h3>Players (<span id="playerCount">0</span>/4)</h3>
+                    <ul id="playersList"></ul>
+                </div>
+                <div class="lobby-buttons">
+                    <button id="startGameBtn" class="primary-btn" disabled>Start Game</button>
+                    <button id="leaveRoomBtn" class="secondary-btn">Leave Room</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="gameScreen" class="main-content" style="display: none;">
             <div class="game-status" id="gameStatus">Click "New Game" to start</div>
 
             <!-- Unified Dialog Area -->
@@ -40,7 +73,7 @@
                         <div class="objective" id="objective1"></div>
                         <div class="tricks-won" id="tricks1">Tricks: 0</div>
                         <div class="objective-status" id="objectiveStatus1"></div>
-                        <div class="threat-card-area" id="threatCard1"></div>
+                        <div class="threat-card" id="threatCard1"></div>
                     </div>
                     <div class="hand" id="player1"></div>
                 </section>
@@ -50,7 +83,7 @@
                         <div class="objective" id="objective2"></div>
                         <div class="tricks-won" id="tricks2">Tricks: 0</div>
                         <div class="objective-status" id="objectiveStatus2"></div>
-                        <div class="threat-card-area" id="threatCard2"></div>
+                        <div class="threat-card" id="threatCard2"></div>
                     </div>
                     <div class="hand" id="player2"></div>
                 </section>
@@ -60,7 +93,7 @@
                         <div class="objective" id="objective3"></div>
                         <div class="tricks-won" id="tricks3">Tricks: 0</div>
                         <div class="objective-status" id="objectiveStatus3"></div>
-                        <div class="threat-card-area" id="threatCard3"></div>
+                        <div class="threat-card" id="threatCard3"></div>
                     </div>
                     <div class="hand" id="player3"></div>
                 </section>
@@ -70,7 +103,7 @@
                         <div class="objective" id="objective4"></div>
                         <div class="tricks-won" id="tricks4">Tricks: 0</div>
                         <div class="objective-status" id="objectiveStatus4"></div>
-                        <div class="threat-card-area" id="threatCard4"></div>
+                        <div class="threat-card" id="threatCard4"></div>
                     </div>
                     <div class="hand" id="player4"></div>
                 </section>
@@ -78,27 +111,13 @@
         </div>
 
         <div class="sidebar">
-            <div class="controls">
-                <label for="playerCount">Players:</label>
-                <select id="playerCount">
-                    <option value="1">1 Player (Solitaire)</option>
-                    <option value="2">2 Players (with Pyramid)</option>
-                    <option value="3">3 Players</option>
-                    <option value="4" selected>4 Players</option>
-                </select>
-                <button onclick="newGame()">New Game</button>
-            </div>
-
             <section class="section game-log">
-                <div class="game-log-header">
-                    <h2>Game Log</h2>
-                    <button onclick="copyGameLog()" class="copy-log-button">Copy Log</button>
-                </div>
+                <h2>Game Log</h2>
                 <div id="gameLog"></div>
             </section>
         </div>
     </div>
 
-    <script type="module" src="/game.ts"></script>
+    <script type="module" src="client/main.ts"></script>
 </body>
 </html>

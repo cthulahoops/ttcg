@@ -4,14 +4,29 @@
 This is a Lord of the Rings-themed trick-taking card game implemented as a single-page web application. The game supports 1-4 players with unique character abilities and win conditions.
 
 ## Project Structure
-- **game.html** - Main HTML structure and layout
+
+### Client (client/)
+- **index.html** - Main HTML structure and layout
 - **game.css** - All styling and visual design
-- **game.ts** - Game logic and main game loop
+- **display.ts** - Display/rendering functions for UI
+- **controllers.ts** - Client-side controller extensions
+- **utils.ts** - Client-side utility functions
+
+### Server (server/)
+- **server.ts** - Express server setup and HTTP endpoints
+- **game-server.ts** - Server-side game state management
+- **room-manager.ts** - Room/lobby management
+
+### Shared (shared/)
+Core game logic shared between client and server:
+- **game.ts** - Game class and main game loop logic
 - **hands.ts** - Hand class implementations (PlayerHand, PyramidHand, SolitaireHand, HiddenHand)
-- **utils.ts** - Utility functions for card sorting and rendering
 - **seat.ts** - Seat class for managing player state
-- **controllers.ts** - Controller implementations (HumanController, AIController)
-- **types.ts** - TypeScript type definitions
+- **controllers.ts** - Controller interface definitions
+- **types.ts** - TypeScript type definitions (Card, Suit, Trick, etc.)
+- **utils.ts** - Shared utility functions (card sorting, deck shuffling)
+- **serialized.ts** - Serialized types for network transmission (SerializedGame, SerializedSeat, SerializedTrickPlay)
+- **serialize.ts** - Serialization functions (serializeGameForSeat)
 - **characters/registry.ts** - Character definitions and registry
 
 ## Game Modes
@@ -163,6 +178,28 @@ game.fattyGiveCards(seat);  // ❌ Too specific
 game.gandalfSetup(seat);     // ❌ Too specific
 ```
 
+### Network Serialization
+
+For network play, the game state must be serialized before transmission. The serialization system provides:
+
+**Boundary Types** (`shared/serialized.ts`):
+- `SerializedGame` - Complete game state for a specific viewing seat
+- `SerializedSeat` - Seat data with controlled visibility
+- `SerializedTrickPlay` - Minimal trick play data `{ seatIndex, card, isTrump }`
+
+**Serialization Function** (`shared/serialize.ts`):
+- `serializeGameForSeat(game, seatIndex)` - Main entry point for serialization
+  - Converts Game instance to SerializedGame
+  - Controls what information is visible to each seat
+  - Single place to implement information hiding/filtering
+
+**Design Principles**:
+- Don't rely on automatic serialization of classes
+- Define explicit boundary types to prevent shipping large object graphs
+- Reduce payload size (TrickPlay uses seatIndex instead of full playerIndex)
+- Prevent accidental hand leakage (filter based on viewing seat)
+- Keep serialization logic centralized for easy hardening later
+
 ### UI Features
 - Real-time game log with scrolling
 - Visual card display with suit-specific gradients
@@ -173,7 +210,7 @@ game.gandalfSetup(seat);     // ❌ Too specific
 ## Development Notes
 
 ### Commands
-- **Type checking**: Use `npm run check` (NOT `npm run build`) to verify TypeScript types without building
+- **Type checking**: Use `bun run check` (NOT `bun run build`) to verify TypeScript types without building
 
 ### AI Behavior
 - Plays random legal moves (no strategy)
