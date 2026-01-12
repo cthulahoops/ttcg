@@ -171,7 +171,7 @@ export class Game {
     this.log(
       `${seat.getDisplayName()}'s hand is now visible to all players`,
     );
-    seat.hand = seat.hand!.revealed();
+    seat.hand!.reveal();
   }
 
   async drawThreatCard(

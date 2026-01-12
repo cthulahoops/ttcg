@@ -1,14 +1,18 @@
-import type { ClientMessage, ServerMessage, Player } from "../shared/protocol.js";
-import type { SerializedGame, SerializedPlayerHand, SerializedPyramidHand, SerializedSolitaireHand } from "../shared/serialized.js";
-import type { Card } from "../shared/types.js";
-import { addToGameLog } from "./display.js";
+import type { ClientMessage, ServerMessage, Player } from "../shared/protocol";
+import type {
+  SerializedGame,
+  SerializedPlayerHand,
+  SerializedPyramidHand,
+  SerializedSolitaireHand,
+} from "../shared/serialized";
+import type { Card } from "../shared/types";
+import { addToGameLog, updateGameDisplay, createCardElement } from "./display";
 
 // Client state
 let ws: WebSocket | null = null;
 let currentRoomCode: string | null = null;
 let currentPlayerId: string | null = null;
 let players: Player[] = [];
-let gameState: SerializedGame | null = null;
 
 // Get or create persistent player ID
 function getOrCreatePlayerId(): string {
@@ -38,7 +42,8 @@ let roomCodeDisplay: HTMLElement;
 let playerCount: HTMLElement;
 let playersList: HTMLElement;
 
-// Initialize WebSocket connection
+let gameStatus: SerializedGame | null = null;
+
 function connectWebSocket() {
   // Connect to WebSocket server on port 3000
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -105,8 +110,8 @@ function handleServerMessage(message: ServerMessage) {
         lobbyScreen.style.display = "none";
         gameScreen.style.display = "block";
       }
-      gameState = message.state;
-      updateGameDisplay();
+      gameStatus = message.state
+      updateGameDisplay(gameStatus, makeCardElementCallback());
       break;
 
     case "game_log":
@@ -220,8 +225,25 @@ function enableCardSelection(requestId: string, availableCards: Card[]) {
     availableCards,
   };
 
+  if (!gameStatus) {
+      return;
+  }
+
+  const currentGameStatus = gameStatus;
+
+  // Handle card click during selection
+  function handleCardClick(card: Card) {
+    if (currentCardSelectionRequest) {
+        const requestId = currentCardSelectionRequest.requestId;
+        currentCardSelectionRequest = null;
+        sendDecisionResponse(requestId, card);
+        // Update display to remove clickable state
+        updateGameDisplay(currentGameStatus, makeCardElementCallback());
+      }
+    }
+
   // Update the display to make available cards clickable
-  updateGameDisplay();
+  updateGameDisplay(currentGameStatus, makeCardElementCallback(availableCards, handleCardClick));
 }
 
 // Hide dialog
@@ -234,6 +256,36 @@ let currentCardSelectionRequest: {
   requestId: string;
   availableCards: Card[];
 } | null = null;
+
+// Helper to create card element callback
+function makeCardElementCallback(
+  availableCards: Card[] = [],
+  onCardClick?: (card: Card) => void
+): (card: Card | "hidden") => HTMLDivElement {
+  return (card: Card | "hidden") => {
+    if (card === "hidden") {
+      // Create card back
+      const cardBack = document.createElement("div");
+      cardBack.className = "card hidden";
+      const valueDiv = document.createElement("div");
+      valueDiv.className = "value";
+      valueDiv.textContent = "?";
+      cardBack.appendChild(valueDiv);
+      return cardBack;
+    }
+
+    // Check if card is selectable
+    const isSelectable = !!onCardClick && availableCards.some(
+      (c) => c.suit === card.suit && c.value === card.value
+    );
+
+    return createCardElement(
+      card,
+      isSelectable,
+      isSelectable ? () => onCardClick(card) : null
+    );
+  };
+}
 
 // UI Functions
 function showError(message: string) {
@@ -275,302 +327,6 @@ function updatePlayersList() {
 }
 
 // Update the game display with current game state
-function updateGameDisplay() {
-  if (!gameState) return;
-
-  // Update current trick display
-  updateTrickDisplay();
-
-  // Update player info (hands, tricks won, etc.)
-  updatePlayersDisplay();
-
-  // Update game status
-  updateStatusDisplay();
-
-  // Update lost card
-  updateLostCardDisplay();
-}
-
-function updateTrickDisplay() {
-  if (!gameState) return;
-
-  const trickDiv = document.getElementById("trickCards");
-  if (!trickDiv) return;
-
-  trickDiv.innerHTML = "";
-
-  const state = gameState; // Local const for null-safety
-  state.currentTrick.forEach((play) => {
-    const trickCardDiv = document.createElement("div");
-    trickCardDiv.className = "trick-card";
-
-    const seat = state.seats[play.seatIndex];
-    const labelDiv = document.createElement("div");
-    labelDiv.className = "player-label";
-    labelDiv.textContent = seat.character || `Player ${play.seatIndex + 1}`;
-    if (play.isTrump) {
-      labelDiv.textContent += " (TRUMP)";
-    }
-
-    trickCardDiv.appendChild(createCardElement(play.card));
-    trickCardDiv.appendChild(labelDiv);
-    trickDiv.appendChild(trickCardDiv);
-  });
-}
-
-function updatePlayersDisplay() {
-  if (!gameState) return;
-
-  const state = gameState; // Local const for null-safety
-  state.seats.forEach((seat, index) => {
-    const playerNum = index + 1;
-
-    // Update player name
-    const nameElement = document.getElementById(`playerName${playerNum}`);
-    if (nameElement) {
-      nameElement.textContent = seat.character || `Player ${playerNum}`;
-    }
-
-    // Update tricks count
-    const tricksElement = document.getElementById(`tricks${playerNum}`);
-    if (tricksElement) {
-      tricksElement.textContent = `Tricks: ${seat.tricksWon.length}`;
-    }
-
-    // Update hand display
-    const handElement = document.getElementById(`player${playerNum}`);
-    if (handElement && seat.hand) {
-      if (seat.hand.type === "player") {
-        renderPlayerHand(seat.hand, handElement);
-      } else if (seat.hand.type === "solitaire") {
-        renderSolitaireHand(seat.hand, handElement);
-      } else if (seat.hand.type === "pyramid") {
-        renderPyramidHand(seat.hand, handElement);
-      }
-    }
-
-    // Highlight active player
-    const playerDiv = document.querySelector(`[data-player="${playerNum}"]`);
-    if (playerDiv) {
-      if (index === state.currentPlayer) {
-        playerDiv.classList.add("active");
-      } else {
-        playerDiv.classList.remove("active");
-      }
-    }
-  });
-}
-
-function updateStatusDisplay() {
-  if (!gameState) return;
-
-  const statusDiv = document.getElementById("gameStatus");
-  if (!statusDiv) return;
-
-  const currentSeat = gameState.seats[gameState.currentPlayer];
-  const playerName = currentSeat.character || `Player ${gameState.currentPlayer + 1}`;
-
-  statusDiv.textContent = `${playerName}'s turn`;
-}
-
-function updateLostCardDisplay() {
-  if (!gameState) return;
-
-  const lostCardDiv = document.getElementById("lostCard");
-  if (!lostCardDiv) return;
-
-  lostCardDiv.innerHTML = "";
-
-  if (gameState.lostCard) {
-    lostCardDiv.appendChild(createCardElement(gameState.lostCard));
-  }
-}
-
-function createCardElement(
-  card: { suit: string; value: number },
-  clickable = false,
-  onClick?: () => void
-): HTMLDivElement {
-  const cardDiv = document.createElement("div");
-  cardDiv.className = `card ${card.suit}`;
-  if (clickable) {
-    cardDiv.classList.add("clickable");
-  }
-
-  const valueDiv = document.createElement("div");
-  valueDiv.className = "value";
-  valueDiv.textContent = card.value.toString();
-
-  const suitDiv = document.createElement("div");
-  suitDiv.className = "suit";
-  suitDiv.textContent = card.suit;
-
-  cardDiv.appendChild(valueDiv);
-  cardDiv.appendChild(suitDiv);
-
-  if (onClick) {
-    cardDiv.onclick = onClick;
-  }
-
-  return cardDiv;
-}
-
-function createCardBack(): HTMLDivElement {
-  const cardBack = document.createElement("div");
-  cardBack.className = "card hidden";
-  const valueDiv = document.createElement("div");
-  valueDiv.className = "value";
-  valueDiv.textContent = "?";
-  cardBack.appendChild(valueDiv);
-  return cardBack;
-}
-
-function renderPlayerHand(hand: SerializedPlayerHand, domElement: HTMLElement): void {
-  domElement.innerHTML = "";
-  domElement.classList.remove("pyramid-hand", "solitaire-hand");
-
-  hand.cards.forEach((card) => {
-    if (card === "hidden") {
-      domElement.appendChild(createCardBack());
-    } else {
-      // Check if card is selectable
-      const isSelectable = !!(currentCardSelectionRequest &&
-        currentCardSelectionRequest.availableCards.some(
-          (c) => c.suit === card.suit && c.value === card.value
-        ));
-
-      const cardElement = createCardElement(
-        card,
-        isSelectable,
-        isSelectable
-          ? () => handleCardClick(card)
-          : undefined
-      );
-      domElement.appendChild(cardElement);
-    }
-  });
-}
-
-// Handle card click during selection
-function handleCardClick(card: Card) {
-  if (currentCardSelectionRequest) {
-    const requestId = currentCardSelectionRequest.requestId;
-    currentCardSelectionRequest = null;
-    sendDecisionResponse(requestId, card);
-    // Update display to remove clickable state
-    updateGameDisplay();
-  }
-}
-
-function renderSolitaireHand(hand: SerializedSolitaireHand, domElement: HTMLElement): void {
-  domElement.innerHTML = "";
-  domElement.classList.remove("pyramid-hand");
-  domElement.classList.add("solitaire-hand");
-
-  hand.cards.forEach((card) => {
-    if (card === "hidden") {
-      domElement.appendChild(createCardBack());
-    } else {
-      // Check if card is selectable
-      const isSelectable = !!(currentCardSelectionRequest &&
-        currentCardSelectionRequest.availableCards.some(
-          (c) => c.suit === card.suit && c.value === card.value
-        ));
-
-      const cardElement = createCardElement(
-        card,
-        isSelectable,
-        isSelectable
-          ? () => handleCardClick(card)
-          : undefined
-      );
-      domElement.appendChild(cardElement);
-    }
-  });
-}
-
-function renderPyramidHand(hand: SerializedPyramidHand, domElement: HTMLElement): void {
-  domElement.innerHTML = "";
-  domElement.classList.add("pyramid-hand");
-
-  const rows = [
-    { start: 0, count: 3 }, // Top row
-    { start: 3, count: 4 }, // Middle row
-    { start: 7, count: 5 }, // Bottom row
-  ];
-
-  rows.forEach((rowInfo, rowIdx) => {
-    for (let colIdx = 0; colIdx < rowInfo.count; colIdx++) {
-      const cardIdx = rowInfo.start + colIdx;
-      const card = hand.positions[cardIdx];
-
-      if (card === null) continue; // Empty position
-
-      let cardElement: HTMLDivElement;
-
-      if (card === "hidden") {
-        // Face-down card
-        cardElement = document.createElement("div");
-        cardElement.className = "card pyramid-face-down";
-
-        const valueDiv = document.createElement("div");
-        valueDiv.className = "value";
-        valueDiv.textContent = "?";
-        cardElement.appendChild(valueDiv);
-      } else {
-        // Check if card is selectable
-        const isSelectable = !!(currentCardSelectionRequest &&
-          currentCardSelectionRequest.availableCards.some(
-            (c) => c.suit === card.suit && c.value === card.value
-          ));
-
-        // Face-up card
-        cardElement = createCardElement(
-          card,
-          isSelectable,
-          isSelectable
-            ? () => handleCardClick(card)
-            : undefined
-        );
-      }
-
-      // Position using CSS grid
-      cardElement.style.gridRow = `${rowIdx + 1} / span 2`;
-      cardElement.style.gridColumn = `${2 * colIdx + (3 - rowIdx)} / span 2`;
-
-      domElement.appendChild(cardElement);
-    }
-  });
-
-  // Render extra cards
-  hand.extraCards.forEach((card, idx) => {
-    let cardElement: HTMLDivElement;
-
-    if (card === "hidden") {
-      cardElement = createCardBack();
-    } else {
-      // Check if card is selectable
-      const isSelectable = !!(currentCardSelectionRequest &&
-        currentCardSelectionRequest.availableCards.some(
-          (c) => c.suit === card.suit && c.value === card.value
-        ));
-
-      cardElement = createCardElement(
-        card,
-        isSelectable,
-        isSelectable
-          ? () => handleCardClick(card)
-          : undefined
-      );
-    }
-
-    cardElement.classList.add("pyramid-extra");
-    cardElement.style.gridRow = `${3} / span 2`;
-    cardElement.style.gridColumn = `${2 * (idx + 5) + 1} / span 2`;
-
-    domElement.appendChild(cardElement);
-  });
-}
 
 // Initialize everything after DOM loads
 function initialize() {
@@ -581,9 +337,13 @@ function initialize() {
   roomLobby = document.getElementById("roomLobby")!;
   lobbyError = document.getElementById("lobbyError")!;
 
-  playerNameInput = document.getElementById("playerNameInput") as HTMLInputElement;
+  playerNameInput = document.getElementById(
+    "playerNameInput",
+  ) as HTMLInputElement;
   roomCodeInput = document.getElementById("roomCodeInput") as HTMLInputElement;
-  generateCodeBtn = document.getElementById("generateCodeBtn") as HTMLButtonElement;
+  generateCodeBtn = document.getElementById(
+    "generateCodeBtn",
+  ) as HTMLButtonElement;
   joinRoomBtn = document.getElementById("joinRoomBtn") as HTMLButtonElement;
   leaveRoomBtn = document.getElementById("leaveRoomBtn") as HTMLButtonElement;
   startGameBtn = document.getElementById("startGameBtn") as HTMLButtonElement;

@@ -2,6 +2,7 @@
 
 import type { Controller, AIController } from "./controllers";
 import type { Seat } from "./seat";
+import type { Game } from "./game";
 
 export type Suit = "mountains" | "shadows" | "forests" | "hills" | "rings";
 
@@ -66,7 +67,6 @@ export interface CharacterDefinition {
     isCompletable: (game: any, seat: Seat) => boolean;
   };
   display: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    renderStatus: (game: any, seat: Seat) => CharacterStatus;
+    renderStatus: (game: Game, seat: Seat) => CharacterStatus;
   };
 }

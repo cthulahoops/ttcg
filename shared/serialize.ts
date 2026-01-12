@@ -17,8 +17,12 @@ import type {
  * @param viewingSeatIndex - The seat index of the viewer (to control visibility)
  * @returns Serialized seat data
  */
-function serializeSeat(seat: Seat, viewingSeatIndex: number): SerializedSeat {
+function serializeSeat(game: Game, seat: Seat, viewingSeatIndex: number): SerializedSeat {
   const isOwnSeat = seat.seatIndex === viewingSeatIndex;
+
+  const objective = seat.characterDef?.objective.text
+    ?? seat.characterDef?.objective.getText?.(game)
+    ?? "";
 
   return {
     seatIndex: seat.seatIndex,
@@ -26,6 +30,8 @@ function serializeSeat(seat: Seat, viewingSeatIndex: number): SerializedSeat {
     threatCard: seat.threatCard,
     tricksWon: seat.tricksWon,
     playedCards: seat.playedCards,
+    status: seat.characterDef?.display.renderStatus(game, seat),
+    objective,
     hand: seat.hand ? seat.hand.serializeForViewer(isOwnSeat) : null,
   };
 }
@@ -58,7 +64,7 @@ export function serializeGameForSeat(
   return {
     playerCount: game.playerCount,
     numCharacters: game.numCharacters,
-    seats: game.seats.map((seat) => serializeSeat(seat, seatIndex)),
+    seats: game.seats.map((seat) => serializeSeat(game, seat, seatIndex)),
     currentTrick: game.currentTrick.map(serializeTrickPlay),
     currentPlayer: game.currentPlayer,
     leadPlayer: game.leadPlayer,

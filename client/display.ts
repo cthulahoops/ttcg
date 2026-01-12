@@ -1,22 +1,32 @@
-// Type-only imports (no runtime circular dependency)
-import type { Game } from "@shared/game.ts";
+import type { AnyCard, Card } from "@shared/types";
+import type {
+  SerializedGame,
+  SerializedSeat,
+  SerializedPlayerHand,
+  SerializedSolitaireHand,
+  SerializedPyramidHand,
+} from "@shared/serialized";
 
-import type { AnyCard, Card } from "@shared/types.ts";
-import type { Seat } from "@shared/seat.ts";
-import type { HumanController } from "./controllers.js";
+export function updateGameDisplay(game: SerializedGame, cardElement: (card: Card | "hidden") => HTMLDivElement) {
+  displayTrick(game);
+  updatePlayersDisplay(game, cardElement);
+  updateStatusDisplay(game);
+  updateLostCardDisplay(game);
+}
 
-export function displayTrick(gameState: Game): void {
+function displayTrick(gameState: SerializedGame): void {
   const trickDiv = document.getElementById("trickCards")!;
   trickDiv.innerHTML = "";
 
-  gameState.currentTrick.forEach((play: { playerIndex: number; card: AnyCard; isTrump: boolean }) => {
+  gameState.currentTrick.forEach((play) => {
     const trickCardDiv = document.createElement("div");
     trickCardDiv.className = "trick-card";
 
     const labelDiv = document.createElement("div");
     labelDiv.className = "player-label";
+    const seat = gameState.seats[play.seatIndex];
     labelDiv.textContent =
-      getPlayerDisplayName(gameState, play.playerIndex) +
+      (seat.character || `Player ${play.seatIndex + 1}`) +
       (play.isTrump ? " (TRUMP)" : "");
 
     trickCardDiv.appendChild(createCardElement(play.card));
@@ -25,7 +35,7 @@ export function displayTrick(gameState: Game): void {
   });
 }
 
-export function highlightActivePlayer(activePlayer: number): void {
+function highlightActivePlayer(activePlayer: number): void {
   document.querySelectorAll(".player").forEach((div) => {
     if ((div as HTMLElement).dataset.player === String(activePlayer + 1)) {
       div.classList.add("active");
@@ -35,19 +45,14 @@ export function highlightActivePlayer(activePlayer: number): void {
   });
 }
 
-export function displayHands(
-  gameState: Game,
-  seats: Seat[],
-  isLegalMove: (gameState: Game, playerIndex: number, card: Card) => boolean,
-  activePlayer?: number,
-): void {
+function displayHands(gameState: SerializedGame): void {
   highlightActivePlayer(gameState.currentPlayer);
 
-  // Hand rendering to be implemented as part of display system refactor
+  // Hand rendering handled elsewhere
 }
 
-export function updateGameStatus(
-  gameState: Game,
+function updateGameStatus(
+  gameState: SerializedGame,
   message: string | null = null,
 ): void {
   const statusDiv = document.getElementById("gameStatus")!;
@@ -57,17 +62,15 @@ export function updateGameStatus(
   } else if (gameState.currentPlayer === 0) {
     statusDiv.textContent = "Your turn! Click a card to play.";
   } else {
-    statusDiv.textContent = `${getPlayerDisplayName(gameState, gameState.currentPlayer)}'s turn...`;
+    const seat = gameState.seats[gameState.currentPlayer];
+    statusDiv.textContent = `${seat.character || `Player ${gameState.currentPlayer + 1}`}'s turn...`;
   }
 }
 
-
-export function getPlayerDisplayName(gameState: Game, playerIndex: number): string {
-  return gameState.seats[playerIndex].getDisplayName();
-}
-
-
-export function addToGameLog(message: string, important: boolean = false): void {
+export function addToGameLog(
+  message: string,
+  important: boolean = false,
+): void {
   const logDiv = document.getElementById("gameLog")!;
   const entry = document.createElement("div");
   entry.className = "log-entry" + (important ? " important" : "");
@@ -82,10 +85,9 @@ export function clearGameLog(): void {
   document.getElementById("gameLog")!.innerHTML = "";
 }
 
-
-export function updateTricksDisplay(gameState: Game): void {
+export function updateTricksDisplay(gameState: SerializedGame): void {
   for (const seat of gameState.seats) {
-    const trickCount = seat.getTrickCount();
+    const trickCount = seat.tricksWon.length;
 
     document.getElementById(`tricks${seat.seatIndex + 1}`)!.textContent =
       `Tricks: ${trickCount}`;
@@ -94,19 +96,15 @@ export function updateTricksDisplay(gameState: Game): void {
       `objectiveStatus${seat.seatIndex + 1}`,
     )!;
 
-    const characterDef = seat.characterDef;
-    if (!characterDef) {
-      statusDiv.innerHTML = "";
-      continue;
-    }
-
-    const status = characterDef.display.renderStatus(gameState, seat);
+    const status = seat.status;
+    if (status) {
     const icon = status.met
       ? '<span class="success">✓</span>'
       : status.completable
         ? '<span class="fail">✗</span>'
         : '<span class="fail">✗ (impossible)</span>';
     statusDiv.innerHTML = status.details ? `${icon} ${status.details}` : icon;
+    }
 
     const threatCardDiv = document.getElementById(
       `threatCard${seat.seatIndex + 1}`,
@@ -121,9 +119,7 @@ export function updateTricksDisplay(gameState: Game): void {
   }
 }
 
-
-
-export function updatePlayerHeadings(gameState: Game): void {
+function updatePlayerHeadings(gameState: SerializedGame): void {
   for (const seat of gameState.seats) {
     const nameElement = document.getElementById(
       `playerName${seat.seatIndex + 1}`,
@@ -134,22 +130,14 @@ export function updatePlayerHeadings(gameState: Game): void {
     const character = seat.character;
 
     if (character) {
-      nameElement.textContent = seat.getDisplayName();
+      nameElement.textContent = character;
     }
 
-    if (seat.characterDef) {
-      let objective: string;
-      if (seat.characterDef.objective?.getText) {
-        objective = seat.characterDef.objective.getText(gameState);
-      } else {
-        objective = seat.characterDef.objective.text!;
-      }
-
-      objectiveElement.textContent = `Goal: ${objective}`;
+    if (seat.objective) {
+      objectiveElement.textContent = `Goal: ${seat.objective}`;
     }
   }
 }
-
 
 export function createCardElement(
   card: AnyCard,
@@ -179,8 +167,7 @@ export function createCardElement(
   return cardDiv;
 }
 
-
-export function updateLostCardDisplay(gameState: Game): void {
+export function updateLostCardDisplay(gameState: SerializedGame): void {
   const lostCardDiv = document.getElementById("lostCard")!;
   lostCardDiv.innerHTML = "";
 
@@ -188,7 +175,6 @@ export function updateLostCardDisplay(gameState: Game): void {
     lostCardDiv.appendChild(createCardElement(gameState.lostCard));
   }
 }
-
 
 export function resetPlayerHeadings(): void {
   for (let p = 0; p < 4; p++) {
@@ -198,7 +184,6 @@ export function resetPlayerHeadings(): void {
     objectiveElement.textContent = "";
   }
 }
-
 
 export function copyGameLog(): void {
   const logDiv = document.getElementById("gameLog")!;
@@ -220,4 +205,118 @@ export function copyGameLog(): void {
       console.error("Failed to copy log:", err);
     },
   );
+}
+
+function updateStatusDisplay(gameState: SerializedGame) {
+  const statusDiv = document.getElementById("gameStatus");
+  if (!statusDiv) return;
+
+  const currentSeat = gameState.seats[gameState.currentPlayer];
+  const playerName =
+    currentSeat.character || `Player ${gameState.currentPlayer + 1}`;
+
+  statusDiv.textContent = `${playerName}'s turn`;
+}
+
+function updatePlayersDisplay(game: SerializedGame, cardElement: (card: Card | "hidden") => HTMLDivElement) {
+  // Update player names and objectives using display.ts functions
+  updatePlayerHeadings(game);
+  updateTricksDisplay(game);
+
+  // Update hands and active player highlighting
+  game.seats.forEach((seat, index) => {
+    const playerNum = index + 1;
+
+    // Update hand display
+    const handElement = document.getElementById(`player${playerNum}`);
+    if (handElement && seat.hand) {
+      if (seat.hand.type === "player") {
+        renderPlayerHand(seat.hand, handElement, cardElement);
+      } else if (seat.hand.type === "solitaire") {
+        renderSolitaireHand(seat.hand, handElement, cardElement);
+      } else if (seat.hand.type === "pyramid") {
+        renderPyramidHand(seat.hand, handElement, cardElement);
+      }
+    }
+
+    // Highlight active player
+    const playerDiv = document.querySelector(`[data-player="${playerNum}"]`);
+    if (playerDiv) {
+      if (index === game.currentPlayer) {
+        playerDiv.classList.add("active");
+      } else {
+        playerDiv.classList.remove("active");
+      }
+    }
+  });
+}
+
+function renderPlayerHand(
+  hand: SerializedPlayerHand,
+  domElement: HTMLElement,
+  cardElement: (card: Card | "hidden") => HTMLDivElement
+): void {
+  domElement.innerHTML = "";
+  domElement.classList.remove("pyramid-hand", "solitaire-hand");
+
+  hand.cards.forEach((card) => {
+    domElement.appendChild(cardElement(card));
+  });
+}
+
+
+function renderSolitaireHand(
+  hand: SerializedSolitaireHand,
+  domElement: HTMLElement,
+  cardElement: (card: Card | "hidden") => HTMLDivElement
+): void {
+  domElement.innerHTML = "";
+  domElement.classList.remove("pyramid-hand");
+  domElement.classList.add("solitaire-hand");
+
+  hand.cards.forEach((card) => {
+    domElement.appendChild(cardElement(card));
+  });
+}
+
+function renderPyramidHand(
+  hand: SerializedPyramidHand,
+  domElement: HTMLElement,
+  cardElement: (card: Card | "hidden") => HTMLDivElement
+): void {
+  domElement.innerHTML = "";
+  domElement.classList.add("pyramid-hand");
+
+  const rows = [
+    { start: 0, count: 3 }, // Top row
+    { start: 3, count: 4 }, // Middle row
+    { start: 7, count: 5 }, // Bottom row
+  ];
+
+  rows.forEach((rowInfo, rowIdx) => {
+    for (let colIdx = 0; colIdx < rowInfo.count; colIdx++) {
+      const cardIdx = rowInfo.start + colIdx;
+      const card = hand.positions[cardIdx];
+
+      if (card === null) continue; // Empty position
+
+      const element = cardElement(card);
+
+      // Position using CSS grid
+      element.style.gridRow = `${rowIdx + 1} / span 2`;
+      element.style.gridColumn = `${2 * colIdx + (3 - rowIdx)} / span 2`;
+
+      domElement.appendChild(element);
+    }
+  });
+
+  // Render extra cards
+  hand.extraCards.forEach((card, idx) => {
+    const element = cardElement(card);
+    element.classList.add("pyramid-extra");
+    element.style.gridRow = `${3} / span 2`;
+    element.style.gridColumn = `${2 * (idx + 5) + 1} / span 2`;
+
+    domElement.appendChild(element);
+  });
 }

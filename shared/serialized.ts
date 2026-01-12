@@ -2,7 +2,7 @@
 // These types define the boundary for what data gets sent over the network,
 // preventing accidental transmission of large object graphs or sensitive data.
 
-import type { Card, Suit, Trick } from "./types";
+import type { Card, Suit, Trick, CharacterStatus } from "./types";
 
 /**
  * Serialized representation of a trick play.
@@ -50,8 +50,8 @@ export interface SerializedSeat {
   threatCard: number | null;
   tricksWon: Trick[];
   playedCards: Card[];
-  // Hand data with position information preserved
-  // The hand type ("pyramid", "solitaire", "player") replaces the old isPyramid flag
+  status?: CharacterStatus;
+  objective: string;
   hand: SerializedHand | null;
 }
 

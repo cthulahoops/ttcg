@@ -21,17 +21,21 @@ export abstract class Hand {
 
   getCards?(): Card[];
 
-  revealed(): Hand {
-    return new PlayerHand(this.getAllCards());
-  }
+  abstract reveal(): void;
 }
 
 export class PlayerHand extends Hand {
   private _cards: Card[];
+  private _revealed: boolean;
 
   constructor(cards: Card[] = []) {
     super();
     this._cards = [...cards];
+    this._revealed = false;
+  }
+
+  reveal() {
+    this._revealed = true;
   }
 
   addCard(card: Card): void {
@@ -118,11 +122,10 @@ export class PyramidHand extends Hand {
     });
   }
 
-  revealed(): Hand {
+  reveal(): void {
     for (let i = 0; i < this._faceUp.length; i++) {
       this._faceUp[i] = true;
     }
-    return this;
   }
 
   addCard(card: Card): void {
@@ -272,6 +275,13 @@ export class PyramidHand extends Hand {
 export class SolitaireHand extends Hand {
   private _revealedCards: Card[];
   private _hiddenCards: Card[];
+
+  reveal() {
+    for (const card of this._hiddenCards) {
+      this._revealedCards.push(card);
+    }
+    this._hiddenCards = [];
+  }
 
   constructor(cards: Card[] = []) {
     super();
