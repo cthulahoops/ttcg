@@ -38,6 +38,11 @@ function handleCreateRoom(ws: ServerWebSocket<WSData>, msg: { playerName: string
     type: "room_created",
     roomCode,
     playerId: player.playerId,
+    players: [{
+      playerId: player.playerId,
+      name: player.name,
+      connected: player.connected,
+    }],
   };
   ws.send(JSON.stringify(reply));
 }
@@ -94,6 +99,43 @@ function handleLeaveRoom(ws: ServerWebSocket<WSData>) {
   }
 }
 
+async function handleStartGame(ws: ServerWebSocket<WSData>) {
+  const socketId = ws.data.socketId;
+
+  try {
+    // Create a callback to send messages to specific players
+    const sendToPlayer = (playerId: string, message: string) => {
+      const room = roomManager.getRoomBySocketId(socketId);
+      if (!room) return;
+
+      const player = room.players.get(playerId);
+      if (player && player.socketId) {
+        const playerSocket = sockets.get(player.socketId);
+        if (playerSocket) {
+          playerSocket.send(message);
+        }
+      }
+    };
+
+    await roomManager.startGame(socketId, sendToPlayer);
+
+    // Get the room to broadcast to all players
+    const room = roomManager.getRoomBySocketId(socketId);
+    if (room) {
+      const startedMsg: ServerMessage = {
+        type: "game_started",
+      };
+      broadcastToRoom(room.code, startedMsg);
+    }
+  } catch (error) {
+    const errorMsg: ServerMessage = {
+      type: "error",
+      message: error instanceof Error ? error.message : "Failed to start game",
+    };
+    ws.send(JSON.stringify(errorMsg));
+  }
+}
+
 Bun.serve<WSData>({
   port: 3000,
 
@@ -122,6 +164,8 @@ Bun.serve<WSData>({
         handleJoinRoom(ws, msg);
       } else if (msg.type === "leave_room") {
         handleLeaveRoom(ws);
+      } else if (msg.type === "start_game") {
+        handleStartGame(ws);
       }
     },
 

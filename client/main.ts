@@ -1,10 +1,12 @@
 import type { ClientMessage, ServerMessage, Player } from "../shared/protocol.js";
+import type { SerializedGame } from "../shared/serialized.js";
 
 // Client state
 let ws: WebSocket | null = null;
 let currentRoomCode: string | null = null;
 let currentPlayerId: string | null = null;
 let players: Player[] = [];
+let gameState: SerializedGame | null = null;
 
 // DOM elements - will be initialized after DOM loads
 let lobbyScreen: HTMLElement;
@@ -66,7 +68,9 @@ function handleServerMessage(message: ServerMessage) {
     case "room_created":
       currentRoomCode = message.roomCode;
       currentPlayerId = message.playerId;
+      players = message.players;
       showRoomLobby();
+      updatePlayersList();
       break;
 
     case "room_joined":
@@ -87,6 +91,17 @@ function handleServerMessage(message: ServerMessage) {
       // Remove player from list
       players = players.filter((p) => p.playerId !== message.playerId);
       updatePlayersList();
+      break;
+
+    case "game_started":
+      // Switch to game screen
+      lobbyScreen.style.display = "none";
+      gameScreen.style.display = "block";
+      break;
+
+    case "game_state":
+      gameState = message.state;
+      updateGameDisplay();
       break;
 
     case "error":
@@ -140,6 +155,147 @@ function updatePlayersList() {
 
   // Enable start button if we have at least 2 players
   startGameBtn.disabled = players.length < 2;
+}
+
+// Update the game display with current game state
+function updateGameDisplay() {
+  if (!gameState) return;
+
+  // Update current trick display
+  updateTrickDisplay();
+
+  // Update player info (hands, tricks won, etc.)
+  updatePlayersDisplay();
+
+  // Update game status
+  updateStatusDisplay();
+
+  // Update lost card
+  updateLostCardDisplay();
+}
+
+function updateTrickDisplay() {
+  if (!gameState) return;
+
+  const trickDiv = document.getElementById("trickCards");
+  if (!trickDiv) return;
+
+  trickDiv.innerHTML = "";
+
+  const state = gameState; // Local const for null-safety
+  state.currentTrick.forEach((play) => {
+    const trickCardDiv = document.createElement("div");
+    trickCardDiv.className = "trick-card";
+
+    const seat = state.seats[play.seatIndex];
+    const labelDiv = document.createElement("div");
+    labelDiv.className = "player-label";
+    labelDiv.textContent = seat.character || `Player ${play.seatIndex + 1}`;
+    if (play.isTrump) {
+      labelDiv.textContent += " (TRUMP)";
+    }
+
+    trickCardDiv.appendChild(createCardElement(play.card));
+    trickCardDiv.appendChild(labelDiv);
+    trickDiv.appendChild(trickCardDiv);
+  });
+}
+
+function updatePlayersDisplay() {
+  if (!gameState) return;
+
+  const state = gameState; // Local const for null-safety
+  state.seats.forEach((seat, index) => {
+    const playerNum = index + 1;
+
+    // Update player name
+    const nameElement = document.getElementById(`playerName${playerNum}`);
+    if (nameElement) {
+      nameElement.textContent = seat.character || `Player ${playerNum}`;
+    }
+
+    // Update tricks count
+    const tricksElement = document.getElementById(`tricks${playerNum}`);
+    if (tricksElement) {
+      tricksElement.textContent = `Tricks: ${seat.tricksWon.length}`;
+    }
+
+    // Update hand display
+    const handElement = document.getElementById(`player${playerNum}Hand`);
+    if (handElement) {
+      handElement.innerHTML = "";
+
+      if (seat.visibleCards) {
+        // Show actual cards if visible
+        seat.visibleCards.forEach((card) => {
+          handElement.appendChild(createCardElement(card, false));
+        });
+      } else {
+        // Show card backs for hidden cards
+        for (let i = 0; i < seat.handSize; i++) {
+          const cardBack = document.createElement("div");
+          cardBack.className = "card card-back";
+          handElement.appendChild(cardBack);
+        }
+      }
+    }
+
+    // Highlight active player
+    const playerDiv = document.querySelector(`[data-player="${playerNum}"]`);
+    if (playerDiv) {
+      if (index === state.currentPlayer) {
+        playerDiv.classList.add("active");
+      } else {
+        playerDiv.classList.remove("active");
+      }
+    }
+  });
+}
+
+function updateStatusDisplay() {
+  if (!gameState) return;
+
+  const statusDiv = document.getElementById("gameStatus");
+  if (!statusDiv) return;
+
+  const currentSeat = gameState.seats[gameState.currentPlayer];
+  const playerName = currentSeat.character || `Player ${gameState.currentPlayer + 1}`;
+
+  statusDiv.textContent = `${playerName}'s turn`;
+}
+
+function updateLostCardDisplay() {
+  if (!gameState) return;
+
+  const lostCardDiv = document.getElementById("lostCard");
+  if (!lostCardDiv) return;
+
+  lostCardDiv.innerHTML = "";
+
+  if (gameState.lostCard) {
+    lostCardDiv.appendChild(createCardElement(gameState.lostCard));
+  }
+}
+
+function createCardElement(card: { suit: string; value: number }, clickable = false): HTMLDivElement {
+  const cardDiv = document.createElement("div");
+  cardDiv.className = `card ${card.suit}`;
+  if (clickable) {
+    cardDiv.classList.add("clickable");
+  }
+
+  const valueDiv = document.createElement("div");
+  valueDiv.className = "value";
+  valueDiv.textContent = card.value.toString();
+
+  const suitDiv = document.createElement("div");
+  suitDiv.className = "suit";
+  suitDiv.textContent = card.suit;
+
+  cardDiv.appendChild(valueDiv);
+  cardDiv.appendChild(suitDiv);
+
+  return cardDiv;
 }
 
 // Initialize everything after DOM loads
@@ -205,8 +361,7 @@ function initialize() {
   });
 
   startGameBtn.addEventListener("click", () => {
-    // TODO: Implement game start logic
-    showError("Game start not yet implemented");
+    sendMessage({ type: "start_game" });
   });
 
   // Auto-uppercase room code input

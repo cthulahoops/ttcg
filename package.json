@@ -5,7 +5,7 @@
   "description": "Lord of the Rings-themed trick-taking card game",
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-    "dev:server": "bun server/server.ts",
+    "dev:server": "bun --watch server/server.ts",
     "dev:client": "vite",
     "build": "tsc -b",
     "preview": "vite preview",

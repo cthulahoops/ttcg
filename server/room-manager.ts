@@ -1,5 +1,8 @@
-import { Game } from "../shared/game.js";
+import { Game, runGame } from "../shared/game.js";
 import type { Player } from "../shared/protocol.js";
+import { NetworkController } from "./controllers.js";
+import { newGame } from "./game-server.js";
+import { serializeGameForSeat } from "../shared/serialize.js";
 
 interface InternalPlayer {
   playerId: string;        // UUID (separate from socket ID)
@@ -15,6 +18,7 @@ interface Room {
   game: Game | null;         // null for MVP, reserved for future
   started: boolean;          // false for MVP, reserved for future
   createdAt: number;         // Timestamp for cleanup
+  seatToPlayer: Map<number, string>; // Seat index to player ID mapping
 }
 
 export class RoomManager {
@@ -51,6 +55,7 @@ export class RoomManager {
       game: null,
       started: false,
       createdAt: Date.now(),
+      seatToPlayer: new Map(),
     };
 
     this.rooms.set(roomCode, room);
@@ -191,6 +196,68 @@ export class RoomManager {
       return undefined;
     }
     return this.rooms.get(lookup.roomCode);
+  }
+
+  /**
+   * Start the game for a room
+   * @param socketId - The socket ID of the player starting the game
+   * @param sendToPlayer - Callback to send a message to a specific player
+   * @returns The initialized game
+   * @throws Error if room doesn't exist, already started, or player is not the host
+   */
+  async startGame(
+    socketId: string,
+    sendToPlayer: (playerId: string, message: string) => void
+  ): Promise<Game> {
+    const lookup = this.socketToPlayer.get(socketId);
+    if (!lookup) {
+      throw new Error("Not in a room");
+    }
+
+    const { roomCode, playerId } = lookup;
+    const room = this.rooms.get(roomCode);
+    if (!room) {
+      throw new Error("Room not found");
+    }
+
+    if (room.started) {
+      throw new Error("Game already started");
+    }
+
+    if (room.hostId !== playerId) {
+      throw new Error("Only host can start the game");
+    }
+
+    // Create a NetworkController for each player and build seat-to-player mapping
+    const playerList = Array.from(room.players.values());
+    const controllers = playerList.map(() => new NetworkController());
+
+    // Map seat indices to player IDs (in the same order as controllers)
+    playerList.forEach((player, index) => {
+      room.seatToPlayer.set(index, player.playerId);
+    });
+
+    // Initialize the game
+    const game = newGame(controllers);
+    room.game = game;
+    room.started = true;
+
+    // Set up state change callback to broadcast game state
+    game.onStateChange = () => {
+      // Serialize and send game state to each player
+      for (const [seatIndex, playerId] of room.seatToPlayer.entries()) {
+        const serializedGame = serializeGameForSeat(game, seatIndex);
+        sendToPlayer(playerId, JSON.stringify({
+          type: "game_state",
+          state: serializedGame,
+        }));
+      }
+    };
+
+    // Start the game loop
+    runGame(game);
+
+    return game;
   }
 
   /**
