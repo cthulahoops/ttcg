@@ -227,7 +227,7 @@ function updatePlayersDisplay() {
     }
 
     // Update hand display
-    const handElement = document.getElementById(`player${playerNum}Hand`);
+    const handElement = document.getElementById(`player${playerNum}`);
     if (handElement && seat.hand) {
       if (seat.hand.type === "player") {
         renderPlayerHand(seat.hand, handElement);
