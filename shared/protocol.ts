@@ -13,7 +13,7 @@ export interface Player {
 // Client → Server messages
 export type ClientMessage =
   | { type: "ping" }
-  | { type: "join_room"; roomCode: string; playerName: string }
+  | { type: "join_room"; roomCode: string; playerName: string; playerId: string }
   | { type: "leave_room" }
   | { type: "start_game" }
   | { type: "decision_response"; requestId: string; response: any };

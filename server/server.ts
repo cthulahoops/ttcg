@@ -26,11 +26,11 @@ function broadcastToRoom(roomCode: string, message: ServerMessage, excludeSocket
 }
 
 // Message handlers
-function handleJoinRoom(ws: ServerWebSocket<WSData>, msg: { roomCode: string; playerName: string }) {
+function handleJoinRoom(ws: ServerWebSocket<WSData>, msg: { roomCode: string; playerName: string; playerId: string }) {
   const socketId = ws.data.socketId;
 
   try {
-    const { playerId, players } = roomManager.joinRoom(msg.roomCode, socketId, msg.playerName);
+    const { playerId, players } = roomManager.joinRoom(msg.roomCode, socketId, msg.playerName, msg.playerId);
 
     // Send to joiner
     const joinedReply: ServerMessage = {

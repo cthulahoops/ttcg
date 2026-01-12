@@ -36,11 +36,31 @@ export class RoomManager {
   /**
    * Join a room, creating it if it doesn't exist
    * @returns Player ID and current player list
-   * @throws Error if player already in a room
+   * @throws Error if socket already in a different room
    */
-  joinRoom(roomCode: string, socketId: string, playerName: string): { playerId: string; players: Player[] } {
+  joinRoom(roomCode: string, socketId: string, playerName: string, playerId: string): { playerId: string; players: Player[] } {
     // Check if socket already in a room
-    if (this.socketToPlayer.has(socketId)) {
+    const existingLookup = this.socketToPlayer.get(socketId);
+    if (existingLookup) {
+      // If trying to join the same room, allow reconnection
+      if (existingLookup.roomCode === roomCode && existingLookup.playerId === playerId) {
+        // Reconnection - just update the player info
+        const room = this.rooms.get(roomCode)!;
+        const player = room.players.get(playerId);
+        if (player) {
+          player.socketId = socketId;
+          player.connected = true;
+          player.name = playerName; // Update name in case it changed
+        }
+
+        const players: Player[] = Array.from(room.players.values()).map(p => ({
+          playerId: p.playerId,
+          name: p.name,
+          connected: p.connected,
+        }));
+
+        return { playerId, players };
+      }
       throw new Error("Already in a room");
     }
 
@@ -59,15 +79,24 @@ export class RoomManager {
       this.rooms.set(roomCode, room);
     }
 
-    const playerId = this.generatePlayerId();
-    const player: InternalPlayer = {
-      playerId,
-      socketId,
-      name: playerName,
-      connected: true,
-    };
+    // Check if player already exists in room (reconnection case)
+    let player = room.players.get(playerId);
+    if (player) {
+      // Reconnecting - update socket and connection status
+      player.socketId = socketId;
+      player.connected = true;
+      player.name = playerName; // Update name in case it changed
+    } else {
+      // New player
+      player = {
+        playerId,
+        socketId,
+        name: playerName,
+        connected: true,
+      };
+      room.players.set(playerId, player);
+    }
 
-    room.players.set(playerId, player);
     this.socketToPlayer.set(socketId, { roomCode, playerId });
 
     // Convert internal players to protocol Player type
@@ -279,12 +308,5 @@ export class RoomManager {
     }
 
     controller.handleResponse(requestId, response);
-  }
-
-  /**
-   * Generate a unique player ID using UUID
-   */
-  private generatePlayerId(): string {
-    return crypto.randomUUID();
   }
 }

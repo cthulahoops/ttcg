@@ -8,6 +8,16 @@ let currentPlayerId: string | null = null;
 let players: Player[] = [];
 let gameState: SerializedGame | null = null;
 
+// Get or create persistent player ID
+function getOrCreatePlayerId(): string {
+  let playerId = localStorage.getItem("playerId");
+  if (!playerId) {
+    playerId = crypto.randomUUID();
+    localStorage.setItem("playerId", playerId);
+  }
+  return playerId;
+}
+
 // DOM elements - will be initialized after DOM loads
 let lobbyScreen: HTMLElement;
 let gameScreen: HTMLElement;
@@ -344,6 +354,7 @@ function initialize() {
       type: "join_room",
       roomCode,
       playerName,
+      playerId: getOrCreatePlayerId(),
     });
   });
 
