@@ -14,11 +14,24 @@ let currentRoomCode: string | null = null;
 let currentPlayerId: string | null = null;
 let players: Player[] = [];
 
+// Generate a UUID v4 (fallback for environments without crypto.randomUUID)
+function generateUUID(): string {
+  if (crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback implementation
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 // Get or create persistent player ID
 function getOrCreatePlayerId(): string {
   let playerId = localStorage.getItem("playerId");
   if (!playerId) {
-    playerId = crypto.randomUUID();
+    playerId = generateUUID();
     localStorage.setItem("playerId", playerId);
   }
   return playerId;
