@@ -210,7 +210,7 @@ For network play, the game state must be serialized before transmission. The ser
 ## Development Notes
 
 ### Commands
-- **Type checking**: Use `npm run check` (NOT `npm run build`) to verify TypeScript types without building
+- **Type checking**: Use `bun run check` (NOT `bun run build`) to verify TypeScript types without building
 
 ### AI Behavior
 - Plays random legal moves (no strategy)

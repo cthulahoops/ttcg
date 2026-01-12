@@ -97,13 +97,12 @@ function handleServerMessage(message: ServerMessage) {
       updatePlayersList();
       break;
 
-    case "game_started":
-      // Switch to game screen
-      lobbyScreen.style.display = "none";
-      gameScreen.style.display = "block";
-      break;
-
     case "game_state":
+      // Switch to game screen if not already there
+      if (lobbyScreen.style.display !== "none") {
+        lobbyScreen.style.display = "none";
+        gameScreen.style.display = "block";
+      }
       gameState = message.state;
       updateGameDisplay();
       break;

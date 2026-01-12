@@ -24,7 +24,6 @@ export type ServerMessage =
   | { type: "room_joined"; roomCode: string; playerId: string; players: Player[] }
   | { type: "player_joined"; player: Player }
   | { type: "player_left"; playerId: string }
-  | { type: "game_started" }
   | { type: "game_state"; state: SerializedGame }
   | { type: "error"; message: string }
   | { type: "decision_request"; requestId: string; decision: DecisionRequest };

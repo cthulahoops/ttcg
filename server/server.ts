@@ -1,6 +1,7 @@
 // server/server.ts
 import { ClientMessage, ServerMessage } from "@shared/protocol";
 import { RoomManager } from "./room-manager.js";
+import { serializeGameForSeat } from "@shared/serialize";
 import type { ServerWebSocket } from "bun";
 
 // WebSocket data type
@@ -41,8 +42,29 @@ function handleJoinRoom(ws: ServerWebSocket<WSData>, msg: { roomCode: string; pl
     };
     ws.send(JSON.stringify(joinedReply));
 
-    // Broadcast to room (excluding joiner)
+    // If game is in progress, send current game state
     const room = roomManager.getRoom(msg.roomCode)!;
+    if (room.started && room.game) {
+      // Find which seat this player is in
+      let playerSeatIndex = -1;
+      for (const [seatIndex, pid] of room.seatToPlayer.entries()) {
+        if (pid === playerId) {
+          playerSeatIndex = seatIndex;
+          break;
+        }
+      }
+
+      if (playerSeatIndex !== -1) {
+        const serializedGame = serializeGameForSeat(room.game, playerSeatIndex);
+        const gameStateMsg: ServerMessage = {
+          type: "game_state",
+          state: serializedGame,
+        };
+        ws.send(JSON.stringify(gameStateMsg));
+      }
+    }
+
+    // Broadcast to room (excluding joiner)
     const newPlayer = room.players.get(playerId)!;
     const broadcastMsg: ServerMessage = {
       type: "player_joined",
@@ -97,15 +119,6 @@ async function handleStartGame(ws: ServerWebSocket<WSData>) {
     };
 
     await roomManager.startGame(socketId, sendToPlayer);
-
-    // Get the room to broadcast to all players
-    const room = roomManager.getRoomBySocketId(socketId);
-    if (room) {
-      const startedMsg: ServerMessage = {
-        type: "game_started",
-      };
-      broadcastToRoom(room.code, startedMsg);
-    }
   } catch (error) {
     const errorMsg: ServerMessage = {
       type: "error",
