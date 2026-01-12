@@ -30,8 +30,11 @@ export class NetworkController extends Controller {
   handleResponse(requestId: string, response: any): void {
     const pending = this.pendingRequests.get(requestId);
     if (pending) {
+      console.log(`[NetworkController] Received response for request ${requestId}, remaining pending: ${this.pendingRequests.size - 1}`);
       this.pendingRequests.delete(requestId);
       pending.resolve(response);
+    } else {
+      console.log(`[NetworkController] Received response for unknown request ${requestId}`);
     }
   }
 
@@ -40,7 +43,9 @@ export class NetworkController extends Controller {
    * Called when a player reconnects to ensure they receive any decisions they missed
    */
   resendPendingRequests(): void {
+    console.log(`[NetworkController] Resending ${this.pendingRequests.size} pending requests`);
     for (const pending of this.pendingRequests.values()) {
+      console.log(`[NetworkController] Resending request ${pending.requestId} with decision type: ${pending.decision?.type}`);
       this.sendMessage({
         type: "decision_request",
         requestId: pending.requestId,
@@ -59,6 +64,7 @@ export class NetworkController extends Controller {
       this.pendingRequests.set(requestId, { resolve, reject, requestId, decision });
     });
 
+    console.log(`[NetworkController] Sending decision request ${requestId}, type: ${decision?.type}, total pending: ${this.pendingRequests.size}`);
     this.sendMessage({
       type: "decision_request",
       requestId,

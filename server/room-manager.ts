@@ -199,6 +199,14 @@ export class RoomManager {
   }
 
   /**
+   * Get room code for a socket ID
+   */
+  getRoomCodeBySocketId(socketId: string): string | undefined {
+    const lookup = this.socketToPlayer.get(socketId);
+    return lookup?.roomCode;
+  }
+
+  /**
    * Start the game for a room
    * @param socketId - The socket ID of the player starting the game
    * @param sendToPlayer - Callback to send a message to a specific player

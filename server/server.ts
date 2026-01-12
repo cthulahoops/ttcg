@@ -31,6 +31,7 @@ function handleJoinRoom(ws: ServerWebSocket<WSData>, msg: { roomCode: string; pl
   const socketId = ws.data.socketId;
 
   try {
+    console.log(`[JoinRoom] Player ${msg.playerName} (${msg.playerId}) joining room ${msg.roomCode}`);
     const { playerId, players } = roomManager.joinRoom(msg.roomCode, socketId, msg.playerName, msg.playerId);
 
     // Send to joiner
@@ -45,6 +46,7 @@ function handleJoinRoom(ws: ServerWebSocket<WSData>, msg: { roomCode: string; pl
     // If game is in progress, send current game state
     const room = roomManager.getRoom(msg.roomCode)!;
     if (room.started && room.game) {
+      console.log(`[JoinRoom] Game already started, sending state to reconnecting player`);
       // Find which seat this player is in
       let playerSeatIndex = -1;
       for (const [seatIndex, pid] of room.seatToPlayer.entries()) {
@@ -53,6 +55,7 @@ function handleJoinRoom(ws: ServerWebSocket<WSData>, msg: { roomCode: string; pl
           break;
         }
       }
+      console.log(`[JoinRoom] Player ${playerId} is in seat ${playerSeatIndex}`);
 
       if (playerSeatIndex !== -1) {
         const serializedGame = serializeGameForSeat(room.game, playerSeatIndex);
@@ -65,7 +68,10 @@ function handleJoinRoom(ws: ServerWebSocket<WSData>, msg: { roomCode: string; pl
         // Resend any pending decision requests
         const controller = room.controllers.get(playerId);
         if (controller) {
+          console.log(`[Reconnect] Player ${playerId} reconnected, checking for pending requests...`);
           controller.resendPendingRequests();
+        } else {
+          console.log(`[Reconnect] No controller found for player ${playerId}`);
         }
       }
     }
@@ -110,17 +116,30 @@ async function handleStartGame(ws: ServerWebSocket<WSData>) {
   const socketId = ws.data.socketId;
 
   try {
+    // Get the room code before starting the game
+    const roomCode = roomManager.getRoomCodeBySocketId(socketId);
+    if (!roomCode) {
+      throw new Error("Not in a room");
+    }
+
     // Create a callback to send messages to specific players
     const sendToPlayer = (playerId: string, message: string) => {
-      const room = roomManager.getRoomBySocketId(socketId);
-      if (!room) return;
+      const room = roomManager.getRoom(roomCode);
+      if (!room) {
+        console.log(`[SendToPlayer] Room ${roomCode} not found`);
+        return;
+      }
 
       const player = room.players.get(playerId);
       if (player && player.socketId) {
         const playerSocket = sockets.get(player.socketId);
         if (playerSocket) {
           playerSocket.send(message);
+        } else {
+          console.log(`[SendToPlayer] Socket for player ${playerId} not found`);
         }
+      } else {
+        console.log(`[SendToPlayer] Player ${playerId} not found or not connected`);
       }
     };
 
