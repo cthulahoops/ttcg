@@ -275,6 +275,18 @@ export class RoomManager {
       }
     };
 
+    // Set up log callback to broadcast game log messages
+    game.onLog = (line: string, important?: boolean) => {
+      // Broadcast log message to all players
+      for (const playerId of room.players.keys()) {
+        sendToPlayer(playerId, JSON.stringify({
+          type: "game_log",
+          line,
+          important,
+        }));
+      }
+    };
+
     // Start the game loop
     runGame(game);
 

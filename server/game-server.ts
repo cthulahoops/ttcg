@@ -1,29 +1,18 @@
-import {
-     shuffleDeck
-} from "@shared/utils";
-import {
-    runGame,
-    Game
-} from "@shared/game";
+import { shuffleDeck } from "@shared/utils";
+import { runGame, Game } from "@shared/game";
+
+import { ProxyController, Controller } from "@shared/controllers";
+
+import { Card, Suit } from "@shared/types";
+
+import { Seat } from "@shared/seat";
+
+import { SolitaireHand, PlayerHand, PyramidHand } from "@shared/hands";
 
 import {
-    ProxyController,
-    Controller
-} from "@shared/controllers";
-
-import {
-    Card, Suit
-} from "@shared/types";
-
-import {
-    Seat
-} from "@shared/seat";
-
-import {
-    SolitaireHand, PlayerHand, PyramidHand
-} from "@shared/hands";
-
-import { characterRegistry, allCharacterNames } from "@shared/characters/registry";
+  characterRegistry,
+  allCharacterNames,
+} from "@shared/characters/registry";
 
 // All possible characters in the game (except Frodo who is automatically assigned)
 const allCharacters = allCharacterNames.filter((name) => name !== "Frodo");
@@ -32,15 +21,15 @@ export function newGame(controllers: Controller[]): Game {
   const playerCount = controllers.length;
 
   if (playerCount == 1) {
-      controllers.push(controllers[0]);
-      controllers.push(controllers[0]);
-      controllers.push(controllers[0]);
+    controllers.push(controllers[0]);
+    controllers.push(controllers[0]);
+    controllers.push(controllers[0]);
   }
 
   let pyramidController;
   if (playerCount == 2) {
-      pyramidController = new ProxyController();
-      controllers.push(pyramidController);
+    pyramidController = new ProxyController();
+    controllers.push(pyramidController);
   }
 
   shuffleDeck(controllers);
@@ -49,8 +38,7 @@ export function newGame(controllers: Controller[]): Game {
 
   const cardsPerPlayer = 36 / numCharacters;
 
-
-//  document.body.setAttribute("data-player-count", playerCount.toString());
+  //  document.body.setAttribute("data-player-count", playerCount.toString());
 
   let deck: Card[], lostCard: Card;
 
@@ -90,7 +78,7 @@ export function newGame(controllers: Controller[]): Game {
     seats.push(seat);
   }
 
-  const availableCharacters = shuffleDeck(allCharacters); // .slice(0, 4);
+  const availableCharacters = shuffleDeck(allCharacters).slice(0, 4);
   availableCharacters.push("Frodo");
 
   const gameState = new Game(
@@ -102,9 +90,8 @@ export function newGame(controllers: Controller[]): Game {
   );
   gameState.availableCharacters = availableCharacters;
 
-  return gameState
+  return gameState;
 }
-
 
 export function createDeck(): Card[] {
   const deck: Card[] = [];
@@ -134,5 +121,3 @@ function findPlayerWithCard(hands: Card[][], needle: Card): number {
   }
   return idx;
 }
-
-

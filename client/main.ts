@@ -1,6 +1,7 @@
 import type { ClientMessage, ServerMessage, Player } from "../shared/protocol.js";
 import type { SerializedGame, SerializedPlayerHand, SerializedPyramidHand, SerializedSolitaireHand } from "../shared/serialized.js";
 import type { Card } from "../shared/types.js";
+import { addToGameLog } from "./display.js";
 
 // Client state
 let ws: WebSocket | null = null;
@@ -106,6 +107,10 @@ function handleServerMessage(message: ServerMessage) {
       }
       gameState = message.state;
       updateGameDisplay();
+      break;
+
+    case "game_log":
+      addToGameLog(message.line, message.important);
       break;
 
     case "decision_request":

@@ -24,6 +24,7 @@ export type ServerMessage =
   | { type: "player_joined"; player: Player }
   | { type: "player_left"; playerName: string } // Use name instead of ID
   | { type: "game_state"; state: SerializedGame }
+  | { type: "game_log"; line: string; important?: boolean }
   | { type: "error"; message: string }
   | { type: "decision_request"; requestId: string; decision: DecisionRequest };
 
