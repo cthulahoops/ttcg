@@ -20,21 +20,13 @@ import type {
 function serializeSeat(seat: Seat, viewingSeatIndex: number): SerializedSeat {
   const isOwnSeat = seat.seatIndex === viewingSeatIndex;
 
-  // For now, we don't filter hidden information yet
-  // This will be the single place to add filtering later
-  const visibleCards = isOwnSeat && seat.hand
-    ? seat.hand.getAllCards()
-    : undefined;
-
   return {
     seatIndex: seat.seatIndex,
     character: seat.character,
     threatCard: seat.threatCard,
     tricksWon: seat.tricksWon,
     playedCards: seat.playedCards,
-    isPyramid: seat.isPyramid,
-    handSize: seat.hand ? seat.hand.getSize() : 0,
-    visibleCards,
+    hand: seat.hand ? seat.hand.serializeForViewer(isOwnSeat) : null,
   };
 }
 

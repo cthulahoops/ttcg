@@ -16,6 +16,31 @@ export interface SerializedTrickPlay {
 }
 
 /**
+ * Serialized hand types that preserve positional information
+ * while allowing cards to be hidden from non-viewing seats.
+ */
+export type SerializedPlayerHand = {
+  type: "player";
+  cards: (Card | "hidden")[];
+};
+
+export type SerializedPyramidHand = {
+  type: "pyramid";
+  positions: (Card | "hidden" | null)[]; // 12 positions, null = empty
+  extraCards: (Card | "hidden")[]; // Any cards beyond the pyramid
+};
+
+export type SerializedSolitaireHand = {
+  type: "solitaire";
+  cards: (Card | "hidden")[]; // Revealed cards first, then hidden
+};
+
+export type SerializedHand =
+  | SerializedPlayerHand
+  | SerializedPyramidHand
+  | SerializedSolitaireHand;
+
+/**
  * Serialized representation of a Seat.
  * Contains only the data needed by clients, not the full Seat object.
  */
@@ -25,10 +50,9 @@ export interface SerializedSeat {
   threatCard: number | null;
   tricksWon: Trick[];
   playedCards: Card[];
-  isPyramid: boolean;
-  // Hand data - only what the viewing seat is allowed to see
-  handSize: number; // Total number of cards in hand
-  visibleCards?: Card[]; // Only included if this seat's cards are visible to the viewer
+  // Hand data with position information preserved
+  // The hand type ("pyramid", "solitaire", "player") replaces the old isPyramid flag
+  hand: SerializedHand | null;
 }
 
 /**

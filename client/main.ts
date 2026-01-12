@@ -227,21 +227,43 @@ function updatePlayersDisplay() {
 
     // Update hand display
     const handElement = document.getElementById(`player${playerNum}Hand`);
-    if (handElement) {
+    if (handElement && seat.hand) {
       handElement.innerHTML = "";
 
-      if (seat.visibleCards) {
-        // Show actual cards if visible
-        seat.visibleCards.forEach((card) => {
-          handElement.appendChild(createCardElement(card, false));
+      if (seat.hand.type === "player" || seat.hand.type === "solitaire") {
+        // Render cards array (Card or "hidden")
+        seat.hand.cards.forEach((card) => {
+          if (card === "hidden") {
+            const cardBack = document.createElement("div");
+            cardBack.className = "card card-back";
+            handElement.appendChild(cardBack);
+          } else {
+            handElement.appendChild(createCardElement(card, false));
+          }
         });
-      } else {
-        // Show card backs for hidden cards
-        for (let i = 0; i < seat.handSize; i++) {
-          const cardBack = document.createElement("div");
-          cardBack.className = "card card-back";
-          handElement.appendChild(cardBack);
-        }
+      } else if (seat.hand.type === "pyramid") {
+        // For pyramid, render positions and extra cards
+        // TODO: Implement proper pyramid layout
+        seat.hand.positions.forEach((card) => {
+          if (card === null) {
+            // Empty position - don't render anything
+          } else if (card === "hidden") {
+            const cardBack = document.createElement("div");
+            cardBack.className = "card card-back";
+            handElement.appendChild(cardBack);
+          } else {
+            handElement.appendChild(createCardElement(card, false));
+          }
+        });
+        seat.hand.extraCards.forEach((card) => {
+          if (card === "hidden") {
+            const cardBack = document.createElement("div");
+            cardBack.className = "card card-back";
+            handElement.appendChild(cardBack);
+          } else {
+            handElement.appendChild(createCardElement(card, false));
+          }
+        });
       }
     }
 

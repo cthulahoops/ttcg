@@ -2,7 +2,6 @@ import {
   Hand as _Hand,
   PlayerHand,
   PyramidHand,
-  HiddenHand,
   SolitaireHand,
 } from "./hands";
 import {

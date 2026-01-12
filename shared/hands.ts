@@ -2,6 +2,12 @@
 
 import { sortHand } from "./utils";
 import type { Card } from "./types";
+import type {
+  SerializedHand,
+  SerializedPlayerHand,
+  SerializedPyramidHand,
+  SerializedSolitaireHand,
+} from "./serialized";
 
 export abstract class Hand {
   abstract addCard(card: Card): void;
@@ -11,6 +17,7 @@ export abstract class Hand {
   abstract getSize(): number;
   abstract getAllCards(): Card[];
   abstract onTrickComplete(): void;
+  abstract serializeForViewer(isOwnSeat: boolean): SerializedHand;
 
   getCards?(): Card[];
 
@@ -64,6 +71,13 @@ export class PlayerHand extends Hand {
 
   onTrickComplete(): void {
     // No-op for PlayerHand
+  }
+
+  serializeForViewer(isOwnSeat: boolean): SerializedPlayerHand {
+    return {
+      type: "player",
+      cards: isOwnSeat ? [...this._cards] : this._cards.map(() => "hidden"),
+    };
   }
 }
 
@@ -236,50 +250,20 @@ export class PyramidHand extends Hand {
     // Reveal newly uncovered cards after trick is complete
     this._revealNewlyUncoveredCards();
   }
-}
 
-export class HiddenHand extends Hand {
-  private _wrappedHand: PlayerHand;
+  serializeForViewer(isOwnSeat: boolean): SerializedPyramidHand {
+    // Pyramid is always visible (it's meant to be seen by all)
+    // But face-down cards are hidden until revealed
+    const positions = this._positions.map((card, idx) => {
+      if (card === null) return null;
+      return this._faceUp[idx] ? card : "hidden";
+    });
 
-  constructor(cards: Card[] = []) {
-    super();
-    this._wrappedHand = new PlayerHand(cards);
-  }
-
-  addCard(card: Card): void {
-    this._wrappedHand.addCard(card);
-  }
-
-  removeCard(card: Card): boolean {
-    return this._wrappedHand.removeCard(card);
-  }
-
-  getAvailableCards(): Card[] {
-    return this._wrappedHand.getAvailableCards();
-  }
-
-  isEmpty(): boolean {
-    return this._wrappedHand.isEmpty();
-  }
-
-  getSize(): number {
-    return this._wrappedHand.getSize();
-  }
-
-  getAllCards(): Card[] {
-    return this._wrappedHand.getAllCards();
-  }
-
-  getCards(): Card[] {
-    return this._wrappedHand.getCards();
-  }
-
-  unwrap(): PlayerHand {
-    return this._wrappedHand;
-  }
-
-  onTrickComplete(): void {
-    this._wrappedHand.onTrickComplete();
+    return {
+      type: "pyramid",
+      positions: positions as (Card | "hidden" | null)[],
+      extraCards: this._extraCards, // Extra cards are face-up
+    };
   }
 }
 
@@ -350,5 +334,19 @@ export class SolitaireHand extends Hand {
       const cardToReveal = this._hiddenCards.shift()!;
       this._revealedCards.push(cardToReveal);
     }
+  }
+
+  serializeForViewer(isOwnSeat: boolean): SerializedSolitaireHand {
+    // In solitaire mode, all seats are controlled by the same player
+    // So we always show revealed cards and hide the hidden ones
+    const cards: (Card | "hidden")[] = [
+      ...this._revealedCards,
+      ...this._hiddenCards.map(() => "hidden" as const),
+    ];
+
+    return {
+      type: "solitaire",
+      cards,
+    };
   }
 }

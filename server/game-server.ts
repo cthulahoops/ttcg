@@ -20,7 +20,7 @@ import {
 } from "@shared/seat";
 
 import {
-    SolitaireHand, HiddenHand, PlayerHand, PyramidHand
+    SolitaireHand, PlayerHand, PyramidHand
 } from "@shared/hands";
 
 import { characterRegistry, allCharacterNames } from "@shared/characters/registry";
@@ -82,10 +82,9 @@ export function newGame(controllers: Controller[]): Game {
     } else if (controller === pyramidController) {
       seat.hand = new PyramidHand(playerCards[i]);
       seat.isPyramid = true;
-    } else if (i === 0) {
-      seat.hand = new PlayerHand(playerCards[i]);
     } else {
-      seat.hand = new HiddenHand(playerCards[i]);
+      // All normal hands use PlayerHand; hiding is handled by serialization
+      seat.hand = new PlayerHand(playerCards[i]);
     }
 
     seats.push(seat);
