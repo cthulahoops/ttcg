@@ -17,7 +17,7 @@ let lobbyError: HTMLElement;
 
 let playerNameInput: HTMLInputElement;
 let roomCodeInput: HTMLInputElement;
-let createRoomBtn: HTMLButtonElement;
+let generateCodeBtn: HTMLButtonElement;
 let joinRoomBtn: HTMLButtonElement;
 let leaveRoomBtn: HTMLButtonElement;
 let startGameBtn: HTMLButtonElement;
@@ -63,14 +63,6 @@ function handleServerMessage(message: ServerMessage) {
   switch (message.type) {
     case "pong":
       // Heartbeat response
-      break;
-
-    case "room_created":
-      currentRoomCode = message.roomCode;
-      currentPlayerId = message.playerId;
-      players = message.players;
-      showRoomLobby();
-      updatePlayersList();
       break;
 
     case "room_joined":
@@ -309,7 +301,7 @@ function initialize() {
 
   playerNameInput = document.getElementById("playerNameInput") as HTMLInputElement;
   roomCodeInput = document.getElementById("roomCodeInput") as HTMLInputElement;
-  createRoomBtn = document.getElementById("createRoomBtn") as HTMLButtonElement;
+  generateCodeBtn = document.getElementById("generateCodeBtn") as HTMLButtonElement;
   joinRoomBtn = document.getElementById("joinRoomBtn") as HTMLButtonElement;
   leaveRoomBtn = document.getElementById("leaveRoomBtn") as HTMLButtonElement;
   startGameBtn = document.getElementById("startGameBtn") as HTMLButtonElement;
@@ -319,18 +311,14 @@ function initialize() {
   playersList = document.getElementById("playersList")!;
 
   // Event Handlers
-  createRoomBtn.addEventListener("click", () => {
-    const playerName = playerNameInput.value.trim();
-    if (!playerName) {
-      showError("Please enter your name");
-      return;
+  generateCodeBtn.addEventListener("click", () => {
+    // Generate a random 4-character room code (A-Z excluding I and O)
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+    let code = "";
+    for (let i = 0; i < 4; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
     }
-
-    showError("");
-    sendMessage({
-      type: "create_room",
-      playerName,
-    });
+    roomCodeInput.value = code;
   });
 
   joinRoomBtn.addEventListener("click", () => {
@@ -373,11 +361,7 @@ function initialize() {
   // Allow Enter key to submit
   playerNameInput.addEventListener("keypress", (e) => {
     if (e.key === "Enter") {
-      if (roomCodeInput.value.trim()) {
-        joinRoomBtn.click();
-      } else {
-        createRoomBtn.click();
-      }
+      joinRoomBtn.click();
     }
   });
 

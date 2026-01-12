@@ -13,7 +13,6 @@ interface InternalPlayer {
 
 interface Room {
   code: string;              // 4-char uppercase (A-Z minus I/O)
-  hostId: string;            // Player ID of host
   players: Map<string, InternalPlayer>;
   game: Game | null;         // null for MVP, reserved for future
   started: boolean;          // false for MVP, reserved for future
@@ -35,40 +34,9 @@ export class RoomManager {
   }
 
   /**
-   * Create a new room with the given player as host
-   * @returns The room code
-   */
-  createRoom(socketId: string, playerName: string): string {
-    const roomCode = this.generateRoomCode();
-    const playerId = this.generatePlayerId();
-
-    const player: InternalPlayer = {
-      playerId,
-      socketId,
-      name: playerName,
-      connected: true,
-    };
-
-    const room: Room = {
-      code: roomCode,
-      hostId: playerId,
-      players: new Map([[playerId, player]]),
-      game: null,
-      started: false,
-      createdAt: Date.now(),
-      seatToPlayer: new Map(),
-    };
-
-    this.rooms.set(roomCode, room);
-    this.socketToPlayer.set(socketId, { roomCode, playerId });
-
-    return roomCode;
-  }
-
-  /**
-   * Join an existing room
+   * Join a room, creating it if it doesn't exist
    * @returns Player ID and current player list
-   * @throws Error if room doesn't exist or player already in a room
+   * @throws Error if player already in a room
    */
   joinRoom(roomCode: string, socketId: string, playerName: string): { playerId: string; players: Player[] } {
     // Check if socket already in a room
@@ -76,9 +44,19 @@ export class RoomManager {
       throw new Error("Already in a room");
     }
 
-    const room = this.rooms.get(roomCode);
+    // Create room if it doesn't exist
+    let room = this.rooms.get(roomCode);
     if (!room) {
-      throw new Error("Room not found");
+      room = {
+        code: roomCode,
+        players: new Map(),
+        game: null,
+        started: false,
+        createdAt: Date.now(),
+        seatToPlayer: new Map(),
+        controllers: new Map(),
+      };
+      this.rooms.set(roomCode, room);
     }
 
     const playerId = this.generatePlayerId();
@@ -125,10 +103,6 @@ export class RoomManager {
     // If room is empty, delete it
     if (room.players.size === 0) {
       this.rooms.delete(roomCode);
-    } else if (room.hostId === playerId) {
-      // Transfer host to next player
-      const nextPlayer = Array.from(room.players.values())[0];
-      room.hostId = nextPlayer.playerId;
     }
 
     return { roomCode, playerId };
@@ -164,10 +138,6 @@ export class RoomManager {
       // If room is empty, delete it
       if (room.players.size === 0) {
         this.rooms.delete(roomCode);
-      } else if (room.hostId === playerId) {
-        // Transfer host to next player
-        const nextPlayer = Array.from(room.players.values())[0];
-        room.hostId = nextPlayer.playerId;
       }
 
       return { roomCode, playerId };
@@ -204,7 +174,7 @@ export class RoomManager {
    * @param socketId - The socket ID of the player starting the game
    * @param sendToPlayer - Callback to send a message to a specific player
    * @returns The initialized game
-   * @throws Error if room doesn't exist, already started, or player is not the host
+   * @throws Error if room doesn't exist or game already started
    */
   async startGame(
     socketId: string,
@@ -215,7 +185,7 @@ export class RoomManager {
       throw new Error("Not in a room");
     }
 
-    const { roomCode, playerId } = lookup;
+    const { roomCode } = lookup;
     const room = this.rooms.get(roomCode);
     if (!room) {
       throw new Error("Room not found");
@@ -223,10 +193,6 @@ export class RoomManager {
 
     if (room.started) {
       throw new Error("Game already started");
-    }
-
-    if (room.hostId !== playerId) {
-      throw new Error("Only host can start the game");
     }
 
     // Create a NetworkController for each player and build seat-to-player mapping

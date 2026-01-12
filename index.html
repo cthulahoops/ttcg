@@ -16,13 +16,11 @@
                 <h2>Join a Game</h2>
                 <div class="lobby-form">
                     <input type="text" id="playerNameInput" placeholder="Your Name" maxlength="20">
-                    <div class="lobby-buttons">
-                        <button id="createRoomBtn" class="primary-btn">Create Room</button>
-                        <div class="join-room-group">
-                            <input type="text" id="roomCodeInput" placeholder="Room Code" maxlength="4" style="text-transform: uppercase;">
-                            <button id="joinRoomBtn" class="primary-btn">Join Room</button>
-                        </div>
+                    <div class="join-room-group">
+                        <input type="text" id="roomCodeInput" placeholder="Room Code (4 letters)" maxlength="4" style="text-transform: uppercase;">
+                        <button id="generateCodeBtn" class="secondary-btn">Random Code</button>
                     </div>
+                    <button id="joinRoomBtn" class="primary-btn">Join Room</button>
                 </div>
                 <div id="lobbyError" class="lobby-error"></div>
             </div>

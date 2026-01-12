@@ -26,27 +26,6 @@ function broadcastToRoom(roomCode: string, message: ServerMessage, excludeSocket
 }
 
 // Message handlers
-function handleCreateRoom(ws: ServerWebSocket<WSData>, msg: { playerName: string }) {
-  const socketId = ws.data.socketId;
-  const roomCode = roomManager.createRoom(socketId, msg.playerName);
-
-  // Get the created player info
-  const room = roomManager.getRoom(roomCode)!;
-  const player = Array.from(room.players.values())[0];
-
-  const reply: ServerMessage = {
-    type: "room_created",
-    roomCode,
-    playerId: player.playerId,
-    players: [{
-      playerId: player.playerId,
-      name: player.name,
-      connected: player.connected,
-    }],
-  };
-  ws.send(JSON.stringify(reply));
-}
-
 function handleJoinRoom(ws: ServerWebSocket<WSData>, msg: { roomCode: string; playerName: string }) {
   const socketId = ws.data.socketId;
 
