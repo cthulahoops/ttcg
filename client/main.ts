@@ -93,8 +93,8 @@ function handleServerMessage(message: ServerMessage) {
       break;
 
     case "player_left":
-      // Remove player from list
-      players = players.filter((p) => p.playerId !== message.playerId);
+      // Remove player from list by name
+      players = players.filter((p) => p.name !== message.playerName);
       updatePlayersList();
       break;
 

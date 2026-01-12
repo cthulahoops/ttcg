@@ -3,9 +3,8 @@
 import type { SerializedGame } from "./serialized";
 import type { Card, AnyCard, ChoiceButtonOptions, ChoiceCardOptions } from "./types";
 
-// Player info shared between client and server
+// Player info shared between client and server (public information only)
 export interface Player {
-  playerId: string;
   name: string;
   connected: boolean;
 }
@@ -21,9 +20,9 @@ export type ClientMessage =
 // Server → Client messages
 export type ServerMessage =
   | { type: "pong" }
-  | { type: "room_joined"; roomCode: string; playerId: string; players: Player[] }
+  | { type: "room_joined"; roomCode: string; playerId: string; players: Player[] } // playerId only for self
   | { type: "player_joined"; player: Player }
-  | { type: "player_left"; playerId: string }
+  | { type: "player_left"; playerName: string } // Use name instead of ID
   | { type: "game_state"; state: SerializedGame }
   | { type: "error"; message: string }
   | { type: "decision_request"; requestId: string; decision: DecisionRequest };

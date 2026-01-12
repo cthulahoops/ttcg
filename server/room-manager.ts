@@ -54,7 +54,6 @@ export class RoomManager {
         }
 
         const players: Player[] = Array.from(room.players.values()).map(p => ({
-          playerId: p.playerId,
           name: p.name,
           connected: p.connected,
         }));
@@ -87,7 +86,14 @@ export class RoomManager {
       player.connected = true;
       player.name = playerName; // Update name in case it changed
     } else {
-      // New player
+      // New player - check for name uniqueness
+      const existingPlayerWithName = Array.from(room.players.values()).find(
+        p => p.name === playerName
+      );
+      if (existingPlayerWithName) {
+        throw new Error(`Player name "${playerName}" is already taken in this room`);
+      }
+
       player = {
         playerId,
         socketId,
@@ -99,9 +105,8 @@ export class RoomManager {
 
     this.socketToPlayer.set(socketId, { roomCode, playerId });
 
-    // Convert internal players to protocol Player type
+    // Convert internal players to protocol Player type (without exposing playerIds)
     const players: Player[] = Array.from(room.players.values()).map(p => ({
-      playerId: p.playerId,
       name: p.name,
       connected: p.connected,
     }));
@@ -112,7 +117,7 @@ export class RoomManager {
   /**
    * Leave the current room
    */
-  leaveRoom(socketId: string): { roomCode: string; playerId: string } | null {
+  leaveRoom(socketId: string): { roomCode: string; playerId: string; playerName: string } | null {
     const lookup = this.socketToPlayer.get(socketId);
     if (!lookup) {
       return null;
@@ -125,6 +130,10 @@ export class RoomManager {
       return null;
     }
 
+    // Get player name before removing
+    const player = room.players.get(playerId);
+    const playerName = player?.name || "";
+
     // Remove player from room
     room.players.delete(playerId);
     this.socketToPlayer.delete(socketId);
@@ -134,13 +143,13 @@ export class RoomManager {
       this.rooms.delete(roomCode);
     }
 
-    return { roomCode, playerId };
+    return { roomCode, playerId, playerName };
   }
 
   /**
    * Handle socket disconnection
    */
-  handleDisconnect(socketId: string): { roomCode: string; playerId: string } | null {
+  handleDisconnect(socketId: string): { roomCode: string; playerId: string; playerName: string } | null {
     const lookup = this.socketToPlayer.get(socketId);
     if (!lookup) {
       return null;
@@ -159,6 +168,8 @@ export class RoomManager {
       return null;
     }
 
+    const playerName = player.name;
+
     // If game hasn't started, remove player completely
     if (!room.started) {
       room.players.delete(playerId);
@@ -169,7 +180,7 @@ export class RoomManager {
         this.rooms.delete(roomCode);
       }
 
-      return { roomCode, playerId };
+      return { roomCode, playerId, playerName };
     }
 
     // If game has started, mark as disconnected but keep in room
@@ -177,7 +188,7 @@ export class RoomManager {
     player.socketId = null;
     this.socketToPlayer.delete(socketId);
 
-    return { roomCode, playerId };
+    return { roomCode, playerId, playerName };
   }
 
   /**

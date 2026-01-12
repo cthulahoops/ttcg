@@ -81,7 +81,6 @@ function handleJoinRoom(ws: ServerWebSocket<WSData>, msg: { roomCode: string; pl
     const broadcastMsg: ServerMessage = {
       type: "player_joined",
       player: {
-        playerId: newPlayer.playerId,
         name: newPlayer.name,
         connected: true,
       },
@@ -102,11 +101,11 @@ function handleLeaveRoom(ws: ServerWebSocket<WSData>) {
   const result = roomManager.leaveRoom(socketId);
 
   if (result) {
-    const { roomCode, playerId } = result;
+    const { roomCode, playerName } = result;
     // Broadcast to remaining players
     const leftMsg: ServerMessage = {
       type: "player_left",
-      playerId,
+      playerName,
     };
     broadcastToRoom(roomCode, leftMsg);
   }
@@ -200,11 +199,11 @@ Bun.serve<WSData>({
       sockets.delete(socketId);
 
       if (result) {
-        const { roomCode, playerId } = result;
+        const { roomCode, playerName } = result;
         // Broadcast to remaining players
         const leftMsg: ServerMessage = {
           type: "player_left",
-          playerId,
+          playerName,
         };
         broadcastToRoom(roomCode, leftMsg);
       }
