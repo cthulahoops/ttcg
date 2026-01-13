@@ -1,24 +1,20 @@
 import { useEffect } from "react";
 import type { SerializedGame } from "@shared/serialized";
 import { updateGameDisplay } from "./display";
-import { createCardElement } from "./display";
 
-import { Hand } from "./Hand";
+import { TrickArea } from "./TrickArea";
+import { LostCard } from "./LostCard";
+import { PlayerSeat } from "./PlayerSeat";
+import { GameStatus } from "./GameStatus";
 
 type GameScreenProps = {
   game: SerializedGame;
 };
 
 export function GameScreen({ game }: GameScreenProps) {
-  useEffect(() => {
-    updateGameDisplay(game, (card) => createCardElement(card));
-  }, [game]);
-
   return (
     <div className="main-content" id="gameScreen">
-      <div className="game-status" id="gameStatus">
-        Click "New Game" to start
-      </div>
+      <GameStatus game={game} />
 
       <section className="dialog-area" id="dialogArea">
         <div className="dialog-content">
@@ -30,35 +26,17 @@ export function GameScreen({ game }: GameScreenProps) {
       </section>
 
       <div className="display-columns">
-        <section className="trick-area">
-          <h2>Current Trick</h2>
-          <div className="trick-cards" id="trickCards"></div>
-        </section>
-
-        <section className="lost-card-section">
-          <h2>Lost Card</h2>
-          <div id="lostCard"></div>
-        </section>
+        <TrickArea game={game} />
+        <LostCard lostCard={game.lostCard} />
       </div>
 
       <div className="players">
-        {game.seats.map((seat, n) => (
-          <section key={n} className="player" data-player={n + 1}>
-            <div>
-              <h3 id={`playerName${n + 1}`}>Player {n + 1}</h3>
-              <div className="objective" id={`objective${n + 1}`} />
-              <div className="tricks-won" id={`tricks${n + 1}`}>
-                Tricks: 0
-              </div>
-              <div
-                className="objective-status"
-                id={`objectiveStatus${n + 1}`}
-              />
-              <div className="threat-card" id={`threatCard${n + 1}`} />
-            </div>
-
-            {seat.hand && <Hand hand={seat.hand} />}
-          </section>
+        {game.seats.map((seat) => (
+          <PlayerSeat
+            key={seat.seatIndex}
+            seat={seat}
+            isActive={seat.seatIndex === game.currentPlayer}
+          />
         ))}
       </div>
     </div>
