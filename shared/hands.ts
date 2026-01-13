@@ -80,7 +80,7 @@ export class PlayerHand extends Hand {
   serializeForViewer(isOwnSeat: boolean): SerializedPlayerHand {
     return {
       type: "player",
-      cards: isOwnSeat
+      cards: isOwnSeat || this._revealed
         ? sortHand([...this._cards])
         : this._cards.map(() => "hidden"),
     };
