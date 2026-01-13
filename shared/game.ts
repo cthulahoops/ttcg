@@ -322,7 +322,7 @@ export class Game {
       cards: sortHand(playableFrom),
     });
 
-    // The second player doesn't see what they're receiving (hidden information mechanic)
+    // Second player can choose from their hand plus the card they're receiving
     const availableTo = targetSeat.hand!.getAvailableCards();
     const isFrodoTo = targetSeat.character === "Frodo";
     const playableTo = isFrodoTo
@@ -330,6 +330,9 @@ export class Game {
           (card) => !(card.suit === "rings" && card.value === 1),
         )
       : availableTo;
+
+    // Include the received card in the choices (can return it if desired)
+    const choicesForSecond = [...playableTo, cardFromFirst];
 
     let messageTo = `Choose a card to give to ${seat.getDisplayName()}`;
     if (isFrodoTo) {
@@ -339,7 +342,7 @@ export class Game {
     const cardFromSecond = await targetSeat.controller.chooseCard({
       title: `${targetSeat.character} - Exchange with ${seat.character}`,
       message: messageTo,
-      cards: sortHand(playableTo),
+      cards: sortHand(choicesForSecond),
     });
 
     return {
@@ -352,6 +355,18 @@ export class Game {
 
   completeExchange(exchange: Exchange, setupContext: GameSetupContext): void {
     const { fromSeat, toSeat, cardFromFirst, cardFromSecond } = exchange;
+
+    // No-op if the same card is returned (second player returned what they received)
+    const sameCard =
+      cardFromFirst.suit === cardFromSecond.suit &&
+      cardFromFirst.value === cardFromSecond.value;
+
+    if (sameCard) {
+      this.log(
+        `${toSeat.getDisplayName()} returns the card to ${fromSeat.getDisplayName()}`,
+      );
+      return;
+    }
 
     fromSeat.hand!.removeCard(cardFromFirst);
     toSeat.hand!.removeCard(cardFromSecond);
