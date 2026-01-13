@@ -32,7 +32,7 @@ export function newGame(controllers: Controller[]): Game {
     controllers.push(pyramidController);
   }
 
-  shuffleDeck(controllers);
+  controllers = shuffleDeck(controllers);
 
   const numCharacters = controllers.length;
 
