@@ -24,8 +24,7 @@ export function useGameWebSocket() {
 
   useEffect(() => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const host = window.location.hostname;
-    const wsUrl = `${protocol}//${host}:3000`;
+    const wsUrl = `${protocol}//${window.location.host}`;
 
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
