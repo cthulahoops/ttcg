@@ -90,8 +90,6 @@ export function serializeGameForSeat(
     availableCharacters: game.availableCharacters,
     lostCard: game.lostCard,
     lastTrickWinner: game.lastTrickWinner,
-    // For now, expose full threat deck - can filter later
-    threatDeck: game.threatDeck,
     tricksToPlay: game.tricksToPlay,
   };
 }

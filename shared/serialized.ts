@@ -82,6 +82,5 @@ export interface SerializedGame {
   availableCharacters: string[];
   lostCard: Card | null;
   lastTrickWinner: number | null;
-  threatDeck: number[]; // Length only visible, or full deck for specific views
   tricksToPlay: number;
 }

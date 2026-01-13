@@ -217,10 +217,12 @@ export class Game {
       throw new Error("Threat deck is empty!");
     }
 
-    const threatCards: ThreatCard[] = this.threatDeck.map((value) => ({
-      value,
-      suit: "threat",
-    }));
+    const threatCards: ThreatCard[] = [...this.threatDeck]
+      .sort((a, b) => a - b)
+      .map((value) => ({
+        value,
+        suit: "threat",
+      }));
 
     const choice = await seat.controller.chooseCard({
       title: `${seat.character} - Choose Threat Card`,
