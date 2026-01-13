@@ -596,18 +596,7 @@ const GildorInglorian: CharacterDefinition = {
       const met = GildorInglorian.objective.check(game, seat);
       const completable = GildorInglorian.objective.isCompletable(game, seat);
 
-      let details: string;
-      if (game.finished) {
-        details = "Final trick played";
-      } else {
-        const availableCards = seat.hand!.getAvailableCards();
-        const forestsInHand = availableCards.filter(
-          (c) => c.suit === "forests",
-        ).length;
-        details = `Forests: ${forestsInHand} in hand`;
-      }
-
-      return { met, completable, details };
+      return { met, completable };
     },
   },
 };
