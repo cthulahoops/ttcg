@@ -1,7 +1,12 @@
 // shared/protocol.ts
 
 import type { SerializedGame } from "./serialized";
-import type { Card, AnyCard, ChoiceButtonOptions, ChoiceCardOptions } from "./types";
+import type {
+  Card,
+  AnyCard,
+  ChoiceButtonOptions,
+  ChoiceCardOptions,
+} from "./types";
 
 // Player info shared between client and server (public information only)
 export interface Player {
@@ -12,7 +17,12 @@ export interface Player {
 // Client → Server messages
 export type ClientMessage =
   | { type: "ping" }
-  | { type: "join_room"; roomCode: string; playerName: string; playerId: string }
+  | {
+      type: "join_room";
+      roomCode: string;
+      playerName: string;
+      playerId: string;
+    }
   | { type: "leave_room" }
   | { type: "start_game" }
   | { type: "decision_response"; requestId: string; response: any };
@@ -20,7 +30,13 @@ export type ClientMessage =
 // Server → Client messages
 export type ServerMessage =
   | { type: "pong" }
-  | { type: "room_joined"; roomCode: string; playerId: string; players: Player[] } // playerId only for self
+  | {
+      type: "room_joined";
+      roomCode: string;
+      playerId: string;
+      players: Player[];
+    } // playerId only for self
+  | { type: "room_left"; roomCode: string; playerName: string }
   | { type: "player_joined"; player: Player }
   | { type: "player_left"; playerName: string } // Use name instead of ID
   | { type: "game_state"; state: SerializedGame }
