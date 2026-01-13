@@ -20,7 +20,7 @@ export function GameLog({ entries }: GameLogProps) {
   }, [entries.length]);
 
   return (
-    <div className="game-log" ref={logRef}>
+    <section className="game-log" ref={logRef}>
       {entries.map((entry, idx) => (
         <div
           key={idx}
@@ -29,7 +29,7 @@ export function GameLog({ entries }: GameLogProps) {
           {entry.line}
         </div>
       ))}
-    </div>
+    </section>
   );
 }
 
