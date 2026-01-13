@@ -4,8 +4,9 @@ import path from "path";
 
 export default defineConfig({
   build: {
-    outDir: 'dist',
+    outDir: '../dist',
     assetsDir: 'assets',
+    emptyOutDir: true,
   },
   server: {
     open: true,
