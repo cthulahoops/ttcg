@@ -50,7 +50,7 @@ export function App() {
     );
   }
   return (
-    <div className="container">
+    <div className="lobby-screen">
       <LobbyScreen
         roomCode={state.roomCode}
         players={state.players}
