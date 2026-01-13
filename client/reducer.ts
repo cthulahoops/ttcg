@@ -1,9 +1,11 @@
 import type { ClientState } from "./types";
 import type { ServerMessage } from "@shared/protocol";
 
+type ClientAction = { type: "decision_cleared" };
+
 export function clientReducer(
   state: ClientState,
-  message: ServerMessage,
+  message: ServerMessage | ClientAction,
 ): ClientState {
   switch (message.type) {
     case "pong":
@@ -75,6 +77,12 @@ export function clientReducer(
             important: Boolean(message.important),
           },
         ],
+      };
+
+    case "decision_cleared":
+      return {
+        ...state,
+        pendingDecision: null,
       };
 
     default:

@@ -9,7 +9,7 @@ import { usePlayerName } from "./usePlayerName";
 
 export function App() {
   const { roomCode, setRoomCode, clearRoomCode } = useRoomCode();
-  const { state, connected, sendMessage } = useGameWebSocket();
+  const { state, connected, sendMessage, respondToDecision } = useGameWebSocket();
   const playerId = usePlayerId();
   const { playerName, setPlayerName } = usePlayerName();
 
@@ -36,13 +36,7 @@ export function App() {
       <div className="container">
         <GameScreen
           game={state.gameState}
-          onRespond={(requestId, response) =>
-            sendMessage({
-              type: "decision_response",
-              requestId,
-              response,
-            })
-          }
+          onRespond={respondToDecision}
           pendingDecision={state.pendingDecision}
         />
         <GameLog entries={state.gameLog} />

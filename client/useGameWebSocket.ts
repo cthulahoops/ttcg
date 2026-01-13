@@ -3,8 +3,6 @@ import { clientReducer } from "./reducer";
 import { ClientState } from "./types";
 import type { ClientMessage, ServerMessage } from "@shared/protocol";
 
-import { usePlayerId } from "./usePlayerId";
-
 export const initialClientState: ClientState = {
   connected: false,
   roomCode: null,
@@ -66,9 +64,15 @@ export function useGameWebSocket() {
     }
   }
 
+  function respondToDecision(requestId: string, response: unknown) {
+    dispatch({ type: "decision_cleared" });
+    sendMessage({ type: "decision_response", requestId, response });
+  }
+
   return {
     state,
     connected,
     sendMessage,
+    respondToDecision,
   };
 }
