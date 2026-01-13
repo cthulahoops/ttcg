@@ -7,7 +7,11 @@ export function App() {
   const { state, sendMessage } = useGameWebSocket();
 
   if (state.gameState) {
-    return <GameScreen game={state.gameState} />;
+    return (
+      <div className="container">
+        <GameScreen game={state.gameState} />;
+      </div>
+    );
   }
   return (
     <div className="container">

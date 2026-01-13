@@ -3,15 +3,15 @@ import type { SerializedGame } from "@shared/serialized";
 import { updateGameDisplay } from "./display";
 import { createCardElement } from "./display";
 
+import { Hand } from "./Hand";
+
 type GameScreenProps = {
   game: SerializedGame;
 };
 
 export function GameScreen({ game }: GameScreenProps) {
   useEffect(() => {
-    updateGameDisplay(game, (card) =>
-      card !== "hidden" ? createCardElement(card) : null,
-    );
+    updateGameDisplay(game, (card) => createCardElement(card));
   }, [game]);
 
   return (
@@ -42,18 +42,22 @@ export function GameScreen({ game }: GameScreenProps) {
       </div>
 
       <div className="players">
-        {[1, 2, 3, 4].map((n) => (
-          <section key={n} className="player" data-player={n}>
+        {game.seats.map((seat, n) => (
+          <section key={n} className="player" data-player={n + 1}>
             <div>
-              <h3 id={`playerName${n}`}>Player {n}</h3>
-              <div className="objective" id={`objective${n}`} />
-              <div className="tricks-won" id={`tricks${n}`}>
+              <h3 id={`playerName${n + 1}`}>Player {n + 1}</h3>
+              <div className="objective" id={`objective${n + 1}`} />
+              <div className="tricks-won" id={`tricks${n + 1}`}>
                 Tricks: 0
               </div>
-              <div className="objective-status" id={`objectiveStatus${n}`} />
-              <div className="threat-card" id={`threatCard${n}`} />
+              <div
+                className="objective-status"
+                id={`objectiveStatus${n + 1}`}
+              />
+              <div className="threat-card" id={`threatCard${n + 1}`} />
             </div>
-            <div className="hand" id={`player${n}`} />
+
+            {seat.hand && <Hand hand={seat.hand} />}
           </section>
         ))}
       </div>
