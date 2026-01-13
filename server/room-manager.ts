@@ -281,23 +281,6 @@ export class RoomManager {
   }
 
   /**
-   * Generate a unique 4-character room code (A-Z excluding I and O)
-   */
-  private generateRoomCode(): string {
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // 24 chars (no I or O)
-
-    let code: string;
-    do {
-      code = "";
-      for (let i = 0; i < 4; i++) {
-        code += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-    } while (this.rooms.has(code));
-
-    return code;
-  }
-
-  /**
    * Handle a decision response from a player
    * @param socketId - The socket ID of the player sending the response
    * @param requestId - The request ID this response is for
