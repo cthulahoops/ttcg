@@ -7,9 +7,9 @@
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "bun --watch server/server.ts",
     "dev:client": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc && vite build",
     "preview": "vite preview",
-    "check": "tsc -b --noEmit"
+    "check": "tsc"
   },
   "keywords": [],
   "author": "",
