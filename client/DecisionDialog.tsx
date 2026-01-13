@@ -40,20 +40,8 @@ export function DecisionDialog({ decision, onRespond }: DecisionDialogProps) {
       );
 
     case "select_card":
-      return (
-        <Dialog title="Select a card">
-          <div className="card-choices">
-            {decision.availableCards.map((card) => (
-              <Card
-                key={`${card.suit}-${card.value}`}
-                card={card}
-                clickable
-                onClick={() => onRespond(card)}
-              />
-            ))}
-          </div>
-        </Dialog>
-      );
+      // select_card is handled by making cards in the hand selectable, not via dialog
+      return null;
 
     default:
       return null;

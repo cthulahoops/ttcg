@@ -1,13 +1,21 @@
 import type { SerializedSeat } from "@shared/serialized";
+import type { Card as CardType } from "@shared/types";
 import { Hand } from "./Hand";
 import { Card } from "./Card";
 
 type PlayerSeatProps = {
   seat: SerializedSeat;
   isActive: boolean;
+  selectableCards?: CardType[] | null;
+  onSelectCard?: (card: CardType) => void;
 };
 
-export function PlayerSeat({ seat, isActive }: PlayerSeatProps) {
+export function PlayerSeat({
+  seat,
+  isActive,
+  selectableCards,
+  onSelectCard,
+}: PlayerSeatProps) {
   const {
     seatIndex,
     character,
@@ -54,7 +62,13 @@ export function PlayerSeat({ seat, isActive }: PlayerSeatProps) {
         </div>
       </div>
 
-      {hand && <Hand hand={hand} />}
+      {hand && (
+        <Hand
+          hand={hand}
+          selectableCards={selectableCards}
+          onSelectCard={onSelectCard}
+        />
+      )}
     </section>
   );
 }
