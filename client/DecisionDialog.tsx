@@ -26,16 +26,14 @@ export function DecisionDialog({ decision, onRespond }: DecisionDialogProps) {
     case "choose_card":
       return (
         <Dialog title={decision.options.title}>
-          <div className="card-choices">
-            {decision.options.cards.map((card) => (
-              <Card
-                key={`${card.suit}-${card.value}`}
-                card={card}
-                clickable
-                onClick={() => onRespond(card)}
-              />
-            ))}
-          </div>
+          {decision.options.cards.map((card) => (
+            <Card
+              key={`${card.suit}-${card.value}`}
+              card={card}
+              clickable
+              onClick={() => onRespond(card)}
+            />
+          ))}
         </Dialog>
       );
 

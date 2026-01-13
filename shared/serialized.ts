@@ -16,6 +16,14 @@ export interface SerializedTrickPlay {
 }
 
 /**
+ * Serialized representation of a completed trick with its winner.
+ */
+export interface SerializedCompletedTrick {
+  plays: SerializedTrickPlay[];
+  winner: number;
+}
+
+/**
  * Serialized hand types that preserve positional information
  * while allowing cards to be hidden from non-viewing seats.
  */
@@ -65,6 +73,7 @@ export interface SerializedGame {
   numCharacters: number;
   seats: SerializedSeat[];
   currentTrick: SerializedTrickPlay[];
+  completedTricks: SerializedCompletedTrick[];
   currentPlayer: number;
   leadPlayer: number;
   currentTrickNumber: number;

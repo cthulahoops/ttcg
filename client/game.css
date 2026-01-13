@@ -204,6 +204,11 @@ button:hover {
     color: #aed581;
 }
 
+.trick-card.winner .card {
+    outline: 3px solid gold;
+    outline-offset: 2px;
+}
+
 .card.clickable {
     cursor: pointer;
     transition: transform 0.2s;

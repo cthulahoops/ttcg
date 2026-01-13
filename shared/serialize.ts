@@ -3,12 +3,13 @@
 // This is the single place to control what data is sent to clients
 // and to implement information hiding/filtering.
 
-import type { Game, TrickPlay } from "./game";
+import type { Game, TrickPlay, CompletedTrick } from "./game";
 import type { Seat } from "./seat";
 import type {
   SerializedGame,
   SerializedSeat,
   SerializedTrickPlay,
+  SerializedCompletedTrick,
 } from "./serialized";
 
 /**
@@ -50,6 +51,20 @@ function serializeTrickPlay(trickPlay: TrickPlay): SerializedTrickPlay {
 }
 
 /**
+ * Serialize a CompletedTrick.
+ * @param completedTrick - The completed trick to serialize
+ * @returns Serialized completed trick
+ */
+function serializeCompletedTrick(
+  completedTrick: CompletedTrick,
+): SerializedCompletedTrick {
+  return {
+    plays: completedTrick.plays.map(serializeTrickPlay),
+    winner: completedTrick.winner,
+  };
+}
+
+/**
  * Serialize the entire game state for a specific seat.
  * This is the main entry point for serialization.
  *
@@ -66,6 +81,7 @@ export function serializeGameForSeat(
     numCharacters: game.numCharacters,
     seats: game.seats.map((seat) => serializeSeat(game, seat, seatIndex)),
     currentTrick: game.currentTrick.map(serializeTrickPlay),
+    completedTricks: game.completedTricks.map(serializeCompletedTrick),
     currentPlayer: game.currentPlayer,
     leadPlayer: game.leadPlayer,
     currentTrickNumber: game.currentTrickNumber,

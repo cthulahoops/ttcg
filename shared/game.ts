@@ -31,6 +31,11 @@ export interface TrickPlay {
   isTrump: boolean;
 }
 
+export interface CompletedTrick {
+  plays: TrickPlay[];
+  winner: number;
+}
+
 export interface GameSetupContext {
   frodoSeat: Seat | null;
   exchangeMade?: boolean;
@@ -50,6 +55,7 @@ export class Game {
   numCharacters: number;
   seats: Seat[];
   currentTrick: TrickPlay[];
+  completedTricks: CompletedTrick[];
   currentPlayer: number;
   leadPlayer: number;
   currentTrickNumber: number;
@@ -74,6 +80,7 @@ export class Game {
     this.numCharacters = numCharacters;
     this.seats = seats;
     this.currentTrick = [];
+    this.completedTricks = [];
     this.currentPlayer = startPlayer;
     this.leadPlayer = startPlayer;
     this.currentTrickNumber = 0;
@@ -659,6 +666,12 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
     }
 
     const winnerIndex = determineTrickWinner(gameState);
+
+    // Store completed trick with plays and winner
+    gameState.completedTricks.push({
+      plays: [...gameState.currentTrick],
+      winner: winnerIndex,
+    });
 
     const trickCards = gameState.currentTrick.map((play) => play.card);
     gameState.seats[winnerIndex].addTrick(
