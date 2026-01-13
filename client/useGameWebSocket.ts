@@ -10,6 +10,8 @@ export const initialClientState: ClientState = {
   players: [],
   gameState: null,
   error: null,
+  pendingDecision: null,
+  gameLog: [],
 };
 
 export function useGameWebSocket() {

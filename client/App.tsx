@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { LobbyScreen } from "./LobbyScreen";
 import { GameScreen } from "./GameScreen";
+import { GameLog } from "./GameLog";
 import { useGameWebSocket } from "./useGameWebSocket";
 
 export function App() {
@@ -9,7 +10,18 @@ export function App() {
   if (state.gameState) {
     return (
       <div className="container">
-        <GameScreen game={state.gameState} />;
+        <GameScreen
+          game={state.gameState}
+          onRespond={(requestId, response) =>
+            sendMessage({
+              type: "decision_response",
+              requestId,
+              response,
+            })
+          }
+          pendingDecision={state.pendingDecision}
+        />
+        <GameLog entries={state.gameLog} />
       </div>
     );
   }

@@ -1,5 +1,10 @@
-import type { Player } from "@shared/protocol";
+import type { Player, DecisionRequest } from "@shared/protocol";
 import type { SerializedGame } from "@shared/serialized";
+
+export type GameLogEntry = {
+  line: string;
+  important: boolean;
+};
 
 export type ClientState = {
   connected: boolean;
@@ -9,6 +14,12 @@ export type ClientState = {
   players: Player[];
 
   gameState: SerializedGame | null;
+  gameLog: GameLogEntry[];
+
+  pendingDecision: {
+    requestId: string;
+    decision: DecisionRequest;
+  } | null;
 
   error: string | null;
 };

@@ -1,29 +1,36 @@
 import { useEffect } from "react";
 import type { SerializedGame } from "@shared/serialized";
-import { updateGameDisplay } from "./display";
+import type { DecisionRequest, ClientMessage } from "@shared/protocol";
 
 import { TrickArea } from "./TrickArea";
 import { LostCard } from "./LostCard";
 import { PlayerSeat } from "./PlayerSeat";
 import { GameStatus } from "./GameStatus";
+import { DecisionDialog } from "./DecisionDialog";
 
 type GameScreenProps = {
   game: SerializedGame;
+  pendingDecision: { requestId: string; decision: DecisionRequest } | null;
+  onRespond: (requestId: string, response: unknown) => void;
 };
 
-export function GameScreen({ game }: GameScreenProps) {
+export function GameScreen({
+  game,
+  pendingDecision,
+  onRespond,
+}: GameScreenProps) {
   return (
     <div className="main-content" id="gameScreen">
       <GameStatus game={game} />
 
-      <section className="dialog-area" id="dialogArea">
-        <div className="dialog-content">
-          <h3 id="dialogTitle"></h3>
-          <div id="dialogMessage" className="dialog-message"></div>
-          <div id="dialogChoices" className="dialog-buttons"></div>
-          <div id="dialogInfo" className="dialog-info"></div>
-        </div>
-      </section>
+      {pendingDecision && (
+        <DecisionDialog
+          decision={pendingDecision.decision}
+          onRespond={(response) =>
+            onRespond(pendingDecision.requestId, response)
+          }
+        />
+      )}
 
       <div className="display-columns">
         <TrickArea game={game} />

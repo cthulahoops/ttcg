@@ -37,12 +37,34 @@ export function clientReducer(
       return {
         ...state,
         gameState: message.state,
+        pendingDecision: null,
       };
 
     case "error":
       return {
         ...state,
         error: message.message,
+      };
+
+    case "decision_request":
+      return {
+        ...state,
+        pendingDecision: {
+          requestId: message.requestId,
+          decision: message.decision,
+        },
+      };
+
+    case "game_log":
+      return {
+        ...state,
+        gameLog: [
+          ...state.gameLog,
+          {
+            line: message.line,
+            important: Boolean(message.important),
+          },
+        ],
       };
 
     default:
