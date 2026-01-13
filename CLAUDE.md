@@ -13,9 +13,10 @@ This is a Lord of the Rings-themed trick-taking card game implemented as a singl
 - **utils.ts** - Client-side utility functions
 
 ### Server (server/)
-- **server.ts** - Express server setup and HTTP endpoints
-- **game-server.ts** - Server-side game state management
-- **room-manager.ts** - Room/lobby management
+- **server.ts** - Bun WebSocket server, handles connections and message routing
+- **room-manager.ts** - Room/lobby management, game lifecycle
+- **game-server.ts** - Server-side game initialization (newGame)
+- **controllers.ts** - NetworkController for remote players
 
 ### Shared (shared/)
 Core game logic shared between client and server:
@@ -110,11 +111,12 @@ All hands implement:
 
 ### Seat Class
 The `Seat` class represents a player position with:
+- `seatIndex` - Position in the game (0-3)
 - `hand` - Hand instance (PlayerHand, PyramidHand, SolitaireHand, or HiddenHand)
 - `character` - Assigned character name
 - `tricksWon` - Array of tricks won by this seat
 - `playedCards` - Array of all cards played by this seat (in order)
-- `controller` - HumanController or AIController
+- `controller` - AIController, NetworkController, or ProxyController (for pyramid)
 - `isPyramid` - Flag for 2-player pyramid seat
 
 ### Game Class
@@ -178,27 +180,39 @@ game.fattyGiveCards(seat);  // ❌ Too specific
 game.gandalfSetup(seat);     // ❌ Too specific
 ```
 
-### Network Serialization
+### Controller Classes
 
-For network play, the game state must be serialized before transmission. The serialization system provides:
+Controllers handle player input decisions (card selection, character choice, etc.):
+
+- **Controller** (base class) - Abstract interface with `chooseButton()`, `chooseCard()`, `selectCard()`, and `sendGameState(game, seat)` (no-op by default)
+- **AIController** - Makes random legal choices with configurable delay
+- **NetworkController** - Sends decisions to remote players via WebSocket, tracks pending requests for reconnection
+  - `playerId` - Unique identifier linking to the network player
+  - `sendGameState(game, seat)` - Serializes and sends game state to this player
+  - `resendPendingRequests()` - Resends unanswered decision requests on reconnect
+- **ProxyController** - Wraps another controller, used for pyramid seat delegation
+
+### Network Architecture
+
+Game state flows through controllers, not through separate mappings:
+
+```
+game.onStateChange → seat.controller.sendGameState(game, seat)
+                   → NetworkController serializes and sends to player
+                   → AIController/ProxyController no-op
+```
+
+**Serialization** (`shared/serialize.ts`):
+- `serializeGameForSeat(game, seatIndex)` - Converts Game to SerializedGame for a specific viewer
+- Controls hand visibility (only see your own cards)
+- Called inside `NetworkController.sendGameState()`
 
 **Boundary Types** (`shared/serialized.ts`):
 - `SerializedGame` - Complete game state for a specific viewing seat
 - `SerializedSeat` - Seat data with controlled visibility
 - `SerializedTrickPlay` - Minimal trick play data `{ seatIndex, card, isTrump }`
 
-**Serialization Function** (`shared/serialize.ts`):
-- `serializeGameForSeat(game, seatIndex)` - Main entry point for serialization
-  - Converts Game instance to SerializedGame
-  - Controls what information is visible to each seat
-  - Single place to implement information hiding/filtering
-
-**Design Principles**:
-- Don't rely on automatic serialization of classes
-- Define explicit boundary types to prevent shipping large object graphs
-- Reduce payload size (TrickPlay uses seatIndex instead of full playerIndex)
-- Prevent accidental hand leakage (filter based on viewing seat)
-- Keep serialization logic centralized for easy hardening later
+**Reconnection**: When a player reconnects, find their seat via `seat.controller.playerId`, then call `sendGameState()` and `resendPendingRequests()` on their controller.
 
 ### UI Features
 - Real-time game log with scrolling
@@ -221,7 +235,6 @@ For network play, the game state must be serialized before transmission. The ser
 ### Known Constraints
 - No save/load functionality
 - AI has no strategic play logic
-- No network multiplayer support (local only)
 
 ## Testing Considerations
 - Ensure 1 of Rings is never the lost card
