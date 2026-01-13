@@ -248,7 +248,7 @@ export class RoomManager {
     const controllers = playerList.map((player) => {
       const controller = new NetworkController((message) => {
         sendToPlayer(player.playerId, JSON.stringify(message));
-      });
+      }, player.name);
       room.controllers.set(player.playerId, controller);
       return controller;
     });

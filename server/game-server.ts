@@ -29,6 +29,7 @@ export function newGame(controllers: Controller[]): Game {
   let pyramidController;
   if (playerCount == 2) {
     pyramidController = new ProxyController();
+    pyramidController.playerName = "Pyramid";
     controllers.push(pyramidController);
   }
 

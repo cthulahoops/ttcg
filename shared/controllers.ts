@@ -7,6 +7,8 @@ import type {
 } from "./types";
 
 export abstract class Controller {
+  playerName: string | null = null;
+
   async chooseButton<T>(_options: ChoiceButtonOptions<T>): Promise<T> {
     throw new Error("Abstract");
   }

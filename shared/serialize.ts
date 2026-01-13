@@ -28,6 +28,7 @@ function serializeSeat(game: Game, seat: Seat, viewingSeatIndex: number): Serial
 
   return {
     seatIndex: seat.seatIndex,
+    playerName: seat.controller.playerName,
     character: seat.character,
     threatCard: seat.threatCard,
     tricksWon: seat.tricksWon,

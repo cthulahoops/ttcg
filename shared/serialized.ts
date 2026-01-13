@@ -54,6 +54,7 @@ export type SerializedHand =
  */
 export interface SerializedSeat {
   seatIndex: number;
+  playerName: string | null;
   character: string | null;
   threatCard: number | null;
   tricksWon: Trick[];

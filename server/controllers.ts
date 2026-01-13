@@ -18,10 +18,11 @@ export class NetworkController extends Controller {
   private sendMessage: (message: ServerMessage) => void;
   private pendingRequests: Map<string, PendingRequest>;
 
-  constructor(sendMessage: (message: ServerMessage) => void) {
+  constructor(sendMessage: (message: ServerMessage) => void, playerName: string) {
     super();
     this.sendMessage = sendMessage;
     this.pendingRequests = new Map();
+    this.playerName = playerName;
   }
 
   /**

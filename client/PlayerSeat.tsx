@@ -18,6 +18,7 @@ export function PlayerSeat({
 }: PlayerSeatProps) {
   const {
     seatIndex,
+    playerName,
     character,
     objective,
     tricksWon,
@@ -26,7 +27,10 @@ export function PlayerSeat({
     hand,
   } = seat;
 
-  const playerName = character ?? `Player ${seatIndex + 1}`;
+  // Display: "Character (PlayerName)" or just "PlayerName" before assignment
+  const displayName = character
+    ? `${character} (${playerName})`
+    : playerName ?? `Player ${seatIndex + 1}`;
 
   return (
     <section
@@ -34,7 +38,7 @@ export function PlayerSeat({
       data-player={seatIndex + 1}
     >
       <div>
-        <h3>{playerName}</h3>
+        <h3>{displayName}</h3>
 
         <div className="objective">{objective && `Goal: ${objective}`}</div>
 
