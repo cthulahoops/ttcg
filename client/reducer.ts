@@ -21,6 +21,16 @@ export function clientReducer(
         error: null,
       };
 
+    case "room_left":
+      return {
+        ...state,
+        roomCode: null,
+        playerId: null,
+        players: [],
+        gameState: null,
+        pendingDecision: null,
+      };
+
     case "player_joined":
       return {
         ...state,

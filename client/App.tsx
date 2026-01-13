@@ -1,13 +1,35 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LobbyScreen } from "./LobbyScreen";
 import { GameScreen } from "./GameScreen";
 import { GameLog } from "./GameLog";
 import { useGameWebSocket } from "./useGameWebSocket";
+import { useRoomCode } from "./useRoomCode";
 import { usePlayerId } from "./usePlayerId";
+import { usePlayerName } from "./usePlayerName";
 
 export function App() {
+  const { roomCode, setRoomCode, clearRoomCode } = useRoomCode();
+  const { state, connected, sendMessage } = useGameWebSocket();
   const playerId = usePlayerId();
-  const { state, sendMessage } = useGameWebSocket();
+  const { playerName, setPlayerName } = usePlayerName();
+
+  useEffect(() => {
+    if (!connected) return;
+    if (!roomCode) return;
+    if (!playerName) return;
+
+    sendMessage({
+      type: "join_room",
+      playerName,
+      roomCode,
+      playerId,
+    });
+  }, [connected, roomCode, playerName]);
+
+  const handleLeaveRoom = () => {
+    sendMessage({ type: "leave_room" });
+    clearRoomCode();
+  };
 
   if (state.gameState) {
     return (
@@ -32,16 +54,12 @@ export function App() {
       <LobbyScreen
         roomCode={state.roomCode}
         players={state.players}
-        onJoinRoom={(playerName, roomCode) =>
-          sendMessage({
-            type: "join_room",
-            playerName,
-            roomCode,
-            playerId,
-          })
-        }
+        onJoinRoom={(playerName, roomCode) => {
+          setPlayerName(playerName);
+          setRoomCode(roomCode);
+        }}
         onStartGame={() => sendMessage({ type: "start_game" })}
-        onLeaveRoom={() => sendMessage({ type: "leave_room" })}
+        onLeaveRoom={handleLeaveRoom}
       />
     </div>
   );

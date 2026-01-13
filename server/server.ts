@@ -12,7 +12,11 @@ const roomManager = new RoomManager();
 const sockets = new Map<string, ServerWebSocket<WSData>>();
 
 // Helper: broadcast a message to all players in a room (optionally excluding one)
-function broadcastToRoom(roomCode: string, message: ServerMessage, excludeSocketId?: string) {
+function broadcastToRoom(
+  roomCode: string,
+  message: ServerMessage,
+  excludeSocketId?: string,
+) {
   const room = roomManager.getRoom(roomCode);
   if (!room) return;
 
@@ -27,12 +31,22 @@ function broadcastToRoom(roomCode: string, message: ServerMessage, excludeSocket
 }
 
 // Message handlers
-function handleJoinRoom(ws: ServerWebSocket<WSData>, msg: { roomCode: string; playerName: string; playerId: string }) {
+function handleJoinRoom(
+  ws: ServerWebSocket<WSData>,
+  msg: { roomCode: string; playerName: string; playerId: string },
+) {
   const socketId = ws.data.socketId;
 
   try {
-    console.log(`[JoinRoom] Player ${msg.playerName} (${msg.playerId}) joining room ${msg.roomCode}`);
-    const { playerId, players } = roomManager.joinRoom(msg.roomCode, socketId, msg.playerName, msg.playerId);
+    console.log(
+      `[JoinRoom] Player ${msg.playerName} (${msg.playerId}) joining room ${msg.roomCode}`,
+    );
+    const { playerId, players } = roomManager.joinRoom(
+      msg.roomCode,
+      socketId,
+      msg.playerName,
+      msg.playerId,
+    );
 
     // Send to joiner
     const joinedReply: ServerMessage = {
@@ -46,7 +60,9 @@ function handleJoinRoom(ws: ServerWebSocket<WSData>, msg: { roomCode: string; pl
     // If game is in progress, send current game state
     const room = roomManager.getRoom(msg.roomCode)!;
     if (room.started && room.game) {
-      console.log(`[JoinRoom] Game already started, sending state to reconnecting player`);
+      console.log(
+        `[JoinRoom] Game already started, sending state to reconnecting player`,
+      );
       // Find which seat this player is in
       let playerSeatIndex = -1;
       for (const [seatIndex, pid] of room.seatToPlayer.entries()) {
@@ -55,7 +71,9 @@ function handleJoinRoom(ws: ServerWebSocket<WSData>, msg: { roomCode: string; pl
           break;
         }
       }
-      console.log(`[JoinRoom] Player ${playerId} is in seat ${playerSeatIndex}`);
+      console.log(
+        `[JoinRoom] Player ${playerId} is in seat ${playerSeatIndex}`,
+      );
 
       if (playerSeatIndex !== -1) {
         const serializedGame = serializeGameForSeat(room.game, playerSeatIndex);
@@ -68,7 +86,9 @@ function handleJoinRoom(ws: ServerWebSocket<WSData>, msg: { roomCode: string; pl
         // Resend any pending decision requests
         const controller = room.controllers.get(playerId);
         if (controller) {
-          console.log(`[Reconnect] Player ${playerId} reconnected, checking for pending requests...`);
+          console.log(
+            `[Reconnect] Player ${playerId} reconnected, checking for pending requests...`,
+          );
           controller.resendPendingRequests();
         } else {
           console.log(`[Reconnect] No controller found for player ${playerId}`);
@@ -86,7 +106,6 @@ function handleJoinRoom(ws: ServerWebSocket<WSData>, msg: { roomCode: string; pl
       },
     };
     broadcastToRoom(msg.roomCode, broadcastMsg, socketId);
-
   } catch (error) {
     const errorMsg: ServerMessage = {
       type: "error",
@@ -103,6 +122,13 @@ function handleLeaveRoom(ws: ServerWebSocket<WSData>) {
   if (result) {
     const { roomCode, playerName } = result;
     // Broadcast to remaining players
+    const leftReply: ServerMessage = {
+      type: "room_left",
+      roomCode,
+      playerName,
+    };
+    ws.send(JSON.stringify(leftReply));
+
     const leftMsg: ServerMessage = {
       type: "player_left",
       playerName,
@@ -138,7 +164,9 @@ async function handleStartGame(ws: ServerWebSocket<WSData>) {
           console.log(`[SendToPlayer] Socket for player ${playerId} not found`);
         }
       } else {
-        console.log(`[SendToPlayer] Player ${playerId} not found or not connected`);
+        console.log(
+          `[SendToPlayer] Player ${playerId} not found or not connected`,
+        );
       }
     };
 
@@ -194,11 +222,18 @@ Bun.serve<WSData>({
         handleStartGame(ws);
       } else if (msg.type === "decision_response") {
         try {
-          roomManager.handleDecisionResponse(ws.data.socketId, msg.requestId, msg.response);
+          roomManager.handleDecisionResponse(
+            ws.data.socketId,
+            msg.requestId,
+            msg.response,
+          );
         } catch (error) {
           const errorMsg: ServerMessage = {
             type: "error",
-            message: error instanceof Error ? error.message : "Failed to handle decision response",
+            message:
+              error instanceof Error
+                ? error.message
+                : "Failed to handle decision response",
           };
           ws.send(JSON.stringify(errorMsg));
         }
