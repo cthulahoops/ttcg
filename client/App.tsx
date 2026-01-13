@@ -54,6 +54,7 @@ export function App() {
       <LobbyScreen
         roomCode={state.roomCode}
         players={state.players}
+        playerName={playerName}
         onJoinRoom={(playerName, roomCode) => {
           setPlayerName(playerName);
           setRoomCode(roomCode);

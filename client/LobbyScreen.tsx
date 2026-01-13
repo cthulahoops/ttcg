@@ -9,6 +9,7 @@ type Player = {
 type LobbyScreenProps = {
   roomCode: string | null;
   players: Player[];
+  playerName: string | null;
   onJoinRoom: (playerName: string, roomCode: string) => void;
   onStartGame: () => void;
   onLeaveRoom: () => void;
@@ -17,12 +18,13 @@ type LobbyScreenProps = {
 export function LobbyScreen({
   roomCode,
   players,
+  playerName,
   onJoinRoom,
   onStartGame,
   onLeaveRoom,
 }: LobbyScreenProps) {
   if (!roomCode) {
-    return <LobbyMenu onJoinRoom={onJoinRoom} />;
+    return <LobbyMenu playerName={playerName} onJoinRoom={onJoinRoom} />;
   }
 
   return (
