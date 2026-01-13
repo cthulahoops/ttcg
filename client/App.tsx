@@ -1,25 +1,31 @@
 import { useState } from "react";
 import { LobbyScreen } from "./LobbyScreen";
+import { GameScreen } from "./GameScreen";
 import { useGameWebSocket } from "./useGameWebSocket";
 
 export function App() {
   const { state, sendMessage } = useGameWebSocket();
 
+  if (state.gameState) {
+    return <GameScreen game={state.gameState} />;
+  }
   return (
-    <LobbyScreen
-      roomCode={state.roomCode}
-      players={state.players}
-      onJoinRoom={(playerName, roomCode) =>
-        sendMessage({
-          type: "join_room",
-          playerName,
-          roomCode,
-          playerId: generateUUID(),
-        })
-      }
-      onStartGame={() => sendMessage({ type: "start_game" })}
-      onLeaveRoom={() => sendMessage({ type: "leave_room" })}
-    />
+    <div className="container">
+      <LobbyScreen
+        roomCode={state.roomCode}
+        players={state.players}
+        onJoinRoom={(playerName, roomCode) =>
+          sendMessage({
+            type: "join_room",
+            playerName,
+            roomCode,
+            playerId: generateUUID(),
+          })
+        }
+        onStartGame={() => sendMessage({ type: "start_game" })}
+        onLeaveRoom={() => sendMessage({ type: "leave_room" })}
+      />
+    </div>
   );
 }
 

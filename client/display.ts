@@ -7,7 +7,10 @@ import type {
   SerializedPyramidHand,
 } from "@shared/serialized";
 
-export function updateGameDisplay(game: SerializedGame, cardElement: (card: Card | "hidden") => HTMLDivElement) {
+export function updateGameDisplay(
+  game: SerializedGame,
+  cardElement: (card: Card | "hidden") => HTMLDivElement,
+) {
   displayTrick(game);
   updatePlayersDisplay(game, cardElement);
   updateStatusDisplay(game);
@@ -98,12 +101,12 @@ export function updateTricksDisplay(gameState: SerializedGame): void {
 
     const status = seat.status;
     if (status) {
-    const icon = status.met
-      ? '<span class="success">✓</span>'
-      : status.completable
-        ? '<span class="fail">✗</span>'
-        : '<span class="fail">✗ (impossible)</span>';
-    statusDiv.innerHTML = status.details ? `${icon} ${status.details}` : icon;
+      const icon = status.met
+        ? '<span class="success">✓</span>'
+        : status.completable
+          ? '<span class="fail">✗</span>'
+          : '<span class="fail">✗ (impossible)</span>';
+      statusDiv.innerHTML = status.details ? `${icon} ${status.details}` : icon;
     }
 
     const threatCardDiv = document.getElementById(
@@ -140,10 +143,21 @@ function updatePlayerHeadings(gameState: SerializedGame): void {
 }
 
 export function createCardElement(
-  card: AnyCard,
+  card: AnyCard | "hidden",
   clickable = false,
   clickHandler: (() => void) | null = null,
 ): HTMLDivElement {
+  if (card === "hidden") {
+    // Create card back
+    const cardBack = document.createElement("div");
+    cardBack.className = "card hidden";
+    const valueDiv = document.createElement("div");
+    valueDiv.className = "value";
+    valueDiv.textContent = "?";
+    cardBack.appendChild(valueDiv);
+    return cardBack;
+  }
+
   const cardDiv = document.createElement("div");
   cardDiv.className = `card ${card.suit}`;
   if (clickable) {
@@ -218,7 +232,10 @@ function updateStatusDisplay(gameState: SerializedGame) {
   statusDiv.textContent = `${playerName}'s turn`;
 }
 
-function updatePlayersDisplay(game: SerializedGame, cardElement: (card: Card | "hidden") => HTMLDivElement) {
+function updatePlayersDisplay(
+  game: SerializedGame,
+  cardElement: (card: Card | "hidden") => HTMLDivElement,
+) {
   // Update player names and objectives using display.ts functions
   updatePlayerHeadings(game);
   updateTricksDisplay(game);
@@ -254,7 +271,7 @@ function updatePlayersDisplay(game: SerializedGame, cardElement: (card: Card | "
 function renderPlayerHand(
   hand: SerializedPlayerHand,
   domElement: HTMLElement,
-  cardElement: (card: Card | "hidden") => HTMLDivElement
+  cardElement: (card: Card | "hidden") => HTMLDivElement,
 ): void {
   domElement.innerHTML = "";
   domElement.classList.remove("pyramid-hand", "solitaire-hand");
@@ -264,25 +281,24 @@ function renderPlayerHand(
   });
 }
 
-
 function renderSolitaireHand(
   hand: SerializedSolitaireHand,
   domElement: HTMLElement,
-  cardElement: (card: Card | "hidden") => HTMLDivElement
+  cardElement: (card: Card | "hidden") => HTMLDivElement,
 ): void {
   domElement.innerHTML = "";
   domElement.classList.remove("pyramid-hand");
   domElement.classList.add("solitaire-hand");
 
   hand.cards.forEach((card) => {
-    domElement.appendChild(cardElement(card));
+    // domElement.appendChild(cardElement(card));
   });
 }
 
 function renderPyramidHand(
   hand: SerializedPyramidHand,
   domElement: HTMLElement,
-  cardElement: (card: Card | "hidden") => HTMLDivElement
+  cardElement: (card: Card | "hidden") => HTMLDivElement,
 ): void {
   domElement.innerHTML = "";
   domElement.classList.add("pyramid-hand");

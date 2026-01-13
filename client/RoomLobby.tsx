@@ -16,7 +16,7 @@ export function RoomLobby({
   onStartGame,
   onLeaveRoom,
 }: RoomLobbyProps) {
-  const canStartGame = players.length >= 2;
+  const canStartGame = players.length >= 1;
 
   return (
     <div className="room-lobby">
