@@ -15,11 +15,16 @@
   "author": "",
   "license": "None",
   "dependencies": {
-    "@types/bun": "^1.3.5"
+    "@types/bun": "^1.3.5",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/node": "^25.0.3",
+    "@types/react": "^19.2.8",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
     "concurrently": "^9.2.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
