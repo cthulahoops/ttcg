@@ -1,4 +1,4 @@
 node_modules
 .vite
-tsconfig.tsbuildinfo
+*.tsbuildinfo
 dist
