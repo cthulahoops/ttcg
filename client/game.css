@@ -579,3 +579,40 @@ body[data-player-count="2"] .player:has(#player4) {
 #playersList li.disconnected::before {
     content: "💤";
 }
+
+/* Available Characters Section */
+
+.character-list {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.character-card {
+    flex: 1;
+    min-width: 200px;
+    max-width: 300px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid #4a7023;
+}
+
+.character-name {
+    color: #ffd700;
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-bottom: 8px;
+}
+
+.character-objective,
+.character-setup {
+    font-size: 0.85em;
+    color: #aed581;
+    margin-bottom: 5px;
+}
+
+.character-objective strong,
+.character-setup strong {
+    color: #ccc;
+}

@@ -79,7 +79,7 @@ export interface SerializedGame {
   currentTrickNumber: number;
   leadSuit: Suit | null;
   ringsBroken: boolean;
-  availableCharacters: string[];
+  availableCharacters: { name: string; objective: string; setupText: string }[];
   lostCard: Card | null;
   lastTrickWinner: number | null;
   tricksToPlay: number;

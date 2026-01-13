@@ -5,6 +5,7 @@
 
 import type { Game, TrickPlay, CompletedTrick } from "./game";
 import type { Seat } from "./seat";
+import { characterRegistry } from "./characters/registry";
 import type {
   SerializedGame,
   SerializedSeat,
@@ -87,7 +88,15 @@ export function serializeGameForSeat(
     currentTrickNumber: game.currentTrickNumber,
     leadSuit: game.leadSuit,
     ringsBroken: game.ringsBroken,
-    availableCharacters: game.availableCharacters,
+    availableCharacters: game.availableCharacters.map((name) => {
+      const def = characterRegistry.get(name);
+      const objective = def?.objective.text ?? def?.objective.getText?.(game) ?? "";
+      return {
+        name,
+        objective,
+        setupText: def?.setupText ?? "",
+      };
+    }),
     lostCard: game.lostCard,
     lastTrickWinner: game.lastTrickWinner,
     tricksToPlay: game.tricksToPlay,

@@ -803,6 +803,10 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
 
     gameState.notifyStateChange();
   }
+
+  // Clear available characters after assignment is complete
+  gameState.availableCharacters = [];
+  gameState.notifyStateChange();
 }
 
 export async function runGame(gameState: Game): Promise<void> {
