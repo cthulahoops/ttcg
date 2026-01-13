@@ -2,7 +2,6 @@ import { Game, runGame } from "../shared/game.js";
 import type { Player } from "../shared/protocol.js";
 import { NetworkController } from "./controllers.js";
 import { newGame } from "./game-server.js";
-import { serializeGameForSeat } from "../shared/serialize.js";
 
 interface InternalPlayer {
   playerId: string;        // UUID (separate from socket ID)
@@ -17,7 +16,6 @@ interface Room {
   game: Game | null;         // null for MVP, reserved for future
   started: boolean;          // false for MVP, reserved for future
   createdAt: number;         // Timestamp for cleanup
-  seatToPlayer: Map<number, string>; // Seat index to player ID mapping
   controllers: Map<string, NetworkController>; // Player ID to controller mapping
 }
 
@@ -72,7 +70,6 @@ export class RoomManager {
         game: null,
         started: false,
         createdAt: Date.now(),
-        seatToPlayer: new Map(),
         controllers: new Map(),
       };
       this.rooms.set(roomCode, room);
@@ -248,35 +245,20 @@ export class RoomManager {
     const controllers = playerList.map((player) => {
       const controller = new NetworkController((message) => {
         sendToPlayer(player.playerId, JSON.stringify(message));
-      }, player.name);
+      }, player.playerId, player.name);
       room.controllers.set(player.playerId, controller);
       return controller;
     });
 
     // Initialize the game (this shuffles controllers)
     const game = newGame(controllers);
-
-    // Build seatToPlayer mapping AFTER game creation by matching controller playerName
-    // (controllers get shuffled in newGame, so we need to check where each ended up)
-    for (const seat of game.seats) {
-      const controllerName = seat.controller.playerName;
-      const player = playerList.find(p => p.name === controllerName);
-      if (player) {
-        room.seatToPlayer.set(seat.seatIndex, player.playerId);
-      }
-    }
     room.game = game;
     room.started = true;
 
     // Set up state change callback to broadcast game state
     game.onStateChange = () => {
-      // Serialize and send game state to each player
-      for (const [seatIndex, playerId] of room.seatToPlayer.entries()) {
-        const serializedGame = serializeGameForSeat(game, seatIndex);
-        sendToPlayer(playerId, JSON.stringify({
-          type: "game_state",
-          state: serializedGame,
-        }));
+      for (const seat of game.seats) {
+        seat.controller.sendGameState(game, seat);
       }
     };
 

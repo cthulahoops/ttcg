@@ -1,7 +1,7 @@
 // server/server.ts
 import { ClientMessage, ServerMessage } from "@shared/protocol";
 import { RoomManager } from "./room-manager.js";
-import { serializeGameForSeat } from "@shared/serialize";
+import { NetworkController } from "./controllers.js";
 import type { ServerWebSocket } from "bun";
 
 // WebSocket data type
@@ -63,36 +63,15 @@ function handleJoinRoom(
       console.log(
         `[JoinRoom] Game already started, sending state to reconnecting player`,
       );
-      // Find which seat this player is in
-      let playerSeatIndex = -1;
-      for (const [seatIndex, pid] of room.seatToPlayer.entries()) {
-        if (pid === playerId) {
-          playerSeatIndex = seatIndex;
-          break;
-        }
-      }
-      console.log(
-        `[JoinRoom] Player ${playerId} is in seat ${playerSeatIndex}`,
+      // Find this player's seat by matching controller playerId
+      const seat = room.game.seats.find(
+        s => s.controller instanceof NetworkController && s.controller.playerId === playerId
       );
 
-      if (playerSeatIndex !== -1) {
-        const serializedGame = serializeGameForSeat(room.game, playerSeatIndex);
-        const gameStateMsg: ServerMessage = {
-          type: "game_state",
-          state: serializedGame,
-        };
-        ws.send(JSON.stringify(gameStateMsg));
-
-        // Resend any pending decision requests
-        const controller = room.controllers.get(playerId);
-        if (controller) {
-          console.log(
-            `[Reconnect] Player ${playerId} reconnected, checking for pending requests...`,
-          );
-          controller.resendPendingRequests();
-        } else {
-          console.log(`[Reconnect] No controller found for player ${playerId}`);
-        }
+      if (seat && seat.controller instanceof NetworkController) {
+        console.log(`[JoinRoom] Player ${playerId} is in seat ${seat.seatIndex}`);
+        seat.controller.sendGameState(room.game, seat);
+        seat.controller.resendPendingRequests();
       }
     }
 

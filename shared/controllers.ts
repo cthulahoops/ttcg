@@ -5,6 +5,8 @@ import type {
   ChoiceButtonOptions,
   ChoiceCardOptions,
 } from "./types";
+import type { Game } from "./game";
+import type { Seat } from "./seat";
 
 export abstract class Controller {
   playerName: string | null = null;
@@ -22,6 +24,9 @@ export abstract class Controller {
   async selectCard(_availableCards: Card[]): Promise<Card> {
     throw new Error("Abstract");
   }
+
+  /** Send game state to this player. No-op for non-network controllers. */
+  sendGameState(_game: Game, _seat: Seat): void {}
 }
 
 export class AIController extends Controller {

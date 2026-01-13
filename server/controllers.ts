@@ -6,6 +6,9 @@ import type {
   ChoiceCardOptions,
 } from "../shared/types";
 import type { ServerMessage } from "../shared/protocol";
+import type { Game } from "../shared/game";
+import type { Seat } from "../shared/seat";
+import { serializeGameForSeat } from "../shared/serialize";
 
 interface PendingRequest {
   resolve: (value: any) => void;
@@ -15,11 +18,13 @@ interface PendingRequest {
 }
 
 export class NetworkController extends Controller {
+  readonly playerId: string;
   private sendMessage: (message: ServerMessage) => void;
   private pendingRequests: Map<string, PendingRequest>;
 
-  constructor(sendMessage: (message: ServerMessage) => void, playerName: string) {
+  constructor(sendMessage: (message: ServerMessage) => void, playerId: string, playerName: string) {
     super();
+    this.playerId = playerId;
     this.sendMessage = sendMessage;
     this.pendingRequests = new Map();
     this.playerName = playerName;
@@ -95,6 +100,17 @@ export class NetworkController extends Controller {
     return this.sendRequest<Card>({
       type: "select_card",
       availableCards,
+    });
+  }
+
+  /**
+   * Send game state to this player
+   */
+  override sendGameState(game: Game, seat: Seat): void {
+    const state = serializeGameForSeat(game, seat.seatIndex);
+    this.sendMessage({
+      type: "game_state",
+      state,
     });
   }
 }
