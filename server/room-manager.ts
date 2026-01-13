@@ -253,13 +253,18 @@ export class RoomManager {
       return controller;
     });
 
-    // Map seat indices to player IDs (in the same order as controllers)
-    playerList.forEach((player, index) => {
-      room.seatToPlayer.set(index, player.playerId);
-    });
-
-    // Initialize the game
+    // Initialize the game (this shuffles controllers)
     const game = newGame(controllers);
+
+    // Build seatToPlayer mapping AFTER game creation by matching controller playerName
+    // (controllers get shuffled in newGame, so we need to check where each ended up)
+    for (const seat of game.seats) {
+      const controllerName = seat.controller.playerName;
+      const player = playerList.find(p => p.name === controllerName);
+      if (player) {
+        room.seatToPlayer.set(seat.seatIndex, player.playerId);
+      }
+    }
     room.game = game;
     room.started = true;
 
