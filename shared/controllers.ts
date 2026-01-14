@@ -85,5 +85,8 @@ export class ProxyController extends Controller {
 }
 
 function randomChoice<T>(items: T[]): T {
-  return items[Math.floor(Math.random() * items.length)];
+  if (items.length === 0) {
+    throw new Error("randomChoice called with empty array");
+  }
+  return items[Math.floor(Math.random() * items.length)]!;
 }

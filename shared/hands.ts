@@ -296,7 +296,7 @@ export class SolitaireHand extends Hand {
       (c) => c.suit === "rings" && c.value === 1,
     );
     if (oneRingIndex >= 4) {
-      [cards[3], cards[oneRingIndex]] = [cards[oneRingIndex], cards[3]];
+      [cards[3], cards[oneRingIndex]] = [cards[oneRingIndex]!, cards[3]!];
     }
   }
 

@@ -57,3 +57,14 @@ Fixed possibly undefined access in server/game-server.ts:
 
 All 3 type errors (TS2345, TS2532, TS2322) in game-server.ts have been resolved.
 Type check confirms no game-server.ts errors remain.
+
+## Completed: undefined-utilities
+
+Fixed possibly undefined access in shared utility files:
+
+- shared/hands.ts:299 - Added non-null assertions to array swap in `_ensureOneRingRevealed` (indices are guaranteed valid by preceding check)
+- shared/utils.ts:31 - Added non-null assertions to array swap in `shuffleDeck` (Fisher-Yates shuffle indices are always valid)
+- shared/controllers.ts:88 - Added non-null assertion in `randomChoice` return (function is called with non-empty arrays)
+
+All 3 type errors (TS2322) in shared utilities have been resolved.
+Type check confirms no errors remain in hands.ts, utils.ts, or controllers.ts.

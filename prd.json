@@ -76,7 +76,7 @@
   {
     "id": "undefined-utilities",
     "title": "Fix possibly undefined access in shared utilities",
-    "status": "incomplete",
+    "status": "complete",
     "files": ["shared/hands.ts", "shared/utils.ts", "shared/controllers.ts"],
     "errors": [
       "hands.ts:299 - Card | undefined not assignable to Card",
