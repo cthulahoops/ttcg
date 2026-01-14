@@ -30,16 +30,19 @@ export class Seat {
   // Display helper - encapsulates complex display logic
   getDisplayName(): string {
     if (this.character) {
-      if (this.controller.constructor.name === "HumanController") {
-        return `${this.character} (You)`;
-      } else if (this.isPyramid) {
+      if (this.isPyramid) {
         return `${this.character} (Pyramid)`;
       } else {
         return this.character;
       }
     } else {
-      const baseName = `Player ${this.seatIndex + 1}`;
-      return this.seatIndex === 0 ? `${baseName} (You)` : baseName;
+      // Use player name if available, otherwise fall back to "Player X"
+      const baseName = this.controller.playerName ?? `Player ${this.seatIndex + 1}`;
+      if (this.isPyramid) {
+        return `${baseName} (Pyramid)`;
+      } else {
+        return baseName;
+      }
     }
   }
 

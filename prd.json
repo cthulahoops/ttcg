@@ -28,7 +28,7 @@
   {
     "id": "log-player-names",
     "title": "Show player names instead of numbers in game log",
-    "status": "pending",
+    "status": "completed",
     "notes": "Especially for character choice announcements"
   },
   {

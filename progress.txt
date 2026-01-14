@@ -158,3 +158,24 @@ disrupts gameplay.
 
 This improves UX by avoiding an obvious "Yes" choice when the player would win anyway.
 Type check passes with no errors.
+
+## Completed: log-player-names
+
+Show player names instead of numbers in game log:
+
+Before this change, log messages during character selection showed "Player 1 chose Gandalf"
+instead of the actual player names. The `getDisplayName()` method fell back to "Player X"
+when no character was assigned, ignoring `controller.playerName`.
+
+**Fix (shared/seat.ts)**:
+- Updated `getDisplayName()` to use `controller.playerName ?? 'Player ${seatIndex + 1}'`
+  as fallback when no character is assigned yet
+- Removed "(You)" annotations throughout since player names make them redundant
+- Kept "(Pyramid)" annotation as it indicates a game mode, not a player identity
+
+Now for networked games:
+- Before character selection: Shows actual player names (e.g., "Alice chose Gandalf")
+- After character selection: Shows character names (e.g., "Gandalf plays 3 of Hills")
+
+For local/solitaire games, falls back to "Player X" when no name is set.
+Type check passes with no errors.
