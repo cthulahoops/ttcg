@@ -55,7 +55,7 @@
   {
     "id": "undefined-game",
     "title": "Fix possibly undefined access in shared/game.ts",
-    "status": "incomplete",
+    "status": "complete",
     "files": ["shared/game.ts"],
     "errors": [
       "~30 errors related to seats[index], trick plays, and array access returning undefined",

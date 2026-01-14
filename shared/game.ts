@@ -259,7 +259,7 @@ export class Game {
     if (this.playerCount === 1) {
       const targetDescription =
         validPlayers.length === 1
-          ? validPlayers[0].character!
+          ? validPlayers[0]!.character!
           : validPlayers.map((p) => p.character).join(" or ");
 
       const wantsToExchange = await seat.controller.chooseButton({
@@ -278,7 +278,9 @@ export class Game {
 
     let targetSeat: Seat;
     if (validPlayers.length === 1) {
-      targetSeat = validPlayers[0];
+      const first = validPlayers[0];
+      if (!first) return null;
+      targetSeat = first;
     } else {
       const choices: ChoiceButton<number>[] = validPlayers.map((p) => ({
         label: p.character!,
@@ -291,7 +293,9 @@ export class Game {
         buttons: choices,
       });
 
-      targetSeat = this.seats[targetIndex];
+      const chosen = this.seats[targetIndex];
+      if (!chosen) return null;
+      targetSeat = chosen;
     }
 
     const availableFrom = seat.hand!.getAvailableCards();
@@ -452,12 +456,8 @@ export class Game {
 
 
 // ===== GAME FUNCTIONS =====
-function isLegalMove(
-  gameState: Game,
-  playerIndex: number,
-  card: Card,
-): boolean {
-  const playerHand = gameState.seats[playerIndex].hand!.getAvailableCards();
+function isLegalMove(gameState: Game, seat: Seat, card: Card): boolean {
+  const playerHand = seat.hand!.getAvailableCards();
 
   if (gameState.currentTrick.length === 0) {
     if (card.suit === "rings") {
@@ -478,11 +478,9 @@ function isLegalMove(
   return true;
 }
 
-function getLegalMoves(gameState: Game, playerIndex: number): Card[] {
-  const availableCards = gameState.seats[playerIndex].hand!.getAvailableCards();
-  return availableCards.filter((card) =>
-    isLegalMove(gameState, playerIndex, card),
-  );
+function getLegalMoves(gameState: Game, seat: Seat): Card[] {
+  const availableCards = seat.hand!.getAvailableCards();
+  return availableCards.filter((card) => isLegalMove(gameState, seat, card));
 }
 
 // ===== EXCHANGE HELPER FUNCTIONS =====
@@ -518,7 +516,8 @@ function getGameOverMessage(gameState: Game): string {
 
   if (objectiveWinners.length > 0) {
     const winnerNames = objectiveWinners.map((p) => {
-      return gameState.seats[p].getDisplayName();
+      const seat = gameState.seats[p];
+      return seat ? seat.getDisplayName() : `Player ${p}`;
     });
     message += `\n\nObjectives completed by: ${winnerNames.join(", ")}`;
   } else {
@@ -568,11 +567,16 @@ function determineTrickWinner(gameState: Game): number {
   if (trumpPlay) {
     winningPlay = trumpPlay;
   } else {
-    winningPlay = gameState.currentTrick[0];
+    const firstPlay = gameState.currentTrick[0];
+    if (!firstPlay) {
+      throw new Error("Cannot determine trick winner: no plays in trick");
+    }
+    winningPlay = firstPlay;
 
     for (let i = 1; i < gameState.currentTrick.length; i++) {
       const play = gameState.currentTrick[i];
       if (
+        play &&
         play.card.suit === gameState.leadSuit &&
         play.card.value > winningPlay.card.value
       ) {
@@ -586,15 +590,15 @@ function determineTrickWinner(gameState: Game): number {
 
 async function playSelectedCard(
   gameState: Game,
-  playerIndex: number,
+  seat: Seat,
   card: Card,
 ): Promise<void> {
-  gameState.seats[playerIndex].hand!.removeCard(card);
-  gameState.seats[playerIndex].playedCards.push(card);
-  gameState.currentTrick.push({ playerIndex, card, isTrump: false });
+  seat.hand!.removeCard(card);
+  seat.playedCards.push(card);
+  gameState.currentTrick.push({ playerIndex: seat.seatIndex, card, isTrump: false });
 
   gameState.log(
-    `${gameState.seats[playerIndex].getDisplayName()} plays ${card.value} of ${card.suit}`,
+    `${seat.getDisplayName()} plays ${card.value} of ${card.suit}`,
   );
 
   if (gameState.currentTrick.length === 1) {
@@ -608,13 +612,11 @@ async function playSelectedCard(
 
 async function selectCardFromPlayer(
   gameState: Game,
-  playerIndex: number,
+  seat: Seat,
   legalMoves: Card[],
 ): Promise<Card> {
-  gameState.currentPlayer = playerIndex;
-
-  const controller = gameState.seats[playerIndex].controller;
-  return await controller.selectCard(legalMoves);
+  gameState.currentPlayer = seat.seatIndex;
+  return await seat.controller.selectCard(legalMoves);
 }
 
 async function runTrickTakingPhase(gameState: Game): Promise<void> {
@@ -631,26 +633,24 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
 
     for (let i = 0; i < gameState.numCharacters; i++) {
       const playerIndex = (trickLeader + i) % gameState.numCharacters;
+      const seat = gameState.seats[playerIndex];
+      if (!seat) {
+        throw new Error(`Invalid seat index: ${playerIndex}`);
+      }
 
-      if (gameState.seats[playerIndex].hand!.isEmpty()) {
-        gameState.log(
-          `${gameState.seats[playerIndex].getDisplayName()} passes (no cards)`,
-        );
+      if (seat.hand!.isEmpty()) {
+        gameState.log(`${seat.getDisplayName()} passes (no cards)`);
         continue;
       }
 
       gameState.currentPlayer = playerIndex;
       gameState.notifyStateChange();
 
-      const legalMoves = getLegalMoves(gameState, playerIndex);
+      const legalMoves = getLegalMoves(gameState, seat);
 
-      const selectedCard = await selectCardFromPlayer(
-        gameState,
-        playerIndex,
-        legalMoves,
-      );
+      const selectedCard = await selectCardFromPlayer(gameState, seat, legalMoves);
 
-      await playSelectedCard(gameState, playerIndex, selectedCard);
+      await playSelectedCard(gameState, seat, selectedCard);
       gameState.notifyStateChange();
     }
 
@@ -659,9 +659,11 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
     );
 
     if (oneRingPlay) {
-      const useTrump = await gameState.seats[
-        oneRingPlay.playerIndex
-      ].controller.chooseButton({
+      const oneRingSeat = gameState.seats[oneRingPlay.playerIndex];
+      if (!oneRingSeat) {
+        throw new Error(`Invalid seat for 1 of Rings player: ${oneRingPlay.playerIndex}`);
+      }
+      const useTrump = await oneRingSeat.controller.chooseButton({
         title: "You played the 1 of Rings!",
         message: "Do you want to use it as trump to win this trick?",
         buttons: [
@@ -674,6 +676,10 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
     }
 
     const winnerIndex = determineTrickWinner(gameState);
+    const winnerSeat = gameState.seats[winnerIndex];
+    if (!winnerSeat) {
+      throw new Error(`Invalid winner seat index: ${winnerIndex}`);
+    }
 
     // Store completed trick with plays and winner
     gameState.completedTricks.push({
@@ -682,17 +688,11 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
     });
 
     const trickCards = gameState.currentTrick.map((play) => play.card);
-    gameState.seats[winnerIndex].addTrick(
-      gameState.currentTrickNumber,
-      trickCards,
-    );
+    winnerSeat.addTrick(gameState.currentTrickNumber, trickCards);
     gameState.currentTrickNumber++;
     gameState.lastTrickWinner = winnerIndex;
 
-    gameState.log(
-      `${gameState.seats[winnerIndex].getDisplayName()} wins the trick!`,
-      true,
-    );
+    gameState.log(`${winnerSeat.getDisplayName()} wins the trick!`, true);
 
     for (const seat of gameState.seats) {
       seat.hand!.onTrickComplete();
@@ -710,17 +710,20 @@ async function runSetupPhase(gameState: Game): Promise<void> {
   gameState.log("=== SETUP PHASE ===", true);
 
   const setupContext: GameSetupContext = {
-    frodoSeat: gameState.seats[gameState.leadPlayer] || null,
+    frodoSeat: gameState.seats[gameState.leadPlayer] ?? null,
     exchangeMade: false,
   };
 
   for (let i = 0; i < gameState.numCharacters; i++) {
     const playerIndex = (gameState.leadPlayer + i) % gameState.numCharacters;
+    const seat = gameState.seats[playerIndex];
+    if (!seat) {
+      throw new Error(`Invalid seat index in setup phase: ${playerIndex}`);
+    }
 
     gameState.currentPlayer = playerIndex;
     gameState.notifyStateChange();
 
-    const seat = gameState.seats[playerIndex];
     await seat.characterDef!.setup(gameState, seat, setupContext);
     gameState.notifyStateChange();
   }
@@ -730,32 +733,44 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
   gameState.log("=== CHARACTER ASSIGNMENT ===", true);
 
   const startPlayer = gameState.leadPlayer; // Player with 1 of Rings
+  const frodoSeat = gameState.seats[startPlayer];
+  if (!frodoSeat) {
+    throw new Error(`Invalid start player seat index: ${startPlayer}`);
+  }
 
   gameState.log(
-    `${gameState.seats[startPlayer].getDisplayName()} gets Frodo (has 1 of Rings)`,
+    `${frodoSeat.getDisplayName()} gets Frodo (has 1 of Rings)`,
     true,
   );
-  gameState.seats[startPlayer].character = "Frodo";
-  gameState.seats[startPlayer].characterDef = characterRegistry.get("Frodo")!;
+  frodoSeat.character = "Frodo";
+  frodoSeat.characterDef = characterRegistry.get("Frodo")!;
   gameState.availableCharacters = gameState.availableCharacters.filter(
     (c) => c !== "Frodo",
   );
   gameState.notifyStateChange();
 
   if (gameState.playerCount === 2) {
-    const pyramid = gameState.seats.find((s) => s.controller instanceof ProxyController)!;
-    let pyramidControllerIndex: number;
-
-    if (startPlayer === pyramid.seatIndex) {
-      pyramidControllerIndex = (startPlayer + 2) % 3;
-    } else {
-      pyramidControllerIndex = startPlayer;
+    const pyramid = gameState.seats.find((s) => s.controller instanceof ProxyController);
+    if (!pyramid) {
+      throw new Error("No pyramid seat found in 2-player game");
     }
 
-    (gameState.seats[pyramid.seatIndex].controller as ProxyController).setController( gameState.seats[pyramidControllerIndex].controller);
+    let pyramidControllerSeat: Seat;
+    if (startPlayer === pyramid.seatIndex) {
+      const controllerIndex = (startPlayer + 2) % 3;
+      const seat = gameState.seats[controllerIndex];
+      if (!seat) {
+        throw new Error(`Invalid pyramid controller seat index: ${controllerIndex}`);
+      }
+      pyramidControllerSeat = seat;
+    } else {
+      pyramidControllerSeat = frodoSeat;
+    }
+
+    (pyramid.controller as ProxyController).setController(pyramidControllerSeat.controller);
 
     gameState.log(
-      `Pyramid will be controlled by ${gameState.seats[pyramidControllerIndex].getDisplayName()}`,
+      `Pyramid will be controlled by ${pyramidControllerSeat.getDisplayName()}`,
       true,
     );
     gameState.notifyStateChange();
@@ -763,6 +778,10 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
 
   for (let i = 1; i < gameState.numCharacters; i++) {
     const playerIndex = (startPlayer + i) % gameState.numCharacters;
+    const seat = gameState.seats[playerIndex];
+    if (!seat) {
+      throw new Error(`Invalid seat index during character assignment: ${playerIndex}`);
+    }
 
     gameState.currentPlayer = playerIndex;
     gameState.notifyStateChange();
@@ -774,20 +793,15 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
       }),
     );
 
-    const character = await gameState.seats[
-      playerIndex
-    ].controller.chooseButton({
-      title: `${gameState.seats[playerIndex].getDisplayName()} - Choose Your Character`,
+    const character = await seat.controller.chooseButton({
+      title: `${seat.getDisplayName()} - Choose Your Character`,
       message: "Select a character to play as",
       buttons,
     });
 
-    gameState.log(
-      `${gameState.seats[playerIndex].getDisplayName()} chose ${character}`,
-    );
-    const seat = gameState.seats[playerIndex];
+    gameState.log(`${seat.getDisplayName()} chose ${character}`);
     seat.character = character;
-    seat.characterDef = characterRegistry.get(seat.character)!;
+    seat.characterDef = characterRegistry.get(character)!;
     gameState.availableCharacters = gameState.availableCharacters.filter(
       (c) => c !== character,
     );

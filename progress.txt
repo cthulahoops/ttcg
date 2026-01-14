@@ -81,3 +81,21 @@ Fixed possibly undefined access in shared/characters/registry.ts:
 
 All 11 type errors (TS2532, TS18048, TS2322, TS2345) in registry.ts have been resolved.
 Type check confirms no registry.ts errors remain.
+
+## Completed: undefined-game
+
+Fixed ~30 TypeScript errors in shared/game.ts related to possibly undefined array access:
+
+**Design improvement**: Refactored `isLegalMove` and `getLegalMoves` to take `Seat` instead of `playerIndex`. This pushes undefined checking to call sites with proper context, rather than silently returning empty results which could mask bugs.
+
+**Key fixes**:
+- setupExchange: Added guards for validPlayers[0] and seats[targetIndex] lookups
+- getGameOverMessage: Added safe seat lookup in winner name mapping
+- determineTrickWinner: Added guard for currentTrick[0] with explicit error for empty tricks
+- playSelectedCard/selectCardFromPlayer: Refactored to take Seat parameter directly
+- runTrickTakingPhase: Get seat once at loop start with throw on invalid index; fixed oneRingPlay and winner seat access
+- runSetupPhase: Added seat validation with throw on invalid index
+- runCharacterAssignment: Added validation for frodoSeat, pyramid seat, and loop seats
+
+All 33 TypeScript errors have been resolved.
+Type check confirms no errors remain in shared/game.ts.
