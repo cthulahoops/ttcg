@@ -53,7 +53,7 @@
   {
     "id": "early-victory-exit",
     "title": "End game early when all objectives are completed",
-    "status": "pending",
+    "status": "completed",
     "notes": "Depends on completedness-display"
   },
   {

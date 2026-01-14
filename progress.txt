@@ -356,3 +356,30 @@ Visual states now:
 - ✗ (impossible) (red) - Objective can no longer be completed
 
 Type check passes with no errors.
+
+## Completed: early-victory-exit
+
+End game early when all objectives are completed:
+
+Previously, the game would continue until all tricks were played or until any player's objective
+became impossible. Now the game also ends early when ALL players have definitively completed
+their objectives, allowing players to celebrate victory without playing unnecessary tricks.
+
+**Type fix (shared/types.ts)**:
+- Added `isCompleted` method to the `objective` property of `CharacterDefinition` interface
+- This aligns the type with the implementation in `shared/characters/types.ts`
+
+**Game logic changes (shared/game.ts)**:
+- Added `isObjectiveCompleted(gameState, seat)` helper function
+- Added `allObjectivesCompleted(gameState)` function that returns true when all seats have
+  completed objectives
+- Updated `isGameOver()` to also return true when `allObjectivesCompleted()` is true
+- Added log message "All objectives have been completed!" when early victory occurs
+
+**How it works**:
+After each trick, the game checks if all objectives are completed. If so, it logs a victory
+message and the game loop exits, proceeding directly to the game over screen. This uses the
+`isCompleted` method added in the completedness-checks feature, which returns true only when
+an objective is definitively completed and cannot be undone.
+
+Type check passes with no errors.

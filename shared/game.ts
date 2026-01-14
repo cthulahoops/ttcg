@@ -508,6 +508,14 @@ function isObjectiveCompletable(gameState: Game, seat: Seat): boolean {
   return seat.characterDef!.objective.isCompletable(gameState, seat);
 }
 
+function isObjectiveCompleted(gameState: Game, seat: Seat): boolean {
+  return seat.characterDef!.objective.isCompleted(gameState, seat);
+}
+
+function allObjectivesCompleted(gameState: Game): boolean {
+  return gameState.seats.every((seat) => isObjectiveCompleted(gameState, seat));
+}
+
 function getGameOverMessage(gameState: Game): string {
   const results: string[] = [];
   const objectiveWinners: number[] = [];
@@ -567,6 +575,10 @@ function isGameOver(gameState: Game): boolean {
     if (!isObjectiveCompletable(gameState, seat)) {
       return true;
     }
+  }
+
+  if (allObjectivesCompleted(gameState)) {
+    return true;
   }
 
   return false;
@@ -731,6 +743,10 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
     gameState.notifyStateChange();
 
     checkForImpossibleObjectives(gameState);
+
+    if (allObjectivesCompleted(gameState)) {
+      gameState.log("All objectives have been completed!", true);
+    }
 
     gameState.leadPlayer = winnerIndex;
   }
