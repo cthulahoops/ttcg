@@ -81,7 +81,7 @@
   {
     "id": "exchange-privacy",
     "title": "Respect privacy in exchange log messages",
-    "status": "pending",
+    "status": "completed",
     "notes": "Show card details only to players involved in exchange, others see 'a card'"
   },
   {

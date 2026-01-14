@@ -203,3 +203,27 @@ indicator showing this state to players.
 
 This helps players understand when they can lead with Rings cards.
 Type check passes with no errors.
+
+## Completed: exchange-privacy
+
+Respect privacy in exchange log messages:
+
+When players exchange cards during setup (e.g., Frodo exchanging with Gandalf), the log
+previously showed card details to ALL players. This leaked private information about
+cards transferred between specific players.
+
+**Changes**:
+- `shared/game.ts`: Extended `log()` method signature to accept visibility options:
+  - `visibleTo?: number[]` - seat indices that should see the detailed message
+  - `hiddenMessage?: string` - alternative message shown to non-participants
+- `shared/game.ts`: Updated `giveCard()` to use privacy-aware logging:
+  - Participants see: "Gandalf gives 3 of Hills to Frodo"
+  - Others see: "Gandalf gives a card to Frodo"
+- `shared/game.ts`: Updated `completeExchange()` to use privacy-aware logging:
+  - Both log lines (one per direction) now respect participant privacy
+- `server/room-manager.ts`: Updated `onLog` callback to handle per-seat messaging:
+  - Looks up each player's seat via their controller
+  - Sends detailed message to participants, hidden message to others
+
+Now only players involved in an exchange see the specific cards traded.
+Type check passes with no errors.

@@ -263,14 +263,36 @@ export class RoomManager {
     };
 
     // Set up log callback to broadcast game log messages
-    game.onLog = (line: string, important?: boolean) => {
+    game.onLog = (
+      line: string,
+      important?: boolean,
+      options?: { visibleTo?: number[]; hiddenMessage?: string },
+    ) => {
       // Broadcast log message to all players
       for (const playerId of room.players.keys()) {
-        sendToPlayer(playerId, JSON.stringify({
-          type: "game_log",
-          line,
-          important,
-        }));
+        let messageToSend = line;
+
+        // If visibility is restricted, check if this player can see the detailed message
+        if (options?.visibleTo && options?.hiddenMessage) {
+          // Find the seat for this player
+          const controller = room.controllers.get(playerId);
+          const seat = game.seats.find((s) => s.controller === controller);
+          const seatIndex = seat?.seatIndex;
+
+          // If player's seat is not in visibleTo, use the hidden message
+          if (seatIndex === undefined || !options.visibleTo.includes(seatIndex)) {
+            messageToSend = options.hiddenMessage;
+          }
+        }
+
+        sendToPlayer(
+          playerId,
+          JSON.stringify({
+            type: "game_log",
+            line: messageToSend,
+            important,
+          }),
+        );
       }
     };
 

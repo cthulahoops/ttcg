@@ -49,7 +49,11 @@ export class Game {
   threatDeck: number[];
   tricksToPlay: number;
   onStateChange?: (game: Game) => void;
-  onLog?: (line: string, important?: boolean) => void;
+  onLog?: (
+    line: string,
+    important?: boolean,
+    options?: { visibleTo?: number[]; hiddenMessage?: string },
+  ) => void;
 
   constructor(
     playerCount: number,
@@ -91,8 +95,12 @@ export class Game {
     this.onStateChange?.(this);
   }
 
-  log(line: string, important?: boolean): void {
-    this.onLog?.(line, important);
+  log(
+    line: string,
+    important?: boolean,
+    options?: { visibleTo?: number[]; hiddenMessage?: string },
+  ): void {
+    this.onLog?.(line, important, options);
   }
 
   // ===== GAME API METHODS FOR CHARACTER SETUP/OBJECTIVES =====
@@ -352,11 +360,22 @@ export class Game {
     fromSeat.hand!.addCard(cardFromSecond);
     toSeat.hand!.addCard(cardFromFirst);
 
+    const participants = [fromSeat.seatIndex, toSeat.seatIndex];
     this.log(
       `${fromSeat.getDisplayName()} gives ${cardFromFirst.value} of ${cardFromFirst.suit} to ${toSeat.getDisplayName()}`,
+      false,
+      {
+        visibleTo: participants,
+        hiddenMessage: `${fromSeat.getDisplayName()} gives a card to ${toSeat.getDisplayName()}`,
+      },
     );
     this.log(
       `${toSeat.getDisplayName()} gives ${cardFromSecond.value} of ${cardFromSecond.suit} to ${fromSeat.getDisplayName()}`,
+      false,
+      {
+        visibleTo: participants,
+        hiddenMessage: `${toSeat.getDisplayName()} gives a card to ${fromSeat.getDisplayName()}`,
+      },
     );
 
     if (this.playerCount === 1) {
@@ -439,6 +458,11 @@ export class Game {
 
     this.log(
       `${fromSeat.getDisplayName()} gives ${cardToGive.value} of ${cardToGive.suit} to ${toSeat.getDisplayName()}`,
+      false,
+      {
+        visibleTo: [fromSeat.seatIndex, toSeat.seatIndex],
+        hiddenMessage: `${fromSeat.getDisplayName()} gives a card to ${toSeat.getDisplayName()}`,
+      },
     );
     this.notifyStateChange();
   }
