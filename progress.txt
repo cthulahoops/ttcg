@@ -46,3 +46,14 @@ Fixed possibly undefined 'seat' access in client files:
 
 Both client type errors (TS18048) have been resolved.
 Type check confirms no client errors remain.
+
+## Completed: undefined-game-server
+
+Fixed possibly undefined access in server/game-server.ts:
+
+- Lines 21-24: Extracted `controllers[0]` into `singleController` const with non-null assertion before pushing
+- Line 52: Added non-null assertion to `playerCards[p]!` since `p` is bounded by `numCharacters`
+- Line 63: Added non-null assertion to `controllers[i]!` since `i` is bounded by `numCharacters`
+
+All 3 type errors (TS2345, TS2532, TS2322) in game-server.ts have been resolved.
+Type check confirms no game-server.ts errors remain.

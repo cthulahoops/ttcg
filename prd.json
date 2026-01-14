@@ -44,7 +44,7 @@
   {
     "id": "undefined-game-server",
     "title": "Fix possibly undefined access in game-server.ts",
-    "status": "incomplete",
+    "status": "complete",
     "files": ["server/game-server.ts"],
     "errors": [
       "Lines 24-26: Controller | undefined not assignable to Controller",

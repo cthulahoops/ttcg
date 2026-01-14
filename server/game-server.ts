@@ -18,9 +18,10 @@ export function newGame(controllers: Controller[]): Game {
   const playerCount = controllers.length;
 
   if (playerCount == 1) {
-    controllers.push(controllers[0]);
-    controllers.push(controllers[0]);
-    controllers.push(controllers[0]);
+    const singleController = controllers[0]!;
+    controllers.push(singleController);
+    controllers.push(singleController);
+    controllers.push(singleController);
   }
 
   let pyramidController;
@@ -48,7 +49,7 @@ export function newGame(controllers: Controller[]): Game {
   const playerCards: Card[][] = Array.from({ length: numCharacters }, () => []);
   for (let i = 0; i < cardsPerPlayer; i++) {
     for (let p = 0; p < numCharacters; p++) {
-      playerCards[p].push(deck.shift()!);
+      playerCards[p]!.push(deck.shift()!);
     }
   }
 
@@ -59,7 +60,7 @@ export function newGame(controllers: Controller[]): Game {
 
   const seats: Seat[] = [];
   for (let i = 0; i < numCharacters; i++) {
-    const controller: Controller = controllers[i];
+    const controller: Controller = controllers[i]!;
 
     const seat = new Seat(i, controller);
 
