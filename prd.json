@@ -8,7 +8,7 @@
   {
     "id": "give-card-recipient",
     "title": "Show recipient name in Give Card dialog",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "id": "sort-characters-alphabetically",
@@ -88,5 +88,11 @@
     "id": "room-code-leave-existing",
     "title": "Leave existing room when setting a new room code",
     "status": "pending"
+  },
+  {
+    "id": "unit-tests-for-shared-code",
+    "title": "Create a unit test for something in @shared",
+    "status": "pending",
+    "notes": "Choose something reasonably high value, but the main focus to get a working test setup."
   }
 ]

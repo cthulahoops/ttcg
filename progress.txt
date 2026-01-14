@@ -109,3 +109,20 @@ Sorted available characters alphabetically for easier selection:
 Characters are now displayed in alphabetical order (e.g., Aragorn, Arwen, Boromir, Frodo...)
 instead of random shuffle order. This makes it easier for players to find their preferred character.
 Type check confirms no errors introduced.
+
+## Completed: give-card-recipient
+
+Show recipient name in Give Card dialog:
+
+The `DecisionDialog` React component was not displaying the `message` field from choice options,
+which meant the recipient's name wasn't shown in card-giving dialogs (e.g., Fatty Bolger's setup).
+
+**Fix (client/DecisionDialog.tsx)**:
+- Added `message` prop to the internal `Dialog` component
+- Rendered message as `<p className="dialog-message">` between title and buttons
+- Updated both `choose_button` and `choose_card` cases to pass `decision.options.message`
+
+Now the dialog shows "Choose a card to give to [Character Name]" below the title.
+The CSS class `.dialog-message` already existed with appropriate styling.
+
+Type check passes with no errors.
