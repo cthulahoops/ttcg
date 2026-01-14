@@ -1,0 +1,13 @@
+# PRD Progress Summary
+
+## Completed: unused-client
+
+Fixed unused imports and code in client files:
+
+- client/App.tsx: Removed unused `useState` import
+- client/GameLog.tsx: Wired up `CopyLogButton` (was defined but not rendered)
+- client/LobbyMenu.tsx: Removed unused `handleGenerateCode` function
+- client/usePlayerId.ts: Removed unused `useRef` import
+
+All 4 issues from the prd.json "unused-client" item have been resolved.
+Type check confirms the fixes are valid.

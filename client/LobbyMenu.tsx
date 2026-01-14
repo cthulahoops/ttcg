@@ -28,8 +28,6 @@ export function LobbyMenu({
     onJoinRoom(playerName.trim(), roomCode.toUpperCase());
   };
 
-  const handleGenerateCode = () => {};
-
   return (
     <div className="lobby-menu">
       <h2>Join a Game</h2>

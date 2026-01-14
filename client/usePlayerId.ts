@@ -1,5 +1,3 @@
-import { useRef } from "react";
-
 const STORAGE_KEY = "ttcg:playerId";
 
 export function usePlayerId(): string {

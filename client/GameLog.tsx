@@ -21,6 +21,7 @@ export function GameLog({ entries }: GameLogProps) {
 
   return (
     <section className="game-log" ref={logRef}>
+      <CopyLogButton entries={entries} />
       {entries.map((entry, idx) => (
         <div
           key={idx}
@@ -33,11 +34,7 @@ export function GameLog({ entries }: GameLogProps) {
   );
 }
 
-type CopyLogButtonProps = {
-  entries: { line: string }[];
-};
-
-function CopyLogButton({ entries }: CopyLogButtonProps) {
+function CopyLogButton({ entries }: { entries: { line: string }[] }) {
   function copy() {
     const text = entries.map((e) => e.line).join("\n");
     navigator.clipboard.writeText(text);
