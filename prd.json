@@ -35,7 +35,7 @@
   {
     "id": "split-character-registry",
     "title": "Split characters/registry.ts into one file per character",
-    "status": "pending",
+    "status": "completed",
     "notes": "Precondition for implementing completedness checks"
   },
   {

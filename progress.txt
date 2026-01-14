@@ -242,3 +242,31 @@ to the Rings suit and didn't evoke the earthy "hills" theme well.
 The new colors are noticeably browner with more red and less green, creating an
 earthier appearance that better represents rolling hills while maintaining good
 contrast for readability.
+
+## Completed: split-character-registry
+
+Split characters/registry.ts into one file per character:
+
+The original registry.ts contained all 25 character definitions in a single 1253-line file.
+This made it difficult to find and modify individual character implementations. Splitting
+into separate files is a precondition for implementing completedness checks.
+
+**New file structure (shared/characters/)**:
+- `types.ts` - Shared interfaces: CharacterDefinition, CharacterObjective, CharacterDisplay
+- Individual character files (25 total):
+  - `frodo.ts`, `gandalf.ts`, `merry.ts`, `celeborn.ts`, `pippin.ts`
+  - `boromir.ts`, `sam.ts`, `gimli.ts`, `legolas.ts`, `aragorn.ts`
+  - `goldberry.ts`, `glorfindel.ts`, `galadriel.ts`, `gildor-inglorian.ts`
+  - `farmer-maggot.ts`, `fatty-bolger.ts`, `tom-bombadil.ts`
+  - `barliman-butterbur.ts`, `bill-the-pony.ts`, `elrond.ts`
+  - `arwen.ts`, `gloin.ts`, `bilbo-baggins.ts`, `gwaihir.ts`, `shadowfax.ts`
+- `registry.ts` - Imports all characters and exports characterRegistry and allCharacterNames
+
+**Unchanged external API**:
+- `characterRegistry` - Map<string, CharacterDefinition> (same as before)
+- `allCharacterNames` - string[] (same as before)
+- Type exports via `export type { CharacterDefinition, ... }` from registry.ts
+
+Each character file exports a single const with the character definition, containing
+its name, setupText, setup function, objective, and display configuration.
+Type check passes with no errors.
