@@ -141,3 +141,20 @@ gift dialog to appear before the revealed cards were visible to the player.
 
 Now the revealed cards are visible before the gift dialog appears, as expected.
 Type check passes with no errors.
+
+## Completed: one-ring-skip-prompt
+
+Skip one ring trump prompt when already winning:
+
+When the 1 of Rings is played, the player is asked whether to use it as trump to win
+the trick. However, if the 1 of Rings would already win without trump (i.e., rings is
+the lead suit and no higher rings card was played), this prompt is unnecessary and
+disrupts gameplay.
+
+**Fix (shared/game.ts)**:
+- Added `alreadyWinning` check before showing the trump prompt
+- Condition: `leadSuit === "rings"` AND no rings card with `value > 1` was played
+- When already winning, skip the prompt entirely (normal trick winner logic applies)
+
+This improves UX by avoiding an obvious "Yes" choice when the player would win anyway.
+Type check passes with no errors.

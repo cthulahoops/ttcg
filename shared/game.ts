@@ -654,22 +654,29 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
     );
 
     if (oneRingPlay) {
-      const oneRingSeat = gameState.seats[oneRingPlay.playerIndex];
-      if (!oneRingSeat) {
-        throw new Error(
-          `Invalid seat for 1 of Rings player: ${oneRingPlay.playerIndex}`,
-        );
+      // Check if the 1 of Rings would already win without using trump
+      // (isTrump is still false at this point, so determineTrickWinner gives us the non-trump result)
+      const alreadyWinning =
+        determineTrickWinner(gameState) === oneRingPlay.playerIndex;
+
+      if (!alreadyWinning) {
+        const oneRingSeat = gameState.seats[oneRingPlay.playerIndex];
+        if (!oneRingSeat) {
+          throw new Error(
+            `Invalid seat for 1 of Rings player: ${oneRingPlay.playerIndex}`,
+          );
+        }
+        const useTrump = await oneRingSeat.controller.chooseButton({
+          title: "You played the 1 of Rings!",
+          message: "Do you want to use it as trump to win this trick?",
+          buttons: [
+            { label: "Yes, Win Trick", value: true },
+            { label: "No, Play Normal", value: false },
+          ],
+        });
+        oneRingPlay.isTrump = useTrump;
+        gameState.notifyStateChange();
       }
-      const useTrump = await oneRingSeat.controller.chooseButton({
-        title: "You played the 1 of Rings!",
-        message: "Do you want to use it as trump to win this trick?",
-        buttons: [
-          { label: "Yes, Win Trick", value: true },
-          { label: "No, Play Normal", value: false },
-        ],
-      });
-      oneRingPlay.isTrump = useTrump;
-      gameState.notifyStateChange();
     }
 
     const winnerIndex = determineTrickWinner(gameState);
