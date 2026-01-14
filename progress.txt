@@ -227,3 +227,18 @@ cards transferred between specific players.
 
 Now only players involved in an exchange see the specific cards traded.
 Type check passes with no errors.
+
+## Completed: hills-color
+
+Make hills suit color browner:
+
+The Hills suit cards previously used a golden/yellow color gradient that was too similar
+to the Rings suit and didn't evoke the earthy "hills" theme well.
+
+**Fix (client/game.css)**:
+- Changed `.card.hills` background gradient from `#ccb342 → #aea551` (golden yellow)
+  to `#c4965c → #a8824a` (warm tan-brown)
+
+The new colors are noticeably browner with more red and less green, creating an
+earthier appearance that better represents rolling hills while maintaining good
+contrast for readability.
