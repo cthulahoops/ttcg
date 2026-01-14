@@ -33,6 +33,8 @@ export const Pippin: CharacterDefinition = {
       // Can still complete if other players can catch up with remaining tricks
       return totalGap <= game.tricksRemaining();
     },
+    isCompleted: (game, seat) =>
+      game.finished && Pippin.objective.check(game, seat),
   },
 
   display: {

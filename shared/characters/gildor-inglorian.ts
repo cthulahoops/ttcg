@@ -31,6 +31,8 @@ export const GildorInglorian: CharacterDefinition = {
       const availableCards = seat.hand!.getAvailableCards();
       return availableCards.some((c: Card) => c.suit === "forests");
     },
+    isCompleted: (game, seat) =>
+      game.finished && GildorInglorian.objective.check(game, seat),
   },
 
   display: {

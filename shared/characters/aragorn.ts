@@ -27,6 +27,8 @@ export const Aragorn: CharacterDefinition = {
       const tricksNeeded = target - current;
       return game.tricksRemaining() >= tricksNeeded;
     },
+    isCompleted: (game, seat) =>
+      game.finished && Aragorn.objective.check(game, seat),
   },
 
   display: {

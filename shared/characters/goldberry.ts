@@ -56,6 +56,8 @@ export const Goldberry: CharacterDefinition = {
       const tricksNeeded = 3 - trickCount;
       return game.tricksRemaining() >= tricksNeeded;
     },
+    isCompleted: (game, seat) =>
+      game.finished && Goldberry.objective.check(game, seat),
   },
 
   display: {

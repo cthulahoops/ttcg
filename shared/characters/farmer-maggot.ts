@@ -48,6 +48,7 @@ export const FarmerMaggot: CharacterDefinition = {
 
       return matchingWon + matchingAvailable >= 2;
     },
+    isCompleted: (game, seat) => FarmerMaggot.objective.check(game, seat),
   },
 
   display: {

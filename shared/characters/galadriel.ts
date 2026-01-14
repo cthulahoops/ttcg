@@ -48,6 +48,8 @@ export const Galadriel: CharacterDefinition = {
         tricksNeededForGaladriel + tricksNeededForMax <= game.tricksRemaining()
       );
     },
+    isCompleted: (game, seat) =>
+      game.finished && Galadriel.objective.check(game, seat),
   },
 
   display: {

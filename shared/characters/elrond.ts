@@ -59,6 +59,7 @@ export const Elrond: CharacterDefinition = {
 
       return ringsRemaining >= seatsNeedingRing;
     },
+    isCompleted: (game, seat) => Elrond.objective.check(game, seat),
   },
 
   display: {

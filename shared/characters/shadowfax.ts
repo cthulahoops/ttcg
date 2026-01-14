@@ -26,6 +26,7 @@ export const Shadowfax: CharacterDefinition = {
       // Simplified: always completable
       return true;
     },
+    isCompleted: (game, seat) => Shadowfax.objective.check(game, seat),
   },
 
   display: {

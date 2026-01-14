@@ -45,6 +45,8 @@ export const TomBombadil: CharacterDefinition = {
       // (need to check if we can still win 3+ cards of suits in hand)
       return true;
     },
+    isCompleted: (game, seat) =>
+      game.finished && TomBombadil.objective.check(game, seat),
   },
 
   display: {

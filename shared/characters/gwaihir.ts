@@ -24,6 +24,7 @@ export const Gwaihir: CharacterDefinition = {
       // Simplified: always completable
       return true;
     },
+    isCompleted: (game, seat) => Gwaihir.objective.check(game, seat),
   },
 
   display: {

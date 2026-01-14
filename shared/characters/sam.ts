@@ -24,6 +24,7 @@ export const Sam: CharacterDefinition = {
       if (!seat.threatCard) return true;
       return !game.cardGone(seat, "hills", seat.threatCard);
     },
+    isCompleted: (game, seat) => Sam.objective.check(game, seat),
   },
 
   display: {

@@ -53,6 +53,8 @@ export const Arwen: CharacterDefinition = {
 
       return myCounts + forestsRemaining > othersMaxCounts;
     },
+    isCompleted: (game, seat) =>
+      game.finished && Arwen.objective.check(game, seat),
   },
 
   display: {

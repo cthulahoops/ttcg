@@ -25,6 +25,7 @@ export const Glorfindel: CharacterDefinition = {
       }
       return true;
     },
+    isCompleted: (game, seat) => Glorfindel.objective.check(game, seat),
   },
 
   display: {

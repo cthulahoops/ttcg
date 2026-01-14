@@ -19,6 +19,7 @@ export const Celeborn: CharacterDefinition = {
       return Object.values(rankCounts).some((count) => count >= 3);
     },
     isCompletable: (_game, _seat) => true, // Hard to determine early
+    isCompleted: (game, seat) => Celeborn.objective.check(game, seat),
   },
 
   display: {

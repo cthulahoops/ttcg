@@ -20,6 +20,13 @@ export const BilboBaggins: CharacterDefinition = {
       // Impossible if already has 1 of Rings
       return !game.hasCard(seat, "rings", 1);
     },
+    isCompleted: (game, seat) => {
+      // Can be completed early if objective is met AND 1 of Rings is already won by someone else
+      const met = BilboBaggins.objective.check(game, seat);
+      if (!met) return false;
+      // If game is finished, check is enough. Otherwise, need 1-ring to be gone.
+      return game.finished || game.cardGone(seat, "rings", 1);
+    },
   },
 
   display: {

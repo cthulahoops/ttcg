@@ -33,6 +33,8 @@ export const BillThePony: CharacterDefinition = {
     text: "Win exactly one trick",
     check: (_game, seat) => seat.getTrickCount() === 1,
     isCompletable: (_game, seat) => seat.getTrickCount() <= 1,
+    isCompleted: (game, seat) =>
+      game.finished && BillThePony.objective.check(game, seat),
   },
 
   display: {

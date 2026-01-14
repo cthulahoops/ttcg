@@ -13,6 +13,7 @@ export const Gandalf: CharacterDefinition = {
     text: "Win at least one trick",
     check: (_game, seat) => seat.getTrickCount() >= 1,
     isCompletable: (_game, _seat) => true, // Always possible
+    isCompleted: (game, seat) => Gandalf.objective.check(game, seat),
   },
 
   display: {

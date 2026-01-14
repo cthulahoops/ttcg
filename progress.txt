@@ -270,3 +270,55 @@ into separate files is a precondition for implementing completedness checks.
 Each character file exports a single const with the character definition, containing
 its name, setupText, setup function, objective, and display configuration.
 Type check passes with no errors.
+
+## Completed: completedness-checks
+
+Implement isCompleted for each character:
+
+Added `isCompleted` method to the `CharacterObjective` interface and implemented it for all
+25 characters. This method returns true when a character's objective is definitively completed
+and cannot be undone, enabling the early-victory-exit feature (future PRD item).
+
+**Interface change (shared/characters/types.ts)**:
+- Added `isCompleted: (game: Game, seat: Seat) => boolean` to CharacterObjective
+
+**Implementation categories**:
+
+1. **"At least X" objectives (isCompleted = check)**:
+   Once met, these cannot be undone since won cards/tricks are permanent.
+   - Gandalf: Win at least one trick
+   - Frodo: Win at least 2/4 ring cards
+   - Sam/Legolas/Gimli: Win specific threat card
+   - Celeborn: Win 3+ cards of same rank
+   - Glorfindel: Win all 8 shadows cards
+   - Gwaihir: Win 2+ tricks with mountains
+   - Shadowfax: Win 2+ tricks with hills
+   - Farmer Maggot: Win 2+ cards matching threat rank
+   - Barliman Butterbur: Win 1+ of last 3 tricks
+   - Elrond: Every character has won a ring
+
+2. **"Exact count" objectives (isCompleted = finished && check)**:
+   Could be undone by winning too many; must wait for game end.
+   - Merry: Exactly 1 or 2 tricks
+   - Fatty Bolger: Exactly 1 trick
+   - Bill the Pony: Exactly 1 trick
+   - Aragorn: Exactly N tricks (threat card value)
+   - Goldberry: Exactly 3 consecutive tricks, no others
+
+3. **Comparative objectives (isCompleted = finished && check)**:
+   Depend on other players' final state.
+   - Pippin: Win fewest tricks
+   - Galadriel: Win neither fewest nor most tricks
+   - Arwen: Win most forests cards
+   - Gloin: Win most mountains cards
+
+4. **End-game determined (isCompleted = finished && check)**:
+   - Boromir: Win last trick + no 1-ring
+   - Gildor Inglorian: Play forests in final trick
+   - Tom Bombadil: Win 3+ cards matching suit in hand at end
+
+5. **Special case (Bilbo Baggins)**:
+   - isCompleted = check && (finished || 1-ring gone to someone else)
+   - Can be completed early once 3+ tricks won AND 1-ring is won by another player
+
+Type check passes with no errors.

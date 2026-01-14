@@ -23,6 +23,7 @@ export const Legolas: CharacterDefinition = {
       if (!seat.threatCard) return true;
       return !game.cardGone(seat, "forests", seat.threatCard);
     },
+    isCompleted: (game, seat) => Legolas.objective.check(game, seat),
   },
 
   display: {

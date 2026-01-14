@@ -41,7 +41,7 @@
   {
     "id": "completedness-checks",
     "title": "Implement isCompleted for each character",
-    "status": "pending",
+    "status": "completed",
     "notes": "Depends on split-character-registry"
   },
   {

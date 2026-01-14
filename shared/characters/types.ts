@@ -9,6 +9,7 @@ export interface CharacterObjective {
   getText?: (game: Game) => string;
   check: (game: Game, seat: Seat) => boolean;
   isCompletable: (game: Game, seat: Seat) => boolean;
+  isCompleted: (game: Game, seat: Seat) => boolean;
 }
 
 export interface CharacterDisplay {

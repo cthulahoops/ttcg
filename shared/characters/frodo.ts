@@ -37,6 +37,7 @@ export const Frodo: CharacterDefinition = {
       const ringsRemaining = 5 - myRings - othersRings;
       return myRings + ringsRemaining >= ringsNeeded;
     },
+    isCompleted: (game, seat) => Frodo.objective.check(game, seat),
   },
 
   display: {

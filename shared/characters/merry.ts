@@ -17,6 +17,8 @@ export const Merry: CharacterDefinition = {
       return count === 1 || count === 2;
     },
     isCompletable: (_game, seat) => seat.getTrickCount() < 3,
+    isCompleted: (game, seat) =>
+      game.finished && Merry.objective.check(game, seat),
   },
 
   display: {

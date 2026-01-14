@@ -53,6 +53,8 @@ export const Gloin: CharacterDefinition = {
 
       return myCounts + mountainsRemaining > othersMaxCounts;
     },
+    isCompleted: (game, seat) =>
+      game.finished && Gloin.objective.check(game, seat),
   },
 
   display: {

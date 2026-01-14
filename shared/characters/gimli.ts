@@ -24,6 +24,7 @@ export const Gimli: CharacterDefinition = {
       if (!seat.threatCard) return true;
       return !game.cardGone(seat, "mountains", seat.threatCard);
     },
+    isCompleted: (game, seat) => Gimli.objective.check(game, seat),
   },
 
   display: {
