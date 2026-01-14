@@ -23,7 +23,8 @@
   {
     "id": "show-controller-names",
     "title": "Show controller/player names in display",
-    "status": "pending"
+    "status": "invalid",
+    "notes": "PlayerSeat already shows this format; TrickArea should use character name only"
   },
   {
     "id": "log-player-names",
