@@ -1,27 +1,18 @@
-import {
-  Hand as _Hand,
-  PlayerHand,
-  PyramidHand,
-  SolitaireHand,
-} from "./hands";
+import { Hand as _Hand } from "./hands";
 import {
   shuffleDeck,
   sortHand,
   delay,
 } from "./utils";
 import { Seat } from "./seat";
-import { AIController, ProxyController } from "./controllers";
-import { characterRegistry, allCharacterNames } from "./characters/registry";
+import { ProxyController } from "./controllers";
+import { characterRegistry } from "./characters/registry";
 import type {
   Card,
   Suit,
   ThreatCard,
-  Controller,
   ChoiceButton,
 } from "./types";
-
-// All possible characters in the game (except Frodo who is automatically assigned)
-const allCharacters = allCharacterNames.filter((name) => name !== "Frodo");
 
 // ===== INTERFACES =====
 

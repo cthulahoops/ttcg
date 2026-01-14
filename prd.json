@@ -24,7 +24,7 @@
   {
     "id": "unused-shared",
     "title": "Remove unused imports/params in shared code",
-    "status": "incomplete",
+    "status": "complete",
     "files": ["shared/game.ts", "shared/hands.ts"],
     "errors": [
       "game.ts: unused 'PlayerHand', 'PyramidHand', 'SolitaireHand', 'AIController', 'Controller', 'allCharacters'",

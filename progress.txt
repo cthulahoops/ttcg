@@ -22,3 +22,17 @@ Fixed unused imports in server files:
 
 All 2 files from the prd.json "unused-server" item have been cleaned up.
 Type check confirms no new errors introduced.
+
+## Completed: unused-shared
+
+Fixed unused imports and parameters in shared files:
+
+- shared/game.ts: Removed unused `PlayerHand`, `PyramidHand`, `SolitaireHand` imports
+- shared/game.ts: Removed unused `AIController` import
+- shared/game.ts: Removed unused `Controller` type import
+- shared/game.ts: Removed unused `allCharacterNames` import and `allCharacters` constant
+- shared/hands.ts: Prefixed unused `isOwnSeat` parameter with underscore in PyramidHand.serializeForViewer
+- shared/hands.ts: Prefixed unused `isOwnSeat` parameter with underscore in SolitaireHand.serializeForViewer
+
+All issues from the prd.json "unused-shared" item have been resolved.
+Type check confirms no TS6xxx (unused) errors remain in these files.

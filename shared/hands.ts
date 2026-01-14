@@ -256,7 +256,7 @@ export class PyramidHand extends Hand {
     this._revealNewlyUncoveredCards();
   }
 
-  serializeForViewer(isOwnSeat: boolean): SerializedPyramidHand {
+  serializeForViewer(_isOwnSeat: boolean): SerializedPyramidHand {
     // Pyramid is always visible (it's meant to be seen by all)
     // But face-down cards are hidden until revealed
     const positions = this._positions.map((card, idx) => {
@@ -348,7 +348,7 @@ export class SolitaireHand extends Hand {
     }
   }
 
-  serializeForViewer(isOwnSeat: boolean): SerializedSolitaireHand {
+  serializeForViewer(_isOwnSeat: boolean): SerializedSolitaireHand {
     // In solitaire mode, all seats are controlled by the same player
     // So we always show revealed cards and hide the hidden ones
     const cards: (Card | "hidden")[] = [
