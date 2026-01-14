@@ -64,10 +64,12 @@ export const Gloin: CharacterDefinition = {
         .filter((c: Card) => c.suit === "mountains").length;
       const met = Gloin.objective.check(game, seat);
       const completable = Gloin.objective.isCompletable(game, seat);
+      const completed = Gloin.objective.isCompleted(game, seat);
 
       return {
         met,
         completable,
+        completed,
         details: `Mountains: ${myCounts}`,
       };
     },

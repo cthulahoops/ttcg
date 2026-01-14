@@ -39,8 +39,9 @@ export const GildorInglorian: CharacterDefinition = {
     renderStatus: (game, seat) => {
       const met = GildorInglorian.objective.check(game, seat);
       const completable = GildorInglorian.objective.isCompletable(game, seat);
+      const completed = GildorInglorian.objective.isCompleted(game, seat);
 
-      return { met, completable };
+      return { met, completable, completed };
     },
   },
 };

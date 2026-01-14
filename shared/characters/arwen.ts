@@ -64,10 +64,12 @@ export const Arwen: CharacterDefinition = {
         .filter((c: Card) => c.suit === "forests").length;
       const met = Arwen.objective.check(game, seat);
       const completable = Arwen.objective.isCompletable(game, seat);
+      const completed = Arwen.objective.isCompleted(game, seat);
 
       return {
         met,
         completable,
+        completed,
         details: `Forests: ${myCounts}`,
       };
     },

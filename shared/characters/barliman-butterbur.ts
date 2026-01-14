@@ -23,7 +23,8 @@ export const BarlimanButterbur: CharacterDefinition = {
     renderStatus: (game, seat) => {
       const met = BarlimanButterbur.objective.check(game, seat);
       const completable = BarlimanButterbur.objective.isCompletable(game, seat);
-      return game.displaySimple(met, completable);
+      const completed = BarlimanButterbur.objective.isCompleted(game, seat);
+      return game.displaySimple(met, completable, completed);
     },
   },
 };

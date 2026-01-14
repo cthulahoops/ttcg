@@ -30,7 +30,8 @@ export const Legolas: CharacterDefinition = {
     renderStatus: (game, seat) => {
       const met = Legolas.objective.check(game, seat);
       const completable = Legolas.objective.isCompletable(game, seat);
-      return game.displayThreatCard(seat, met, completable);
+      const completed = Legolas.objective.isCompleted(game, seat);
+      return game.displayThreatCard(seat, met, completable, completed);
     },
   },
 };

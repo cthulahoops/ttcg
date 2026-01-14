@@ -54,7 +54,7 @@ export const FarmerMaggot: CharacterDefinition = {
   display: {
     renderStatus: (game, seat) => {
       if (!seat.threatCard) {
-        return game.displaySimple(false, true);
+        return game.displaySimple(false, true, false);
       }
 
       const matchingCards = seat
@@ -62,10 +62,12 @@ export const FarmerMaggot: CharacterDefinition = {
         .filter((c) => c.value === seat.threatCard);
       const met = FarmerMaggot.objective.check(game, seat);
       const completable = FarmerMaggot.objective.isCompletable(game, seat);
+      const completed = FarmerMaggot.objective.isCompleted(game, seat);
 
       return {
         met,
         completable,
+        completed,
         details: `Threat: ${seat.threatCard}, Won: ${matchingCards.length}/2`,
       };
     },

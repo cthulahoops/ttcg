@@ -35,12 +35,13 @@ export const BilboBaggins: CharacterDefinition = {
       const hasOneRing = game.hasCard(seat, "rings", 1);
       const met = BilboBaggins.objective.check(game, seat);
       const completable = BilboBaggins.objective.isCompletable(game, seat);
+      const completed = BilboBaggins.objective.isCompleted(game, seat);
 
       const tricksIcon = trickCount >= 3 ? "✓" : `${trickCount}/3`;
       const oneRingIcon = hasOneRing ? "✗ (has 1-Ring)" : "✓";
       const details = `Tricks: ${tricksIcon}, 1-Ring: ${oneRingIcon}`;
 
-      return { met, completable, details };
+      return { met, completable, completed, details };
     },
   },
 };

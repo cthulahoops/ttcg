@@ -35,7 +35,8 @@ export const FattyBolger: CharacterDefinition = {
     renderStatus: (game, seat) => {
       const met = FattyBolger.objective.check(game, seat);
       const completable = FattyBolger.objective.isCompletable(game, seat);
-      return game.displaySimple(met, completable);
+      const completed = FattyBolger.objective.isCompleted(game, seat);
+      return game.displaySimple(met, completable, completed);
     },
   },
 };

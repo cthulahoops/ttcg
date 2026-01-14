@@ -31,7 +31,8 @@ export const Sam: CharacterDefinition = {
     renderStatus: (game, seat) => {
       const met = Sam.objective.check(game, seat);
       const completable = Sam.objective.isCompletable(game, seat);
-      return game.displayThreatCard(seat, met, completable);
+      const completed = Sam.objective.isCompleted(game, seat);
+      return game.displayThreatCard(seat, met, completable, completed);
     },
   },
 };

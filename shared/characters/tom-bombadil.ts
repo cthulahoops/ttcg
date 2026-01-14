@@ -53,6 +53,7 @@ export const TomBombadil: CharacterDefinition = {
     renderStatus: (game, seat) => {
       const met = TomBombadil.objective.check(game, seat);
       const completable = TomBombadil.objective.isCompletable(game, seat);
+      const completed = TomBombadil.objective.isCompleted(game, seat);
 
       const wonBySuit: Record<Suit, number> = {
         mountains: 0,
@@ -82,6 +83,7 @@ export const TomBombadil: CharacterDefinition = {
       return {
         met,
         completable,
+        completed,
         details: countsDisplay || undefined,
       };
     },

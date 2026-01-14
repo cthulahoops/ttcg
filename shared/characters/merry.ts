@@ -25,7 +25,8 @@ export const Merry: CharacterDefinition = {
     renderStatus: (game, seat) => {
       const met = Merry.objective.check(game, seat);
       const completable = Merry.objective.isCompletable(game, seat);
-      return game.displaySimple(met, completable);
+      const completed = Merry.objective.isCompleted(game, seat);
+      return game.displaySimple(met, completable, completed);
     },
   },
 };

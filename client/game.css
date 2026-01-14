@@ -299,6 +299,10 @@ button:hover {
   margin-top: 5px;
 }
 
+.objective-status .completed {
+  color: #ffd700;
+}
+
 .objective-status .success {
   color: #4caf50;
 }

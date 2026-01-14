@@ -37,10 +37,12 @@ export const Shadowfax: CharacterDefinition = {
       );
       const met = Shadowfax.objective.check(game, seat);
       const completable = Shadowfax.objective.isCompletable(game, seat);
+      const completed = Shadowfax.objective.isCompleted(game, seat);
 
       return {
         met,
         completable,
+        completed,
         details: `Tricks with hills: ${tricksWithHills.length}/2`,
       };
     },

@@ -73,10 +73,12 @@ export const Elrond: CharacterDefinition = {
 
       const met = Elrond.objective.check(game, seat);
       const completable = Elrond.objective.isCompletable(game, seat);
+      const completed = Elrond.objective.isCompleted(game, seat);
 
       return {
         met,
         completable,
+        completed,
         details: `Seats with rings: ${seatsWithRings}/${game.seats.length}`,
       };
     },

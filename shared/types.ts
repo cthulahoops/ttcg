@@ -49,6 +49,7 @@ export interface SetupContext {
 export interface CharacterStatus {
   met: boolean;
   completable: boolean;
+  completed: boolean;
   details?: string;
 }
 

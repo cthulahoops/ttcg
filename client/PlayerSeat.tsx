@@ -47,7 +47,9 @@ export function PlayerSeat({
         <div className="objective-status">
           {status && (
             <>
-              {status.met ? (
+              {status.completed ? (
+                <span className="completed">★</span>
+              ) : status.met ? (
                 <span className="success">✓</span>
               ) : status.completable ? (
                 <span className="fail">✗</span>

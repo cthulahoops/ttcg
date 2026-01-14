@@ -35,10 +35,12 @@ export const Glorfindel: CharacterDefinition = {
         .filter((c: Card) => c.suit === "shadows");
       const met = Glorfindel.objective.check(game, seat);
       const completable = Glorfindel.objective.isCompletable(game, seat);
+      const completed = Glorfindel.objective.isCompleted(game, seat);
 
       return {
         met,
         completable,
+        completed,
         details: `Shadows: ${shadowsCards.length}/8`,
       };
     },

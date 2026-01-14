@@ -64,7 +64,8 @@ export const Goldberry: CharacterDefinition = {
     renderStatus: (game, seat) => {
       const met = Goldberry.objective.check(game, seat);
       const completable = Goldberry.objective.isCompletable(game, seat);
-      return game.displaySimple(met, completable);
+      const completed = Goldberry.objective.isCompleted(game, seat);
+      return game.displaySimple(met, completable, completed);
     },
   },
 };

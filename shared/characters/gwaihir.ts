@@ -35,10 +35,12 @@ export const Gwaihir: CharacterDefinition = {
       );
       const met = Gwaihir.objective.check(game, seat);
       const completable = Gwaihir.objective.isCompletable(game, seat);
+      const completed = Gwaihir.objective.isCompleted(game, seat);
 
       return {
         met,
         completable,
+        completed,
         details: `Tricks with mountains: ${tricksWithMountains.length}/2`,
       };
     },

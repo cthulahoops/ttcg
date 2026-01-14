@@ -47,7 +47,7 @@
   {
     "id": "completedness-display",
     "title": "Add display for completed objectives",
-    "status": "pending",
+    "status": "completed",
     "notes": "Depends on completedness-checks"
   },
   {

@@ -428,16 +428,18 @@ export class Game {
   displaySimple(
     met: boolean,
     completable: boolean,
-  ): { met: boolean; completable: boolean } {
-    return { met, completable };
+    completed: boolean,
+  ): { met: boolean; completable: boolean; completed: boolean } {
+    return { met, completable, completed };
   }
 
   displayThreatCard(
     _seat: Seat,
     met: boolean,
     completable: boolean,
-  ): { met: boolean; completable: boolean } {
-    return this.displaySimple(met, completable);
+    completed: boolean,
+  ): { met: boolean; completable: boolean; completed: boolean } {
+    return this.displaySimple(met, completable, completed);
   }
 
   async giveCard(fromSeat: Seat, toSeat: Seat): Promise<void> {

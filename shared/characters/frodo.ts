@@ -48,6 +48,7 @@ export const Frodo: CharacterDefinition = {
       const ringsNeeded = game.numCharacters === 3 ? 4 : 2;
       const met = ringCards.length >= ringsNeeded;
       const completable = Frodo.objective.isCompletable(game, seat);
+      const completed = Frodo.objective.isCompleted(game, seat);
 
       let details: string;
       if (ringCards.length > 0) {
@@ -60,7 +61,7 @@ export const Frodo: CharacterDefinition = {
         details = "Rings: none";
       }
 
-      return { met, completable, details };
+      return { met, completable, completed, details };
     },
   },
 };

@@ -41,7 +41,8 @@ export const BillThePony: CharacterDefinition = {
     renderStatus: (game, seat) => {
       const met = BillThePony.objective.check(game, seat);
       const completable = BillThePony.objective.isCompletable(game, seat);
-      return game.displaySimple(met, completable);
+      const completed = BillThePony.objective.isCompleted(game, seat);
+      return game.displaySimple(met, completable, completed);
     },
   },
 };

@@ -41,7 +41,8 @@ export const Pippin: CharacterDefinition = {
     renderStatus: (game, seat) => {
       const met = Pippin.objective.check(game, seat);
       const completable = Pippin.objective.isCompletable(game, seat);
-      return game.displaySimple(met, completable);
+      const completed = Pippin.objective.isCompleted(game, seat);
+      return game.displaySimple(met, completable, completed);
     },
   },
 };

@@ -26,12 +26,13 @@ export const Boromir: CharacterDefinition = {
       const hasOneRing = game.hasCard(seat, "rings", 1);
       const met = Boromir.objective.check(game, seat);
       const completable = Boromir.objective.isCompletable(game, seat);
+      const completed = Boromir.objective.isCompleted(game, seat);
 
       const lastIcon = wonLast ? "✓" : "✗";
       const oneRingIcon = hasOneRing ? "✗ (has 1-Ring)" : "✓";
       const details = `Last: ${lastIcon}, 1-Ring: ${oneRingIcon}`;
 
-      return { met, completable, details };
+      return { met, completable, completed, details };
     },
   },
 };

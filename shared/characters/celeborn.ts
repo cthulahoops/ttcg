@@ -29,6 +29,7 @@ export const Celeborn: CharacterDefinition = {
         rankCounts[card.value] = (rankCounts[card.value] || 0) + 1;
       });
       const met = Celeborn.objective.check(game, seat);
+      const completed = Celeborn.objective.isCompleted(game, seat);
 
       const ranksWithCounts = Object.entries(rankCounts)
         .filter(([_rank, count]) => count >= 2)
@@ -38,6 +39,7 @@ export const Celeborn: CharacterDefinition = {
       return {
         met,
         completable: true,
+        completed,
         details: ranksWithCounts || undefined,
       };
     },

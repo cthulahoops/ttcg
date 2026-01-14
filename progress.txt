@@ -322,3 +322,37 @@ and cannot be undone, enabling the early-victory-exit feature (future PRD item).
    - Can be completed early once 3+ tricks won AND 1-ring is won by another player
 
 Type check passes with no errors.
+
+## Completed: completedness-display
+
+Add display for completed objectives:
+
+Extended the UI to visually distinguish when a character's objective is definitively completed
+(locked in, cannot be undone) vs merely "met" (currently passing but could still fail).
+
+**Type changes (shared/types.ts)**:
+- Added `completed: boolean` to CharacterStatus interface
+
+**Game helper updates (shared/game.ts)**:
+- Updated `displaySimple(met, completable, completed)` to accept and return completed field
+- Updated `displayThreatCard(seat, met, completable, completed)` to pass through completed
+
+**Character updates (all 25 character files)**:
+Each character's `renderStatus` method now:
+- Computes `completed = CharacterName.objective.isCompleted(game, seat)`
+- Includes `completed` in the returned status object
+
+**UI changes (client/PlayerSeat.tsx)**:
+- Added new visual state for completed objectives: gold star (★)
+- Rendering priority: completed (★) > met (✓) > not met (✗)
+
+**CSS styling (client/game.css)**:
+- Added `.objective-status .completed` with gold color (#ffd700)
+
+Visual states now:
+- ★ (gold) - Objective definitively completed, locked in
+- ✓ (green) - Objective currently met but could still fail
+- ✗ (red) - Objective not met
+- ✗ (impossible) (red) - Objective can no longer be completed
+
+Type check passes with no errors.

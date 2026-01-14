@@ -19,7 +19,8 @@ export const Gandalf: CharacterDefinition = {
   display: {
     renderStatus: (game, seat) => {
       const met = Gandalf.objective.check(game, seat);
-      return game.displaySimple(met, true);
+      const completed = Gandalf.objective.isCompleted(game, seat);
+      return game.displaySimple(met, true, completed);
     },
   },
 };
