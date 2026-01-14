@@ -179,3 +179,27 @@ Now for networked games:
 
 For local/solitaire games, falls back to "Player X" when no name is set.
 Type check passes with no errors.
+
+## Completed: broken-rings-indicator
+
+Add visual indication when rings are broken:
+
+In this trick-taking game, players cannot lead with Rings suit cards until rings have
+been "broken" (a Rings card has been played for any reason). The `ringsBroken` flag
+was tracked in the game state and serialized to clients, but there was no visual
+indicator showing this state to players.
+
+**Changes**:
+- `client/TrickArea.tsx`: Added a rings status indicator next to the trick area title
+  - Wrapped h2 and indicator in a `.trick-header` div
+  - Shows "Rings: Sealed" (blue styling) when rings haven't been broken yet
+  - Shows "Rings: Broken" (orange styling) once any Rings card has been played
+- `client/game.css`: Added styling for the rings status badge
+  - Added `.trick-header` flex container for title and indicator
+  - Added `.trick-header h2` to remove margin for proper alignment
+  - Added `.rings-status` base styles with padding and border-radius
+  - Added `.rings-status.sealed` with blue color scheme
+  - Added `.rings-status.broken` with orange color scheme
+
+This helps players understand when they can lead with Rings cards.
+Type check passes with no errors.

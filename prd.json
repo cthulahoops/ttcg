@@ -18,7 +18,7 @@
   {
     "id": "broken-rings-indicator",
     "title": "Add visual indication when rings are broken",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "id": "show-controller-names",
