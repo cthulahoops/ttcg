@@ -59,7 +59,7 @@
   {
     "id": "play-again",
     "title": "Add play again option after game over",
-    "status": "pending",
+    "status": "completed",
     "notes": "Ask all players via choice dialog, first response wins. Yes = reset game, No = return to room screen"
   },
   {

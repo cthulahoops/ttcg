@@ -408,3 +408,43 @@ This ensures the client properly leaves its current room before joining a differ
 preventing the "Already in a room" error when changing room codes.
 
 Type check passes with no errors.
+
+## Completed: play-again
+
+Add play again option after game over:
+
+After a game ends (whether through completion, early victory, or impossible objectives), players
+are now presented with a "Play Again?" dialog. All players see the dialog simultaneously, and
+the first response from any player determines the outcome for everyone.
+
+**Protocol changes (shared/protocol.ts)**:
+- Added `game_reset` server message type with `players` field
+- This message tells clients to return to the lobby state while keeping them in the room
+
+**Client changes (client/reducer.ts)**:
+- Added handler for `game_reset` message
+- Clears `gameState`, `pendingDecision`, and `gameLog`
+- Updates `players` list from the message (in case connections changed)
+
+**Server changes (server/room-manager.ts)**:
+- Refactored `startGame()` to await `runGame()` and implement a play-again loop
+- Added `askPlayAgain()` method:
+  - Sends decision request to all players with same `requestId`
+  - First response resolves the promise (first-response-wins pattern)
+  - Stores handler on room object for routing in `handleDecisionResponse()`
+- Added `resetRoomToLobby()` method:
+  - Clears game state, controllers, and started flag
+  - Broadcasts `game_reset` to all players
+- Updated `handleDecisionResponse()`:
+  - Checks for play-again response before routing to controllers
+  - Routes to stored handler if request ID matches
+
+**Game flow**:
+1. Game ends → `runGame()` returns
+2. Server sends "Play Again?" dialog to all players
+3. First player to respond determines outcome:
+   - "Yes" → Reset room state, start new game (loop continues)
+   - "No" → Reset room to lobby state (players return to room screen)
+4. Players can then start another game from the lobby or leave the room
+
+Type check passes with no errors.

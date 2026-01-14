@@ -42,7 +42,8 @@ export type ServerMessage =
   | { type: "game_state"; state: SerializedGame }
   | { type: "game_log"; line: string; important?: boolean }
   | { type: "error"; message: string }
-  | { type: "decision_request"; requestId: string; decision: DecisionRequest };
+  | { type: "decision_request"; requestId: string; decision: DecisionRequest }
+  | { type: "game_reset"; players: Player[] }; // Return to room lobby
 
 // Decision request types
 export type DecisionRequest =
