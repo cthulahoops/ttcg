@@ -105,7 +105,6 @@ Type check confirms no errors remain in shared/game.ts.
 Sorted available characters alphabetically for easier selection:
 
 - server/game-server.ts: Added `.sort()` call after creating available characters list
-- shared/game.ts: Sort characters before creating choice buttons in runCharacterAssignment
 
 Characters are now displayed in alphabetical order (e.g., Aragorn, Arwen, Boromir, Frodo...)
 instead of random shuffle order. This makes it easier for players to find their preferred character.

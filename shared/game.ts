@@ -792,11 +792,12 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
     gameState.currentPlayer = playerIndex;
     gameState.notifyStateChange();
 
-    const sortedCharacters = [...gameState.availableCharacters].sort();
-    const buttons: ChoiceButton<string>[] = sortedCharacters.map((char) => ({
-      label: char,
-      value: char,
-    }));
+    const buttons: ChoiceButton<string>[] = gameState.availableCharacters.map(
+      (char) => ({
+        label: char,
+        value: char,
+      }),
+    );
 
     const character = await seat.controller.chooseButton({
       title: `${seat.getDisplayName()} - Choose Your Character`,
