@@ -2,7 +2,7 @@
   {
     "id": "fatty-card-reveal",
     "title": "Publish gameState on card reveal for Fatty Bolger",
-    "status": "pending",
+    "status": "completed",
     "notes": "Cards should reveal before card gift dialog, not after"
   },
   {

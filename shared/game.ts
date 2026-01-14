@@ -155,10 +155,9 @@ export class Game {
   }
 
   revealHand(seat: Seat): void {
-    // This would need to modify the hand to be always visible
-    // For now, just log it
     this.log(`${seat.getDisplayName()}'s hand is now visible to all players`);
     seat.hand!.reveal();
+    this.notifyStateChange();
   }
 
   async drawThreatCard(

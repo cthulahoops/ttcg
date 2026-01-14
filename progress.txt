@@ -126,3 +126,18 @@ Now the dialog shows "Choose a card to give to [Character Name]" below the title
 The CSS class `.dialog-message` already existed with appropriate styling.
 
 Type check passes with no errors.
+
+## Completed: fatty-card-reveal
+
+Publish gameState on card reveal for Fatty Bolger:
+
+In 1-player mode, Fatty Bolger's setup reveals their hand before the card gift dialogs.
+However, the `revealHand()` method wasn't calling `notifyStateChange()`, so the game
+state wasn't published until the next operation (`giveCard()`). This caused the card
+gift dialog to appear before the revealed cards were visible to the player.
+
+**Fix (shared/game.ts)**:
+- Added `this.notifyStateChange()` call at the end of `revealHand()` method
+
+Now the revealed cards are visible before the gift dialog appears, as expected.
+Type check passes with no errors.
