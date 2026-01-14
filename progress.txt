@@ -36,3 +36,13 @@ Fixed unused imports and parameters in shared files:
 
 All issues from the prd.json "unused-shared" item have been resolved.
 Type check confirms no TS6xxx (unused) errors remain in these files.
+
+## Completed: undefined-client
+
+Fixed possibly undefined 'seat' access in client files:
+
+- client/GameStatus.tsx: Added early return when seat is undefined
+- client/TrickArea.tsx: Used optional chaining (seat?.character, seat?.playerName) for safe access
+
+Both client type errors (TS18048) have been resolved.
+Type check confirms no client errors remain.

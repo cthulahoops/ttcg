@@ -29,7 +29,7 @@ export function TrickArea({ game }: TrickAreaProps) {
       <div className="trick-cards">
         {displayTrick.plays.map((play, idx) => {
           const seat = game.seats[play.seatIndex];
-          const name = seat.character ?? seat.playerName ?? `Player ${play.seatIndex + 1}`;
+          const name = seat?.character ?? seat?.playerName ?? `Player ${play.seatIndex + 1}`;
           const label = name + (play.isTrump ? " (TRUMP)" : "");
           const isWinner = isCompleted && displayTrick.winner === play.seatIndex;
 

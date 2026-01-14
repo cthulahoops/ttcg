@@ -34,7 +34,7 @@
   {
     "id": "undefined-client",
     "title": "Fix possibly undefined access in client code",
-    "status": "incomplete",
+    "status": "complete",
     "files": ["client/GameStatus.tsx", "client/TrickArea.tsx"],
     "errors": [
       "GameStatus.tsx:9 - 'seat' possibly undefined",
