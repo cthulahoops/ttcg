@@ -678,7 +678,7 @@ const FattyBolger: CharacterDefinition = {
   setupText: "Give a card to every other character (don't take any back)",
 
   setup: async (game, seat, _setupContext) => {
-    if (game.numCharacters === 1) {
+    if (game.playerCount === 1) {
       game.revealHand(seat);
     }
 
