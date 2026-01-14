@@ -383,3 +383,28 @@ message and the game loop exits, proceeding directly to the game over screen. Th
 an objective is definitively completed and cannot be undone.
 
 Type check passes with no errors.
+
+## Completed: room-code-leave-existing
+
+Leave existing room when setting a new room code:
+
+When a player set a new room code (e.g., by manually editing the URL hash or using browser
+back/forward), the client would attempt to join the new room without first leaving the
+current room. This caused the server to reject the join with "Already in a room" error.
+
+**Issue analysis (server/room-manager.ts:41-61)**:
+- The `joinRoom` method checks if the socket is already in a room via `socketToPlayer` map
+- If the socket is in a different room than requested, it throws "Already in a room"
+- This is correct behavior - the client needs to leave first
+
+**Fix (client/App.tsx)**:
+- Added a check in the `useEffect` that handles room joining
+- Before sending `join_room`, checks if `state.roomCode` (server-confirmed room) exists
+  and differs from `roomCode` (target room from URL/local state)
+- If so, sends `leave_room` message first to cleanly exit the current room
+- Then proceeds with `join_room` for the new room
+
+This ensures the client properly leaves its current room before joining a different one,
+preventing the "Already in a room" error when changing room codes.
+
+Type check passes with no errors.

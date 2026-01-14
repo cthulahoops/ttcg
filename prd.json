@@ -88,7 +88,7 @@
   {
     "id": "room-code-leave-existing",
     "title": "Leave existing room when setting a new room code",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "id": "unit-tests-for-shared-code",

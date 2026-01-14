@@ -19,6 +19,11 @@ export function App() {
     if (!roomCode) return;
     if (!playerName) return;
 
+    // Leave existing room if we're joining a different one
+    if (state.roomCode && state.roomCode !== roomCode) {
+      sendMessage({ type: "leave_room" });
+    }
+
     sendMessage({
       type: "join_room",
       playerName,
