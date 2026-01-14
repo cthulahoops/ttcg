@@ -1,5 +1,5 @@
 import { shuffleDeck } from "@shared/utils";
-import { runGame, Game } from "@shared/game";
+import { Game } from "@shared/game";
 
 import { ProxyController, Controller } from "@shared/controllers";
 
@@ -9,10 +9,7 @@ import { Seat } from "@shared/seat";
 
 import { SolitaireHand, PlayerHand, PyramidHand } from "@shared/hands";
 
-import {
-  characterRegistry,
-  allCharacterNames,
-} from "@shared/characters/registry";
+import { allCharacterNames } from "@shared/characters/registry";
 
 // All possible characters in the game (except Frodo who is automatically assigned)
 const allCharacters = allCharacterNames.filter((name) => name !== "Frodo");

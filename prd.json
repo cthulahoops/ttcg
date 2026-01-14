@@ -1,0 +1,87 @@
+[
+  {
+    "id": "unused-client",
+    "title": "Remove unused imports in client code",
+    "status": "complete",
+    "files": ["client/App.tsx", "client/GameLog.tsx", "client/LobbyMenu.tsx", "client/usePlayerId.ts"],
+    "errors": [
+      "App.tsx: unused 'useState'",
+      "GameLog.tsx: unused 'CopyLogButton'",
+      "LobbyMenu.tsx: unused 'handleGenerateCode'",
+      "usePlayerId.ts: unused 'useRef'"
+    ]
+  },
+  {
+    "id": "unused-server",
+    "title": "Remove unused imports in server code",
+    "status": "complete",
+    "files": ["server/game-server.ts", "server/smoke.ts"],
+    "errors": [
+      "game-server.ts: unused 'runGame', 'characterRegistry'",
+      "smoke.ts: unused 'Game'"
+    ]
+  },
+  {
+    "id": "unused-shared",
+    "title": "Remove unused imports/params in shared code",
+    "status": "incomplete",
+    "files": ["shared/game.ts", "shared/hands.ts"],
+    "errors": [
+      "game.ts: unused 'PlayerHand', 'PyramidHand', 'SolitaireHand', 'AIController', 'Controller', 'allCharacters'",
+      "hands.ts: unused 'isOwnSeat' parameter (2 occurrences)"
+    ]
+  },
+  {
+    "id": "undefined-client",
+    "title": "Fix possibly undefined access in client code",
+    "status": "incomplete",
+    "files": ["client/GameStatus.tsx", "client/TrickArea.tsx"],
+    "errors": [
+      "GameStatus.tsx:9 - 'seat' possibly undefined",
+      "TrickArea.tsx:32 - 'seat' possibly undefined (2 occurrences)"
+    ]
+  },
+  {
+    "id": "undefined-game-server",
+    "title": "Fix possibly undefined access in game-server.ts",
+    "status": "incomplete",
+    "files": ["server/game-server.ts"],
+    "errors": [
+      "Lines 24-26: Controller | undefined not assignable to Controller",
+      "Line 54: Object possibly undefined",
+      "Line 65: Controller | undefined not assignable to Controller"
+    ]
+  },
+  {
+    "id": "undefined-game",
+    "title": "Fix possibly undefined access in shared/game.ts",
+    "status": "incomplete",
+    "files": ["shared/game.ts"],
+    "errors": [
+      "~30 errors related to seats[index], trick plays, and array access returning undefined",
+      "Key areas: determineTrickWinner, runGame loop, seat lookups, trick processing"
+    ]
+  },
+  {
+    "id": "undefined-characters",
+    "title": "Fix possibly undefined access in character registry",
+    "status": "incomplete",
+    "files": ["shared/characters/registry.ts"],
+    "errors": [
+      "Lines 415, 437, 444: Object/array access possibly undefined",
+      "Lines 573: isCompletable returning boolean | undefined",
+      "Lines 876-891: seat and card access possibly undefined"
+    ]
+  },
+  {
+    "id": "undefined-utilities",
+    "title": "Fix possibly undefined access in shared utilities",
+    "status": "incomplete",
+    "files": ["shared/hands.ts", "shared/utils.ts", "shared/controllers.ts"],
+    "errors": [
+      "hands.ts:299 - Card | undefined not assignable to Card",
+      "utils.ts:31 - generic T | undefined issue in shuffle",
+      "controllers.ts:88 - generic T | undefined in controller return"
+    ]
+  }
+]

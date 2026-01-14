@@ -11,3 +11,14 @@ Fixed unused imports and code in client files:
 
 All 4 issues from the prd.json "unused-client" item have been resolved.
 Type check confirms the fixes are valid.
+
+## Completed: unused-server
+
+Fixed unused imports in server files:
+
+- server/game-server.ts: Removed unused `runGame` import
+- server/game-server.ts: Removed unused `characterRegistry` import
+- server/smoke.ts: Removed unused `Game` import
+
+All 2 files from the prd.json "unused-server" item have been cleaned up.
+Type check confirms no new errors introduced.

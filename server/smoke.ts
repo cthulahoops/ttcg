@@ -1,6 +1,6 @@
 // server/smoke.ts
 import { newGame } from "./game-server";
-import { Game, runGame } from "@shared/game";
+import { runGame } from "@shared/game";
 import { AIController } from "@shared/controllers";
 
 
