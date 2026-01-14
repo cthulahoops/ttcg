@@ -412,8 +412,8 @@ const Goldberry: CharacterDefinition = {
       if (trickNumbers.length !== 3) return false;
 
       return (
-        trickNumbers[1] === trickNumbers[0] + 1 &&
-        trickNumbers[2] === trickNumbers[1] + 1
+        trickNumbers[1] === trickNumbers[0]! + 1 &&
+        trickNumbers[2] === trickNumbers[1]! + 1
       );
     },
     isCompletable: (game, seat) => {
@@ -434,12 +434,13 @@ const Goldberry: CharacterDefinition = {
         .sort((a: number, b: number) => a - b);
 
       for (let i = 1; i < trickNumbers.length; i++) {
-        if (trickNumbers[i] !== trickNumbers[i - 1] + 1) {
+        if (trickNumbers[i]! !== trickNumbers[i - 1]! + 1) {
           return false;
         }
       }
 
       const maxTrickWon = trickNumbers[trickNumbers.length - 1];
+      if (maxTrickWon === undefined) return false;
 
       if (game.currentTrickNumber > maxTrickWon + 1) {
         return false;
@@ -577,8 +578,9 @@ const GildorInglorian: CharacterDefinition = {
 
       // Find the last card played by this seat
       const lastCardPlayed = seat.playedCards[seat.playedCards.length - 1];
+      if (!lastCardPlayed) return false;
 
-      return lastCardPlayed && lastCardPlayed.suit === "forests";
+      return lastCardPlayed.suit === "forests";
     },
     isCompletable: (game, seat) => {
       if (game.finished) {
@@ -871,8 +873,7 @@ const Elrond: CharacterDefinition = {
 
   setup: async (game, _seat, _setupContext) => {
     const cardsToPass: Card[] = [];
-    for (let i = 0; i < game.seats.length; i++) {
-      const seat = game.seats[i];
+    for (const seat of game.seats) {
       const availableCards = seat.hand!.getAvailableCards();
 
       const card = await seat.controller.chooseCard({
@@ -884,11 +885,11 @@ const Elrond: CharacterDefinition = {
     }
 
     for (let i = 0; i < game.seats.length; i++) {
-      game.seats[i].hand!.removeCard(cardsToPass[i]);
+      game.seats[i]!.hand!.removeCard(cardsToPass[i]!);
     }
     for (let i = 0; i < game.seats.length; i++) {
-      const toSeat = game.seats[(i + 1) % game.seats.length];
-      toSeat.hand!.addCard(cardsToPass[i]);
+      const toSeat = game.seats[(i + 1) % game.seats.length]!;
+      toSeat.hand!.addCard(cardsToPass[i]!);
     }
 
     game.log("Everyone passes a card to the right");

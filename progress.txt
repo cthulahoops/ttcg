@@ -68,3 +68,16 @@ Fixed possibly undefined access in shared utility files:
 
 All 3 type errors (TS2322) in shared utilities have been resolved.
 Type check confirms no errors remain in hands.ts, utils.ts, or controllers.ts.
+
+## Completed: undefined-characters
+
+Fixed possibly undefined access in shared/characters/registry.ts:
+
+- Goldberry.objective.check (line 415): Added non-null assertions for `trickNumbers[0]!` and `trickNumbers[1]!` after length check
+- Goldberry.objective.isCompletable (line 437): Added non-null assertions for `trickNumbers[i]!` and `trickNumbers[i-1]!` in loop
+- Goldberry.objective.isCompletable (line 444): Added undefined check for `maxTrickWon` before using it
+- GildorInglorian.objective.check (line 573): Fixed boolean | undefined return by adding explicit undefined check for `lastCardPlayed`
+- Elrond.setup (lines 876-891): Changed indexed loop to for-of for first loop, added non-null assertions for array access in second and third loops
+
+All 11 type errors (TS2532, TS18048, TS2322, TS2345) in registry.ts have been resolved.
+Type check confirms no registry.ts errors remain.
