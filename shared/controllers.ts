@@ -30,12 +30,12 @@ export abstract class Controller {
 }
 
 export class AIController extends Controller {
-    private delay;
+  private delay;
 
-    constructor(delay: number) {
-        super()
-        this.delay = delay;
-    }
+  constructor(delay: number) {
+    super();
+    this.delay = delay;
+  }
 
   async chooseButton<T>({ buttons }: ChoiceButtonOptions<T>): Promise<T> {
     await delay(this.delay);
@@ -56,31 +56,33 @@ export class AIController extends Controller {
 }
 
 export class ProxyController extends Controller {
-    private realController: Controller | undefined;
+  private realController: Controller | undefined;
 
-    setController(controller: Controller) {
-        this.realController = controller;
-    }
-
-  chooseButton<T>(options: ChoiceButtonOptions<T>): Promise<T> {
-      if (!this.realController) {
-          throw new Error("Controller must be assigned!");
-      }
-      return this.realController.chooseButton(options)
+  setController(controller: Controller) {
+    this.realController = controller;
   }
 
-  chooseCard<T extends AnyCard = AnyCard>(options: ChoiceCardOptions<T>): Promise<T> {
-      if (!this.realController) {
-          throw new Error("Controller must be assigned!");
-      }
-    return this.realController.chooseCard(options)
+  chooseButton<T>(options: ChoiceButtonOptions<T>): Promise<T> {
+    if (!this.realController) {
+      throw new Error("Controller must be assigned!");
+    }
+    return this.realController.chooseButton(options);
+  }
+
+  chooseCard<T extends AnyCard = AnyCard>(
+    options: ChoiceCardOptions<T>,
+  ): Promise<T> {
+    if (!this.realController) {
+      throw new Error("Controller must be assigned!");
+    }
+    return this.realController.chooseCard(options);
   }
 
   selectCard(availableCards: Card[]): Promise<Card> {
-      if (!this.realController) {
-          throw new Error("Controller must be assigned!");
-      }
-    return this.realController.selectCard(availableCards)
+    if (!this.realController) {
+      throw new Error("Controller must be assigned!");
+    }
+    return this.realController.selectCard(availableCards);
   }
 }
 

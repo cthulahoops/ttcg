@@ -30,7 +30,7 @@ export function PlayerSeat({
   // Display: "Character (PlayerName)" or just "PlayerName" before assignment
   const displayName = character
     ? `${character} (${playerName})`
-    : playerName ?? `Player ${seatIndex + 1}`;
+    : (playerName ?? `Player ${seatIndex + 1}`);
 
   return (
     <section

@@ -19,12 +19,17 @@ import type {
  * @param viewingSeatIndex - The seat index of the viewer (to control visibility)
  * @returns Serialized seat data
  */
-function serializeSeat(game: Game, seat: Seat, viewingSeatIndex: number): SerializedSeat {
+function serializeSeat(
+  game: Game,
+  seat: Seat,
+  viewingSeatIndex: number,
+): SerializedSeat {
   const isOwnSeat = seat.seatIndex === viewingSeatIndex;
 
-  const objective = seat.characterDef?.objective.text
-    ?? seat.characterDef?.objective.getText?.(game)
-    ?? "";
+  const objective =
+    seat.characterDef?.objective.text ??
+    seat.characterDef?.objective.getText?.(game) ??
+    "";
 
   return {
     seatIndex: seat.seatIndex,
@@ -91,7 +96,8 @@ export function serializeGameForSeat(
     ringsBroken: game.ringsBroken,
     availableCharacters: game.availableCharacters.map((name) => {
       const def = characterRegistry.get(name);
-      const objective = def?.objective.text ?? def?.objective.getText?.(game) ?? "";
+      const objective =
+        def?.objective.text ?? def?.objective.getText?.(game) ?? "";
       return {
         name,
         objective,
