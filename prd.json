@@ -1,87 +1,92 @@
 [
   {
-    "id": "unused-client",
-    "title": "Remove unused imports in client code",
-    "status": "complete",
-    "files": ["client/App.tsx", "client/GameLog.tsx", "client/LobbyMenu.tsx", "client/usePlayerId.ts"],
-    "errors": [
-      "App.tsx: unused 'useState'",
-      "GameLog.tsx: unused 'CopyLogButton'",
-      "LobbyMenu.tsx: unused 'handleGenerateCode'",
-      "usePlayerId.ts: unused 'useRef'"
-    ]
+    "id": "fatty-card-reveal",
+    "title": "Publish gameState on card reveal for Fatty Bolger",
+    "status": "pending",
+    "notes": "Cards should reveal before card gift dialog, not after"
   },
   {
-    "id": "unused-server",
-    "title": "Remove unused imports in server code",
-    "status": "complete",
-    "files": ["server/game-server.ts", "server/smoke.ts"],
-    "errors": [
-      "game-server.ts: unused 'runGame', 'characterRegistry'",
-      "smoke.ts: unused 'Game'"
-    ]
+    "id": "give-card-recipient",
+    "title": "Show recipient name in Give Card dialog",
+    "status": "pending"
   },
   {
-    "id": "unused-shared",
-    "title": "Remove unused imports/params in shared code",
-    "status": "complete",
-    "files": ["shared/game.ts", "shared/hands.ts"],
-    "errors": [
-      "game.ts: unused 'PlayerHand', 'PyramidHand', 'SolitaireHand', 'AIController', 'Controller', 'allCharacters'",
-      "hands.ts: unused 'isOwnSeat' parameter (2 occurrences)"
-    ]
+    "id": "sort-characters-alphabetically",
+    "title": "Sort available characters alphabetically",
+    "status": "completed"
   },
   {
-    "id": "undefined-client",
-    "title": "Fix possibly undefined access in client code",
-    "status": "complete",
-    "files": ["client/GameStatus.tsx", "client/TrickArea.tsx"],
-    "errors": [
-      "GameStatus.tsx:9 - 'seat' possibly undefined",
-      "TrickArea.tsx:32 - 'seat' possibly undefined (2 occurrences)"
-    ]
+    "id": "broken-rings-indicator",
+    "title": "Add visual indication when rings are broken",
+    "status": "pending"
   },
   {
-    "id": "undefined-game-server",
-    "title": "Fix possibly undefined access in game-server.ts",
-    "status": "complete",
-    "files": ["server/game-server.ts"],
-    "errors": [
-      "Lines 24-26: Controller | undefined not assignable to Controller",
-      "Line 54: Object possibly undefined",
-      "Line 65: Controller | undefined not assignable to Controller"
-    ]
+    "id": "show-controller-names",
+    "title": "Show controller/player names in display",
+    "status": "pending"
   },
   {
-    "id": "undefined-game",
-    "title": "Fix possibly undefined access in shared/game.ts",
-    "status": "complete",
-    "files": ["shared/game.ts"],
-    "errors": [
-      "~30 errors related to seats[index], trick plays, and array access returning undefined",
-      "Key areas: determineTrickWinner, runGame loop, seat lookups, trick processing"
-    ]
+    "id": "log-player-names",
+    "title": "Show player names instead of numbers in game log",
+    "status": "pending",
+    "notes": "Especially for character choice announcements"
   },
   {
-    "id": "undefined-characters",
-    "title": "Fix possibly undefined access in character registry",
-    "status": "complete",
-    "files": ["shared/characters/registry.ts"],
-    "errors": [
-      "Lines 415, 437, 444: Object/array access possibly undefined",
-      "Lines 573: isCompletable returning boolean | undefined",
-      "Lines 876-891: seat and card access possibly undefined"
-    ]
+    "id": "split-character-registry",
+    "title": "Split characters/registry.ts into one file per character",
+    "status": "pending",
+    "notes": "Precondition for implementing completedness checks"
   },
   {
-    "id": "undefined-utilities",
-    "title": "Fix possibly undefined access in shared utilities",
-    "status": "complete",
-    "files": ["shared/hands.ts", "shared/utils.ts", "shared/controllers.ts"],
-    "errors": [
-      "hands.ts:299 - Card | undefined not assignable to Card",
-      "utils.ts:31 - generic T | undefined issue in shuffle",
-      "controllers.ts:88 - generic T | undefined in controller return"
-    ]
+    "id": "completedness-checks",
+    "title": "Implement isCompleted for each character",
+    "status": "pending",
+    "notes": "Depends on split-character-registry"
+  },
+  {
+    "id": "completedness-display",
+    "title": "Add display for completed objectives",
+    "status": "pending",
+    "notes": "Depends on completedness-checks"
+  },
+  {
+    "id": "early-victory-exit",
+    "title": "End game early when all objectives are completed",
+    "status": "pending",
+    "notes": "Depends on completedness-display"
+  },
+  {
+    "id": "play-again",
+    "title": "Add play again option after game over",
+    "status": "pending",
+    "notes": "Ask all players via choice dialog, first response wins. Yes = reset game, No = return to room screen"
+  },
+  {
+    "id": "one-ring-skip-prompt",
+    "title": "Skip one ring trump prompt when already winning",
+    "status": "pending",
+    "notes": "Don't ask if the 1 of Rings would already win the trick without being used as trump"
+  },
+  {
+    "id": "websocket-reconnection",
+    "title": "Implement websocket reconnection logic",
+    "status": "pending",
+    "notes": "There's a stashed previous attempt that may be over-engineered"
+  },
+  {
+    "id": "hills-color",
+    "title": "Make hills suit color browner",
+    "status": "pending"
+  },
+  {
+    "id": "exchange-privacy",
+    "title": "Respect privacy in exchange log messages",
+    "status": "pending",
+    "notes": "Show card details only to players involved in exchange, others see 'a card'"
+  },
+  {
+    "id": "room-code-leave-existing",
+    "title": "Leave existing room when setting a new room code",
+    "status": "pending"
   }
 ]
