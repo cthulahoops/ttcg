@@ -448,3 +448,31 @@ the first response from any player determines the outcome for everyone.
 4. Players can then start another game from the lobby or leave the room
 
 Type check passes with no errors.
+
+---
+
+## Unit Tests for Shared Code
+
+**Task**: Create a unit test for something in @shared
+
+**Changes made**:
+
+**package.json**:
+- Added `"test": "bun test"` script to run tests with Bun's built-in test runner
+
+**shared/utils.test.ts** (new file):
+- Created unit tests for `sortHand()` function:
+  - Sorts cards by suit order (mountains < shadows < forests < hills < rings)
+  - Sorts cards within same suit by value ascending
+  - Handles mixed cards with suit-first, value-second ordering
+  - Edge cases: empty array, single card
+
+- Created unit tests for `shuffleDeck()` function:
+  - Preserves all elements after shuffle
+  - Does not modify original array (returns new array)
+  - Works with Card objects
+  - Edge cases: empty array, single element
+
+**Test results**: 11 tests pass, 0 fail
+
+This establishes the test infrastructure for the project. Future tests can follow this pattern using Bun's native `describe()`, `test()`, and `expect()` from "bun:test".

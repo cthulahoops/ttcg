@@ -93,7 +93,7 @@
   {
     "id": "unit-tests-for-shared-code",
     "title": "Create a unit test for something in @shared",
-    "status": "pending",
-    "notes": "Choose something reasonably high value, but the main focus to get a working test setup."
+    "status": "completed",
+    "notes": "Created tests for sortHand and shuffleDeck in shared/utils.test.ts using Bun's built-in test runner"
   }
 ]
