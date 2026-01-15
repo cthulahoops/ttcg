@@ -506,3 +506,9 @@ This establishes the test infrastructure for the project. Future tests can follo
 - Server will send updated game state upon successful rejoin
 
 Type check and tests pass.
+
+## Current Trick Min Height Fix
+
+Added min-height to .trick-cards in game.css to prevent layout shift when the current trick area is empty.
+
+**Change**: Added `min-height: var(--card-height)` to `.trick-cards` class (client/game.css:222)

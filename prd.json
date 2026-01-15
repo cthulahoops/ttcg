@@ -95,5 +95,11 @@
     "title": "Create a unit test for something in @shared",
     "status": "completed",
     "notes": "Created tests for sortHand and shuffleDeck in shared/utils.test.ts using Bun's built-in test runner"
+  },
+  {
+    "id": "trick-area-min-height",
+    "title": "Add min height to current trick area",
+    "status": "completed",
+    "notes": "Added min-height: var(--card-height) to .trick-cards to prevent layout shift"
   }
 ]
