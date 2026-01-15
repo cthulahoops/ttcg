@@ -85,6 +85,15 @@ export function clientReducer(
         pendingDecision: null,
       };
 
+    case "game_reset":
+      return {
+        ...state,
+        gameState: null,
+        pendingDecision: null,
+        players: message.players,
+        gameLog: [],
+      };
+
     default:
       return state;
   }

@@ -30,7 +30,7 @@ export function PlayerSeat({
   // Display: "Character (PlayerName)" or just "PlayerName" before assignment
   const displayName = character
     ? `${character} (${playerName})`
-    : playerName ?? `Player ${seatIndex + 1}`;
+    : (playerName ?? `Player ${seatIndex + 1}`);
 
   return (
     <section
@@ -47,7 +47,9 @@ export function PlayerSeat({
         <div className="objective-status">
           {status && (
             <>
-              {status.met ? (
+              {status.completed ? (
+                <span className="completed">★</span>
+              ) : status.met ? (
                 <span className="success">✓</span>
               ) : status.completable ? (
                 <span className="fail">✗</span>

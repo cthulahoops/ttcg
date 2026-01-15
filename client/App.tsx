@@ -9,7 +9,8 @@ import { usePlayerName } from "./usePlayerName";
 
 export function App() {
   const { roomCode, setRoomCode, clearRoomCode } = useRoomCode();
-  const { state, connected, sendMessage, respondToDecision } = useGameWebSocket();
+  const { state, connected, sendMessage, respondToDecision } =
+    useGameWebSocket();
   const playerId = usePlayerId();
   const { playerName, setPlayerName } = usePlayerName();
 
@@ -17,6 +18,11 @@ export function App() {
     if (!connected) return;
     if (!roomCode) return;
     if (!playerName) return;
+
+    // Leave existing room if we're joining a different one
+    if (state.roomCode && state.roomCode !== roomCode) {
+      sendMessage({ type: "leave_room" });
+    }
 
     sendMessage({
       type: "join_room",

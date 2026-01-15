@@ -79,6 +79,7 @@ export function newGame(controllers: Controller[]): Game {
 
   const availableCharacters = shuffleDeck(allCharacters).slice(0, 4);
   availableCharacters.push("Frodo");
+  availableCharacters.sort();
 
   const gameState = new Game(
     playerCount,

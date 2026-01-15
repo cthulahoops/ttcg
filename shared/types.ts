@@ -49,6 +49,7 @@ export interface SetupContext {
 export interface CharacterStatus {
   met: boolean;
   completable: boolean;
+  completed: boolean;
   details?: string;
 }
 
@@ -65,6 +66,8 @@ export interface CharacterDefinition {
     check: (game: any, seat: Seat) => boolean;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     isCompletable: (game: any, seat: Seat) => boolean;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    isCompleted: (game: any, seat: Seat) => boolean;
   };
   display: {
     renderStatus: (game: Game, seat: Seat) => CharacterStatus;

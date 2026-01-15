@@ -99,3 +99,416 @@ Fixed ~30 TypeScript errors in shared/game.ts related to possibly undefined arra
 
 All 33 TypeScript errors have been resolved.
 Type check confirms no errors remain in shared/game.ts.
+
+## Completed: sort-characters-alphabetically
+
+Sorted available characters alphabetically for easier selection:
+
+- server/game-server.ts: Added `.sort()` call after creating available characters list
+
+Characters are now displayed in alphabetical order (e.g., Aragorn, Arwen, Boromir, Frodo...)
+instead of random shuffle order. This makes it easier for players to find their preferred character.
+Type check confirms no errors introduced.
+
+## Completed: give-card-recipient
+
+Show recipient name in Give Card dialog:
+
+The `DecisionDialog` React component was not displaying the `message` field from choice options,
+which meant the recipient's name wasn't shown in card-giving dialogs (e.g., Fatty Bolger's setup).
+
+**Fix (client/DecisionDialog.tsx)**:
+- Added `message` prop to the internal `Dialog` component
+- Rendered message as `<p className="dialog-message">` between title and buttons
+- Updated both `choose_button` and `choose_card` cases to pass `decision.options.message`
+
+Now the dialog shows "Choose a card to give to [Character Name]" below the title.
+The CSS class `.dialog-message` already existed with appropriate styling.
+
+Type check passes with no errors.
+
+## Completed: fatty-card-reveal
+
+Publish gameState on card reveal for Fatty Bolger:
+
+In 1-player mode, Fatty Bolger's setup reveals their hand before the card gift dialogs.
+However, the `revealHand()` method wasn't calling `notifyStateChange()`, so the game
+state wasn't published until the next operation (`giveCard()`). This caused the card
+gift dialog to appear before the revealed cards were visible to the player.
+
+**Fix (shared/game.ts)**:
+- Added `this.notifyStateChange()` call at the end of `revealHand()` method
+
+Now the revealed cards are visible before the gift dialog appears, as expected.
+Type check passes with no errors.
+
+## Completed: one-ring-skip-prompt
+
+Skip one ring trump prompt when already winning:
+
+When the 1 of Rings is played, the player is asked whether to use it as trump to win
+the trick. However, if the 1 of Rings would already win without trump (i.e., rings is
+the lead suit and no higher rings card was played), this prompt is unnecessary and
+disrupts gameplay.
+
+**Fix (shared/game.ts)**:
+- Added `alreadyWinning` check before showing the trump prompt
+- Condition: `leadSuit === "rings"` AND no rings card with `value > 1` was played
+- When already winning, skip the prompt entirely (normal trick winner logic applies)
+
+This improves UX by avoiding an obvious "Yes" choice when the player would win anyway.
+Type check passes with no errors.
+
+## Completed: log-player-names
+
+Show player names instead of numbers in game log:
+
+Before this change, log messages during character selection showed "Player 1 chose Gandalf"
+instead of the actual player names. The `getDisplayName()` method fell back to "Player X"
+when no character was assigned, ignoring `controller.playerName`.
+
+**Fix (shared/seat.ts)**:
+- Updated `getDisplayName()` to use `controller.playerName ?? 'Player ${seatIndex + 1}'`
+  as fallback when no character is assigned yet
+- Removed "(You)" annotations throughout since player names make them redundant
+- Kept "(Pyramid)" annotation as it indicates a game mode, not a player identity
+
+Now for networked games:
+- Before character selection: Shows actual player names (e.g., "Alice chose Gandalf")
+- After character selection: Shows character names (e.g., "Gandalf plays 3 of Hills")
+
+For local/solitaire games, falls back to "Player X" when no name is set.
+Type check passes with no errors.
+
+## Completed: broken-rings-indicator
+
+Add visual indication when rings are broken:
+
+In this trick-taking game, players cannot lead with Rings suit cards until rings have
+been "broken" (a Rings card has been played for any reason). The `ringsBroken` flag
+was tracked in the game state and serialized to clients, but there was no visual
+indicator showing this state to players.
+
+**Changes**:
+- `client/TrickArea.tsx`: Added a rings status indicator next to the trick area title
+  - Wrapped h2 and indicator in a `.trick-header` div
+  - Shows "Rings: Sealed" (blue styling) when rings haven't been broken yet
+  - Shows "Rings: Broken" (orange styling) once any Rings card has been played
+- `client/game.css`: Added styling for the rings status badge
+  - Added `.trick-header` flex container for title and indicator
+  - Added `.trick-header h2` to remove margin for proper alignment
+  - Added `.rings-status` base styles with padding and border-radius
+  - Added `.rings-status.sealed` with blue color scheme
+  - Added `.rings-status.broken` with orange color scheme
+
+This helps players understand when they can lead with Rings cards.
+Type check passes with no errors.
+
+## Completed: exchange-privacy
+
+Respect privacy in exchange log messages:
+
+When players exchange cards during setup (e.g., Frodo exchanging with Gandalf), the log
+previously showed card details to ALL players. This leaked private information about
+cards transferred between specific players.
+
+**Changes**:
+- `shared/game.ts`: Extended `log()` method signature to accept visibility options:
+  - `visibleTo?: number[]` - seat indices that should see the detailed message
+  - `hiddenMessage?: string` - alternative message shown to non-participants
+- `shared/game.ts`: Updated `giveCard()` to use privacy-aware logging:
+  - Participants see: "Gandalf gives 3 of Hills to Frodo"
+  - Others see: "Gandalf gives a card to Frodo"
+- `shared/game.ts`: Updated `completeExchange()` to use privacy-aware logging:
+  - Both log lines (one per direction) now respect participant privacy
+- `server/room-manager.ts`: Updated `onLog` callback to handle per-seat messaging:
+  - Looks up each player's seat via their controller
+  - Sends detailed message to participants, hidden message to others
+
+Now only players involved in an exchange see the specific cards traded.
+Type check passes with no errors.
+
+## Completed: hills-color
+
+Make hills suit color browner:
+
+The Hills suit cards previously used a golden/yellow color gradient that was too similar
+to the Rings suit and didn't evoke the earthy "hills" theme well.
+
+**Fix (client/game.css)**:
+- Changed `.card.hills` background gradient from `#ccb342 → #aea551` (golden yellow)
+  to `#c4965c → #a8824a` (warm tan-brown)
+
+The new colors are noticeably browner with more red and less green, creating an
+earthier appearance that better represents rolling hills while maintaining good
+contrast for readability.
+
+## Completed: split-character-registry
+
+Split characters/registry.ts into one file per character:
+
+The original registry.ts contained all 25 character definitions in a single 1253-line file.
+This made it difficult to find and modify individual character implementations. Splitting
+into separate files is a precondition for implementing completedness checks.
+
+**New file structure (shared/characters/)**:
+- `types.ts` - Shared interfaces: CharacterDefinition, CharacterObjective, CharacterDisplay
+- Individual character files (25 total):
+  - `frodo.ts`, `gandalf.ts`, `merry.ts`, `celeborn.ts`, `pippin.ts`
+  - `boromir.ts`, `sam.ts`, `gimli.ts`, `legolas.ts`, `aragorn.ts`
+  - `goldberry.ts`, `glorfindel.ts`, `galadriel.ts`, `gildor-inglorian.ts`
+  - `farmer-maggot.ts`, `fatty-bolger.ts`, `tom-bombadil.ts`
+  - `barliman-butterbur.ts`, `bill-the-pony.ts`, `elrond.ts`
+  - `arwen.ts`, `gloin.ts`, `bilbo-baggins.ts`, `gwaihir.ts`, `shadowfax.ts`
+- `registry.ts` - Imports all characters and exports characterRegistry and allCharacterNames
+
+**Unchanged external API**:
+- `characterRegistry` - Map<string, CharacterDefinition> (same as before)
+- `allCharacterNames` - string[] (same as before)
+- Type exports via `export type { CharacterDefinition, ... }` from registry.ts
+
+Each character file exports a single const with the character definition, containing
+its name, setupText, setup function, objective, and display configuration.
+Type check passes with no errors.
+
+## Completed: completedness-checks
+
+Implement isCompleted for each character:
+
+Added `isCompleted` method to the `CharacterObjective` interface and implemented it for all
+25 characters. This method returns true when a character's objective is definitively completed
+and cannot be undone, enabling the early-victory-exit feature (future PRD item).
+
+**Interface change (shared/characters/types.ts)**:
+- Added `isCompleted: (game: Game, seat: Seat) => boolean` to CharacterObjective
+
+**Implementation categories**:
+
+1. **"At least X" objectives (isCompleted = check)**:
+   Once met, these cannot be undone since won cards/tricks are permanent.
+   - Gandalf: Win at least one trick
+   - Frodo: Win at least 2/4 ring cards
+   - Sam/Legolas/Gimli: Win specific threat card
+   - Celeborn: Win 3+ cards of same rank
+   - Glorfindel: Win all 8 shadows cards
+   - Gwaihir: Win 2+ tricks with mountains
+   - Shadowfax: Win 2+ tricks with hills
+   - Farmer Maggot: Win 2+ cards matching threat rank
+   - Barliman Butterbur: Win 1+ of last 3 tricks
+   - Elrond: Every character has won a ring
+
+2. **"Exact count" objectives (isCompleted = finished && check)**:
+   Could be undone by winning too many; must wait for game end.
+   - Merry: Exactly 1 or 2 tricks
+   - Fatty Bolger: Exactly 1 trick
+   - Bill the Pony: Exactly 1 trick
+   - Aragorn: Exactly N tricks (threat card value)
+   - Goldberry: Exactly 3 consecutive tricks, no others
+
+3. **Comparative objectives (isCompleted = finished && check)**:
+   Depend on other players' final state.
+   - Pippin: Win fewest tricks
+   - Galadriel: Win neither fewest nor most tricks
+   - Arwen: Win most forests cards
+   - Gloin: Win most mountains cards
+
+4. **End-game determined (isCompleted = finished && check)**:
+   - Boromir: Win last trick + no 1-ring
+   - Gildor Inglorian: Play forests in final trick
+   - Tom Bombadil: Win 3+ cards matching suit in hand at end
+
+5. **Special case (Bilbo Baggins)**:
+   - isCompleted = check && (finished || 1-ring gone to someone else)
+   - Can be completed early once 3+ tricks won AND 1-ring is won by another player
+
+Type check passes with no errors.
+
+## Completed: completedness-display
+
+Add display for completed objectives:
+
+Extended the UI to visually distinguish when a character's objective is definitively completed
+(locked in, cannot be undone) vs merely "met" (currently passing but could still fail).
+
+**Type changes (shared/types.ts)**:
+- Added `completed: boolean` to CharacterStatus interface
+
+**Game helper updates (shared/game.ts)**:
+- Updated `displaySimple(met, completable, completed)` to accept and return completed field
+- Updated `displayThreatCard(seat, met, completable, completed)` to pass through completed
+
+**Character updates (all 25 character files)**:
+Each character's `renderStatus` method now:
+- Computes `completed = CharacterName.objective.isCompleted(game, seat)`
+- Includes `completed` in the returned status object
+
+**UI changes (client/PlayerSeat.tsx)**:
+- Added new visual state for completed objectives: gold star (★)
+- Rendering priority: completed (★) > met (✓) > not met (✗)
+
+**CSS styling (client/game.css)**:
+- Added `.objective-status .completed` with gold color (#ffd700)
+
+Visual states now:
+- ★ (gold) - Objective definitively completed, locked in
+- ✓ (green) - Objective currently met but could still fail
+- ✗ (red) - Objective not met
+- ✗ (impossible) (red) - Objective can no longer be completed
+
+Type check passes with no errors.
+
+## Completed: early-victory-exit
+
+End game early when all objectives are completed:
+
+Previously, the game would continue until all tricks were played or until any player's objective
+became impossible. Now the game also ends early when ALL players have definitively completed
+their objectives, allowing players to celebrate victory without playing unnecessary tricks.
+
+**Type fix (shared/types.ts)**:
+- Added `isCompleted` method to the `objective` property of `CharacterDefinition` interface
+- This aligns the type with the implementation in `shared/characters/types.ts`
+
+**Game logic changes (shared/game.ts)**:
+- Added `isObjectiveCompleted(gameState, seat)` helper function
+- Added `allObjectivesCompleted(gameState)` function that returns true when all seats have
+  completed objectives
+- Updated `isGameOver()` to also return true when `allObjectivesCompleted()` is true
+- Added log message "All objectives have been completed!" when early victory occurs
+
+**How it works**:
+After each trick, the game checks if all objectives are completed. If so, it logs a victory
+message and the game loop exits, proceeding directly to the game over screen. This uses the
+`isCompleted` method added in the completedness-checks feature, which returns true only when
+an objective is definitively completed and cannot be undone.
+
+Type check passes with no errors.
+
+## Completed: room-code-leave-existing
+
+Leave existing room when setting a new room code:
+
+When a player set a new room code (e.g., by manually editing the URL hash or using browser
+back/forward), the client would attempt to join the new room without first leaving the
+current room. This caused the server to reject the join with "Already in a room" error.
+
+**Issue analysis (server/room-manager.ts:41-61)**:
+- The `joinRoom` method checks if the socket is already in a room via `socketToPlayer` map
+- If the socket is in a different room than requested, it throws "Already in a room"
+- This is correct behavior - the client needs to leave first
+
+**Fix (client/App.tsx)**:
+- Added a check in the `useEffect` that handles room joining
+- Before sending `join_room`, checks if `state.roomCode` (server-confirmed room) exists
+  and differs from `roomCode` (target room from URL/local state)
+- If so, sends `leave_room` message first to cleanly exit the current room
+- Then proceeds with `join_room` for the new room
+
+This ensures the client properly leaves its current room before joining a different one,
+preventing the "Already in a room" error when changing room codes.
+
+Type check passes with no errors.
+
+## Completed: play-again
+
+Add play again option after game over:
+
+After a game ends (whether through completion, early victory, or impossible objectives), players
+are now presented with a "Play Again?" dialog. All players see the dialog simultaneously, and
+the first response from any player determines the outcome for everyone.
+
+**Protocol changes (shared/protocol.ts)**:
+- Added `game_reset` server message type with `players` field
+- This message tells clients to return to the lobby state while keeping them in the room
+
+**Client changes (client/reducer.ts)**:
+- Added handler for `game_reset` message
+- Clears `gameState`, `pendingDecision`, and `gameLog`
+- Updates `players` list from the message (in case connections changed)
+
+**Server changes (server/room-manager.ts)**:
+- Refactored `startGame()` to await `runGame()` and implement a play-again loop
+- Added `askPlayAgain()` method:
+  - Sends decision request to all players with same `requestId`
+  - First response resolves the promise (first-response-wins pattern)
+  - Stores handler on room object for routing in `handleDecisionResponse()`
+- Added `resetRoomToLobby()` method:
+  - Clears game state, controllers, and started flag
+  - Broadcasts `game_reset` to all players
+- Updated `handleDecisionResponse()`:
+  - Checks for play-again response before routing to controllers
+  - Routes to stored handler if request ID matches
+
+**Game flow**:
+1. Game ends → `runGame()` returns
+2. Server sends "Play Again?" dialog to all players
+3. First player to respond determines outcome:
+   - "Yes" → Reset room state, start new game (loop continues)
+   - "No" → Reset room to lobby state (players return to room screen)
+4. Players can then start another game from the lobby or leave the room
+
+Type check passes with no errors.
+
+---
+
+## Unit Tests for Shared Code
+
+**Task**: Create a unit test for something in @shared
+
+**Changes made**:
+
+**package.json**:
+- Added `"test": "bun test"` script to run tests with Bun's built-in test runner
+
+**shared/utils.test.ts** (new file):
+- Created unit tests for `sortHand()` function:
+  - Sorts cards by suit order (mountains < shadows < forests < hills < rings)
+  - Sorts cards within same suit by value ascending
+  - Handles mixed cards with suit-first, value-second ordering
+  - Edge cases: empty array, single card
+
+- Created unit tests for `shuffleDeck()` function:
+  - Preserves all elements after shuffle
+  - Does not modify original array (returns new array)
+  - Works with Card objects
+  - Edge cases: empty array, single element
+
+**Test results**: 11 tests pass, 0 fail
+
+This establishes the test infrastructure for the project. Future tests can follow this pattern using Bun's native `describe()`, `test()`, and `expect()` from "bun:test".
+
+---
+
+## WebSocket Reconnection Logic
+
+**Task**: Implement websocket reconnection logic
+
+**Changes made**:
+
+**client/useGameWebSocket.ts**:
+- Added `useCallback` import from React
+- Added `reconnectTimeoutRef` to track pending reconnection timeout
+- Added `reconnectAttemptRef` to track number of reconnection attempts
+- Wrapped WebSocket connection logic in `connect` callback function
+- On websocket close: automatically schedule reconnection with exponential backoff (1s, 2s, 4s, 8s, max 10s)
+- On successful connect: reset reconnect attempt counter to 0
+- On unmount: clear any pending reconnection timeout
+
+**How it works**:
+1. When the websocket closes, a reconnection is automatically scheduled
+2. Exponential backoff prevents overwhelming the server: 1s → 2s → 4s → 8s → 10s (max)
+3. When reconnected, App.tsx's existing useEffect auto-rejoins the room using playerId/roomCode/playerName from localStorage/URL hash
+4. Server-side already handles reconnection: finds the player's seat, sends current game state and any pending decision requests
+
+**Why no state reset**:
+- Game state is preserved during reconnection so the user can still see the game
+- External storage (localStorage, URL hash) preserves identity data needed to rejoin
+- Server will send updated game state upon successful rejoin
+
+Type check and tests pass.
+
+## Current Trick Min Height Fix
+
+Added min-height to .trick-cards in game.css to prevent layout shift when the current trick area is empty.
+
+**Change**: Added `min-height: var(--card-height)` to `.trick-cards` class (client/game.css:222)

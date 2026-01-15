@@ -240,44 +240,167 @@ export class RoomManager {
       throw new Error("Game already started");
     }
 
-    // Create a NetworkController for each player and build seat-to-player mapping
-    const playerList = Array.from(room.players.values());
-    const controllers = playerList.map((player) => {
-      const controller = new NetworkController((message) => {
-        sendToPlayer(player.playerId, JSON.stringify(message));
-      }, player.playerId, player.name);
-      room.controllers.set(player.playerId, controller);
-      return controller;
-    });
-
-    // Initialize the game (this shuffles controllers)
-    const game = newGame(controllers);
-    room.game = game;
     room.started = true;
+    let playAgain = true;
+    let game: Game | null = null;
 
-    // Set up state change callback to broadcast game state
-    game.onStateChange = () => {
-      for (const seat of game.seats) {
-        seat.controller.sendGameState(game, seat);
+    while (playAgain) {
+      // Create a NetworkController for each player and build seat-to-player mapping
+      const playerList = Array.from(room.players.values());
+      const controllers = playerList.map((player) => {
+        const controller = new NetworkController((message) => {
+          sendToPlayer(player.playerId, JSON.stringify(message));
+        }, player.playerId, player.name);
+        room.controllers.set(player.playerId, controller);
+        return controller;
+      });
+
+      // Initialize the game (this shuffles controllers)
+      game = newGame(controllers);
+      room.game = game;
+
+      // Set up state change callback to broadcast game state
+      game.onStateChange = () => {
+        for (const seat of game!.seats) {
+          seat.controller.sendGameState(game!, seat);
+        }
+      };
+
+      // Set up log callback to broadcast game log messages
+      game.onLog = (
+        line: string,
+        important?: boolean,
+        options?: { visibleTo?: number[]; hiddenMessage?: string },
+      ) => {
+        // Broadcast log message to all players
+        for (const playerId of room.players.keys()) {
+          let messageToSend = line;
+
+          // If visibility is restricted, check if this player can see the detailed message
+          if (options?.visibleTo && options?.hiddenMessage) {
+            // Find the seat for this player
+            const controller = room.controllers.get(playerId);
+            const seat = game!.seats.find((s) => s.controller === controller);
+            const seatIndex = seat?.seatIndex;
+
+            // If player's seat is not in visibleTo, use the hidden message
+            if (seatIndex === undefined || !options.visibleTo.includes(seatIndex)) {
+              messageToSend = options.hiddenMessage;
+            }
+          }
+
+          sendToPlayer(
+            playerId,
+            JSON.stringify({
+              type: "game_log",
+              line: messageToSend,
+              important,
+            }),
+          );
+        }
+      };
+
+      // Run the game loop and wait for it to complete
+      await runGame(game);
+
+      // Game is over - ask all players if they want to play again
+      // First response wins
+      const response = await this.askPlayAgain(room, sendToPlayer);
+      playAgain = response === "yes";
+
+      if (playAgain) {
+        // Clear controllers for new game
+        room.controllers.clear();
+        room.game = null;
       }
-    };
+    }
 
-    // Set up log callback to broadcast game log messages
-    game.onLog = (line: string, important?: boolean) => {
-      // Broadcast log message to all players
+    // Player chose not to play again - reset room to lobby state
+    this.resetRoomToLobby(room, sendToPlayer);
+
+    return game!;
+  }
+
+  /**
+   * Ask all players if they want to play again. First response wins.
+   */
+  private async askPlayAgain(
+    room: Room,
+    sendToPlayer: (playerId: string, message: string) => void
+  ): Promise<"yes" | "no"> {
+    return new Promise((resolve) => {
+      const requestId = crypto.randomUUID();
+      let resolved = false;
+
+      // Create handler for responses - first response wins
+      const handlePlayAgainResponse = (_playerId: string, responseRequestId: string, response: any) => {
+        if (resolved) return;
+        if (responseRequestId !== requestId) return;
+
+        resolved = true;
+        resolve(response as "yes" | "no");
+      };
+
+      // Store handler temporarily on room for the decision response handling
+      (room as any)._playAgainHandler = handlePlayAgainResponse;
+      (room as any)._playAgainRequestId = requestId;
+
+      // Send decision request to all players
+      const decision = {
+        type: "choose_button" as const,
+        options: {
+          title: "Game Over",
+          message: "Would you like to play again?",
+          buttons: [
+            { label: "Yes", value: "yes" },
+            { label: "No", value: "no" },
+          ],
+        },
+      };
+
       for (const playerId of room.players.keys()) {
-        sendToPlayer(playerId, JSON.stringify({
-          type: "game_log",
-          line,
-          important,
-        }));
+        sendToPlayer(
+          playerId,
+          JSON.stringify({
+            type: "decision_request",
+            requestId,
+            decision,
+          }),
+        );
       }
-    };
+    });
+  }
 
-    // Start the game loop
-    runGame(game);
+  /**
+   * Reset room to lobby state (no active game)
+   */
+  private resetRoomToLobby(
+    room: Room,
+    sendToPlayer: (playerId: string, message: string) => void
+  ): void {
+    room.game = null;
+    room.started = false;
+    room.controllers.clear();
 
-    return game;
+    // Clean up play again handler
+    delete (room as any)._playAgainHandler;
+    delete (room as any)._playAgainRequestId;
+
+    // Notify all players to return to lobby
+    const players = Array.from(room.players.values()).map(p => ({
+      name: p.name,
+      connected: p.connected,
+    }));
+
+    for (const playerId of room.players.keys()) {
+      sendToPlayer(
+        playerId,
+        JSON.stringify({
+          type: "game_reset",
+          players,
+        }),
+      );
+    }
   }
 
   /**
@@ -303,6 +426,15 @@ export class RoomManager {
       throw new Error("Game not started");
     }
 
+    // Check if this is a play-again response
+    const playAgainHandler = (room as any)._playAgainHandler;
+    const playAgainRequestId = (room as any)._playAgainRequestId;
+    if (playAgainHandler && playAgainRequestId === requestId) {
+      playAgainHandler(playerId, requestId, response);
+      return;
+    }
+
+    // Otherwise route to the player's controller
     const controller = room.controllers.get(playerId);
     if (!controller) {
       throw new Error("Controller not found");
