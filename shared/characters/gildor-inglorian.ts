@@ -28,7 +28,7 @@ export const GildorInglorian: CharacterDefinition = {
       }
 
       // Still completable if player has forests cards in hand
-      const availableCards = seat.hand!.getAvailableCards();
+      const availableCards = seat.hand?.getAvailableCards() ?? [];
       return availableCards.some((c: Card) => c.suit === "forests");
     },
     isCompleted: (game, seat) =>

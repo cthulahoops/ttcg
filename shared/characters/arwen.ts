@@ -2,6 +2,9 @@ import type { Card } from "../types";
 import type { Seat } from "../seat";
 import type { CharacterDefinition } from "./types";
 
+const countForestsWon = (seat: Seat) =>
+  seat.getAllWonCards().filter((c: Card) => c.suit === "forests").length;
+
 export const Arwen: CharacterDefinition = {
   name: "Arwen",
   setupText: "Exchange with Elrond or Aragorn",
@@ -15,38 +18,25 @@ export const Arwen: CharacterDefinition = {
   objective: {
     text: "Win the most forests cards",
     check: (game, seat) => {
-      const myCounts = seat
-        .getAllWonCards()
-        .filter((c: Card) => c.suit === "forests").length;
+      const myCounts = countForestsWon(seat);
 
       // Check if this seat has strictly more than all others
       return game.seats.every((s: Seat) => {
         if (s.seatIndex === seat.seatIndex) return true;
-        const theirCounts = s
-          .getAllWonCards()
-          .filter((c: Card) => c.suit === "forests").length;
-        return myCounts > theirCounts;
+        return myCounts > countForestsWon(s);
       });
     },
     isCompletable: (game, seat) => {
-      const myCounts = seat
-        .getAllWonCards()
-        .filter((c: Card) => c.suit === "forests").length;
+      const myCounts = countForestsWon(seat);
 
       const othersMaxCounts = Math.max(
         ...game.seats
           .filter((s: Seat) => s.seatIndex !== seat.seatIndex)
-          .map(
-            (s: Seat) =>
-              s.getAllWonCards().filter((c: Card) => c.suit === "forests")
-                .length,
-          ),
+          .map((s: Seat) => countForestsWon(s)),
       );
 
       const totalForestsWon = game.seats.reduce(
-        (total: number, s: Seat) =>
-          total +
-          s.getAllWonCards().filter((c: Card) => c.suit === "forests").length,
+        (total: number, s: Seat) => total + countForestsWon(s),
         0,
       );
       const forestsRemaining = 8 - totalForestsWon;
@@ -59,9 +49,6 @@ export const Arwen: CharacterDefinition = {
 
   display: {
     renderStatus: (game, seat) => {
-      const myCounts = seat
-        .getAllWonCards()
-        .filter((c: Card) => c.suit === "forests").length;
       const met = Arwen.objective.check(game, seat);
       const completable = Arwen.objective.isCompletable(game, seat);
       const completed = Arwen.objective.isCompleted(game, seat);
@@ -70,7 +57,7 @@ export const Arwen: CharacterDefinition = {
         met,
         completable,
         completed,
-        details: `Forests: ${myCounts}`,
+        details: `Forests: ${countForestsWon(seat)}`,
       };
     },
   },

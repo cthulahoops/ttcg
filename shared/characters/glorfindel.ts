@@ -3,7 +3,7 @@ import type { CharacterDefinition } from "./types";
 
 export const Glorfindel: CharacterDefinition = {
   name: "Glorfindel",
-  setupText: "Optionally take the lost card",
+  setupText: "Take the lost card",
 
   setup: async (game, seat, _setupContext) => {
     await game.takeLostCard(seat);

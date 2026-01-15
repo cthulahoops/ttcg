@@ -2,7 +2,7 @@ import type { CharacterDefinition } from "./types";
 
 export const Gandalf: CharacterDefinition = {
   name: "Gandalf",
-  setupText: "Optionally take the lost card, then exchange with Frodo",
+  setupText: "Take the lost card, then exchange with Frodo",
 
   setup: async (game, seat, setupContext) => {
     await game.takeLostCard(seat);

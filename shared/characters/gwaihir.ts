@@ -1,5 +1,11 @@
 import type { Card } from "../types";
+import type { Seat } from "../seat";
 import type { CharacterDefinition } from "./types";
+
+const countMountainTricks = (seat: Seat) =>
+  seat.tricksWon.filter((trick) =>
+    trick.cards.some((c: Card) => c.suit === "mountains"),
+  ).length;
 
 export const Gwaihir: CharacterDefinition = {
   name: "Gwaihir",
@@ -12,13 +18,7 @@ export const Gwaihir: CharacterDefinition = {
 
   objective: {
     text: "Win at least two tricks containing a mountain card",
-    check: (_game, seat) => {
-      const tricksWithMountains = seat.tricksWon.filter(
-        (trick: { number: number; cards: Card[] }) =>
-          trick.cards.some((c: Card) => c.suit === "mountains"),
-      );
-      return tricksWithMountains.length >= 2;
-    },
+    check: (_game, seat) => countMountainTricks(seat) >= 2,
     isCompletable: (_game, _seat) => {
       // Hard to determine without knowing remaining mountains distribution
       // Simplified: always completable
@@ -29,10 +29,6 @@ export const Gwaihir: CharacterDefinition = {
 
   display: {
     renderStatus: (game, seat) => {
-      const tricksWithMountains = seat.tricksWon.filter(
-        (trick: { number: number; cards: Card[] }) =>
-          trick.cards.some((c: Card) => c.suit === "mountains"),
-      );
       const met = Gwaihir.objective.check(game, seat);
       const completable = Gwaihir.objective.isCompletable(game, seat);
       const completed = Gwaihir.objective.isCompleted(game, seat);
@@ -41,7 +37,7 @@ export const Gwaihir: CharacterDefinition = {
         met,
         completable,
         completed,
-        details: `Tricks with mountains: ${tricksWithMountains.length}/2`,
+        details: `Tricks with mountains: ${countMountainTricks(seat)}/2`,
       };
     },
   },
