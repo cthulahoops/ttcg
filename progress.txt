@@ -476,3 +476,33 @@ Type check passes with no errors.
 **Test results**: 11 tests pass, 0 fail
 
 This establishes the test infrastructure for the project. Future tests can follow this pattern using Bun's native `describe()`, `test()`, and `expect()` from "bun:test".
+
+---
+
+## WebSocket Reconnection Logic
+
+**Task**: Implement websocket reconnection logic
+
+**Changes made**:
+
+**client/useGameWebSocket.ts**:
+- Added `useCallback` import from React
+- Added `reconnectTimeoutRef` to track pending reconnection timeout
+- Added `reconnectAttemptRef` to track number of reconnection attempts
+- Wrapped WebSocket connection logic in `connect` callback function
+- On websocket close: automatically schedule reconnection with exponential backoff (1s, 2s, 4s, 8s, max 10s)
+- On successful connect: reset reconnect attempt counter to 0
+- On unmount: clear any pending reconnection timeout
+
+**How it works**:
+1. When the websocket closes, a reconnection is automatically scheduled
+2. Exponential backoff prevents overwhelming the server: 1s → 2s → 4s → 8s → 10s (max)
+3. When reconnected, App.tsx's existing useEffect auto-rejoins the room using playerId/roomCode/playerName from localStorage/URL hash
+4. Server-side already handles reconnection: finds the player's seat, sends current game state and any pending decision requests
+
+**Why no state reset**:
+- Game state is preserved during reconnection so the user can still see the game
+- External storage (localStorage, URL hash) preserves identity data needed to rejoin
+- Server will send updated game state upon successful rejoin
+
+Type check and tests pass.

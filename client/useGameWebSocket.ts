@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { clientReducer } from "./reducer";
 import { ClientState } from "./types";
 import type { ClientMessage, ServerMessage } from "@shared/protocol";
@@ -19,8 +19,12 @@ export function useGameWebSocket() {
   const [connected, setConnected] = useState<boolean>(false);
 
   const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const reconnectAttemptRef = useRef(0);
 
-  useEffect(() => {
+  const connect = useCallback(() => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host.replace(":5173", ":3000")}`;
 
@@ -30,6 +34,7 @@ export function useGameWebSocket() {
     ws.onopen = () => {
       console.log("WebSocket connected");
       setConnected(true);
+      reconnectAttemptRef.current = 0;
     };
 
     ws.onmessage = (event) => {
@@ -45,13 +50,31 @@ export function useGameWebSocket() {
     ws.onclose = () => {
       console.warn("WebSocket closed");
       setConnected(false);
-    };
 
-    return () => {
-      ws.close();
-      setConnected(false);
+      // Reconnect with exponential backoff (max 10 seconds)
+      const delay = Math.min(
+        1000 * Math.pow(2, reconnectAttemptRef.current),
+        10000,
+      );
+      reconnectAttemptRef.current++;
+      console.log(
+        `Reconnecting in ${delay}ms (attempt ${reconnectAttemptRef.current})`,
+      );
+      reconnectTimeoutRef.current = setTimeout(connect, delay);
     };
   }, []);
+
+  useEffect(() => {
+    connect();
+
+    return () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      wsRef.current?.close();
+      setConnected(false);
+    };
+  }, [connect]);
 
   function sendMessage(message: ClientMessage) {
     const ws = wsRef.current;

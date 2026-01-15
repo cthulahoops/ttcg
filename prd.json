@@ -71,8 +71,8 @@
   {
     "id": "websocket-reconnection",
     "title": "Implement websocket reconnection logic",
-    "status": "pending",
-    "notes": "There's a stashed previous attempt that may be over-engineered"
+    "status": "completed",
+    "notes": "Added automatic reconnection with exponential backoff in useGameWebSocket.ts"
   },
   {
     "id": "hills-color",
