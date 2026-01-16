@@ -550,3 +550,25 @@ gold/yellow background color that visually indicates they are the trump suit.
 
 The visual distinction of the gold-colored rings card is sufficient to indicate trump plays.
 Type check passes with no errors.
+
+## Completed: farmer-maggot-setup-text
+
+Fix Farmer Maggot's setup text to remove misleading "Hills" reference:
+
+Farmer Maggot's setup text incorrectly read "Draw a Hills threat card, then exchange with
+Merry or Pippin". The word "Hills" is misleading because:
+
+1. The threat card is just a number (1-8), not tied to any suit
+2. Farmer Maggot's objective is to win cards of ANY suit matching the threat card rank
+3. Other characters (Sam, Gimli, Legolas) mention specific suits because their objectives
+   require cards from that specific suit
+
+Compare objectives:
+- Sam: "Win the Hills card matching your threat card" → suit-specific
+- Farmer Maggot: "Win at least two cards matching the threat card rank" → any suit
+
+**Fix (shared/characters/farmer-maggot.ts:6)**:
+- Changed setupText from "Draw a Hills threat card, then exchange with Merry or Pippin"
+- To: "Draw a threat card, then exchange with Merry or Pippin"
+
+Type check passes with no errors.
