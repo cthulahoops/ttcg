@@ -73,9 +73,9 @@
   },
   {
     "id": "rotate-seats-ui",
-    "title": "Rotate seat display so active player appears at top",
-    "status": "pending",
-    "notes": "Implement purely in UI layer"
+    "title": "Rotate seat display so viewer's seat appears at top",
+    "status": "completed",
+    "notes": "Added viewerSeat field to SerializedGame and serialization. GameScreen now rotates seats array so viewer's seat appears first. This places the player's own hand at the top of the screen for easier access."
   },
   {
     "id": "play-again-timeout",

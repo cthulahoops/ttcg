@@ -75,6 +75,7 @@ export function serializeGameForSeat(game: Game, seatIndex: number): SerializedG
   return {
     playerCount: game.playerCount,
     numCharacters: game.numCharacters,
+    viewerSeat: seatIndex,
     seats: game.seats.map((seat) => serializeSeat(game, seat, seatIndex)),
     currentTrick: game.currentTrick.map(serializeTrickPlay),
     completedTricks: game.completedTricks.map(serializeCompletedTrick),
