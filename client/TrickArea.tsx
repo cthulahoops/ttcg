@@ -40,14 +40,13 @@ export function TrickArea({ game }: TrickAreaProps) {
             seat?.character ??
             seat?.playerName ??
             `Player ${play.seatIndex + 1}`;
-          const label = name + (play.isTrump ? " (TRUMP)" : "");
           const isWinner =
             isCompleted && displayTrick.winner === play.seatIndex;
 
           return (
             <div key={idx} className={`trick-card ${isWinner ? "winner" : ""}`}>
               <Card card={play.card} />
-              <div className="player-label">{label}</div>
+              <div className="player-label">{name}</div>
             </div>
           );
         })}
