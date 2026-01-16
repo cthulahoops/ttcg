@@ -11,7 +11,7 @@ for (let i = 0; i < 2; i++) {
 
 const game = newGame(controllers);
 
-game.onLog = (l: any) => console.log(l);
+game.onLog = (line: string) => console.log(line);
 game.onStateChange = () => {
   // optional: console.log("state changed");
 };

@@ -889,3 +889,46 @@ Setup ESLint for the project with TypeScript and React support.
 - The `no-explicit-any` warnings will be addressed in the `no-explicit-any` PRD task
 
 Type check and tests pass.
+
+## Completed: no-explicit-any
+
+Enforce no-explicit-any rule and fix all existing violations:
+
+The ESLint rule `@typescript-eslint/no-explicit-any` was set to "warn" and there were 9 violations
+across 5 files. This change fixes all violations and promotes the rule to "error" to prevent future
+`any` usage.
+
+**Files changed:**
+
+**shared/protocol.ts:**
+- Changed `decision_response.response` from `any` to `unknown` (network boundary)
+- Changed `ChoiceButtonOptions<any>` to `ChoiceButtonOptions<string | number | boolean>` (covers all button value types used in practice)
+
+**server/controllers.ts:**
+- Changed `PendingRequest.resolve` parameter from `any` to `unknown`
+- Changed `PendingRequest.decision` from `any` to `DecisionRequest` (proper discriminated union)
+- Changed `handleResponse()` parameter from `any` to `unknown`
+- Changed `sendRequest()` parameter from `any` to `DecisionRequest`
+- Added targeted type assertions with comments where the generic `T` can't satisfy the constrained `DecisionRequest` type
+
+**server/room-manager.ts:**
+- Changed `handleDecisionResponse()` parameter from `any` to `unknown`
+
+**server/smoke.ts:**
+- Changed onLog callback from `(l: any)` to `(line: string)` to match the actual type
+
+**shared/game.ts:**
+- Replaced `(seat.hand as any).getCards()` with proper type narrowing using the optional `getCards` method
+
+**client/DecisionDialog.tsx:**
+- Fixed React key prop error by converting `btn.value` to `String(btn.value)` (boolean not valid as key)
+
+**eslint.config.js:**
+- Changed `@typescript-eslint/no-explicit-any` from "warn" to "error"
+
+**Design notes:**
+- `unknown` is used at network boundaries where we can't guarantee types at compile time
+- Type assertions are used sparingly with comments explaining the invariant being asserted
+- The Controller interface remains generic to allow type-safe usage throughout the codebase
+
+Type check, lint, and tests pass. Lint now shows 0 errors, 1 warning (unrelated react-hooks/exhaustive-deps).

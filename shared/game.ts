@@ -143,9 +143,8 @@ export class Game {
   ): Promise<void> {
     if (!this.lostCard) return;
 
-    const cards = seat.hand!.getCards
-      ? (seat.hand as any).getCards()
-      : seat.hand!.getAllCards();
+    const hand = seat.hand!;
+    const cards = hand.getCards ? hand.getCards() : hand.getAllCards();
     const sortedCards = sortHand(cards);
 
     const cardToGive = await seat.controller.chooseCard({

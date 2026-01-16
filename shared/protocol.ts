@@ -25,7 +25,7 @@ export type ClientMessage =
     }
   | { type: "leave_room" }
   | { type: "start_game" }
-  | { type: "decision_response"; requestId: string; response: any };
+  | { type: "decision_response"; requestId: string; response: unknown };
 
 // Server → Client messages
 export type ServerMessage =
@@ -47,6 +47,6 @@ export type ServerMessage =
 
 // Decision request types
 export type DecisionRequest =
-  | { type: "choose_button"; options: ChoiceButtonOptions<any> }
+  | { type: "choose_button"; options: ChoiceButtonOptions<string | number | boolean> }
   | { type: "choose_card"; options: ChoiceCardOptions<AnyCard> }
   | { type: "select_card"; availableCards: Card[] };
