@@ -103,8 +103,8 @@
   {
     "id": "mountains-constant",
     "title": "Extract magic number 8 (total mountains cards) to constant",
-    "status": "pending",
-    "notes": "In gloin.ts isCompletable logic"
+    "status": "completed",
+    "notes": "Added CARDS_PER_SUIT constant to shared/types.ts. Updated gloin.ts, arwen.ts, glorfindel.ts, and tom-bombadil.ts to use the constant instead of magic numbers."
   },
   {
     "id": "bilbo-completable",
