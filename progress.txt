@@ -512,3 +512,25 @@ Type check and tests pass.
 Added min-height to .trick-cards in game.css to prevent layout shift when the current trick area is empty.
 
 **Change**: Added `min-height: var(--card-height)` to `.trick-cards` class (client/game.css:222)
+
+## Completed: clear-game-log
+
+Clear game log when starting a new game via play-again.
+
+When a player chose "Yes" to play again after a game ended, the game log from the previous
+game was not being cleared. This caused logs to accumulate across multiple games, which
+was confusing and cluttered the UI.
+
+**Root cause**:
+The `game_reset` message (which clears the log on clients) was only sent in `resetRoomToLobby()`,
+which is called when a player chooses "No" to play again. When choosing "Yes", the server
+cleared its internal state (`room.controllers.clear()`, `room.game = null`) but never notified
+clients to clear their logs.
+
+**Fix (server/room-manager.ts:316-329)**:
+- Added `game_reset` message broadcast inside the `if (playAgain)` block
+- Sends to all players before starting the new game
+- Clears game log, game state, and pending decision on all clients
+- New game state is sent immediately after as the new game initializes
+
+Now when players choose to play again, the log is cleared before the new game begins.

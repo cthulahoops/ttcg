@@ -312,6 +312,21 @@ export class RoomManager {
         // Clear controllers for new game
         room.controllers.clear();
         room.game = null;
+
+        // Clear game log for all players before starting new game
+        const players = Array.from(room.players.values()).map(p => ({
+          name: p.name,
+          connected: p.connected,
+        }));
+        for (const playerId of room.players.keys()) {
+          sendToPlayer(
+            playerId,
+            JSON.stringify({
+              type: "game_reset",
+              players,
+            }),
+          );
+        }
       }
     }
 
