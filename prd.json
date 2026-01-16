@@ -62,8 +62,8 @@
   {
     "id": "available-characters-count",
     "title": "Limit available characters to Frodo + 1 per seat",
-    "status": "pending",
-    "notes": "Only one spare character in all player counts"
+    "status": "completed",
+    "notes": "Changed from fixed 4 non-Frodo characters to numCharacters non-Frodo characters, resulting in numCharacters + 1 total (including Frodo). This means 4 total for 3-seat games, 5 total for 4-seat games."
   },
   {
     "id": "seat-character-refactor",

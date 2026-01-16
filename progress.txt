@@ -986,3 +986,20 @@ check script for CI integration.
 - `bun run format:check` - Check formatting without modifying (returns non-zero on violations)
 
 Type check and tests pass.
+
+## Completed: available-characters-count
+
+Limit available characters to Frodo + 1 per seat:
+
+Previously, the game always offered 5 characters (4 random + Frodo) regardless of player count.
+This created unnecessary choice paralysis when there were fewer seats to fill.
+
+**Fix (server/game-server.ts:80-81)**:
+- Changed `shuffleDeck(allCharacters).slice(0, 4)` to `shuffleDeck(allCharacters).slice(0, numCharacters)`
+- This gives numCharacters non-Frodo characters + Frodo = numCharacters + 1 total available characters
+- Results:
+  - 3-seat games (2-3 players): 4 total characters (3 random + Frodo)
+  - 4-seat games (1 or 4 players): 5 total characters (4 random + Frodo)
+- Always exactly 1 spare character beyond the number of seats
+
+Type check and tests pass.

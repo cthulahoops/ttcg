@@ -77,7 +77,8 @@ export function newGame(controllers: Controller[]): Game {
     seats.push(seat);
   }
 
-  const availableCharacters = shuffleDeck(allCharacters).slice(0, 4);
+  // Frodo + 1 spare per seat, so numCharacters non-Frodo characters + Frodo = numCharacters + 1 total
+  const availableCharacters = shuffleDeck(allCharacters).slice(0, numCharacters);
   availableCharacters.push("Frodo");
   availableCharacters.sort();
 
