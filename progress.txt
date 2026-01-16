@@ -824,3 +824,34 @@ since the character name alone is sufficient to identify the player during gamep
 - Consistent with server-side `getDisplayName()` method
 
 Type check and tests pass.
+
+## Completed: consolidate-character-definition
+
+Consolidate duplicate CharacterDefinition interfaces:
+
+The codebase had two definitions of `CharacterDefinition`:
+1. `shared/types.ts` - Loose version with `any` types and eslint-disable comments
+2. `shared/characters/types.ts` - Properly typed version using `Game` and `GameSetupContext`
+
+All 25 character files were already using the properly typed version from `shared/characters/types.ts`.
+Only `shared/seat.ts` was importing from the duplicate in `shared/types.ts`.
+
+**Changes:**
+
+**shared/types.ts:**
+- Removed `CharacterDefinition` interface (56-75 lines)
+- Removed `SetupContext` interface (also duplicate of `GameSetupContext` in game.ts)
+- Removed unused imports (`Seat`, `Game`)
+
+**shared/seat.ts:**
+- Updated import to use `CharacterDefinition` from `./characters/types` instead of `./types`
+
+**Canonical locations:**
+- `CharacterDefinition` → `shared/characters/types.ts`
+- `CharacterObjective` → `shared/characters/types.ts`
+- `CharacterDisplay` → `shared/characters/types.ts`
+- `GameSetupContext` → `shared/game.ts`
+
+The registry at `shared/characters/registry.ts` re-exports these types for external consumers.
+
+Type check and tests pass.

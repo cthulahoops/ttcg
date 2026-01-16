@@ -95,8 +95,8 @@
   {
     "id": "consolidate-character-definition",
     "title": "Consolidate duplicate CharacterDefinition interfaces",
-    "status": "pending",
-    "notes": "shared/characters/types.ts and shared/types.ts both define CharacterDefinition"
+    "status": "completed",
+    "notes": "Removed duplicate CharacterDefinition and SetupContext from shared/types.ts. The canonical versions live in shared/characters/types.ts and shared/game.ts respectively."
   },
   {
     "id": "mountains-constant",
