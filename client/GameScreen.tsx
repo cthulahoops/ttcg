@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import type { SerializedGame } from "@shared/serialized";
 import type { DecisionRequest } from "@shared/protocol";
 import type { Card } from "@shared/types";
@@ -15,6 +16,13 @@ type GameScreenProps = {
 };
 
 export function GameScreen({ game, pendingDecision, onRespond }: GameScreenProps) {
+  // Set data-player-count on body for CSS styling (e.g., smaller cards in solitaire)
+  useEffect(() => {
+    document.body.setAttribute("data-player-count", String(game.playerCount));
+    return () => {
+      document.body.removeAttribute("data-player-count");
+    };
+  }, [game.playerCount]);
   // Rotate seats so viewer's seat appears first
   const rotatedSeats = [
     ...game.seats.slice(game.viewerSeat),
@@ -49,27 +57,8 @@ export function GameScreen({ game, pendingDecision, onRespond }: GameScreenProps
         />
       )}
 
-      {game.availableCharacters.length > 0 && (
-        <section className="available-characters">
-          <h3>Available Characters</h3>
-          <div className="character-list">
-            {game.availableCharacters.map((char) => (
-              <div key={char.name} className="character-card">
-                <div className="character-name">{char.name}</div>
-                <div className="character-objective">
-                  <strong>Objective:</strong> {char.objective}
-                </div>
-                <div className="character-setup">
-                  <strong>Setup:</strong> {char.setupText}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
       <div className="display-columns">
-        <TrickArea game={game} />
+        <TrickArea game={game} lostCard={game.lostCard} />
         <LostCard lostCard={game.lostCard} />
       </div>
 
@@ -91,6 +80,25 @@ export function GameScreen({ game, pendingDecision, onRespond }: GameScreenProps
           );
         })}
       </div>
+
+      {game.availableCharacters.length > 0 && (
+        <section className="available-characters">
+          <h3>Available Characters</h3>
+          <div className="character-list">
+            {game.availableCharacters.map((char) => (
+              <div key={char.name} className="character-card">
+                <div className="character-name">{char.name}</div>
+                <div className="character-objective">
+                  <strong>Objective:</strong> {char.objective}
+                </div>
+                <div className="character-setup">
+                  <strong>Setup:</strong> {char.setupText}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
