@@ -68,7 +68,7 @@ export function newGame(controllers: Controller[]): Game {
       i,
       controller,
       createHand(playerCards[i]!, playerCount, isPyramid),
-      controller == pyramidController
+      isPyramid
     );
 
     seats.push(seat);
