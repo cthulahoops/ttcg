@@ -69,6 +69,7 @@ export interface SerializedSeat {
 export interface SerializedGame {
   playerCount: number;
   numCharacters: number;
+  viewerSeat: number;
   seats: SerializedSeat[];
   currentTrick: SerializedTrickPlay[];
   completedTricks: SerializedCompletedTrick[];

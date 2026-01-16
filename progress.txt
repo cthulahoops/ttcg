@@ -1043,3 +1043,39 @@ these into a single `character: CharacterDefinition | null` field.
 - Client still receives `string | null` via serialization layer
 
 Type check and tests pass.
+
+## Completed: rotate-seats-ui
+
+Rotate seat display so viewer's seat appears at top:
+
+Previously, all players saw seats in the same order (seat 0, 1, 2, 3). This meant the viewer's
+own hand could appear anywhere on the screen depending on which seat they were assigned.
+
+**Changes:**
+
+**shared/serialized.ts:**
+- Added `viewerSeat: number` field to `SerializedGame` interface
+- This tells the client which seat belongs to the viewing player
+
+**shared/serialize.ts:**
+- Updated `serializeGameForSeat()` to include `viewerSeat: seatIndex` in the returned object
+- The seatIndex parameter was already passed in, just needed to include it in the output
+
+**client/GameScreen.tsx:**
+- Added seat rotation logic at the start of the component:
+  ```tsx
+  const rotatedSeats = [
+    ...game.seats.slice(game.viewerSeat),
+    ...game.seats.slice(0, game.viewerSeat),
+  ];
+  ```
+- Changed from iterating `game.seats` to iterating `rotatedSeats`
+- Each `PlayerSeat` component still uses `seat.seatIndex` for its key and logic
+
+**Result:**
+- The viewer's own seat always appears first (at the top of the player list)
+- Other seats follow in turn order from the viewer's perspective
+- Active player highlighting and card selection still work correctly since they use `seatIndex`
+- Example: If you're seat 2 in a 4-player game, you see: seat 2, 3, 0, 1 (instead of 0, 1, 2, 3)
+
+Type check and tests pass.

@@ -15,6 +15,12 @@ type GameScreenProps = {
 };
 
 export function GameScreen({ game, pendingDecision, onRespond }: GameScreenProps) {
+  // Rotate seats so viewer's seat appears first
+  const rotatedSeats = [
+    ...game.seats.slice(game.viewerSeat),
+    ...game.seats.slice(0, game.viewerSeat),
+  ];
+
   // Derive select_card decision state
   const isSelectCard = pendingDecision?.decision.type === "select_card";
   const selectableCardsFromDecision =
@@ -68,7 +74,7 @@ export function GameScreen({ game, pendingDecision, onRespond }: GameScreenProps
       </div>
 
       <div className="players">
-        {game.seats.map((seat) => {
+        {rotatedSeats.map((seat) => {
           const isActive = seat.seatIndex === game.currentPlayer;
           // Only pass selectable cards to the active player's seat
           const selectableCards =
