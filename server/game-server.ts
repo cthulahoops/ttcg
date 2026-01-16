@@ -4,8 +4,7 @@ import { Game } from "@shared/game";
 import { ProxyController, Controller } from "@shared/controllers";
 
 import { Card } from "@shared/types";
-import { createDeck } from "@shared/deck";
-
+import { Deck } from "@shared/deck";
 import { Seat } from "@shared/seat";
 
 import { SolitaireHand, PlayerHand, PyramidHand, Hand } from "@shared/hands";
@@ -38,19 +37,18 @@ export function newGame(controllers: Controller[]): Game {
 
   const cardsPerPlayer = 36 / numCharacters;
 
-  //  document.body.setAttribute("data-player-count", playerCount.toString());
-
-  let deck: Card[], lostCard: Card;
+  let deck: Deck, lostCard: Card;
 
   do {
-    deck = shuffleDeck(createDeck());
-    lostCard = deck.shift()!;
+    deck = new Deck();
+    deck.shuffle();
+    lostCard = deck.draw()!;
   } while (lostCard.suit === "rings" && lostCard.value === 1);
 
   const playerCards: Card[][] = Array.from({ length: numCharacters }, () => []);
   for (let i = 0; i < cardsPerPlayer; i++) {
     for (let p = 0; p < numCharacters; p++) {
-      playerCards[p]!.push(deck.shift()!);
+      playerCards[p]!.push(deck.draw()!);
     }
   }
 
