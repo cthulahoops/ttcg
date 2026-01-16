@@ -63,11 +63,13 @@ export function newGame(controllers: Controller[]): Game {
     const controller: Controller = controllers[i]!;
 
     const isPyramid = controller === pyramidController;
-    const hand = createHand(playerCards[i]!, playerCount, isPyramid);
 
-    const seat = new Seat(i, controller);
-    seat.hand = hand;
-    seat.isPyramid = isPyramid;
+    const seat = new Seat(
+      i,
+      controller,
+      createHand(playerCards[i]!, playerCount, isPyramid),
+      controller == pyramidController
+    );
 
     seats.push(seat);
   }
