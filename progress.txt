@@ -798,3 +798,29 @@ The receiver now immediately knows which card they got, making the exchange deci
 If Frodo is the receiver, the "(Frodo cannot give away the 1 of Rings)" suffix is still appended.
 
 Type check and tests pass.
+
+## Completed: hide-player-names-after-characters
+
+Remove player names from display when character names are known:
+
+Previously, the `PlayerSeat` component displayed both character name and player name when a
+character was assigned, using the format `"CharacterName (PlayerName)"`. This was redundant
+since the character name alone is sufficient to identify the player during gameplay.
+
+**Problem:**
+- `PlayerSeat.tsx` line 32-34 used: `${character} (${playerName})`
+- Server-side `Seat.getDisplayName()` correctly shows only character name
+- UI and server logic were inconsistent
+
+**Fix (client/PlayerSeat.tsx:31-32)**:
+- Simplified display logic to match server-side behavior
+- Changed from: `character ? \`${character} (${playerName})\` : (playerName ?? \`Player ${seatIndex + 1}\`)`
+- To: `character ?? playerName ?? \`Player ${seatIndex + 1}\``
+
+**Result:**
+- Before character assignment: Shows player name (e.g., "Alice")
+- After character assignment: Shows only character name (e.g., "Frodo")
+- Fallback to "Player X" if neither is available
+- Consistent with server-side `getDisplayName()` method
+
+Type check and tests pass.
