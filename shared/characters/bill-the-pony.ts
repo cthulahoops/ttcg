@@ -5,16 +5,8 @@ export const BillThePony: CharacterDefinition = {
   setupText: "Exchange simultaneously with Sam and Frodo",
 
   setup: async (game, seat, setupContext) => {
-    const samExchange = await game.setupExchange(
-      seat,
-      setupContext,
-      (c) => c === "Sam",
-    );
-    const frodoExchange = await game.setupExchange(
-      seat,
-      setupContext,
-      (c) => c === "Frodo",
-    );
+    const samExchange = await game.setupExchange(seat, setupContext, (c) => c === "Sam");
+    const frodoExchange = await game.setupExchange(seat, setupContext, (c) => c === "Frodo");
 
     if (samExchange) {
       game.completeExchange(samExchange, setupContext);
@@ -33,8 +25,7 @@ export const BillThePony: CharacterDefinition = {
     text: "Win exactly one trick",
     check: (_game, seat) => seat.getTrickCount() === 1,
     isCompletable: (_game, seat) => seat.getTrickCount() <= 1,
-    isCompleted: (game, seat) =>
-      game.finished && BillThePony.objective.check(game, seat),
+    isCompleted: (game, seat) => game.finished && BillThePony.objective.check(game, seat),
   },
 
   display: {

@@ -52,7 +52,7 @@ export class Game {
   onLog?: (
     line: string,
     important?: boolean,
-    options?: { visibleTo?: number[]; hiddenMessage?: string },
+    options?: { visibleTo?: number[]; hiddenMessage?: string }
   ) => void;
 
   constructor(
@@ -60,7 +60,7 @@ export class Game {
     numCharacters: number,
     seats: Seat[],
     lostCard: Card | null,
-    startPlayer: number,
+    startPlayer: number
   ) {
     this.playerCount = playerCount;
     this.numCharacters = numCharacters;
@@ -78,16 +78,12 @@ export class Game {
     this.threatDeck = [1, 2, 3, 4, 5, 6, 7];
     this.tricksToPlay = numCharacters === 3 ? 12 : 9;
 
-    this.threatDeck = shuffleDeck(
-      this.threatDeck.map((v) => ({ value: v })),
-    ).map((c) => c.value);
+    this.threatDeck = shuffleDeck(this.threatDeck.map((v) => ({ value: v }))).map((c) => c.value);
   }
 
   get finished(): boolean {
     // Game is finished when (numCharacters - 1) players have no cards
-    const playersWithNoCards = this.seats.filter((seat) =>
-      seat.hand!.isEmpty(),
-    ).length;
+    const playersWithNoCards = this.seats.filter((seat) => seat.hand!.isEmpty()).length;
     return playersWithNoCards >= this.numCharacters - 1;
   }
 
@@ -98,18 +94,14 @@ export class Game {
   log(
     line: string,
     important?: boolean,
-    options?: { visibleTo?: number[]; hiddenMessage?: string },
+    options?: { visibleTo?: number[]; hiddenMessage?: string }
   ): void {
     this.onLog?.(line, important, options);
   }
 
   // ===== GAME API METHODS FOR CHARACTER SETUP/OBJECTIVES =====
 
-  async choice(
-    seat: Seat,
-    question: string,
-    options: string[],
-  ): Promise<string> {
+  async choice(seat: Seat, question: string, options: string[]): Promise<string> {
     return await seat.controller.chooseButton({
       title: question,
       message: question,
@@ -137,10 +129,7 @@ export class Game {
     }
   }
 
-  async exchangeWithLostCard(
-    seat: Seat,
-    _setupContext: GameSetupContext,
-  ): Promise<void> {
+  async exchangeWithLostCard(seat: Seat, _setupContext: GameSetupContext): Promise<void> {
     if (!this.lostCard) return;
 
     const hand = seat.hand!;
@@ -167,10 +156,7 @@ export class Game {
     this.notifyStateChange();
   }
 
-  async drawThreatCard(
-    seat: Seat,
-    options: { exclude?: number } = {},
-  ): Promise<void> {
+  async drawThreatCard(seat: Seat, options: { exclude?: number } = {}): Promise<void> {
     if (this.threatDeck.length === 0) {
       this.log(`${seat.getDisplayName()} - No threat cards remaining!`);
       throw new Error("Threat deck is empty!");
@@ -217,17 +203,14 @@ export class Game {
     }
 
     seat.threatCard = choice.value;
-    this.log(
-      `${seat.getDisplayName()} chooses threat card: ${choice.value}`,
-      true,
-    );
+    this.log(`${seat.getDisplayName()} chooses threat card: ${choice.value}`, true);
     this.notifyStateChange();
   }
 
   async setupExchange(
     seat: Seat,
     setupContext: GameSetupContext,
-    canExchangeWith: (character: string) => boolean,
+    canExchangeWith: (character: string) => boolean
   ): Promise<Exchange | null> {
     if (this.playerCount === 1 && setupContext.exchangeMade) {
       return null;
@@ -291,9 +274,7 @@ export class Game {
     const availableFrom = seat.hand!.getAvailableCards();
     const isFrodoFrom = seat.character === "Frodo";
     const playableFrom = isFrodoFrom
-      ? availableFrom.filter(
-          (card) => !(card.suit === "rings" && card.value === 1),
-        )
+      ? availableFrom.filter((card) => !(card.suit === "rings" && card.value === 1))
       : availableFrom;
 
     let messageFrom = `Choose a card to give to ${targetSeat.getDisplayName()}`;
@@ -311,9 +292,7 @@ export class Game {
     const availableTo = targetSeat.hand!.getAvailableCards();
     const isFrodoTo = targetSeat.character === "Frodo";
     const playableTo = isFrodoTo
-      ? availableTo.filter(
-          (card) => !(card.suit === "rings" && card.value === 1),
-        )
+      ? availableTo.filter((card) => !(card.suit === "rings" && card.value === 1))
       : availableTo;
 
     // Include the received card in the choices (can return it if desired)
@@ -343,13 +322,10 @@ export class Game {
 
     // No-op if the same card is returned (second player returned what they received)
     const sameCard =
-      cardFromFirst.suit === cardFromSecond.suit &&
-      cardFromFirst.value === cardFromSecond.value;
+      cardFromFirst.suit === cardFromSecond.suit && cardFromFirst.value === cardFromSecond.value;
 
     if (sameCard) {
-      this.log(
-        `${toSeat.getDisplayName()} returns the card to ${fromSeat.getDisplayName()}`,
-      );
+      this.log(`${toSeat.getDisplayName()} returns the card to ${fromSeat.getDisplayName()}`);
       return;
     }
 
@@ -366,7 +342,7 @@ export class Game {
       {
         visibleTo: participants,
         hiddenMessage: `${fromSeat.getDisplayName()} gives a card to ${toSeat.getDisplayName()}`,
-      },
+      }
     );
     this.log(
       `${toSeat.getDisplayName()} gives ${cardFromSecond.value} of ${cardFromSecond.suit} to ${fromSeat.getDisplayName()}`,
@@ -374,7 +350,7 @@ export class Game {
       {
         visibleTo: participants,
         hiddenMessage: `${toSeat.getDisplayName()} gives a card to ${fromSeat.getDisplayName()}`,
-      },
+      }
     );
 
     if (this.playerCount === 1) {
@@ -385,13 +361,9 @@ export class Game {
   async exchange(
     seat: Seat,
     setupContext: GameSetupContext,
-    canExchangeWith: (character: string) => boolean,
+    canExchangeWith: (character: string) => boolean
   ): Promise<void> {
-    const exchangeSetup = await this.setupExchange(
-      seat,
-      setupContext,
-      canExchangeWith,
-    );
+    const exchangeSetup = await this.setupExchange(seat, setupContext, canExchangeWith);
 
     if (exchangeSetup) {
       this.completeExchange(exchangeSetup, setupContext);
@@ -400,9 +372,7 @@ export class Game {
   }
 
   hasCard(seat: Seat, suit: Suit, value: number): boolean {
-    return seat
-      .getAllWonCards()
-      .some((card) => card.suit === suit && card.value === value);
+    return seat.getAllWonCards().some((card) => card.suit === suit && card.value === value);
   }
 
   cardGone(seat: Seat, suit: Suit, value: number): boolean {
@@ -427,7 +397,7 @@ export class Game {
   displaySimple(
     met: boolean,
     completable: boolean,
-    completed: boolean,
+    completed: boolean
   ): { met: boolean; completable: boolean; completed: boolean } {
     return { met, completable, completed };
   }
@@ -436,7 +406,7 @@ export class Game {
     _seat: Seat,
     met: boolean,
     completable: boolean,
-    completed: boolean,
+    completed: boolean
   ): { met: boolean; completable: boolean; completed: boolean } {
     return this.displaySimple(met, completable, completed);
   }
@@ -463,7 +433,7 @@ export class Game {
       {
         visibleTo: [fromSeat.seatIndex, toSeat.seatIndex],
         hiddenMessage: `${fromSeat.getDisplayName()} gives a card to ${toSeat.getDisplayName()}`,
-      },
+      }
     );
     this.notifyStateChange();
   }
@@ -556,10 +526,7 @@ function checkForImpossibleObjectives(gameState: Game): void {
     if (!isObjectiveCompletable(gameState, seat)) {
       const character = seat.character;
       if (character) {
-        gameState.log(
-          `${seat.getDisplayName()}'s objective is now impossible!`,
-          true,
-        );
+        gameState.log(`${seat.getDisplayName()}'s objective is now impossible!`, true);
       }
     }
   }
@@ -614,11 +581,7 @@ function determineTrickWinner(gameState: Game): number {
   return winningPlay.playerIndex;
 }
 
-async function playSelectedCard(
-  gameState: Game,
-  seat: Seat,
-  card: Card,
-): Promise<void> {
+async function playSelectedCard(gameState: Game, seat: Seat, card: Card): Promise<void> {
   seat.hand!.removeCard(card);
   seat.playedCards.push(card);
   gameState.currentTrick.push({
@@ -641,7 +604,7 @@ async function playSelectedCard(
 async function selectCardFromPlayer(
   gameState: Game,
   seat: Seat,
-  legalMoves: Card[],
+  legalMoves: Card[]
 ): Promise<Card> {
   gameState.currentPlayer = seat.seatIndex;
   return await seat.controller.selectCard(legalMoves);
@@ -676,32 +639,25 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
 
       const legalMoves = getLegalMoves(gameState, seat);
 
-      const selectedCard = await selectCardFromPlayer(
-        gameState,
-        seat,
-        legalMoves,
-      );
+      const selectedCard = await selectCardFromPlayer(gameState, seat, legalMoves);
 
       await playSelectedCard(gameState, seat, selectedCard);
       gameState.notifyStateChange();
     }
 
     const oneRingPlay = gameState.currentTrick.find(
-      (play) => play.card.suit === "rings" && play.card.value === 1,
+      (play) => play.card.suit === "rings" && play.card.value === 1
     );
 
     if (oneRingPlay) {
       // Check if the 1 of Rings would already win without using trump
       // (isTrump is still false at this point, so determineTrickWinner gives us the non-trump result)
-      const alreadyWinning =
-        determineTrickWinner(gameState) === oneRingPlay.playerIndex;
+      const alreadyWinning = determineTrickWinner(gameState) === oneRingPlay.playerIndex;
 
       if (!alreadyWinning) {
         const oneRingSeat = gameState.seats[oneRingPlay.playerIndex];
         if (!oneRingSeat) {
-          throw new Error(
-            `Invalid seat for 1 of Rings player: ${oneRingPlay.playerIndex}`,
-          );
+          throw new Error(`Invalid seat for 1 of Rings player: ${oneRingPlay.playerIndex}`);
         }
         const useTrump = await oneRingSeat.controller.chooseButton({
           title: "You played the 1 of Rings!",
@@ -755,7 +711,7 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
     ) {
       // Build list of players who have cards to play
       const eligibleLeaders = gameState.seats.filter(
-        (seat) => !seat.hand!.isEmpty() || seat.asideCard,
+        (seat) => !seat.hand!.isEmpty() || seat.asideCard
       );
 
       if (eligibleLeaders.length > 1) {
@@ -774,7 +730,7 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
         if (nextLeader !== winnerIndex) {
           const chosenSeat = gameState.seats[nextLeader];
           gameState.log(
-            `${winnerSeat.getDisplayName()} chooses ${chosenSeat?.getDisplayName()} to lead the next trick.`,
+            `${winnerSeat.getDisplayName()} chooses ${chosenSeat?.getDisplayName()} to lead the next trick.`
           );
         }
       }
@@ -816,21 +772,14 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
     throw new Error(`Invalid start player seat index: ${startPlayer}`);
   }
 
-  gameState.log(
-    `${frodoSeat.getDisplayName()} gets Frodo (has 1 of Rings)`,
-    true,
-  );
+  gameState.log(`${frodoSeat.getDisplayName()} gets Frodo (has 1 of Rings)`, true);
   frodoSeat.character = "Frodo";
   frodoSeat.characterDef = characterRegistry.get("Frodo")!;
-  gameState.availableCharacters = gameState.availableCharacters.filter(
-    (c) => c !== "Frodo",
-  );
+  gameState.availableCharacters = gameState.availableCharacters.filter((c) => c !== "Frodo");
   gameState.notifyStateChange();
 
   if (gameState.playerCount === 2) {
-    const pyramid = gameState.seats.find(
-      (s) => s.controller instanceof ProxyController,
-    );
+    const pyramid = gameState.seats.find((s) => s.controller instanceof ProxyController);
     if (!pyramid) {
       throw new Error("No pyramid seat found in 2-player game");
     }
@@ -840,23 +789,16 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
       const controllerIndex = (startPlayer + 2) % 3;
       const seat = gameState.seats[controllerIndex];
       if (!seat) {
-        throw new Error(
-          `Invalid pyramid controller seat index: ${controllerIndex}`,
-        );
+        throw new Error(`Invalid pyramid controller seat index: ${controllerIndex}`);
       }
       pyramidControllerSeat = seat;
     } else {
       pyramidControllerSeat = frodoSeat;
     }
 
-    (pyramid.controller as ProxyController).setController(
-      pyramidControllerSeat.controller,
-    );
+    (pyramid.controller as ProxyController).setController(pyramidControllerSeat.controller);
 
-    gameState.log(
-      `Pyramid will be controlled by ${pyramidControllerSeat.getDisplayName()}`,
-      true,
-    );
+    gameState.log(`Pyramid will be controlled by ${pyramidControllerSeat.getDisplayName()}`, true);
     gameState.notifyStateChange();
   }
 
@@ -864,20 +806,16 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
     const playerIndex = (startPlayer + i) % gameState.numCharacters;
     const seat = gameState.seats[playerIndex];
     if (!seat) {
-      throw new Error(
-        `Invalid seat index during character assignment: ${playerIndex}`,
-      );
+      throw new Error(`Invalid seat index during character assignment: ${playerIndex}`);
     }
 
     gameState.currentPlayer = playerIndex;
     gameState.notifyStateChange();
 
-    const buttons: ChoiceButton<string>[] = gameState.availableCharacters.map(
-      (char) => ({
-        label: char,
-        value: char,
-      }),
-    );
+    const buttons: ChoiceButton<string>[] = gameState.availableCharacters.map((char) => ({
+      label: char,
+      value: char,
+    }));
 
     const character = await seat.controller.chooseButton({
       title: `${seat.getDisplayName()} - Choose Your Character`,
@@ -888,9 +826,7 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
     gameState.log(`${seat.getDisplayName()} chose ${character}`);
     seat.character = character;
     seat.characterDef = characterRegistry.get(character)!;
-    gameState.availableCharacters = gameState.availableCharacters.filter(
-      (c) => c !== character,
-    );
+    gameState.availableCharacters = gameState.availableCharacters.filter((c) => c !== character);
 
     gameState.notifyStateChange();
   }

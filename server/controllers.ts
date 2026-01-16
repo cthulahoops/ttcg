@@ -1,10 +1,5 @@
 import { Controller } from "../shared/controllers";
-import type {
-  Card,
-  AnyCard,
-  ChoiceButtonOptions,
-  ChoiceCardOptions,
-} from "../shared/types";
+import type { Card, AnyCard, ChoiceButtonOptions, ChoiceCardOptions } from "../shared/types";
 import type { ServerMessage, DecisionRequest } from "../shared/protocol";
 import type { Game } from "../shared/game";
 import type { Seat } from "../shared/seat";
@@ -37,7 +32,9 @@ export class NetworkController extends Controller {
   handleResponse(requestId: string, response: unknown): void {
     const pending = this.pendingRequests.get(requestId);
     if (pending) {
-      console.log(`[NetworkController] Received response for request ${requestId}, remaining pending: ${this.pendingRequests.size - 1}`);
+      console.log(
+        `[NetworkController] Received response for request ${requestId}, remaining pending: ${this.pendingRequests.size - 1}`
+      );
       this.pendingRequests.delete(requestId);
       pending.resolve(response);
     } else {
@@ -52,7 +49,9 @@ export class NetworkController extends Controller {
   resendPendingRequests(): void {
     console.log(`[NetworkController] Resending ${this.pendingRequests.size} pending requests`);
     for (const pending of this.pendingRequests.values()) {
-      console.log(`[NetworkController] Resending request ${pending.requestId} with decision type: ${pending.decision?.type}`);
+      console.log(
+        `[NetworkController] Resending request ${pending.requestId} with decision type: ${pending.decision?.type}`
+      );
       this.sendMessage({
         type: "decision_request",
         requestId: pending.requestId,
@@ -70,10 +69,17 @@ export class NetworkController extends Controller {
     const promise = new Promise<T>((resolve, reject) => {
       // Type assertion needed: we store heterogeneous request types in the same map,
       // and the response type T is validated at runtime by the calling code
-      this.pendingRequests.set(requestId, { resolve: resolve as (value: unknown) => void, reject, requestId, decision });
+      this.pendingRequests.set(requestId, {
+        resolve: resolve as (value: unknown) => void,
+        reject,
+        requestId,
+        decision,
+      });
     });
 
-    console.log(`[NetworkController] Sending decision request ${requestId}, type: ${decision?.type}, total pending: ${this.pendingRequests.size}`);
+    console.log(
+      `[NetworkController] Sending decision request ${requestId}, type: ${decision?.type}, total pending: ${this.pendingRequests.size}`
+    );
     this.sendMessage({
       type: "decision_request",
       requestId,
@@ -91,9 +97,7 @@ export class NetworkController extends Controller {
     });
   }
 
-  async chooseCard<T extends AnyCard = AnyCard>(
-    options: ChoiceCardOptions<T>,
-  ): Promise<T> {
+  async chooseCard<T extends AnyCard = AnyCard>(options: ChoiceCardOptions<T>): Promise<T> {
     return this.sendRequest<T>({
       type: "choose_card",
       options,

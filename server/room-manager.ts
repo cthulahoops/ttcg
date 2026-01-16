@@ -4,18 +4,18 @@ import { NetworkController } from "./controllers.js";
 import { newGame } from "./game-server.js";
 
 interface InternalPlayer {
-  playerId: string;        // UUID (separate from socket ID)
+  playerId: string; // UUID (separate from socket ID)
   socketId: string | null; // Current socket (null if disconnected)
   name: string;
   connected: boolean;
 }
 
 interface Room {
-  code: string;              // 4-char uppercase (A-Z minus I/O)
+  code: string; // 4-char uppercase (A-Z minus I/O)
   players: Map<string, InternalPlayer>;
-  game: Game | null;         // null for MVP, reserved for future
-  started: boolean;          // false for MVP, reserved for future
-  createdAt: number;         // Timestamp for cleanup
+  game: Game | null; // null for MVP, reserved for future
+  started: boolean; // false for MVP, reserved for future
+  createdAt: number; // Timestamp for cleanup
   controllers: Map<string, NetworkController>; // Player ID to controller mapping
   // Play-again state (set during end-of-game prompt)
   playAgainHandler?: (playerId: string, requestId: string, response: boolean) => void;
@@ -24,11 +24,15 @@ interface Room {
 }
 
 export class RoomManager {
-  private rooms: Map<string, Room>;           // roomCode → Room
-  private socketToPlayer: Map<string, {      // socketId → player lookup
-    roomCode: string;
-    playerId: string;
-  }>;
+  private rooms: Map<string, Room>; // roomCode → Room
+  private socketToPlayer: Map<
+    string,
+    {
+      // socketId → player lookup
+      roomCode: string;
+      playerId: string;
+    }
+  >;
 
   constructor() {
     this.rooms = new Map();
@@ -40,7 +44,12 @@ export class RoomManager {
    * @returns Player ID and current player list
    * @throws Error if socket already in a different room
    */
-  joinRoom(roomCode: string, socketId: string, playerName: string, playerId: string): { playerId: string; players: Player[] } {
+  joinRoom(
+    roomCode: string,
+    socketId: string,
+    playerName: string,
+    playerId: string
+  ): { playerId: string; players: Player[] } {
     // Check if socket already in a room
     const existingLookup = this.socketToPlayer.get(socketId);
     if (existingLookup) {
@@ -55,7 +64,7 @@ export class RoomManager {
           player.name = playerName; // Update name in case it changed
         }
 
-        const players: Player[] = Array.from(room.players.values()).map(p => ({
+        const players: Player[] = Array.from(room.players.values()).map((p) => ({
           name: p.name,
           connected: p.connected,
         }));
@@ -89,7 +98,7 @@ export class RoomManager {
     } else {
       // New player - check for name uniqueness
       const existingPlayerWithName = Array.from(room.players.values()).find(
-        p => p.name === playerName
+        (p) => p.name === playerName
       );
       if (existingPlayerWithName) {
         throw new Error(`Player name "${playerName}" is already taken in this room`);
@@ -107,7 +116,7 @@ export class RoomManager {
     this.socketToPlayer.set(socketId, { roomCode, playerId });
 
     // Convert internal players to protocol Player type (without exposing playerIds)
-    const players: Player[] = Array.from(room.players.values()).map(p => ({
+    const players: Player[] = Array.from(room.players.values()).map((p) => ({
       name: p.name,
       connected: p.connected,
     }));
@@ -150,7 +159,9 @@ export class RoomManager {
   /**
    * Handle socket disconnection
    */
-  handleDisconnect(socketId: string): { roomCode: string; playerId: string; playerName: string } | null {
+  handleDisconnect(
+    socketId: string
+  ): { roomCode: string; playerId: string; playerName: string } | null {
     const lookup = this.socketToPlayer.get(socketId);
     if (!lookup) {
       return null;
@@ -252,9 +263,13 @@ export class RoomManager {
       // Create a NetworkController for each player and build seat-to-player mapping
       const playerList = Array.from(room.players.values());
       const controllers = playerList.map((player) => {
-        const controller = new NetworkController((message) => {
-          sendToPlayer(player.playerId, JSON.stringify(message));
-        }, player.playerId, player.name);
+        const controller = new NetworkController(
+          (message) => {
+            sendToPlayer(player.playerId, JSON.stringify(message));
+          },
+          player.playerId,
+          player.name
+        );
         room.controllers.set(player.playerId, controller);
         return controller;
       });
@@ -274,7 +289,7 @@ export class RoomManager {
       game.onLog = (
         line: string,
         important?: boolean,
-        options?: { visibleTo?: number[]; hiddenMessage?: string },
+        options?: { visibleTo?: number[]; hiddenMessage?: string }
       ) => {
         // Broadcast log message to all players
         for (const playerId of room.players.keys()) {
@@ -299,7 +314,7 @@ export class RoomManager {
               type: "game_log",
               line: messageToSend,
               important,
-            }),
+            })
           );
         }
       };
@@ -317,7 +332,7 @@ export class RoomManager {
         room.game = null;
 
         // Clear game log for all players before starting new game
-        const players = Array.from(room.players.values()).map(p => ({
+        const players = Array.from(room.players.values()).map((p) => ({
           name: p.name,
           connected: p.connected,
         }));
@@ -327,7 +342,7 @@ export class RoomManager {
             JSON.stringify({
               type: "game_reset",
               players,
-            }),
+            })
           );
         }
       }
@@ -363,7 +378,11 @@ export class RoomManager {
       };
 
       // Create handler for responses - first response wins
-      const handlePlayAgainResponse = (_playerId: string, responseRequestId: string, response: boolean) => {
+      const handlePlayAgainResponse = (
+        _playerId: string,
+        responseRequestId: string,
+        response: boolean
+      ) => {
         if (resolved) return;
         if (responseRequestId !== requestId) return;
 
@@ -404,7 +423,7 @@ export class RoomManager {
             type: "decision_request",
             requestId,
             decision,
-          }),
+          })
         );
       }
     });
@@ -430,7 +449,7 @@ export class RoomManager {
     delete room.playAgainTimeout;
 
     // Notify all players to return to lobby
-    const players = Array.from(room.players.values()).map(p => ({
+    const players = Array.from(room.players.values()).map((p) => ({
       name: p.name,
       connected: p.connected,
     }));
@@ -441,7 +460,7 @@ export class RoomManager {
         JSON.stringify({
           type: "game_reset",
           players,
-        }),
+        })
       );
     }
   }

@@ -8,9 +8,7 @@ export const Legolas: CharacterDefinition = {
     await game.drawThreatCard(seat, {
       exclude: game.lostCard?.value,
     });
-    await game.exchange(seat, setupContext, (c: string) =>
-      ["Gimli", "Aragorn"].includes(c),
-    );
+    await game.exchange(seat, setupContext, (c: string) => ["Gimli", "Aragorn"].includes(c));
   },
 
   objective: {

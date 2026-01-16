@@ -93,8 +93,7 @@ export const TomBombadil: CharacterDefinition = {
 
       return false;
     },
-    isCompleted: (game, seat) =>
-      game.finished && TomBombadil.objective.check(game, seat),
+    isCompleted: (game, seat) => game.finished && TomBombadil.objective.check(game, seat),
   },
 
   display: {

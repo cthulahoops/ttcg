@@ -5,7 +5,7 @@ type ClientAction = { type: "decision_cleared" };
 
 export function clientReducer(
   state: ClientState,
-  message: ServerMessage | ClientAction,
+  message: ServerMessage | ClientAction
 ): ClientState {
   switch (message.type) {
     case "pong":

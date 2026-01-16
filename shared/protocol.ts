@@ -1,12 +1,7 @@
 // shared/protocol.ts
 
 import type { SerializedGame } from "./serialized";
-import type {
-  Card,
-  AnyCard,
-  ChoiceButtonOptions,
-  ChoiceCardOptions,
-} from "./types";
+import type { Card, AnyCard, ChoiceButtonOptions, ChoiceCardOptions } from "./types";
 
 // Player info shared between client and server (public information only)
 export interface Player {

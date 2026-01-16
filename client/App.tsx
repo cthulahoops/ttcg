@@ -9,8 +9,7 @@ import { usePlayerName } from "./usePlayerName";
 
 export function App() {
   const { roomCode, setRoomCode, clearRoomCode } = useRoomCode();
-  const { state, connected, sendMessage, respondToDecision } =
-    useGameWebSocket();
+  const { state, connected, sendMessage, respondToDecision } = useGameWebSocket();
   const playerId = usePlayerId();
   const { playerName, setPlayerName } = usePlayerName();
 
