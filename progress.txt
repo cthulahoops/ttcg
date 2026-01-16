@@ -689,3 +689,43 @@ This was previously noted as a TODO in the character file but never implemented.
 - AI Bilbo will make a random choice (existing AIController behavior)
 
 Type check and tests pass.
+
+## Completed: play-again-timeout and play-again-cleanup
+
+Add timeout for play-again responses and clean up handler properly:
+
+When a game ends, players are shown a "Play Again?" dialog. Previously, if all players disconnected
+or failed to respond, the promise would never resolve, causing the game to hang indefinitely.
+Additionally, the play-again state was stored using `as any` casts instead of proper typing.
+
+**Changes (server/room-manager.ts):**
+
+**Room interface extension:**
+- Added `playAgainHandler?: (playerId: string, requestId: string, response: boolean) => void`
+- Added `playAgainRequestId?: string`
+- Added `playAgainTimeout?: ReturnType<typeof setTimeout>`
+- Removed all `(room as any)` casts in favor of properly typed properties
+
+**askPlayAgain() method:**
+- Added 1-hour timeout (PLAY_AGAIN_TIMEOUT_MS = 60 * 60 * 1000)
+- Added `cleanup()` helper function that:
+  - Clears the timeout if pending
+  - Deletes playAgainHandler, playAgainRequestId, and playAgainTimeout from room
+- Timeout resolves to false (return to lobby) if no player responds
+- cleanup() is called on both successful response and timeout
+
+**resetRoomToLobby() method:**
+- Updated to use properly typed room properties
+- Clears timeout if still pending (defensive cleanup)
+
+**handleDecisionResponse() method:**
+- Updated to use `room.playAgainHandler` and `room.playAgainRequestId` directly
+
+**Behavior:**
+- If any player responds within 1 hour, their choice is used
+- If no player responds within 1 hour, defaults to false (return to lobby)
+- All play-again state is properly cleaned up in all code paths
+- No more `as any` casts for play-again handling
+- Return type changed from "yes"|"no" to boolean for cleaner code
+
+Type check and tests pass.
