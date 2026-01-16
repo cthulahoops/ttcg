@@ -12,7 +12,6 @@
     "check": "tsc",
     "test": "bun test",
     "lint": "eslint client server shared",
-    "typecheck": "tsc",
     "format": "prettier --write client server shared",
     "format:check": "prettier --check client server shared"
   },

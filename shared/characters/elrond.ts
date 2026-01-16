@@ -12,7 +12,7 @@ export const Elrond: CharacterDefinition = {
       const availableCards = seat.hand!.getAvailableCards();
 
       const card = await seat.controller.chooseCard({
-        title: `${seat.character?.name} - Pass to Right`,
+        title: `${seat.getDisplayName()} - Pass to Right`,
         message: "Choose a card to pass to the player on your right",
         cards: availableCards,
       });
