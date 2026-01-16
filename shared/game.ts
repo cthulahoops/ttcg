@@ -320,7 +320,7 @@ export class Game {
     // Include the received card in the choices (can return it if desired)
     const choicesForSecond = [...playableTo, cardFromFirst];
 
-    let messageTo = `Choose a card to give to ${seat.getDisplayName()}`;
+    let messageTo = `You received ${cardFromFirst.value} of ${cardFromFirst.suit}. Choose a card to give to ${seat.getDisplayName()}`;
     if (isFrodoTo) {
       messageTo += " (Frodo cannot give away the 1 of Rings)";
     }

@@ -779,3 +779,22 @@ This ensures the game ends early if Bilbo cannot possibly reach 3 tricks,
 improving the early-game-over detection.
 
 Type check and tests pass.
+
+## Completed: exchange-return-clarity
+
+Clarify which card was received when choosing return card in exchange:
+
+When two players exchange cards, the second player (receiver) is asked to choose which card
+to give back. Previously, the message only said "Choose a card to give to [Name]" without
+indicating which card was just received. This made it hard to make an informed decision,
+especially when the received card was included in the available choices.
+
+**Fix (shared/game.ts:323)**:
+- Updated the message when prompting the second player to return a card
+- Changed from: "Choose a card to give to [Name]"
+- To: "You received [value] of [suit]. Choose a card to give to [Name]"
+
+The receiver now immediately knows which card they got, making the exchange decision clearer.
+If Frodo is the receiver, the "(Frodo cannot give away the 1 of Rings)" suffix is still appended.
+
+Type check and tests pass.
