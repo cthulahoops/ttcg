@@ -6,15 +6,36 @@ export const Galadriel: CharacterDefinition = {
   setupText: "Exchange with either the lost card or Gandalf",
 
   setup: async (game, seat, setupContext) => {
-    const choice = await game.choice(seat, "Exchange with?", [
-      "Lost Card",
-      "Gandalf",
-    ]);
+    const gandalfInPlay = game.seats.some((s) => s.character === "Gandalf");
+    const lostCardExists = game.lostCard !== null;
 
-    if (choice === "Lost Card") {
-      await game.exchangeWithLostCard(seat, setupContext);
-    } else {
-      await game.exchange(seat, setupContext, (c: string) => c === "Gandalf");
+    // If Gandalf is in play, exchange is required (choose Gandalf or lost card if available)
+    if (gandalfInPlay) {
+      const options = ["Gandalf"];
+      if (lostCardExists) {
+        options.push("Lost Card");
+      }
+
+      const choice = await game.choice(seat, "Exchange with?", options);
+
+      if (choice === "Lost Card") {
+        await game.exchangeWithLostCard(seat, setupContext);
+      } else {
+        await game.exchange(seat, setupContext, (c: string) => c === "Gandalf");
+      }
+      return;
+    }
+
+    // Gandalf not in play - lost card exchange is optional
+    if (lostCardExists) {
+      const choice = await game.choice(seat, "Exchange with?", [
+        "Lost Card",
+        "Skip",
+      ]);
+
+      if (choice === "Lost Card") {
+        await game.exchangeWithLostCard(seat, setupContext);
+      }
     }
   },
 

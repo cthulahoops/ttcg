@@ -591,3 +591,29 @@ Investigated report that pyramid control log showed wrong player name.
 **Conclusion:**
 Could not reproduce. The formula and logging appear correct. May have been a one-time
 issue or misremembered scenario. Marking as could not reproduce.
+
+## Completed: galadriel-setup-fix
+
+Fix Galadriel's setup action to only show valid exchange options.
+
+**Problem:**
+Galadriel's setup was broken in multiple ways:
+1. Always offered "Gandalf" as an option even when Gandalf wasn't in the game
+2. Always offered "Lost Card" even if it had already been taken
+3. No option to skip the exchange entirely
+
+**Fix (shared/characters/galadriel.ts):**
+- Dynamically build options array based on actual game state
+- Check if Gandalf is in play: `game.seats.some(s => s.character === "Gandalf")`
+- Check if lost card exists: `game.lostCard` is not null
+- If no valid options exist, skip setup entirely (return early)
+- If options exist, add "Skip" option and present single choice prompt
+- Updated setupText to reflect optional nature: "Optionally exchange with Gandalf or the lost card"
+
+**How it works now:**
+- If both Gandalf in play AND lost card exists: Shows "Gandalf", "Lost Card", "Skip"
+- If only Gandalf in play: Shows "Gandalf", "Skip"
+- If only lost card exists: Shows "Lost Card", "Skip"
+- If neither: No prompt shown, setup completes silently
+
+Type check passes with no errors.
