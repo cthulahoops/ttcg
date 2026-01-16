@@ -534,3 +534,19 @@ clients to clear their logs.
 - New game state is sent immediately after as the new game initializes
 
 Now when players choose to play again, the log is cleared before the new game begins.
+
+## Completed: remove-trump-text
+
+Remove redundant "(TRUMP)" text from trick display:
+
+When a player used the 1 of Rings as trump to win a trick, the label showed "(TRUMP)"
+next to their name. This text was redundant since ring cards already have a distinctive
+gold/yellow background color that visually indicates they are the trump suit.
+
+**Fix (client/TrickArea.tsx:43)**:
+- Removed the `(play.isTrump ? " (TRUMP)" : "")` suffix from the label
+- Simplified by removing the unnecessary `label` intermediate variable
+- Now the player label just shows the player/character name
+
+The visual distinction of the gold-colored rings card is sufficient to indicate trump plays.
+Type check passes with no errors.
