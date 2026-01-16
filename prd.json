@@ -51,8 +51,8 @@
   {
     "id": "tom-bombadil-completable",
     "title": "Implement proper isCompletable logic for Tom Bombadil",
-    "status": "pending",
-    "notes": "Currently returns true (too optimistic)"
+    "status": "completed",
+    "notes": "Now checks if any suit in hand can still reach 3 won cards based on remaining cards in play."
   },
   {
     "id": "available-characters-count",
