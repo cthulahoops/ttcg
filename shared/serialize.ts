@@ -5,6 +5,7 @@
 
 import type { Game, TrickPlay, CompletedTrick } from "./game";
 import type { Seat } from "./seat";
+import type { Card } from "./types";
 import { characterRegistry } from "./characters/registry";
 import type {
   SerializedGame,
@@ -31,6 +32,12 @@ function serializeSeat(
     seat.character?.objective.getText?.(game) ??
     "";
 
+  // Aside card is only visible to the player who owns it
+  let asideCard: Card | "hidden" | null = null;
+  if (seat.asideCard) {
+    asideCard = isOwnSeat ? seat.asideCard : "hidden";
+  }
+
   return {
     seatIndex: seat.seatIndex,
     playerName: seat.controller.playerName,
@@ -41,6 +48,7 @@ function serializeSeat(
     status: seat.character?.display.renderStatus(game, seat),
     objective,
     hand: seat.hand ? seat.hand.serializeForViewer(isOwnSeat) : null,
+    asideCard,
   };
 }
 

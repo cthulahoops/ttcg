@@ -664,7 +664,8 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
         throw new Error(`Invalid seat index: ${playerIndex}`);
       }
 
-      if (seat.hand.isEmpty()) {
+      // Skip player if they have no cards (and no aside card to play)
+      if (seat.hand.isEmpty() && !seat.asideCard) {
         gameState.log(`${seat.getDisplayName()} passes (no cards)`);
         continue;
       }
