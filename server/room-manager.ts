@@ -17,6 +17,10 @@ interface Room {
   started: boolean;          // false for MVP, reserved for future
   createdAt: number;         // Timestamp for cleanup
   controllers: Map<string, NetworkController>; // Player ID to controller mapping
+  // Play-again state (set during end-of-game prompt)
+  playAgainHandler?: (playerId: string, requestId: string, response: boolean) => void;
+  playAgainRequestId?: string;
+  playAgainTimeout?: ReturnType<typeof setTimeout>;
 }
 
 export class RoomManager {
@@ -305,8 +309,7 @@ export class RoomManager {
 
       // Game is over - ask all players if they want to play again
       // First response wins
-      const response = await this.askPlayAgain(room, sendToPlayer);
-      playAgain = response === "yes";
+      playAgain = await this.askPlayAgain(room, sendToPlayer);
 
       if (playAgain) {
         // Clear controllers for new game
@@ -338,27 +341,48 @@ export class RoomManager {
 
   /**
    * Ask all players if they want to play again. First response wins.
+   * Times out after 1 hour, defaulting to false.
    */
   private async askPlayAgain(
     room: Room,
     sendToPlayer: (playerId: string, message: string) => void
-  ): Promise<"yes" | "no"> {
+  ): Promise<boolean> {
+    const PLAY_AGAIN_TIMEOUT_MS = 60 * 60 * 1000; // 1 hour
+
     return new Promise((resolve) => {
       const requestId = crypto.randomUUID();
       let resolved = false;
 
+      const cleanup = () => {
+        if (room.playAgainTimeout) {
+          clearTimeout(room.playAgainTimeout);
+        }
+        delete room.playAgainHandler;
+        delete room.playAgainRequestId;
+        delete room.playAgainTimeout;
+      };
+
       // Create handler for responses - first response wins
-      const handlePlayAgainResponse = (_playerId: string, responseRequestId: string, response: any) => {
+      const handlePlayAgainResponse = (_playerId: string, responseRequestId: string, response: boolean) => {
         if (resolved) return;
         if (responseRequestId !== requestId) return;
 
         resolved = true;
-        resolve(response as "yes" | "no");
+        cleanup();
+        resolve(response);
       };
 
-      // Store handler temporarily on room for the decision response handling
-      (room as any)._playAgainHandler = handlePlayAgainResponse;
-      (room as any)._playAgainRequestId = requestId;
+      // Store handler on room for the decision response handling
+      room.playAgainHandler = handlePlayAgainResponse;
+      room.playAgainRequestId = requestId;
+
+      // Set timeout - defaults to false if no response
+      room.playAgainTimeout = setTimeout(() => {
+        if (resolved) return;
+        resolved = true;
+        cleanup();
+        resolve(false);
+      }, PLAY_AGAIN_TIMEOUT_MS);
 
       // Send decision request to all players
       const decision = {
@@ -397,9 +421,13 @@ export class RoomManager {
     room.started = false;
     room.controllers.clear();
 
-    // Clean up play again handler
-    delete (room as any)._playAgainHandler;
-    delete (room as any)._playAgainRequestId;
+    // Clean up play again handler (may already be cleaned up by askPlayAgain)
+    if (room.playAgainTimeout) {
+      clearTimeout(room.playAgainTimeout);
+    }
+    delete room.playAgainHandler;
+    delete room.playAgainRequestId;
+    delete room.playAgainTimeout;
 
     // Notify all players to return to lobby
     const players = Array.from(room.players.values()).map(p => ({
@@ -442,10 +470,8 @@ export class RoomManager {
     }
 
     // Check if this is a play-again response
-    const playAgainHandler = (room as any)._playAgainHandler;
-    const playAgainRequestId = (room as any)._playAgainRequestId;
-    if (playAgainHandler && playAgainRequestId === requestId) {
-      playAgainHandler(playerId, requestId, response);
+    if (room.playAgainHandler && room.playAgainRequestId === requestId) {
+      room.playAgainHandler(playerId, requestId, response === "yes");
       return;
     }
 

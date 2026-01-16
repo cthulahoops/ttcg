@@ -75,14 +75,14 @@
   {
     "id": "play-again-timeout",
     "title": "Add timeout for play-again responses",
-    "status": "pending",
-    "notes": "60-second timeout defaulting to 'no'. Also extend Room interface instead of using 'as any'."
+    "status": "completed",
+    "notes": "1-hour timeout defaulting to 'no'. Extended Room interface with playAgainHandler, playAgainRequestId, and playAgainTimeout fields."
   },
   {
     "id": "play-again-cleanup",
     "title": "Clean up play-again handler when continuing to next round",
-    "status": "pending",
-    "notes": "Stale _playAgainHandler and _playAgainRequestId remain on room object"
+    "status": "completed",
+    "notes": "Handler, request ID, and timeout are now cleaned up via cleanup() function on response or timeout."
   },
   {
     "id": "seat-hand-type",
