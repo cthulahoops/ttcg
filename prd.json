@@ -19,7 +19,8 @@
   {
     "id": "exchange-return-clarity",
     "title": "Clarify which card was received when choosing return card in exchange",
-    "status": "pending"
+    "status": "completed",
+    "notes": "Exchange dialog message now shows 'You received X of Y. Choose a card to give to Z' so the receiver knows which card they just got."
   },
   {
     "id": "hide-player-names-after-characters",
