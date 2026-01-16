@@ -710,7 +710,7 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
     ) {
       // Build list of players who have cards to play
       const eligibleLeaders = gameState.seats.filter(
-        (seat) => !seat.hand!.isEmpty() || seat.asideCard
+        (seat) => !seat.hand!.isEmpty()
       );
 
       if (eligibleLeaders.length > 1) {
