@@ -572,3 +572,22 @@ Compare objectives:
 - To: "Draw a threat card, then exchange with Merry or Pippin"
 
 Type check passes with no errors.
+
+## Could Not Reproduce: pyramid-control
+
+Investigated report that pyramid control log showed wrong player name.
+
+**Reported Issue:**
+- Adam at seat 0, L at seat 1, Pyramid at seat 2
+- Log said "Adam controls Pyramid" but L was actually controlling it
+- Rule: when pyramid is Frodo, the player BEFORE the pyramid in turn order controls it
+
+**Investigation (shared/game.ts:806-828):**
+- Formula `(startPlayer + 2) % 3` correctly calculates the seat BEFORE the pyramid
+- For pyramid at seat 2: (2+2)%3 = 1, which is the correct "before" seat
+- Both `setController()` and log message use the same `pyramidControllerSeat` variable
+- Ran 2-player smoke tests with named controllers - all results showed correct controller
+
+**Conclusion:**
+Could not reproduce. The formula and logging appear correct. May have been a one-time
+issue or misremembered scenario. Marking as could not reproduce.

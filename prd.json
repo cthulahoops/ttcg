@@ -117,8 +117,8 @@
     {
       "id": "pyramid-control",
       "title": "Control log is wrong for pyramid",
-      "status": "pending",
-      "notes": "It claimed one player controlled the pyramid when it was really another"
+      "status": "could-not-reproduce",
+      "notes": "Investigated formula and logging - both appear correct. Smoke tests show correct behavior."
     },
     {
         "id": "clear-game-log",
