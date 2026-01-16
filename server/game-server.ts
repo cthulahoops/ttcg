@@ -78,6 +78,8 @@ function dealCards(numCharacters: number) {
     lostCard = deck.draw()!;
   } while (lostCard.suit === "rings" && lostCard.value === 1);
 
+  // 37 cards = 1 lost + (12 * 3 players) or 1 lost + (9 * 4 players)
+  // The deck size is chosen so exactly 1 lost card works for both modes
   const cardsPerPlayer = deck.length / numCharacters;
 
   const playerCards: Card[][] = Array.from({ length: numCharacters }, () => []);
