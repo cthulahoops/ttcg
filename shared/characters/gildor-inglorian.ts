@@ -1,5 +1,6 @@
 import type { Card } from "../types";
 import type { CharacterDefinition } from "./types";
+import { requireHand } from "../seat";
 
 export const GildorInglorian: CharacterDefinition = {
   name: "Gildor Inglorian",
@@ -28,7 +29,7 @@ export const GildorInglorian: CharacterDefinition = {
       }
 
       // Still completable if player has forests cards in hand
-      const availableCards = seat.hand?.getAvailableCards() ?? [];
+      const availableCards = requireHand(seat).hand.getAvailableCards();
       return availableCards.some((c: Card) => c.suit === "forests");
     },
     isCompleted: (game, seat) => game.finished && GildorInglorian.objective.check(game, seat),

@@ -5,6 +5,32 @@ import type { Hand } from "./hands";
 import type { Card, Trick, Controller } from "./types";
 import type { CharacterDefinition } from "./characters/types";
 
+/**
+ * A Seat that has been initialized with a hand.
+ * After game setup, all seats have hands - use this type to avoid null checks.
+ */
+export type InitializedSeat = Seat & { hand: Hand };
+
+/**
+ * Type guard to narrow Seat to InitializedSeat.
+ * Use this at game logic boundaries where hand is guaranteed to exist.
+ */
+export function hasHand(seat: Seat): seat is InitializedSeat {
+  return seat.hand !== null;
+}
+
+/**
+ * Asserts that a seat has a hand and returns it as InitializedSeat.
+ * Throws if hand is null (indicates a programming error - game logic
+ * should only run after hands are initialized).
+ */
+export function requireHand(seat: Seat): InitializedSeat {
+  if (!hasHand(seat)) {
+    throw new Error(`Seat ${seat.seatIndex} has no hand - game not properly initialized`);
+  }
+  return seat;
+}
+
 export class Seat {
   seatIndex: number;
   hand: Hand | null;

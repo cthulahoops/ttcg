@@ -92,8 +92,8 @@
   {
     "id": "seat-hand-type",
     "title": "Handle seat.hand optionality at type layer",
-    "status": "pending",
-    "notes": "Multiple character files use seat.hand! assertions. Make hand non-optional where guaranteed, or add type guard."
+    "status": "completed",
+    "notes": "Added InitializedSeat type and requireHand() type guard. Updated shared/game.ts and 5 character files (shadowfax, fatty-bolger, tom-bombadil, gildor-inglorian, elrond) to use requireHand() instead of non-null assertions."
   },
   {
     "id": "consolidate-character-definition",

@@ -1,5 +1,5 @@
 import type { Card } from "../types";
-import type { Seat } from "../seat";
+import { Seat, requireHand } from "../seat";
 import type { CharacterDefinition } from "./types";
 
 export const Elrond: CharacterDefinition = {
@@ -9,7 +9,7 @@ export const Elrond: CharacterDefinition = {
   setup: async (game, _seat, _setupContext) => {
     const cardsToPass: Card[] = [];
     for (const seat of game.seats) {
-      const availableCards = seat.hand!.getAvailableCards();
+      const availableCards = requireHand(seat).hand.getAvailableCards();
 
       const card = await seat.controller.chooseCard({
         title: `${seat.getDisplayName()} - Pass to Right`,
@@ -20,11 +20,11 @@ export const Elrond: CharacterDefinition = {
     }
 
     for (let i = 0; i < game.seats.length; i++) {
-      game.seats[i]!.hand!.removeCard(cardsToPass[i]!);
+      requireHand(game.seats[i]!).hand.removeCard(cardsToPass[i]!);
     }
     for (let i = 0; i < game.seats.length; i++) {
-      const toSeat = game.seats[(i + 1) % game.seats.length]!;
-      toSeat.hand!.addCard(cardsToPass[i]!);
+      const toSeat = requireHand(game.seats[(i + 1) % game.seats.length]!);
+      toSeat.hand.addCard(cardsToPass[i]!);
     }
 
     game.log("Everyone passes a card to the right");

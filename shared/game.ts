@@ -1,6 +1,6 @@
 import { Hand as _Hand } from "./hands";
 import { shuffleDeck, sortHand, delay } from "./utils";
-import { Seat } from "./seat";
+import { Seat, InitializedSeat, requireHand } from "./seat";
 import { ProxyController } from "./controllers";
 import { characterRegistry } from "./characters/registry";
 import type { Card, Suit, ThreatCard, ChoiceButton } from "./types";
@@ -83,7 +83,7 @@ export class Game {
 
   get finished(): boolean {
     // Game is finished when (numCharacters - 1) players have no cards
-    const playersWithNoCards = this.seats.filter((seat) => seat.hand!.isEmpty()).length;
+    const playersWithNoCards = this.seats.filter((seat) => requireHand(seat).hand.isEmpty()).length;
     return playersWithNoCards >= this.numCharacters - 1;
   }
 
@@ -122,7 +122,7 @@ export class Game {
     });
 
     if (shouldTake) {
-      seat.hand!.addCard(this.lostCard);
+      requireHand(seat).hand.addCard(this.lostCard);
       this.lostCard = null;
       this.log(`${seat.getDisplayName()} takes the lost card`);
       this.notifyStateChange();
@@ -132,7 +132,8 @@ export class Game {
   async exchangeWithLostCard(seat: Seat, _setupContext: GameSetupContext): Promise<void> {
     if (!this.lostCard) return;
 
-    const hand = seat.hand!;
+    const initializedSeat = requireHand(seat);
+    const hand = initializedSeat.hand;
     const cards = hand.getCards ? hand.getCards() : hand.getAllCards();
     const sortedCards = sortHand(cards);
 
@@ -142,8 +143,8 @@ export class Game {
       cards: sortedCards,
     });
 
-    seat.hand!.removeCard(cardToGive);
-    seat.hand!.addCard(this.lostCard);
+    hand.removeCard(cardToGive);
+    hand.addCard(this.lostCard);
     this.lostCard = cardToGive;
 
     this.log(`${seat.getDisplayName()} exchanges with the lost card`);
@@ -152,7 +153,7 @@ export class Game {
 
   revealHand(seat: Seat): void {
     this.log(`${seat.getDisplayName()}'s hand is now visible to all players`);
-    seat.hand!.reveal();
+    requireHand(seat).hand.reveal();
     this.notifyStateChange();
   }
 
@@ -271,7 +272,7 @@ export class Game {
       targetSeat = chosen;
     }
 
-    const availableFrom = seat.hand!.getAvailableCards();
+    const availableFrom = requireHand(seat).hand.getAvailableCards();
     const isFrodoFrom = seat.character?.name === "Frodo";
     const playableFrom = isFrodoFrom
       ? availableFrom.filter((card) => !(card.suit === "rings" && card.value === 1))
@@ -289,7 +290,7 @@ export class Game {
     });
 
     // Second player can choose from their hand plus the card they're receiving
-    const availableTo = targetSeat.hand!.getAvailableCards();
+    const availableTo = requireHand(targetSeat).hand.getAvailableCards();
     const isFrodoTo = targetSeat.character?.name === "Frodo";
     const playableTo = isFrodoTo
       ? availableTo.filter((card) => !(card.suit === "rings" && card.value === 1))
@@ -329,11 +330,14 @@ export class Game {
       return;
     }
 
-    fromSeat.hand!.removeCard(cardFromFirst);
-    toSeat.hand!.removeCard(cardFromSecond);
+    const fromHand = requireHand(fromSeat).hand;
+    const toHand = requireHand(toSeat).hand;
 
-    fromSeat.hand!.addCard(cardFromSecond);
-    toSeat.hand!.addCard(cardFromFirst);
+    fromHand.removeCard(cardFromFirst);
+    toHand.removeCard(cardFromSecond);
+
+    fromHand.addCard(cardFromSecond);
+    toHand.addCard(cardFromFirst);
 
     const participants = [fromSeat.seatIndex, toSeat.seatIndex];
     this.log(
@@ -412,7 +416,9 @@ export class Game {
   }
 
   async giveCard(fromSeat: Seat, toSeat: Seat): Promise<void> {
-    const availableCards = fromSeat.hand!.getAvailableCards();
+    const fromHand = requireHand(fromSeat).hand;
+    const toHand = requireHand(toSeat).hand;
+    const availableCards = fromHand.getAvailableCards();
 
     if (availableCards.length === 0) {
       throw new Error(`${fromSeat.getDisplayName()} has no cards to give`);
@@ -424,8 +430,8 @@ export class Game {
       cards: sortHand(availableCards),
     });
 
-    fromSeat.hand!.removeCard(cardToGive);
-    toSeat.hand!.addCard(cardToGive);
+    fromHand.removeCard(cardToGive);
+    toHand.addCard(cardToGive);
 
     this.log(
       `${fromSeat.getDisplayName()} gives ${cardToGive.value} of ${cardToGive.suit} to ${toSeat.getDisplayName()}`,
@@ -440,8 +446,8 @@ export class Game {
 }
 
 // ===== GAME FUNCTIONS =====
-function isLegalMove(gameState: Game, seat: Seat, card: Card): boolean {
-  const playerHand = seat.hand!.getAvailableCards();
+function isLegalMove(gameState: Game, seat: InitializedSeat, card: Card): boolean {
+  const playerHand = seat.hand.getAvailableCards();
 
   if (gameState.currentTrick.length === 0) {
     if (card.suit === "rings") {
@@ -462,8 +468,8 @@ function isLegalMove(gameState: Game, seat: Seat, card: Card): boolean {
   return true;
 }
 
-function getLegalMoves(gameState: Game, seat: Seat): Card[] {
-  const availableCards = seat.hand!.getAvailableCards();
+function getLegalMoves(gameState: Game, seat: InitializedSeat): Card[] {
+  const availableCards = seat.hand.getAvailableCards();
   return availableCards.filter((card) => isLegalMove(gameState, seat, card));
 }
 
@@ -580,8 +586,8 @@ function determineTrickWinner(gameState: Game): number {
   return winningPlay.playerIndex;
 }
 
-async function playSelectedCard(gameState: Game, seat: Seat, card: Card): Promise<void> {
-  seat.hand!.removeCard(card);
+async function playSelectedCard(gameState: Game, seat: InitializedSeat, card: Card): Promise<void> {
+  seat.hand.removeCard(card);
   seat.playedCards.push(card);
   gameState.currentTrick.push({
     playerIndex: seat.seatIndex,
@@ -602,7 +608,7 @@ async function playSelectedCard(gameState: Game, seat: Seat, card: Card): Promis
 
 async function selectCardFromPlayer(
   gameState: Game,
-  seat: Seat,
+  seat: InitializedSeat,
   legalMoves: Card[]
 ): Promise<Card> {
   gameState.currentPlayer = seat.seatIndex;
@@ -628,7 +634,9 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
         throw new Error(`Invalid seat index: ${playerIndex}`);
       }
 
-      if (seat.hand!.isEmpty()) {
+      const initializedSeat = requireHand(seat);
+
+      if (initializedSeat.hand.isEmpty()) {
         gameState.log(`${seat.getDisplayName()} passes (no cards)`);
         continue;
       }
@@ -636,11 +644,11 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
       gameState.currentPlayer = playerIndex;
       gameState.notifyStateChange();
 
-      const legalMoves = getLegalMoves(gameState, seat);
+      const legalMoves = getLegalMoves(gameState, initializedSeat);
 
-      const selectedCard = await selectCardFromPlayer(gameState, seat, legalMoves);
+      const selectedCard = await selectCardFromPlayer(gameState, initializedSeat, legalMoves);
 
-      await playSelectedCard(gameState, seat, selectedCard);
+      await playSelectedCard(gameState, initializedSeat, selectedCard);
       gameState.notifyStateChange();
     }
 
@@ -691,7 +699,7 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
     gameState.log(`${winnerSeat.getDisplayName()} wins the trick!`, true);
 
     for (const seat of gameState.seats) {
-      seat.hand!.onTrickComplete();
+      requireHand(seat).hand.onTrickComplete();
     }
 
     gameState.notifyStateChange();
@@ -710,7 +718,7 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
     ) {
       // Build list of players who have cards to play
       const eligibleLeaders = gameState.seats.filter(
-        (seat) => !seat.hand!.isEmpty() || seat.asideCard
+        (seat) => !requireHand(seat).hand.isEmpty()
       );
 
       if (eligibleLeaders.length > 1) {

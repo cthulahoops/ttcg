@@ -1,5 +1,6 @@
 import { CARDS_PER_SUIT, type Card, type Suit } from "../types";
 import type { CharacterDefinition } from "./types";
+import { requireHand } from "../seat";
 
 export const TomBombadil: CharacterDefinition = {
   name: "Tom Bombadil",
@@ -13,7 +14,7 @@ export const TomBombadil: CharacterDefinition = {
   objective: {
     text: "Win 3 or more cards matching the suit of a card left in hand at the end of round",
     check: (_game, seat) => {
-      const cardsInHand = seat.hand!.getAvailableCards();
+      const cardsInHand = requireHand(seat).hand.getAvailableCards();
       if (cardsInHand.length === 0) return false;
 
       const wonBySuit: Record<Suit, number> = {
@@ -41,7 +42,7 @@ export const TomBombadil: CharacterDefinition = {
         return TomBombadil.objective.check(game, seat);
       }
 
-      const cardsInHand = seat.hand!.getAvailableCards();
+      const cardsInHand = requireHand(seat).hand.getAvailableCards();
       if (cardsInHand.length === 0) {
         // No cards in hand means we can't have a matching suit at end
         return false;

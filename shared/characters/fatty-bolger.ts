@@ -1,4 +1,5 @@
 import type { CharacterDefinition } from "./types";
+import { requireHand } from "../seat";
 
 export const FattyBolger: CharacterDefinition = {
   name: "Fatty Bolger",
@@ -11,7 +12,7 @@ export const FattyBolger: CharacterDefinition = {
 
     for (const otherSeat of game.seats) {
       if (otherSeat.seatIndex !== seat.seatIndex) {
-        const availableCards = seat.hand!.getAvailableCards();
+        const availableCards = requireHand(seat).hand.getAvailableCards();
         if (availableCards.length === 0) {
           break;
         }

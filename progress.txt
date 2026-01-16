@@ -1079,3 +1079,38 @@ own hand could appear anywhere on the screen depending on which seat they were a
 - Example: If you're seat 2 in a 4-player game, you see: seat 2, 3, 0, 1 (instead of 0, 1, 2, 3)
 
 Type check and tests pass.
+
+## Completed: seat-hand-type
+
+Handle seat.hand optionality at type layer:
+
+The `Seat` class has a `hand: Hand | null` property that is initially `null` in the constructor but
+is always assigned a proper `Hand` instance before any game logic runs. Previously, code used non-null
+assertions (`seat.hand!`) throughout, which worked but didn't provide type-level guarantees.
+
+**New types and helpers (shared/seat.ts)**:
+- Added `InitializedSeat` type: `Seat & { hand: Hand }` - represents a seat with a guaranteed hand
+- Added `hasHand(seat)` type guard function for narrowing Seat to InitializedSeat
+- Added `requireHand(seat)` assertion function that throws if hand is null, returns InitializedSeat
+
+**Updated shared/game.ts**:
+- Imported `InitializedSeat` and `requireHand` from seat.ts
+- Replaced all `seat.hand!` usages with `requireHand(seat).hand`
+- Changed function signatures for `isLegalMove`, `getLegalMoves`, `playSelectedCard`, and
+  `selectCardFromPlayer` to accept `InitializedSeat` instead of `Seat`, eliminating null checks internally
+- In `runTrickTakingPhase`, validated seat once with `requireHand()` at the start of each player's turn
+
+**Updated character files** (5 files):
+- `shadowfax.ts`: Uses `requireHand(seat).hand` in setup for card selection/removal
+- `fatty-bolger.ts`: Uses `requireHand(seat).hand` in setup loop to check available cards
+- `tom-bombadil.ts`: Uses `requireHand(seat).hand` in `check` and `isCompletable` objectives
+- `gildor-inglorian.ts`: Uses `requireHand(seat).hand` in `isCompletable` to check for forests cards
+- `elrond.ts`: Uses `requireHand(seat).hand` in setup for the "pass card to right" mechanic
+
+**Benefits**:
+- Type-safe code: TypeScript now knows when a hand is guaranteed to exist
+- Better error messages: `requireHand()` throws a clear error if hand is unexpectedly null
+- Self-documenting: Function signatures explicitly show when they expect an initialized seat
+- Eliminates ~20 non-null assertions across the codebase
+
+Type check and tests pass.
