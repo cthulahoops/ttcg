@@ -45,8 +45,8 @@
   {
     "id": "bilbo-mechanic",
     "title": "Implement Bilbo Baggins 'choose next leader' mechanic",
-    "status": "pending",
-    "notes": "Special ability when winning tricks"
+    "status": "completed",
+    "notes": "Bilbo can choose who leads the next trick when he wins. Implemented in runTrickTakingPhase."
   },
   {
     "id": "tom-bombadil-completable",

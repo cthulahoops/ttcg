@@ -748,7 +748,40 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
       gameState.log("All objectives have been completed!", true);
     }
 
-    gameState.leadPlayer = winnerIndex;
+    // Bilbo Baggins ability: choose who leads next trick
+    let nextLeader = winnerIndex;
+    if (
+      winnerSeat.character === "Bilbo Baggins" &&
+      !isGameOver(gameState) // No need to choose if game is ending
+    ) {
+      // Build list of players who have cards to play
+      const eligibleLeaders = gameState.seats.filter(
+        (seat) => !seat.hand!.isEmpty() || seat.asideCard,
+      );
+
+      if (eligibleLeaders.length > 1) {
+        // Offer choice only if there's more than one option
+        const options = eligibleLeaders.map((seat) => ({
+          label: seat.getDisplayName(),
+          value: seat.seatIndex,
+        }));
+
+        nextLeader = await winnerSeat.controller.chooseButton({
+          title: "Bilbo's Ability",
+          message: "Choose who leads the next trick:",
+          buttons: options,
+        });
+
+        if (nextLeader !== winnerIndex) {
+          const chosenSeat = gameState.seats[nextLeader];
+          gameState.log(
+            `${winnerSeat.getDisplayName()} chooses ${chosenSeat?.getDisplayName()} to lead the next trick.`,
+          );
+        }
+      }
+    }
+
+    gameState.leadPlayer = nextLeader;
   }
 }
 
