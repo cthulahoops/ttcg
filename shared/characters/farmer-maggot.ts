@@ -3,7 +3,7 @@ import type { CharacterDefinition } from "./types";
 
 export const FarmerMaggot: CharacterDefinition = {
   name: "Farmer Maggot",
-  setupText: "Draw a Hills threat card, then exchange with Merry or Pippin",
+  setupText: "Draw a threat card, then exchange with Merry or Pippin",
 
   setup: async (game, seat, setupContext) => {
     await game.drawThreatCard(seat);
