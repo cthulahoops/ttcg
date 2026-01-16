@@ -5,8 +5,8 @@ export const BilboBaggins: CharacterDefinition = {
   setupText: "No setup action",
 
   setup: async (_game, _seat, _setupContext) => {
-    // TODO: Implement "choose next leader" mechanic during trick-taking
-    // When Bilbo wins a trick, he may choose who leads the next trick
+    // No setup action - Bilbo's "choose next leader" ability is implemented
+    // in runTrickTakingPhase when Bilbo wins a trick
   },
 
   objective: {

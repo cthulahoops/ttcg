@@ -617,3 +617,75 @@ Galadriel's setup was broken in multiple ways:
 - If neither: No prompt shown, setup completes silently
 
 Type check passes with no errors.
+
+## Completed: shadowfax-mechanic
+
+Implement Shadowfax 'set one card aside' mechanic:
+
+Shadowfax's character ability allows them to set one card aside during setup. This card
+doesn't count as part of their hand but can be returned at any point. If their hand
+becomes empty, the aside card must be returned automatically.
+
+**Changes made:**
+
+**shared/seat.ts:**
+- Added `asideCard: Card | null` field to Seat class to track the card set aside
+
+**shared/characters/shadowfax.ts:**
+- Implemented setup function that prompts player to choose a card to set aside
+- Card is removed from hand and stored in `seat.asideCard`
+- Log message shows "sets a card aside" (card details only visible to Shadowfax player)
+
+**shared/game.ts:**
+- Added `returnAsideCard(seat)` method to Game class for returning the aside card to hand
+- Modified `runTrickTakingPhase()`:
+  - Auto-returns aside card when hand is empty (before the "passes" check)
+  - Before each card selection, if player has an aside card, prompts "Return to Hand" or "Keep Aside"
+
+**shared/serialized.ts:**
+- Added `asideCard: Card | "hidden" | null` to SerializedSeat interface
+- Other players see "hidden" when Shadowfax has an aside card
+
+**shared/serialize.ts:**
+- Updated `serializeSeat()` to include aside card (visible only to owner)
+- Added Card type import
+
+**client/PlayerSeat.tsx:**
+- Added aside card display with "Aside:" label
+- Uses existing Card component which handles "hidden" value
+
+**client/game.css:**
+- Added `.aside-card` styling for flex layout
+- Added `.aside-label` with blue color for visibility
+
+Type check and tests pass.
+
+## Completed: bilbo-mechanic
+
+Implement Bilbo Baggins 'choose next leader' mechanic:
+
+Bilbo Baggins has a special ability: "Whenever Bilbo wins a trick, he may choose who leads the next trick."
+This was previously noted as a TODO in the character file but never implemented.
+
+**Changes made:**
+
+**shared/game.ts (runTrickTakingPhase):**
+- Added logic after determining trick winner, before setting next leader
+- When Bilbo wins a trick AND the game will continue:
+  - Build list of players who still have cards (or an aside card)
+  - If more than one eligible player, prompt Bilbo to choose
+  - Show button choice with all eligible player names
+  - Log message when Bilbo chooses someone other than himself
+
+**shared/characters/bilbo-baggins.ts:**
+- Removed TODO comment from setup function
+- Added clarifying comment that the mechanic is in runTrickTakingPhase
+
+**Behavior:**
+- When Bilbo wins a trick, a dialog appears: "Choose who leads the next trick"
+- Options show all players who have cards remaining (including those with aside cards)
+- If only one player has cards, no prompt is shown (no choice to make)
+- If game is ending (last trick), no prompt is shown
+- AI Bilbo will make a random choice (existing AIController behavior)
+
+Type check and tests pass.
