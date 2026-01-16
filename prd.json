@@ -32,6 +32,11 @@
     "status": "pending"
   },
   {
+      "id": "remove-trump-text",
+      "title": "TrickDisplay doesn't neeed to include the word (TRUMP) existing yellow outline is sufficient.",
+      "status": "pending"
+  },
+  {
     "id": "shadowfax-mechanic",
     "title": "Implement Shadowfax 'set one card aside' mechanic",
     "status": "pending",
@@ -102,5 +107,23 @@
     "title": "Fix Bilbo isCompletable to check trick achievability",
     "status": "pending",
     "notes": "Should verify 3 tricks are still achievable, not just check for 1-Ring"
-  }
+  },
+  {
+      "id": "farmer-maggot-setup-text",
+      "title": "Maggot's setup text is wrong",
+      "status": "pending",
+      "notes": "Reads: 'Setup: Draw a Hills threat card, then exchange with Merry or Pippin' the word hills is irrelevant."
+    },
+    {
+      "id": "pyramid-control",
+      "title": "Control log is wrong for pyramid",
+      "status": "pending",
+      "notes": "It claimed one player controlled the pyramid when it was really another"
+    },
+    {
+        "id": "clear-game-log",
+        "title": "The game log should be cleared at start of a new game.",
+      "status": "completed"
+    }
+
 ]
