@@ -3,7 +3,8 @@ import { Game } from "@shared/game";
 
 import { ProxyController, Controller } from "@shared/controllers";
 
-import { Card, Suit } from "@shared/types";
+import { Card } from "@shared/types";
+import { createDeck } from "@shared/deck";
 
 import { Seat } from "@shared/seat";
 
@@ -93,23 +94,6 @@ function createHand(cards: Card[], playerCount: number, isPyramid: boolean): Han
     return new PyramidHand(cards);
   }
   return new PlayerHand(cards);
-}
-
-export function createDeck(): Card[] {
-  const deck: Card[] = [];
-  const normalSuits: Suit[] = ["mountains", "shadows", "forests", "hills"];
-
-  for (const suit of normalSuits) {
-    for (let value = 1; value <= 8; value++) {
-      deck.push({ suit, value });
-    }
-  }
-
-  for (let value = 1; value <= 5; value++) {
-    deck.push({ suit: "rings", value });
-  }
-
-  return deck;
 }
 
 function findPlayerWithCard(hands: Card[][], needle: Card): number {
