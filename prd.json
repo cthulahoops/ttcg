@@ -2,7 +2,8 @@
   {
     "id": "setup-eslint",
     "title": "Setup eslint",
-    "status": "pending"
+    "status": "completed",
+    "notes": "Added eslint with typescript-eslint and eslint-plugin-react-hooks. Config in eslint.config.js. Run via 'bun run lint'. no-explicit-any set to warn (to be addressed separately). no-unused-vars disabled (TypeScript handles via noUnusedLocals). Fixed react-hooks error in useGameWebSocket.ts."
   },
   {
     "id": "no-explicit-any",

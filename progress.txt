@@ -855,3 +855,37 @@ Only `shared/seat.ts` was importing from the duplicate in `shared/types.ts`.
 The registry at `shared/characters/registry.ts` re-exports these types for external consumers.
 
 Type check and tests pass.
+
+## Completed: setup-eslint
+
+Setup ESLint for the project with TypeScript and React support.
+
+**New dependencies (devDependencies)**:
+- `eslint` ^9.39.2
+- `@eslint/js` ^9.39.2
+- `typescript-eslint` ^8.53.0
+- `eslint-plugin-react-hooks` ^7.0.1
+
+**New files**:
+- `eslint.config.js` - ESLint flat config with:
+  - Base recommended rules from eslint and typescript-eslint
+  - React hooks plugin with recommended rules
+  - `@typescript-eslint/no-unused-vars` disabled (TypeScript handles via noUnusedLocals/noUnusedParameters)
+  - `@typescript-eslint/no-explicit-any` set to warn (to be enforced in separate PRD task)
+  - Ignores dist/ and node_modules/
+
+**package.json changes**:
+- Added `"lint": "eslint client server shared"` script
+- Added `"typecheck": "tsc"` script (alias for check)
+
+**Code fixes**:
+- `client/useGameWebSocket.ts`: Fixed react-hooks/immutability error by moving `connect` function
+  inside the useEffect. Previously the `connect` callback referenced itself for reconnection which
+  triggered the react-hooks plugin error. Now reconnection works via a locally-scoped function.
+
+**Current lint status**:
+- 0 errors
+- 10 warnings (9 `no-explicit-any` + 1 exhaustive-deps in App.tsx)
+- The `no-explicit-any` warnings will be addressed in the `no-explicit-any` PRD task
+
+Type check and tests pass.
