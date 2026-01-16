@@ -8,7 +8,7 @@ export { delay, sortHand, shuffleDeck } from "@shared/utils";
 export function createCardElement(
   card: AnyCard,
   clickable = false,
-  clickHandler: (() => void) | null = null,
+  clickHandler: (() => void) | null = null
 ): HTMLDivElement {
   const cardDiv = document.createElement("div");
   cardDiv.className = `card ${card.suit}`;

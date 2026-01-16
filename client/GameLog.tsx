@@ -23,10 +23,7 @@ export function GameLog({ entries }: GameLogProps) {
     <section className="game-log" ref={logRef}>
       <CopyLogButton entries={entries} />
       {entries.map((entry, idx) => (
-        <div
-          key={idx}
-          className={`log-entry ${entry.important ? "important" : ""}`}
-        >
+        <div key={idx} className={`log-entry ${entry.important ? "important" : ""}`}>
           {entry.line}
         </div>
       ))}

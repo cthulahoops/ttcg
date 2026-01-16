@@ -1,7 +1,4 @@
-export function addToGameLog(
-  message: string,
-  important: boolean = false,
-): void {
+export function addToGameLog(message: string, important: boolean = false): void {
   const logDiv = document.getElementById("gameLog")!;
   const entry = document.createElement("div");
   entry.className = "log-entry" + (important ? " important" : "");
@@ -23,9 +20,7 @@ export function copyGameLog(): void {
 
   navigator.clipboard.writeText(logText).then(
     () => {
-      const button = document.querySelector(
-        ".copy-log-button",
-      ) as HTMLButtonElement;
+      const button = document.querySelector(".copy-log-button") as HTMLButtonElement;
       const originalText = button.textContent;
       button.textContent = "Copied!";
       setTimeout(() => {
@@ -34,6 +29,6 @@ export function copyGameLog(): void {
     },
     (err) => {
       console.error("Failed to copy log:", err);
-    },
+    }
   );
 }

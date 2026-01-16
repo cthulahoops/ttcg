@@ -3,8 +3,7 @@ import type { CharacterDefinition } from "./types";
 
 export const Shadowfax: CharacterDefinition = {
   name: "Shadowfax",
-  setupText:
-    "Set one card aside (may return it to hand at any point, must return if hand empty)",
+  setupText: "Set one card aside (may return it to hand at any point, must return if hand empty)",
 
   setup: async (_game, _seat, _setupContext) => {
     // TODO: Implement card aside mechanic
@@ -15,9 +14,8 @@ export const Shadowfax: CharacterDefinition = {
   objective: {
     text: "Win at least two tricks containing a hills card",
     check: (_game, seat) => {
-      const tricksWithHills = seat.tricksWon.filter(
-        (trick: { number: number; cards: Card[] }) =>
-          trick.cards.some((c) => c.suit === "hills"),
+      const tricksWithHills = seat.tricksWon.filter((trick: { number: number; cards: Card[] }) =>
+        trick.cards.some((c) => c.suit === "hills")
       );
       return tricksWithHills.length >= 2;
     },
@@ -31,9 +29,8 @@ export const Shadowfax: CharacterDefinition = {
 
   display: {
     renderStatus: (game, seat) => {
-      const tricksWithHills = seat.tricksWon.filter(
-        (trick: { number: number; cards: Card[] }) =>
-          trick.cards.some((c) => c.suit === "hills"),
+      const tricksWithHills = seat.tricksWon.filter((trick: { number: number; cards: Card[] }) =>
+        trick.cards.some((c) => c.suit === "hills")
       );
       const met = Shadowfax.objective.check(game, seat);
       const completable = Shadowfax.objective.isCompletable(game, seat);

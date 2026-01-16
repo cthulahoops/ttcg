@@ -19,17 +19,11 @@ import type {
  * @param viewingSeatIndex - The seat index of the viewer (to control visibility)
  * @returns Serialized seat data
  */
-function serializeSeat(
-  game: Game,
-  seat: Seat,
-  viewingSeatIndex: number,
-): SerializedSeat {
+function serializeSeat(game: Game, seat: Seat, viewingSeatIndex: number): SerializedSeat {
   const isOwnSeat = seat.seatIndex === viewingSeatIndex;
 
   const objective =
-    seat.characterDef?.objective.text ??
-    seat.characterDef?.objective.getText?.(game) ??
-    "";
+    seat.characterDef?.objective.text ?? seat.characterDef?.objective.getText?.(game) ?? "";
 
   return {
     seatIndex: seat.seatIndex,
@@ -62,9 +56,7 @@ function serializeTrickPlay(trickPlay: TrickPlay): SerializedTrickPlay {
  * @param completedTrick - The completed trick to serialize
  * @returns Serialized completed trick
  */
-function serializeCompletedTrick(
-  completedTrick: CompletedTrick,
-): SerializedCompletedTrick {
+function serializeCompletedTrick(completedTrick: CompletedTrick): SerializedCompletedTrick {
   return {
     plays: completedTrick.plays.map(serializeTrickPlay),
     winner: completedTrick.winner,
@@ -79,10 +71,7 @@ function serializeCompletedTrick(
  * @param seatIndex - The seat index of the viewer (controls what information is visible)
  * @returns Serialized game state suitable for network transmission
  */
-export function serializeGameForSeat(
-  game: Game,
-  seatIndex: number,
-): SerializedGame {
+export function serializeGameForSeat(game: Game, seatIndex: number): SerializedGame {
   return {
     playerCount: game.playerCount,
     numCharacters: game.numCharacters,
@@ -96,8 +85,7 @@ export function serializeGameForSeat(
     ringsBroken: game.ringsBroken,
     availableCharacters: game.availableCharacters.map((name) => {
       const def = characterRegistry.get(name);
-      const objective =
-        def?.objective.text ?? def?.objective.getText?.(game) ?? "";
+      const objective = def?.objective.text ?? def?.objective.getText?.(game) ?? "";
       return {
         name,
         objective,

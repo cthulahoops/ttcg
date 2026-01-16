@@ -16,8 +16,7 @@ export const Boromir: CharacterDefinition = {
       return wonLast && !hasOneRing;
     },
     isCompletable: (game, seat) => !game.hasCard(seat, "rings", 1),
-    isCompleted: (game, seat) =>
-      game.finished && Boromir.objective.check(game, seat),
+    isCompleted: (game, seat) => game.finished && Boromir.objective.check(game, seat),
   },
 
   display: {

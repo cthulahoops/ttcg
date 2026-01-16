@@ -954,3 +954,35 @@ This made the code harder to understand and maintain.
 
 The constant is defined once and used everywhere, making the codebase more maintainable.
 Type check and tests pass.
+
+## Completed: prettier-check
+
+Add check for prettier formatting and reformat code:
+
+The codebase lacked consistent code formatting. Added Prettier for automatic code formatting with a
+check script for CI integration.
+
+**New dependencies (devDependencies)**:
+- `prettier` ^3.8.0
+
+**New files**:
+- `.prettierrc` - Prettier configuration:
+  - `semi: true` - Use semicolons
+  - `singleQuote: false` - Use double quotes
+  - `trailingComma: "es5"` - Trailing commas where valid in ES5
+  - `tabWidth: 2` - 2-space indentation
+  - `printWidth: 100` - 100 character line width
+
+**package.json changes**:
+- Added `"format": "prettier --write client server shared"` - Auto-fix formatting
+- Added `"format:check": "prettier --check client server shared"` - Check formatting (for CI)
+
+**Formatted files**:
+- 46 files were checked; many were reformatted for consistent style
+- Files marked "(unchanged)" were already compliant
+
+**Usage**:
+- `bun run format` - Automatically format all source files
+- `bun run format:check` - Check formatting without modifying (returns non-zero on violations)
+
+Type check and tests pass.

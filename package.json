@@ -12,7 +12,9 @@
     "check": "tsc",
     "test": "bun test",
     "lint": "eslint client server shared",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "format": "prettier --write client server shared",
+    "format:check": "prettier --check client server shared"
   },
   "keywords": [],
   "author": "",
@@ -32,6 +34,7 @@
     "concurrently": "^9.2.1",
     "eslint": "^9.39.2",
     "eslint-plugin-react-hooks": "^7.0.1",
+    "prettier": "^3.8.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.53.0",

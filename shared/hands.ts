@@ -43,9 +43,7 @@ export class PlayerHand extends Hand {
   }
 
   removeCard(card: Card): boolean {
-    const index = this._cards.findIndex(
-      (c) => c.suit === card.suit && c.value === card.value,
-    );
+    const index = this._cards.findIndex((c) => c.suit === card.suit && c.value === card.value);
     if (index !== -1) {
       this._cards.splice(index, 1);
       return true;
@@ -81,9 +79,7 @@ export class PlayerHand extends Hand {
     return {
       type: "player",
       cards:
-        isOwnSeat || this._revealed
-          ? sortHand([...this._cards])
-          : this._cards.map(() => "hidden"),
+        isOwnSeat || this._revealed ? sortHand([...this._cards]) : this._cards.map(() => "hidden"),
     };
   }
 }
@@ -140,7 +136,7 @@ export class PyramidHand extends Hand {
 
   removeCard(card: Card): boolean {
     const extraIndex = this._extraCards.findIndex(
-      (c) => c.suit === card.suit && c.value === card.value,
+      (c) => c.suit === card.suit && c.value === card.value
     );
     if (extraIndex !== -1) {
       this._extraCards.splice(extraIndex, 1);
@@ -148,7 +144,7 @@ export class PyramidHand extends Hand {
     }
 
     const posIndex = this._positions.findIndex(
-      (c) => c && c.suit === card.suit && c.value === card.value,
+      (c) => c && c.suit === card.suit && c.value === card.value
     );
     if (posIndex !== -1) {
       this._positions[posIndex] = null;
@@ -293,9 +289,7 @@ export class SolitaireHand extends Hand {
   }
 
   private static _ensureOneRingRevealed(cards: Card[]): void {
-    const oneRingIndex = cards.findIndex(
-      (c) => c.suit === "rings" && c.value === 1,
-    );
+    const oneRingIndex = cards.findIndex((c) => c.suit === "rings" && c.value === 1);
     if (oneRingIndex >= 4) {
       [cards[3], cards[oneRingIndex]] = [cards[oneRingIndex]!, cards[3]!];
     }
@@ -308,7 +302,7 @@ export class SolitaireHand extends Hand {
 
   removeCard(card: Card): boolean {
     const revealedIndex = this._revealedCards.findIndex(
-      (c) => c.suit === card.suit && c.value === card.value,
+      (c) => c.suit === card.suit && c.value === card.value
     );
     if (revealedIndex !== -1) {
       this._revealedCards.splice(revealedIndex, 1);
@@ -316,7 +310,7 @@ export class SolitaireHand extends Hand {
     }
 
     const hiddenIndex = this._hiddenCards.findIndex(
-      (c) => c.suit === card.suit && c.value === card.value,
+      (c) => c.suit === card.suit && c.value === card.value
     );
     if (hiddenIndex !== -1) {
       this._hiddenCards.splice(hiddenIndex, 1);

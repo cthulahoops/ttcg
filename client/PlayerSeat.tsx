@@ -10,12 +10,7 @@ type PlayerSeatProps = {
   onSelectCard?: (card: CardType) => void;
 };
 
-export function PlayerSeat({
-  seat,
-  isActive,
-  selectableCards,
-  onSelectCard,
-}: PlayerSeatProps) {
+export function PlayerSeat({ seat, isActive, selectableCards, onSelectCard }: PlayerSeatProps) {
   const {
     seatIndex,
     playerName,
@@ -31,10 +26,7 @@ export function PlayerSeat({
   const displayName = character ?? playerName ?? `Player ${seatIndex + 1}`;
 
   return (
-    <section
-      className={`player ${isActive ? "active" : ""}`}
-      data-player={seatIndex + 1}
-    >
+    <section className={`player ${isActive ? "active" : ""}`} data-player={seatIndex + 1}>
       <div>
         <h3>{displayName}</h3>
 
@@ -60,19 +52,11 @@ export function PlayerSeat({
         </div>
 
         <div className="threat-card">
-          {threatCard !== null && (
-            <Card card={{ suit: "threat", value: threatCard }} />
-          )}
+          {threatCard !== null && <Card card={{ suit: "threat", value: threatCard }} />}
         </div>
       </div>
 
-      {hand && (
-        <Hand
-          hand={hand}
-          selectableCards={selectableCards}
-          onSelectCard={onSelectCard}
-        />
-      )}
+      {hand && <Hand hand={hand} selectableCards={selectableCards} onSelectCard={onSelectCard} />}
     </section>
   );
 }

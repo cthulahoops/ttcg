@@ -18,10 +18,7 @@ export const Goldberry: CharacterDefinition = {
 
       if (trickNumbers.length !== 3) return false;
 
-      return (
-        trickNumbers[1] === trickNumbers[0]! + 1 &&
-        trickNumbers[2] === trickNumbers[1]! + 1
-      );
+      return trickNumbers[1] === trickNumbers[0]! + 1 && trickNumbers[2] === trickNumbers[1]! + 1;
     },
     isCompletable: (game, seat) => {
       const trickCount = seat.getTrickCount();
@@ -56,8 +53,7 @@ export const Goldberry: CharacterDefinition = {
       const tricksNeeded = 3 - trickCount;
       return game.tricksRemaining() >= tricksNeeded;
     },
-    isCompleted: (game, seat) =>
-      game.finished && Goldberry.objective.check(game, seat),
+    isCompleted: (game, seat) => game.finished && Goldberry.objective.check(game, seat),
   },
 
   display: {

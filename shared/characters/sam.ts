@@ -2,15 +2,14 @@ import type { CharacterDefinition } from "./types";
 
 export const Sam: CharacterDefinition = {
   name: "Sam",
-  setupText:
-    "Draw a Hills threat card, then exchange with Frodo, Merry, or Pippin",
+  setupText: "Draw a Hills threat card, then exchange with Frodo, Merry, or Pippin",
 
   setup: async (game, seat, setupContext) => {
     await game.drawThreatCard(seat, {
       exclude: game.lostCard?.value,
     });
     await game.exchange(seat, setupContext, (c: string) =>
-      ["Frodo", "Merry", "Pippin"].includes(c),
+      ["Frodo", "Merry", "Pippin"].includes(c)
     );
   },
 

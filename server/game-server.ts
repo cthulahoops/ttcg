@@ -81,13 +81,7 @@ export function newGame(controllers: Controller[]): Game {
   availableCharacters.push("Frodo");
   availableCharacters.sort();
 
-  const gameState = new Game(
-    playerCount,
-    numCharacters,
-    seats,
-    lostCard,
-    startPlayer,
-  );
+  const gameState = new Game(playerCount, numCharacters, seats, lostCard, startPlayer);
   gameState.availableCharacters = availableCharacters;
 
   return gameState;
@@ -112,9 +106,7 @@ export function createDeck(): Card[] {
 
 function findPlayerWithCard(hands: Card[][], needle: Card): number {
   const idx = hands.findIndex((hand: Card[]) =>
-    hand.some(
-      (card) => card.suit === needle.suit && card.value === needle.value,
-    ),
+    hand.some((card) => card.suit === needle.suit && card.value === needle.value)
   );
   if (idx < 0) {
     throw new Error("Needle not found");

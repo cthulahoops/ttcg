@@ -15,12 +15,10 @@ type HandProps = {
 
 function isCardSelectable(
   card: CardType | "hidden",
-  selectableCards?: CardType[] | null,
+  selectableCards?: CardType[] | null
 ): card is CardType {
   if (!selectableCards || card === "hidden") return false;
-  return selectableCards.some(
-    (c) => c.suit === card.suit && c.value === card.value,
-  );
+  return selectableCards.some((c) => c.suit === card.suit && c.value === card.value);
 }
 
 export function Hand({ hand, selectableCards, onSelectCard }: HandProps) {
@@ -35,11 +33,7 @@ export function Hand({ hand, selectableCards, onSelectCard }: HandProps) {
                 key={idx}
                 card={card}
                 clickable={selectable}
-                onClick={
-                  selectable && onSelectCard
-                    ? () => onSelectCard(card)
-                    : undefined
-                }
+                onClick={selectable && onSelectCard ? () => onSelectCard(card) : undefined}
               />
             );
           })}
@@ -56,11 +50,7 @@ export function Hand({ hand, selectableCards, onSelectCard }: HandProps) {
                 key={idx}
                 card={card}
                 clickable={selectable}
-                onClick={
-                  selectable && onSelectCard
-                    ? () => onSelectCard(card)
-                    : undefined
-                }
+                onClick={selectable && onSelectCard ? () => onSelectCard(card) : undefined}
               />
             );
           })}
@@ -69,11 +59,7 @@ export function Hand({ hand, selectableCards, onSelectCard }: HandProps) {
 
     case "pyramid":
       return (
-        <PyramidHand
-          hand={hand}
-          selectableCards={selectableCards}
-          onSelectCard={onSelectCard}
-        />
+        <PyramidHand hand={hand} selectableCards={selectableCards} onSelectCard={onSelectCard} />
       );
 
     default:
@@ -87,11 +73,7 @@ type PyramidHandProps = {
   onSelectCard?: (card: CardType) => void;
 };
 
-function PyramidHand({
-  hand,
-  selectableCards,
-  onSelectCard,
-}: PyramidHandProps) {
+function PyramidHand({ hand, selectableCards, onSelectCard }: PyramidHandProps) {
   const rows = [
     { start: 0, count: 3 },
     { start: 3, count: 4 },
@@ -117,15 +99,11 @@ function PyramidHand({
               <Card
                 card={card}
                 clickable={selectable}
-                onClick={
-                  selectable && onSelectCard
-                    ? () => onSelectCard(card)
-                    : undefined
-                }
+                onClick={selectable && onSelectCard ? () => onSelectCard(card) : undefined}
               />
             </div>
           );
-        }),
+        })
       )}
 
       {hand.extraCards.map((card, idx) => {
@@ -140,11 +118,7 @@ function PyramidHand({
             <Card
               card={card}
               clickable={selectable}
-              onClick={
-                selectable && onSelectCard
-                  ? () => onSelectCard(card)
-                  : undefined
-              }
+              onClick={selectable && onSelectCard ? () => onSelectCard(card) : undefined}
             />
           </div>
         );
