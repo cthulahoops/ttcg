@@ -729,3 +729,29 @@ Additionally, the play-again state was stored using `as any` casts instead of pr
 - Return type changed from "yes"|"no" to boolean for cleaner code
 
 Type check and tests pass.
+
+## Completed: tom-bombadil-completable
+
+Implement proper isCompletable logic for Tom Bombadil:
+
+Tom Bombadil's objective is: "Win 3 or more cards matching the suit of a card left in hand at the end of round."
+The previous `isCompletable` always returned `true` when the game wasn't finished, which was too optimistic.
+The game should end early if Tom's objective becomes impossible.
+
+**Fix (shared/characters/tom-bombadil.ts)**:
+- Count how many cards of each suit Tom has already won
+- Count total cards won by all players for each suit
+- Calculate remaining cards in play per suit (using known totals: 8 for normal suits, 5 for rings)
+- For each suit still in hand, check if `alreadyWon + remainingInPlay >= 3`
+- Return false if no suit in hand can reach 3 won cards
+- Also return false early if hand is empty (no card to match at end)
+
+**How it works**:
+1. If hand is empty, return false (can't have matching suit at game end)
+2. For each unique suit in the current hand:
+   - Calculate needed = 3 - wonBySuit
+   - If needed <= 0, already have 3+ of this suit, return true
+   - Otherwise check if remainingInPlay >= needed
+3. If no suit in hand can reach 3, return false
+
+Type check and tests pass.

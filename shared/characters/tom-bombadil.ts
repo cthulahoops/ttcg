@@ -36,14 +36,71 @@ export const TomBombadil: CharacterDefinition = {
 
       return false;
     },
-    isCompletable: (game, _seat) => {
+    isCompletable: (game, seat) => {
       if (game.finished) {
-        return TomBombadil.objective.check(game, _seat);
+        return TomBombadil.objective.check(game, seat);
       }
 
-      // TODO: Implement proper completability check
-      // (need to check if we can still win 3+ cards of suits in hand)
-      return true;
+      const cardsInHand = seat.hand!.getAvailableCards();
+      if (cardsInHand.length === 0) {
+        // No cards in hand means we can't have a matching suit at end
+        return false;
+      }
+
+      // Count how many cards of each suit Tom has won
+      const wonBySuit: Record<Suit, number> = {
+        mountains: 0,
+        shadows: 0,
+        forests: 0,
+        hills: 0,
+        rings: 0,
+      };
+
+      seat.getAllWonCards().forEach((card: Card) => {
+        wonBySuit[card.suit] = (wonBySuit[card.suit] || 0) + 1;
+      });
+
+      // Count total won cards by all players for each suit
+      const totalWonBySuit: Record<Suit, number> = {
+        mountains: 0,
+        shadows: 0,
+        forests: 0,
+        hills: 0,
+        rings: 0,
+      };
+
+      for (const s of game.seats) {
+        s.getAllWonCards().forEach((card: Card) => {
+          totalWonBySuit[card.suit] = (totalWonBySuit[card.suit] || 0) + 1;
+        });
+      }
+
+      // Cards per suit: mountains/shadows/forests/hills = 8, rings = 5
+      const cardsPerSuit: Record<Suit, number> = {
+        mountains: 8,
+        shadows: 8,
+        forests: 8,
+        hills: 8,
+        rings: 5,
+      };
+
+      // Check if any suit in hand can still reach 3 won cards
+      const suitsInHand = new Set(cardsInHand.map((c) => c.suit));
+      for (const suit of suitsInHand) {
+        const alreadyWon = wonBySuit[suit];
+        const needed = 3 - alreadyWon;
+        if (needed <= 0) {
+          // Already have 3+ of this suit
+          return true;
+        }
+        const remainingInPlay = cardsPerSuit[suit] - totalWonBySuit[suit];
+        if (remainingInPlay >= needed) {
+          // Still possible to win enough
+          return true;
+        }
+      }
+
+      return false;
     },
     isCompleted: (game, seat) =>
       game.finished && TomBombadil.objective.check(game, seat),
