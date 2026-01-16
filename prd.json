@@ -25,7 +25,8 @@
   {
     "id": "hide-player-names-after-characters",
     "title": "Remove player names from display when character names are known",
-    "status": "pending"
+    "status": "completed",
+    "notes": "PlayerSeat.tsx now shows only character name when assigned, matching server-side getDisplayName() behavior."
   },
   {
     "id": "prettier-check",
