@@ -92,8 +92,8 @@
   {
     "id": "seat-hand-type",
     "title": "Handle seat.hand optionality at type layer",
-    "status": "pending",
-    "notes": "Multiple character files use seat.hand! assertions. Make hand non-optional where guaranteed, or add type guard."
+    "status": "completed",
+    "notes": "Seat.hand is now required at construction time. All non-null assertions removed."
   },
   {
     "id": "consolidate-character-definition",
