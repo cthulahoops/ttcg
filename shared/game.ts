@@ -113,7 +113,7 @@ export class Game {
     if (!this.lostCard) return;
 
     const shouldTake = await seat.controller.chooseButton({
-      title: `${seat.character} - Lost Card`,
+      title: `${seat.character?.name} - Lost Card`,
       message: `Take the lost card (${this.lostCard.value} of ${this.lostCard.suit})?`,
       buttons: [
         { label: "Yes", value: true },
@@ -137,7 +137,7 @@ export class Game {
     const sortedCards = sortHand(cards);
 
     const cardToGive = await seat.controller.chooseCard({
-      title: `${seat.character} - Exchange with Lost Card`,
+      title: `${seat.character?.name} - Exchange with Lost Card`,
       message: `Choose a card to exchange with the lost card (${this.lostCard.value} of ${this.lostCard.suit})`,
       cards: sortedCards,
     });
@@ -192,7 +192,7 @@ export class Game {
       }));
 
     const choice = await seat.controller.chooseCard({
-      title: `${seat.character} - Choose Threat Card`,
+      title: `${seat.character?.name} - Choose Threat Card`,
       message: "Choose a threat card:",
       cards: threatCards,
     });
@@ -219,7 +219,7 @@ export class Game {
     const validPlayers: Seat[] = [];
     for (const otherSeat of this.seats) {
       if (otherSeat.seatIndex !== seat.seatIndex && otherSeat.character) {
-        if (canExchangeWith(otherSeat.character)) {
+        if (canExchangeWith(otherSeat.character.name)) {
           validPlayers.push(otherSeat);
         }
       }
@@ -232,12 +232,12 @@ export class Game {
     if (this.playerCount === 1) {
       const targetDescription =
         validPlayers.length === 1
-          ? validPlayers[0]!.character!
-          : validPlayers.map((p) => p.character).join(" or ");
+          ? validPlayers[0]!.character!.name
+          : validPlayers.map((p) => p.character?.name).join(" or ");
 
       const wantsToExchange = await seat.controller.chooseButton({
-        title: `${seat.character} - Exchange?`,
-        message: `Do you want ${seat.character} to exchange with ${targetDescription}?`,
+        title: `${seat.character?.name} - Exchange?`,
+        message: `Do you want ${seat.character?.name} to exchange with ${targetDescription}?`,
         buttons: [
           { label: "Yes, Exchange", value: true },
           { label: "No, Skip", value: false },
@@ -256,12 +256,12 @@ export class Game {
       targetSeat = first;
     } else {
       const choices: ChoiceButton<number>[] = validPlayers.map((p) => ({
-        label: p.character!,
+        label: p.character!.name,
         value: p.seatIndex,
       }));
 
       const targetIndex = await seat.controller.chooseButton({
-        title: `${seat.character} - Choose Exchange Partner`,
+        title: `${seat.character?.name} - Choose Exchange Partner`,
         message: "Choose who to exchange with:",
         buttons: choices,
       });
@@ -272,7 +272,7 @@ export class Game {
     }
 
     const availableFrom = seat.hand!.getAvailableCards();
-    const isFrodoFrom = seat.character === "Frodo";
+    const isFrodoFrom = seat.character?.name === "Frodo";
     const playableFrom = isFrodoFrom
       ? availableFrom.filter((card) => !(card.suit === "rings" && card.value === 1))
       : availableFrom;
@@ -283,14 +283,14 @@ export class Game {
     }
 
     const cardFromFirst = await seat.controller.chooseCard({
-      title: `${seat.character} - Exchange with ${targetSeat.character}`,
+      title: `${seat.character?.name} - Exchange with ${targetSeat.character?.name}`,
       message: messageFrom,
       cards: sortHand(playableFrom),
     });
 
     // Second player can choose from their hand plus the card they're receiving
     const availableTo = targetSeat.hand!.getAvailableCards();
-    const isFrodoTo = targetSeat.character === "Frodo";
+    const isFrodoTo = targetSeat.character?.name === "Frodo";
     const playableTo = isFrodoTo
       ? availableTo.filter((card) => !(card.suit === "rings" && card.value === 1))
       : availableTo;
@@ -304,7 +304,7 @@ export class Game {
     }
 
     const cardFromSecond = await targetSeat.controller.chooseCard({
-      title: `${targetSeat.character} - Exchange with ${seat.character}`,
+      title: `${targetSeat.character?.name} - Exchange with ${seat.character?.name}`,
       message: messageTo,
       cards: sortHand(choicesForSecond),
     });
@@ -419,7 +419,7 @@ export class Game {
     }
 
     const cardToGive = await fromSeat.controller.chooseCard({
-      title: `${fromSeat.character} - Give Card`,
+      title: `${fromSeat.character?.name} - Give Card`,
       message: `Choose a card to give to ${toSeat.getDisplayName()}`,
       cards: sortHand(availableCards),
     });
@@ -470,15 +470,15 @@ function getLegalMoves(gameState: Game, seat: Seat): Card[] {
 // ===== EXCHANGE HELPER FUNCTIONS =====
 
 function checkObjective(gameState: Game, seat: Seat): boolean {
-  return seat.characterDef!.objective.check(gameState, seat);
+  return seat.character!.objective.check(gameState, seat);
 }
 
 function isObjectiveCompletable(gameState: Game, seat: Seat): boolean {
-  return seat.characterDef!.objective.isCompletable(gameState, seat);
+  return seat.character!.objective.isCompletable(gameState, seat);
 }
 
 function isObjectiveCompleted(gameState: Game, seat: Seat): boolean {
-  return seat.characterDef!.objective.isCompleted(gameState, seat);
+  return seat.character!.objective.isCompleted(gameState, seat);
 }
 
 function allObjectivesCompleted(gameState: Game): boolean {
@@ -524,8 +524,7 @@ function getGameOverMessage(gameState: Game): string {
 function checkForImpossibleObjectives(gameState: Game): void {
   for (const seat of gameState.seats) {
     if (!isObjectiveCompletable(gameState, seat)) {
-      const character = seat.character;
-      if (character) {
+      if (seat.character) {
         gameState.log(`${seat.getDisplayName()}'s objective is now impossible!`, true);
       }
     }
@@ -706,7 +705,7 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
     // Bilbo Baggins ability: choose who leads next trick
     let nextLeader = winnerIndex;
     if (
-      winnerSeat.character === "Bilbo Baggins" &&
+      winnerSeat.character?.name === "Bilbo Baggins" &&
       !isGameOver(gameState) // No need to choose if game is ending
     ) {
       // Build list of players who have cards to play
@@ -758,7 +757,7 @@ async function runSetupPhase(gameState: Game): Promise<void> {
     gameState.currentPlayer = playerIndex;
     gameState.notifyStateChange();
 
-    await seat.characterDef!.setup(gameState, seat, setupContext);
+    await seat.character!.setup(gameState, seat, setupContext);
     gameState.notifyStateChange();
   }
 }
@@ -773,8 +772,7 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
   }
 
   gameState.log(`${frodoSeat.getDisplayName()} gets Frodo (has 1 of Rings)`, true);
-  frodoSeat.character = "Frodo";
-  frodoSeat.characterDef = characterRegistry.get("Frodo")!;
+  frodoSeat.character = characterRegistry.get("Frodo")!;
   gameState.availableCharacters = gameState.availableCharacters.filter((c) => c !== "Frodo");
   gameState.notifyStateChange();
 
@@ -824,8 +822,7 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
     });
 
     gameState.log(`${seat.getDisplayName()} chose ${character}`);
-    seat.character = character;
-    seat.characterDef = characterRegistry.get(character)!;
+    seat.character = characterRegistry.get(character)!;
     gameState.availableCharacters = gameState.availableCharacters.filter((c) => c !== character);
 
     gameState.notifyStateChange();

@@ -8,8 +8,7 @@ import type { CharacterDefinition } from "./characters/types";
 export class Seat {
   seatIndex: number;
   hand: Hand | null;
-  character: string | null;
-  characterDef: CharacterDefinition | null;
+  character: CharacterDefinition | null;
   threatCard: number | null;
   tricksWon: Trick[];
   playedCards: Card[];
@@ -19,8 +18,7 @@ export class Seat {
   constructor(seatIndex: number, controller: Controller) {
     this.seatIndex = seatIndex;
     this.hand = null; // Hand instance (set after creation)
-    this.character = null; // Character name or null
-    this.characterDef = null; // Character definition from registry (cached)
+    this.character = null; // Character definition from registry
     this.threatCard = null; // Threat card number or null
     this.tricksWon = []; // Array of { number: number, cards: Card[] }
     this.playedCards = []; // Array of cards played by this seat
@@ -32,9 +30,9 @@ export class Seat {
   getDisplayName(): string {
     if (this.character) {
       if (this.isPyramid) {
-        return `${this.character} (Pyramid)`;
+        return `${this.character.name} (Pyramid)`;
       } else {
-        return this.character;
+        return this.character.name;
       }
     } else {
       // Use player name if available, otherwise fall back to "Player X"

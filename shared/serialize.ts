@@ -23,16 +23,16 @@ function serializeSeat(game: Game, seat: Seat, viewingSeatIndex: number): Serial
   const isOwnSeat = seat.seatIndex === viewingSeatIndex;
 
   const objective =
-    seat.characterDef?.objective.text ?? seat.characterDef?.objective.getText?.(game) ?? "";
+    seat.character?.objective.text ?? seat.character?.objective.getText?.(game) ?? "";
 
   return {
     seatIndex: seat.seatIndex,
     playerName: seat.controller.playerName,
-    character: seat.character,
+    character: seat.character?.name ?? null,
     threatCard: seat.threatCard,
     tricksWon: seat.tricksWon,
     playedCards: seat.playedCards,
-    status: seat.characterDef?.display.renderStatus(game, seat),
+    status: seat.character?.display.renderStatus(game, seat),
     objective,
     hand: seat.hand ? seat.hand.serializeForViewer(isOwnSeat) : null,
   };
