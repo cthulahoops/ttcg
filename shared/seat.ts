@@ -2,7 +2,8 @@
 // Represents a player position/seat in the game
 
 import type { Hand } from "./hands";
-import type { Card, Trick, Controller, CharacterDefinition } from "./types";
+import type { Card, Trick, Controller } from "./types";
+import type { CharacterDefinition } from "./characters/types";
 
 export class Seat {
   seatIndex: number;
