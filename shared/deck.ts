@@ -20,4 +20,8 @@ export class Deck {
   draw() {
     return this.cards.shift();
   }
+
+  get length() {
+    return this.cards.length;
+  }
 }

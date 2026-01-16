@@ -35,22 +35,7 @@ export function newGame(controllers: Controller[]): Game {
 
   const numCharacters = controllers.length;
 
-  const cardsPerPlayer = 36 / numCharacters;
-
-  let deck: Deck, lostCard: Card;
-
-  do {
-    deck = new Deck();
-    deck.shuffle();
-    lostCard = deck.draw()!;
-  } while (lostCard.suit === "rings" && lostCard.value === 1);
-
-  const playerCards: Card[][] = Array.from({ length: numCharacters }, () => []);
-  for (let i = 0; i < cardsPerPlayer; i++) {
-    for (let p = 0; p < numCharacters; p++) {
-      playerCards[p]!.push(deck.draw()!);
-    }
-  }
+  const { lostCard, playerCards } = dealCards(numCharacters);
 
   const startPlayer = findPlayerWithCard(playerCards, {
     suit: "rings",
@@ -82,6 +67,30 @@ export function newGame(controllers: Controller[]): Game {
   gameState.availableCharacters = availableCharacters;
 
   return gameState;
+}
+
+function dealCards(numCharacters: number) {
+  let deck: Deck, lostCard: Card;
+
+  do {
+    deck = new Deck();
+    deck.shuffle();
+    lostCard = deck.draw()!;
+  } while (lostCard.suit === "rings" && lostCard.value === 1);
+
+  const cardsPerPlayer = deck.length / numCharacters;
+
+  const playerCards: Card[][] = Array.from({ length: numCharacters }, () => []);
+  for (let i = 0; i < cardsPerPlayer; i++) {
+    for (let p = 0; p < numCharacters; p++) {
+      playerCards[p]!.push(deck.draw()!);
+    }
+  }
+
+  return {
+    playerCards,
+    lostCard,
+  };
 }
 
 function createHand(cards: Card[], playerCount: number, isPyramid: boolean): Hand {
