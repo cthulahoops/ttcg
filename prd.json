@@ -68,8 +68,8 @@
   {
     "id": "seat-character-refactor",
     "title": "Consolidate Seat character and characterDef into single attribute 'Character'",
-    "status": "pending",
-    "notes": "Existing references to character become character.name"
+    "status": "completed",
+    "notes": "Removed characterDef field, changed character type from string|null to CharacterDefinition|null. All references to seat.character now use seat.character?.name for the name. Serialization extracts the name for client consumption."
   },
   {
     "id": "rotate-seats-ui",

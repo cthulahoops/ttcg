@@ -6,7 +6,7 @@ export const Galadriel: CharacterDefinition = {
   setupText: "Exchange with either the lost card or Gandalf",
 
   setup: async (game, seat, setupContext) => {
-    const gandalfInPlay = game.seats.some((s) => s.character === "Gandalf");
+    const gandalfInPlay = game.seats.some((s) => s.character?.name === "Gandalf");
     const lostCardExists = game.lostCard !== null;
 
     // If Gandalf is in play, exchange is required (choose Gandalf or lost card if available)

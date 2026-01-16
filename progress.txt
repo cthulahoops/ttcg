@@ -1003,3 +1003,43 @@ This created unnecessary choice paralysis when there were fewer seats to fill.
 - Always exactly 1 spare character beyond the number of seats
 
 Type check and tests pass.
+
+## Completed: seat-character-refactor
+
+Consolidate Seat character and characterDef into single attribute:
+
+The `Seat` class previously had two related fields:
+- `character: string | null` - The character name
+- `characterDef: CharacterDefinition | null` - The full character definition
+
+This was redundant since the name is always `characterDef.name`. The refactor consolidates
+these into a single `character: CharacterDefinition | null` field.
+
+**Changes (shared/seat.ts)**:
+- Removed `characterDef` property from Seat class
+- Changed `character` type from `string | null` to `CharacterDefinition | null`
+- Updated `getDisplayName()` to use `this.character.name` instead of `this.character`
+
+**Changes (shared/game.ts)**:
+- All `seat.character` string comparisons now use `seat.character?.name`
+- All `seat.characterDef` references now use `seat.character`
+- Character assignment (`frodoSeat.character = "Frodo"; frodoSeat.characterDef = ...`)
+  simplified to `frodoSeat.character = characterRegistry.get("Frodo")!`
+
+**Changes (shared/serialize.ts)**:
+- `character: seat.character` → `character: seat.character?.name ?? null`
+- `seat.characterDef?.objective` → `seat.character?.objective`
+- `seat.characterDef?.display` → `seat.character?.display`
+
+**Changes (shared/characters/*.ts)**:
+- `galadriel.ts`: `s.character === "Gandalf"` → `s.character?.name === "Gandalf"`
+- `elrond.ts`: `seat.character` in title → `seat.character?.name`
+- `shadowfax.ts`: `seat.character` in title → `seat.character?.name`
+
+**Benefits**:
+- Single source of truth for character info
+- Eliminates redundant field that could get out of sync
+- Type system enforces accessing name via `.name` property
+- Client still receives `string | null` via serialization layer
+
+Type check and tests pass.
