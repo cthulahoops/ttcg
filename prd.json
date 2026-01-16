@@ -1,105 +1,106 @@
 [
   {
-    "id": "fatty-card-reveal",
-    "title": "Publish gameState on card reveal for Fatty Bolger",
-    "status": "completed",
-    "notes": "Cards should reveal before card gift dialog, not after"
+    "id": "setup-eslint",
+    "title": "Setup eslint",
+    "status": "pending"
   },
   {
-    "id": "give-card-recipient",
-    "title": "Show recipient name in Give Card dialog",
-    "status": "completed"
+    "id": "no-explicit-any",
+    "title": "Enforce no-explicit-any rule and review existing exceptions",
+    "status": "pending",
+    "depends": "setup-eslint"
   },
   {
-    "id": "sort-characters-alphabetically",
-    "title": "Sort available characters alphabetically",
-    "status": "completed"
+    "id": "galadriel-setup-fix",
+    "title": "Fix Galadriel's setup action",
+    "status": "pending",
+    "notes": "Offers exchange with Gandalf when not in play. Single prompt: exchange with Gandalf, lost card, skip? Only include valid options, don't ask at all if no lost card."
   },
   {
-    "id": "broken-rings-indicator",
-    "title": "Add visual indication when rings are broken",
-    "status": "completed"
+    "id": "exchange-return-clarity",
+    "title": "Clarify which card was received when choosing return card in exchange",
+    "status": "pending"
   },
   {
-    "id": "show-controller-names",
-    "title": "Show controller/player names in display",
-    "status": "invalid",
-    "notes": "PlayerSeat already shows this format; TrickArea should use character name only"
+    "id": "hide-player-names-after-characters",
+    "title": "Remove player names from display when character names are known",
+    "status": "pending"
   },
   {
-    "id": "log-player-names",
-    "title": "Show player names instead of numbers in game log",
-    "status": "completed",
-    "notes": "Especially for character choice announcements"
+    "id": "prettier-check",
+    "title": "Add check for prettier formatting and reformat code",
+    "status": "pending"
   },
   {
-    "id": "split-character-registry",
-    "title": "Split characters/registry.ts into one file per character",
-    "status": "completed",
-    "notes": "Precondition for implementing completedness checks"
+    "id": "shadowfax-mechanic",
+    "title": "Implement Shadowfax 'set one card aside' mechanic",
+    "status": "pending",
+    "notes": "Core character ability currently missing"
   },
   {
-    "id": "completedness-checks",
-    "title": "Implement isCompleted for each character",
-    "status": "completed",
-    "notes": "Depends on split-character-registry"
+    "id": "bilbo-mechanic",
+    "title": "Implement Bilbo Baggins 'choose next leader' mechanic",
+    "status": "pending",
+    "notes": "Special ability when winning tricks"
   },
   {
-    "id": "completedness-display",
-    "title": "Add display for completed objectives",
-    "status": "completed",
-    "notes": "Depends on completedness-checks"
+    "id": "tom-bombadil-completable",
+    "title": "Implement proper isCompletable logic for Tom Bombadil",
+    "status": "pending",
+    "notes": "Currently returns true (too optimistic)"
   },
   {
-    "id": "early-victory-exit",
-    "title": "End game early when all objectives are completed",
-    "status": "completed",
-    "notes": "Depends on completedness-display"
+    "id": "available-characters-count",
+    "title": "Limit available characters to Frodo + 1 per seat",
+    "status": "pending",
+    "notes": "Only one spare character in all player counts"
   },
   {
-    "id": "play-again",
-    "title": "Add play again option after game over",
-    "status": "completed",
-    "notes": "Ask all players via choice dialog, first response wins. Yes = reset game, No = return to room screen"
+    "id": "seat-character-refactor",
+    "title": "Consolidate Seat character and characterDef into single attribute 'Character'",
+    "status": "pending",
+    "notes": "Existing references to character become character.name"
   },
   {
-    "id": "one-ring-skip-prompt",
-    "title": "Skip one ring trump prompt when already winning",
-    "status": "completed",
-    "notes": "Don't ask if the 1 of Rings would already win the trick without being used as trump"
+    "id": "rotate-seats-ui",
+    "title": "Rotate seat display so active player appears at top",
+    "status": "pending",
+    "notes": "Implement purely in UI layer"
   },
   {
-    "id": "websocket-reconnection",
-    "title": "Implement websocket reconnection logic",
-    "status": "completed",
-    "notes": "Added automatic reconnection with exponential backoff in useGameWebSocket.ts"
+    "id": "play-again-timeout",
+    "title": "Add timeout for play-again responses",
+    "status": "pending",
+    "notes": "60-second timeout defaulting to 'no'. Also extend Room interface instead of using 'as any'."
   },
   {
-    "id": "hills-color",
-    "title": "Make hills suit color browner",
-    "status": "completed"
+    "id": "play-again-cleanup",
+    "title": "Clean up play-again handler when continuing to next round",
+    "status": "pending",
+    "notes": "Stale _playAgainHandler and _playAgainRequestId remain on room object"
   },
   {
-    "id": "exchange-privacy",
-    "title": "Respect privacy in exchange log messages",
-    "status": "completed",
-    "notes": "Show card details only to players involved in exchange, others see 'a card'"
+    "id": "seat-hand-type",
+    "title": "Handle seat.hand optionality at type layer",
+    "status": "pending",
+    "notes": "Multiple character files use seat.hand! assertions. Make hand non-optional where guaranteed, or add type guard."
   },
   {
-    "id": "room-code-leave-existing",
-    "title": "Leave existing room when setting a new room code",
-    "status": "completed"
+    "id": "consolidate-character-definition",
+    "title": "Consolidate duplicate CharacterDefinition interfaces",
+    "status": "pending",
+    "notes": "shared/characters/types.ts and shared/types.ts both define CharacterDefinition"
   },
   {
-    "id": "unit-tests-for-shared-code",
-    "title": "Create a unit test for something in @shared",
-    "status": "completed",
-    "notes": "Created tests for sortHand and shuffleDeck in shared/utils.test.ts using Bun's built-in test runner"
+    "id": "mountains-constant",
+    "title": "Extract magic number 8 (total mountains cards) to constant",
+    "status": "pending",
+    "notes": "In gloin.ts isCompletable logic"
   },
   {
-    "id": "trick-area-min-height",
-    "title": "Add min height to current trick area",
-    "status": "completed",
-    "notes": "Added min-height: var(--card-height) to .trick-cards to prevent layout shift"
+    "id": "bilbo-completable",
+    "title": "Fix Bilbo isCompletable to check trick achievability",
+    "status": "pending",
+    "notes": "Should verify 3 tricks are still achievable, not just check for 1-Ring"
   }
 ]

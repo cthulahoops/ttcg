@@ -1,0 +1,104 @@
+[
+  {
+    "id": "fatty-card-reveal",
+    "title": "Publish gameState on card reveal for Fatty Bolger",
+    "status": "completed",
+    "notes": "Cards should reveal before card gift dialog, not after"
+  },
+  {
+    "id": "give-card-recipient",
+    "title": "Show recipient name in Give Card dialog",
+    "status": "completed"
+  },
+  {
+    "id": "sort-characters-alphabetically",
+    "title": "Sort available characters alphabetically",
+    "status": "completed"
+  },
+  {
+    "id": "broken-rings-indicator",
+    "title": "Add visual indication when rings are broken",
+    "status": "completed"
+  },
+  {
+    "id": "show-controller-names",
+    "title": "Show controller/player names in display",
+    "status": "invalid",
+    "notes": "PlayerSeat already shows this format; TrickArea should use character name only"
+  },
+  {
+    "id": "log-player-names",
+    "title": "Show player names instead of numbers in game log",
+    "status": "completed",
+    "notes": "Especially for character choice announcements"
+  },
+  {
+    "id": "split-character-registry",
+    "title": "Split characters/registry.ts into one file per character",
+    "status": "completed"
+  },
+  {
+    "id": "completedness-checks",
+    "title": "Implement isCompleted for each character",
+    "status": "completed",
+    "depends": "split-character-registry"
+  },
+  {
+    "id": "completedness-display",
+    "title": "Add display for completed objectives",
+    "status": "completed",
+    "depends": "completedness-checks"
+  },
+  {
+    "id": "early-victory-exit",
+    "title": "End game early when all objectives are completed",
+    "status": "completed",
+    "depends": "completedness-display"
+  },
+  {
+    "id": "play-again",
+    "title": "Add play again option after game over",
+    "status": "completed",
+    "notes": "Ask all players via choice dialog, first response wins. Yes = reset game, No = return to room screen"
+  },
+  {
+    "id": "one-ring-skip-prompt",
+    "title": "Skip one ring trump prompt when already winning",
+    "status": "completed",
+    "notes": "Don't ask if the 1 of Rings would already win the trick without being used as trump"
+  },
+  {
+    "id": "websocket-reconnection",
+    "title": "Implement websocket reconnection logic",
+    "status": "completed",
+    "notes": "Added automatic reconnection with exponential backoff in useGameWebSocket.ts"
+  },
+  {
+    "id": "hills-color",
+    "title": "Make hills suit color browner",
+    "status": "completed"
+  },
+  {
+    "id": "exchange-privacy",
+    "title": "Respect privacy in exchange log messages",
+    "status": "completed",
+    "notes": "Show card details only to players involved in exchange, others see 'a card'"
+  },
+  {
+    "id": "room-code-leave-existing",
+    "title": "Leave existing room when setting a new room code",
+    "status": "completed"
+  },
+  {
+    "id": "unit-tests-for-shared-code",
+    "title": "Create a unit test for something in @shared",
+    "status": "completed",
+    "notes": "Created tests for sortHand and shuffleDeck in shared/utils.test.ts using Bun's built-in test runner"
+  },
+  {
+    "id": "trick-area-min-height",
+    "title": "Add min height to current trick area",
+    "status": "completed",
+    "notes": "Added min-height: var(--card-height) to .trick-cards to prevent layout shift"
+  }
+]
