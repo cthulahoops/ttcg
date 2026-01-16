@@ -13,7 +13,7 @@
   {
     "id": "galadriel-setup-fix",
     "title": "Fix Galadriel's setup action",
-    "status": "pending",
+    "status": "completed",
     "notes": "Offers exchange with Gandalf when not in play. Single prompt: exchange with Gandalf, lost card, skip? Only include valid options, don't ask at all if no lost card."
   },
   {
