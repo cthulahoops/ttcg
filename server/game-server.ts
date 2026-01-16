@@ -7,7 +7,7 @@ import { Card, Suit } from "@shared/types";
 
 import { Seat } from "@shared/seat";
 
-import { SolitaireHand, PlayerHand, PyramidHand } from "@shared/hands";
+import { SolitaireHand, PlayerHand, PyramidHand, Hand } from "@shared/hands";
 
 import { allCharacterNames } from "@shared/characters/registry";
 
@@ -62,17 +62,14 @@ export function newGame(controllers: Controller[]): Game {
   for (let i = 0; i < numCharacters; i++) {
     const controller: Controller = controllers[i]!;
 
-    const seat = new Seat(i, controller);
+    const isPyramid = controller === pyramidController;
 
-    if (playerCount === 1) {
-      seat.hand = new SolitaireHand(playerCards[i]);
-    } else if (controller === pyramidController) {
-      seat.hand = new PyramidHand(playerCards[i]);
-      seat.isPyramid = true;
-    } else {
-      // All normal hands use PlayerHand; hiding is handled by serialization
-      seat.hand = new PlayerHand(playerCards[i]);
-    }
+    const seat = new Seat(
+      i,
+      controller,
+      createHand(playerCards[i]!, playerCount, isPyramid),
+      isPyramid
+    );
 
     seats.push(seat);
   }
@@ -86,6 +83,16 @@ export function newGame(controllers: Controller[]): Game {
   gameState.availableCharacters = availableCharacters;
 
   return gameState;
+}
+
+function createHand(cards: Card[], playerCount: number, isPyramid: boolean): Hand {
+  if (playerCount == 1) {
+    return new SolitaireHand(cards);
+  }
+  if (isPyramid) {
+    return new PyramidHand(cards);
+  }
+  return new PlayerHand(cards);
 }
 
 export function createDeck(): Card[] {

@@ -11,7 +11,7 @@ export const FattyBolger: CharacterDefinition = {
 
     for (const otherSeat of game.seats) {
       if (otherSeat.seatIndex !== seat.seatIndex) {
-        const availableCards = seat.hand!.getAvailableCards();
+        const availableCards = seat.hand.getAvailableCards();
         if (availableCards.length === 0) {
           break;
         }
