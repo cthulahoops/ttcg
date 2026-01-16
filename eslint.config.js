@@ -13,8 +13,8 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       // TypeScript handles unused vars via noUnusedLocals/noUnusedParameters
       "@typescript-eslint/no-unused-vars": "off",
-      // Will be addressed in separate PRD item "no-explicit-any"
-      "@typescript-eslint/no-explicit-any": "warn",
+      // Enforce no explicit any to maintain type safety
+      "@typescript-eslint/no-explicit-any": "error",
     },
   },
   {

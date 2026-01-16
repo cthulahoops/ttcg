@@ -5,22 +5,23 @@ import type {
   ChoiceButtonOptions,
   ChoiceCardOptions,
 } from "../shared/types";
-import type { ServerMessage } from "../shared/protocol";
+import type { ServerMessage, DecisionRequest } from "../shared/protocol";
 import type { Game } from "../shared/game";
 import type { Seat } from "../shared/seat";
 import { serializeGameForSeat } from "../shared/serialize";
 
-interface PendingRequest {
-  resolve: (value: any) => void;
+interface PendingRequest<T = unknown> {
+  resolve: (value: T) => void;
   reject: (error: Error) => void;
   requestId: string;
-  decision: any;
+  decision: DecisionRequest;
 }
 
 export class NetworkController extends Controller {
   readonly playerId: string;
   private sendMessage: (message: ServerMessage) => void;
-  private pendingRequests: Map<string, PendingRequest>;
+  // Using PendingRequest<unknown> since requests store heterogeneous response types
+  private pendingRequests: Map<string, PendingRequest<unknown>>;
 
   constructor(sendMessage: (message: ServerMessage) => void, playerId: string, playerName: string) {
     super();
@@ -33,7 +34,7 @@ export class NetworkController extends Controller {
   /**
    * Handle a decision response from the client
    */
-  handleResponse(requestId: string, response: any): void {
+  handleResponse(requestId: string, response: unknown): void {
     const pending = this.pendingRequests.get(requestId);
     if (pending) {
       console.log(`[NetworkController] Received response for request ${requestId}, remaining pending: ${this.pendingRequests.size - 1}`);
@@ -63,11 +64,13 @@ export class NetworkController extends Controller {
   /**
    * Send a decision request and wait for response
    */
-  private async sendRequest<T>(decision: any): Promise<T> {
+  private async sendRequest<T>(decision: DecisionRequest): Promise<T> {
     const requestId = crypto.randomUUID();
 
     const promise = new Promise<T>((resolve, reject) => {
-      this.pendingRequests.set(requestId, { resolve, reject, requestId, decision });
+      // Type assertion needed: we store heterogeneous request types in the same map,
+      // and the response type T is validated at runtime by the calling code
+      this.pendingRequests.set(requestId, { resolve: resolve as (value: unknown) => void, reject, requestId, decision });
     });
 
     console.log(`[NetworkController] Sending decision request ${requestId}, type: ${decision?.type}, total pending: ${this.pendingRequests.size}`);
@@ -81,9 +84,10 @@ export class NetworkController extends Controller {
   }
 
   async chooseButton<T>(options: ChoiceButtonOptions<T>): Promise<T> {
+    // Type assertion: button values are always string | number | boolean in practice
     return this.sendRequest<T>({
       type: "choose_button",
-      options,
+      options: options as ChoiceButtonOptions<string | number | boolean>,
     });
   }
 

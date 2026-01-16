@@ -8,8 +8,9 @@
   {
     "id": "no-explicit-any",
     "title": "Enforce no-explicit-any rule and review existing exceptions",
-    "status": "pending",
-    "depends": "setup-eslint"
+    "status": "completed",
+    "depends": "setup-eslint",
+    "notes": "Fixed 9 no-explicit-any warnings across 5 files. Changed rule from warn to error. Key changes: protocol uses unknown for network boundary types, server/controllers uses typed DecisionRequest with targeted type assertions, shared/game.ts uses proper type narrowing for optional getCards method."
   },
   {
     "id": "galadriel-setup-fix",

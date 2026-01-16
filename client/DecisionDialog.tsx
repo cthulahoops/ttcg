@@ -13,7 +13,7 @@ export function DecisionDialog({ decision, onRespond }: DecisionDialogProps) {
         <Dialog title={decision.options.title} message={decision.options.message}>
           {decision.options.buttons.map((btn) => (
             <button
-              key={btn.value}
+              key={String(btn.value)}
               className="primary-btn"
               onClick={() => onRespond(btn.value)}
             >

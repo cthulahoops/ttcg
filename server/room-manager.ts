@@ -453,7 +453,7 @@ export class RoomManager {
    * @param response - The decision response data
    * @throws Error if player is not in a room or not in a game
    */
-  handleDecisionResponse(socketId: string, requestId: string, response: any): void {
+  handleDecisionResponse(socketId: string, requestId: string, response: unknown): void {
     const lookup = this.socketToPlayer.get(socketId);
     if (!lookup) {
       throw new Error("Not in a room");
