@@ -755,3 +755,27 @@ The game should end early if Tom's objective becomes impossible.
 3. If no suit in hand can reach 3, return false
 
 Type check and tests pass.
+
+## Completed: bilbo-completable
+
+Fix Bilbo isCompletable to check trick achievability:
+
+Bilbo Baggins' objective is: "Win 3 or more tricks; do NOT win the 1 of Rings."
+The previous `isCompletable` only checked if Bilbo already had the 1 of Rings,
+but did not verify whether 3 tricks were still achievable. This could cause the
+game to continue when Bilbo's objective was already impossible.
+
+**Fix (shared/characters/bilbo-baggins.ts)**:
+- Added check for `tricksWon + game.tricksRemaining() >= 3`
+- Combined with existing 1-Ring check using early return pattern
+- If either condition fails, the objective is impossible
+
+**How it works**:
+1. If Bilbo has already won the 1 of Rings → return false (impossible)
+2. If the remaining tricks plus already won tricks < 3 → return false (impossible)
+3. Otherwise → return true (still possible)
+
+This ensures the game ends early if Bilbo cannot possibly reach 3 tricks,
+improving the early-game-over detection.
+
+Type check and tests pass.
