@@ -105,8 +105,8 @@
   {
     "id": "bilbo-completable",
     "title": "Fix Bilbo isCompletable to check trick achievability",
-    "status": "pending",
-    "notes": "Should verify 3 tricks are still achievable, not just check for 1-Ring"
+    "status": "completed",
+    "notes": "Now checks both: (1) no 1-Ring won, and (2) tricksWon + tricksRemaining >= 3"
   },
   {
       "id": "farmer-maggot-setup-text",

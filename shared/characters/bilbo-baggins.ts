@@ -18,7 +18,13 @@ export const BilboBaggins: CharacterDefinition = {
     },
     isCompletable: (game, seat) => {
       // Impossible if already has 1 of Rings
-      return !game.hasCard(seat, "rings", 1);
+      if (game.hasCard(seat, "rings", 1)) {
+        return false;
+      }
+      // Impossible if not enough tricks remaining to reach 3
+      const tricksWon = seat.getTrickCount();
+      const maxPossible = tricksWon + game.tricksRemaining();
+      return maxPossible >= 3;
     },
     isCompleted: (game, seat) => {
       // Can be completed early if objective is met AND 1 of Rings is already won by someone else
