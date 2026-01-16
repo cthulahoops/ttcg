@@ -1,4 +1,4 @@
-import type { Card } from "../types";
+import { CARDS_PER_SUIT, type Card } from "../types";
 import type { Seat } from "../seat";
 import type { CharacterDefinition } from "./types";
 
@@ -39,7 +39,7 @@ export const Arwen: CharacterDefinition = {
         (total: number, s: Seat) => total + countForestsWon(s),
         0,
       );
-      const forestsRemaining = 8 - totalForestsWon;
+      const forestsRemaining = CARDS_PER_SUIT.forests - totalForestsWon;
 
       return myCounts + forestsRemaining > othersMaxCounts;
     },

@@ -4,6 +4,15 @@ import type { Controller, AIController } from "./controllers";
 
 export type Suit = "mountains" | "shadows" | "forests" | "hills" | "rings";
 
+/** Number of cards in each suit (8 for normal suits, 5 for rings) */
+export const CARDS_PER_SUIT: Record<Suit, number> = {
+  mountains: 8,
+  shadows: 8,
+  forests: 8,
+  hills: 8,
+  rings: 5,
+};
+
 type BaseCard<T> = { suit: T; value: number };
 
 export type Card = BaseCard<Suit>;

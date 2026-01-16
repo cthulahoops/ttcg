@@ -1,4 +1,4 @@
-import type { Card } from "../types";
+import { CARDS_PER_SUIT, type Card } from "../types";
 import type { CharacterDefinition } from "./types";
 
 export const Glorfindel: CharacterDefinition = {
@@ -15,10 +15,10 @@ export const Glorfindel: CharacterDefinition = {
       const shadowsCards = seat
         .getAllWonCards()
         .filter((c: Card) => c.suit === "shadows");
-      return shadowsCards.length === 8; // All shadows cards (1-8)
+      return shadowsCards.length === CARDS_PER_SUIT.shadows;
     },
     isCompletable: (game, seat) => {
-      for (let value = 1; value <= 8; value++) {
+      for (let value = 1; value <= CARDS_PER_SUIT.shadows; value++) {
         if (game.cardGone(seat, "shadows", value)) {
           return false;
         }
@@ -41,7 +41,7 @@ export const Glorfindel: CharacterDefinition = {
         met,
         completable,
         completed,
-        details: `Shadows: ${shadowsCards.length}/8`,
+        details: `Shadows: ${shadowsCards.length}/${CARDS_PER_SUIT.shadows}`,
       };
     },
   },

@@ -1,4 +1,4 @@
-import type { Card, Suit } from "../types";
+import { CARDS_PER_SUIT, type Card, type Suit } from "../types";
 import type { CharacterDefinition } from "./types";
 
 export const TomBombadil: CharacterDefinition = {
@@ -75,15 +75,6 @@ export const TomBombadil: CharacterDefinition = {
         });
       }
 
-      // Cards per suit: mountains/shadows/forests/hills = 8, rings = 5
-      const cardsPerSuit: Record<Suit, number> = {
-        mountains: 8,
-        shadows: 8,
-        forests: 8,
-        hills: 8,
-        rings: 5,
-      };
-
       // Check if any suit in hand can still reach 3 won cards
       const suitsInHand = new Set(cardsInHand.map((c) => c.suit));
       for (const suit of suitsInHand) {
@@ -93,7 +84,7 @@ export const TomBombadil: CharacterDefinition = {
           // Already have 3+ of this suit
           return true;
         }
-        const remainingInPlay = cardsPerSuit[suit] - totalWonBySuit[suit];
+        const remainingInPlay = CARDS_PER_SUIT[suit] - totalWonBySuit[suit];
         if (remainingInPlay >= needed) {
           // Still possible to win enough
           return true;

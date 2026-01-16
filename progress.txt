@@ -932,3 +932,25 @@ across 5 files. This change fixes all violations and promotes the rule to "error
 - The Controller interface remains generic to allow type-safe usage throughout the codebase
 
 Type check, lint, and tests pass. Lint now shows 0 errors, 1 warning (unrelated react-hooks/exhaustive-deps).
+
+## Completed: mountains-constant
+
+Extract magic number 8 (total cards per suit) to a shared constant:
+
+Several character files used the magic number 8 (or 5 for rings) to calculate remaining cards in play.
+This made the code harder to understand and maintain.
+
+**New constant (shared/types.ts):**
+- Added `CARDS_PER_SUIT: Record<Suit, number>` with values for each suit (8 for normal suits, 5 for rings)
+
+**Updated files:**
+- `shared/characters/gloin.ts`: Changed `8 - totalMountainsWon` to `CARDS_PER_SUIT.mountains - totalMountainsWon`
+- `shared/characters/arwen.ts`: Changed `8 - totalForestsWon` to `CARDS_PER_SUIT.forests - totalForestsWon`
+- `shared/characters/glorfindel.ts`: Updated three occurrences of `8` to use `CARDS_PER_SUIT.shadows`
+  - `shadowsCards.length === 8` → `shadowsCards.length === CARDS_PER_SUIT.shadows`
+  - `value <= 8` → `value <= CARDS_PER_SUIT.shadows`
+  - `${shadowsCards.length}/8` → `${shadowsCards.length}/${CARDS_PER_SUIT.shadows}`
+- `shared/characters/tom-bombadil.ts`: Removed local `cardsPerSuit` definition, now uses shared `CARDS_PER_SUIT`
+
+The constant is defined once and used everywhere, making the codebase more maintainable.
+Type check and tests pass.

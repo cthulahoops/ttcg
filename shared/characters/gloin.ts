@@ -1,4 +1,4 @@
-import type { Card } from "../types";
+import { CARDS_PER_SUIT, type Card } from "../types";
 import type { Seat } from "../seat";
 import type { CharacterDefinition } from "./types";
 
@@ -49,7 +49,7 @@ export const Gloin: CharacterDefinition = {
           s.getAllWonCards().filter((c: Card) => c.suit === "mountains").length,
         0,
       );
-      const mountainsRemaining = 8 - totalMountainsWon;
+      const mountainsRemaining = CARDS_PER_SUIT.mountains - totalMountainsWon;
 
       return myCounts + mountainsRemaining > othersMaxCounts;
     },
