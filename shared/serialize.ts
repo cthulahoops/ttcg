@@ -32,11 +32,13 @@ function serializeSeat(
     seat.character?.objective.getText?.(game) ??
     "";
 
-  // Aside card is visible to owner or anyone viewing a pyramid seat
-  // (pyramid cards are visible to the controlling player)
+  // Aside card is visible if:
+  // - It's the viewer's own seat, OR
+  // - The seat's hand is revealed (Goldberry, Fatty Bolger, pyramid, solitaire)
   let asideCard: Card | "hidden" | null = null;
   if (seat.asideCard) {
-    asideCard = isOwnSeat || seat.isPyramid ? seat.asideCard : "hidden";
+    const handRevealed = seat.hand?.isRevealed() ?? false;
+    asideCard = isOwnSeat || handRevealed ? seat.asideCard : "hidden";
   }
 
   return {
