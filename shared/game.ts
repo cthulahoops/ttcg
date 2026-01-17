@@ -493,7 +493,17 @@ function isLegalMove(gameState: Game, seat: Seat, card: Card): boolean {
 
 function getLegalMoves(gameState: Game, seat: Seat): Card[] {
   const availableCards = seat.hand.getAvailableCards();
-  return availableCards.filter((card) => isLegalMove(gameState, seat, card));
+  const legalFromHand = availableCards.filter((card) =>
+    isLegalMove(gameState, seat, card)
+  );
+
+  // Aside card lives on Seat rather than Hand to avoid changing all Hand subclasses.
+  // The trade-off: handle it here and in playSelectedCard() vs. adding complexity to Hand.
+  if (seat.asideCard && isLegalMove(gameState, seat, seat.asideCard)) {
+    return [...legalFromHand, seat.asideCard];
+  }
+
+  return legalFromHand;
 }
 
 // ===== EXCHANGE HELPER FUNCTIONS =====
@@ -617,7 +627,16 @@ async function playSelectedCard(
   seat: Seat,
   card: Card
 ): Promise<void> {
-  seat.hand.removeCard(card);
+  // Check if the played card is the aside card
+  if (
+    seat.asideCard &&
+    seat.asideCard.suit === card.suit &&
+    seat.asideCard.value === card.value
+  ) {
+    seat.asideCard = null;
+  } else {
+    seat.hand.removeCard(card);
+  }
   seat.playedCards.push(card);
   gameState.currentTrick.push({
     playerIndex: seat.seatIndex,

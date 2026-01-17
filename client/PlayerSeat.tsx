@@ -91,8 +91,10 @@ export function PlayerSeat({
 
         {asideCard && (
           <div className="aside-card">
-            <span className="aside-label">Aside: </span>
-            <Card card={asideCard} />
+            <span className="aside-label">
+              {asideCard === "hidden" ? "Has card aside" : "Aside:"}
+            </span>
+            {asideCard !== "hidden" && <Card card={asideCard} />}
           </div>
         )}
       </div>
