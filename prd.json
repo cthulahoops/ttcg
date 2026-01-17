@@ -44,8 +44,8 @@
   {
     "id": "shadowfax-mechanic",
     "title": "Implement Shadowfax 'set one card aside' mechanic",
-    "status": "pending",
-    "notes": "Core character ability currently missing"
+    "status": "completed",
+    "notes": "Core character ability now implemented. Card can be set aside during setup, returned at any point, or auto-returned when hand is empty."
   },
   {
     "id": "bilbo-mechanic",

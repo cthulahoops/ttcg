@@ -304,6 +304,18 @@ button:hover {
   margin-top: 5px;
 }
 
+.aside-card {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.aside-label {
+  font-size: 12px;
+  color: #90caf9;
+}
+
 .objective-status .completed {
   color: #ffd700;
 }

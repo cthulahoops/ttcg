@@ -1,15 +1,29 @@
 import type { Card } from "../types";
 import type { CharacterDefinition } from "./types";
+import { sortHand } from "../utils";
 
 export const Shadowfax: CharacterDefinition = {
   name: "Shadowfax",
   setupText:
-    "Set one card aside (may return it to hand at any point, must return if hand empty)",
+    "Set one card aside (can be played normally, but doesn't count for suit-following)",
 
-  setup: async (_game, _seat, _setupContext) => {
-    // TODO: Implement card aside mechanic
-    // This requires tracking a "set aside" card that can be returned to hand
-    // For now, no action taken
+  setup: async (game, seat, _setupContext) => {
+    const availableCards = seat.hand.getAvailableCards();
+
+    const cardToSetAside = await seat.controller.chooseCard({
+      title: "Shadowfax - Set Card Aside",
+      message: "Choose a card to set aside",
+      cards: sortHand(availableCards),
+    });
+
+    seat.hand.removeCard(cardToSetAside);
+    seat.asideCard = cardToSetAside;
+
+    game.log(`${seat.getDisplayName()} sets a card aside`, false, {
+      visibleTo: [seat.seatIndex],
+      hiddenMessage: `${seat.getDisplayName()} sets a card aside`,
+    });
+    game.notifyStateChange();
   },
 
   objective: {

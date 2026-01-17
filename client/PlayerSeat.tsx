@@ -25,6 +25,7 @@ export function PlayerSeat({
     status,
     threatCard,
     hand,
+    asideCard,
   } = seat;
 
   // Show character name when assigned, otherwise player name
@@ -87,6 +88,15 @@ export function PlayerSeat({
             <Card card={{ suit: "threat", value: threatCard }} />
           )}
         </div>
+
+        {asideCard && (
+          <div className="aside-card">
+            <span className="aside-label">
+              {asideCard === "hidden" ? "Has card aside" : "Aside:"}
+            </span>
+            {asideCard !== "hidden" && <Card card={asideCard} />}
+          </div>
+        )}
       </div>
 
       {hand && (

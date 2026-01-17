@@ -62,6 +62,7 @@ export interface SerializedSeat {
   status?: CharacterStatus;
   objective: string;
   hand: SerializedHand | null;
+  asideCard: Card | "hidden" | null; // Shadowfax aside card (hidden to other players)
 }
 
 /**

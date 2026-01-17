@@ -14,6 +14,7 @@ export class Seat {
   playedCards: Card[];
   controller: Controller;
   isPyramid: boolean;
+  asideCard: Card | null; // Card set aside by Shadowfax
 
   constructor(
     seatIndex: number,
@@ -29,6 +30,7 @@ export class Seat {
     this.playedCards = []; // Array of cards played by this seat
     this.controller = controller; // "human" | "ai"
     this.isPyramid = isPyramid; // Flag for 2-player pyramid seat
+    this.asideCard = null; // Card set aside by Shadowfax
   }
 
   // Display helper - encapsulates complex display logic
