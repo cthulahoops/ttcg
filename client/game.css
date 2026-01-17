@@ -769,24 +769,13 @@ button:hover {
     color: #aed581;
   }
 
-  .info-toggle {
-    padding: 2px 6px;
+  .compact-objective {
     font-size: 11px;
-    background: #4a7023;
-    border: none;
-    border-radius: 3px;
-    color: #fff;
-    cursor: pointer;
+    color: #aed581;
   }
 
-  .player-details {
-    display: none;
-    margin-top: 6px;
-    font-size: 12px;
-  }
-
-  .player-details.expanded {
-    display: block;
+  .player-header-compact {
+    margin-bottom: 6px;
   }
 
   /* Hide hand count on mobile (superfluous) */

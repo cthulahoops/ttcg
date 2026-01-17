@@ -1,4 +1,3 @@
-import { useState } from "react";
 import type { SerializedSeat } from "@shared/serialized";
 import type { Card as CardType } from "@shared/types";
 import { Hand } from "./Hand";
@@ -12,8 +11,6 @@ type PlayerSeatProps = {
 };
 
 export function PlayerSeat({ seat, isActive, selectableCards, onSelectCard }: PlayerSeatProps) {
-  const [detailsExpanded, setDetailsExpanded] = useState(false);
-
   const {
     seatIndex,
     playerName,
@@ -44,39 +41,12 @@ export function PlayerSeat({ seat, isActive, selectableCards, onSelectCard }: Pl
         <h3>{displayName}</h3>
         {statusIcon && <span className="compact-status">{statusIcon}</span>}
         <span className="compact-tricks">T:{tricksWon.length}</span>
-        <button
-          className="info-toggle"
-          onClick={() => setDetailsExpanded(!detailsExpanded)}
-          aria-expanded={detailsExpanded}
-        >
-          {detailsExpanded ? "−" : "i"}
-        </button>
+        <span className="compact-objective">{objective}</span>
         {threatCard !== null && (
           <div className="threat-card-inline">
             <Card card={{ suit: "threat", value: threatCard }} />
           </div>
         )}
-      </div>
-
-      {/* Expandable details for mobile */}
-      <div className={`player-details ${detailsExpanded ? "expanded" : ""}`}>
-        <div className="objective">{objective && `Goal: ${objective}`}</div>
-        <div className="objective-status">
-          {status && (
-            <>
-              {status.completed ? (
-                <span className="completed">★</span>
-              ) : status.met ? (
-                <span className="success">✓</span>
-              ) : status.completable ? (
-                <span className="fail">✗</span>
-              ) : (
-                <span className="fail">✗ (impossible)</span>
-              )}
-              {status.details && ` ${status.details}`}
-            </>
-          )}
-        </div>
       </div>
 
       {/* Full header for desktop */}

@@ -7,6 +7,7 @@ import { LostCard } from "./LostCard";
 import { PlayerSeat } from "./PlayerSeat";
 import { GameStatus } from "./GameStatus";
 import { DecisionDialog } from "./DecisionDialog";
+import { AvailableCharacters } from "./AvailableCharacters";
 
 type GameScreenProps = {
   game: SerializedGame;
@@ -73,24 +74,7 @@ export function GameScreen({ game, pendingDecision, onRespond }: GameScreenProps
         })}
       </div>
 
-      {game.availableCharacters.length > 0 && (
-        <section className="available-characters">
-          <h3>Available Characters</h3>
-          <div className="character-list">
-            {game.availableCharacters.map((char) => (
-              <div key={char.name} className="character-card">
-                <div className="character-name">{char.name}</div>
-                <div className="character-objective">
-                  <strong>Objective:</strong> {char.objective}
-                </div>
-                <div className="character-setup">
-                  <strong>Setup:</strong> {char.setupText}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      <AvailableCharacters characters={game.availableCharacters} />
     </div>
   );
 }
