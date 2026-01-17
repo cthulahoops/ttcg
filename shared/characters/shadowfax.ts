@@ -5,7 +5,7 @@ import { sortHand } from "../utils";
 export const Shadowfax: CharacterDefinition = {
   name: "Shadowfax",
   setupText:
-    "Set one card aside (can be played normally, but doesn't count for suit-following)",
+    "Set one card aside (may return it to hand at any point, must return if hand empty)",
 
   setup: async (game, seat, _setupContext) => {
     const availableCards = seat.hand.getAvailableCards();
