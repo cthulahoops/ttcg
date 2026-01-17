@@ -32,10 +32,11 @@ function serializeSeat(
     seat.character?.objective.getText?.(game) ??
     "";
 
-  // Aside card is only visible to the player who owns it
+  // Aside card is visible to owner or anyone viewing a pyramid seat
+  // (pyramid cards are visible to the controlling player)
   let asideCard: Card | "hidden" | null = null;
   if (seat.asideCard) {
-    asideCard = isOwnSeat ? seat.asideCard : "hidden";
+    asideCard = isOwnSeat || seat.isPyramid ? seat.asideCard : "hidden";
   }
 
   return {
