@@ -84,7 +84,10 @@ export const TomBombadil: CharacterDefinition = {
           // Already have 3+ of this suit
           return true;
         }
-        const remainingInPlay = CARDS_PER_SUIT[suit] - totalWonBySuit[suit];
+        // Account for the lost card which is permanently unavailable
+        const lostCardOfSuit = game.lostCard?.suit === suit ? 1 : 0;
+        const remainingInPlay =
+          CARDS_PER_SUIT[suit] - totalWonBySuit[suit] - lostCardOfSuit;
         if (remainingInPlay >= needed) {
           // Still possible to win enough
           return true;
