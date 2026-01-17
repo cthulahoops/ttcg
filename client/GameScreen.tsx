@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import type { SerializedGame } from "@shared/serialized";
 import type { DecisionRequest } from "@shared/protocol";
 import type { Card } from "@shared/types";
@@ -16,13 +15,6 @@ type GameScreenProps = {
 };
 
 export function GameScreen({ game, pendingDecision, onRespond }: GameScreenProps) {
-  // Set data-player-count on body for CSS styling (e.g., smaller cards in solitaire)
-  useEffect(() => {
-    document.body.setAttribute("data-player-count", String(game.playerCount));
-    return () => {
-      document.body.removeAttribute("data-player-count");
-    };
-  }, [game.playerCount]);
   // Rotate seats so viewer's seat appears first
   const rotatedSeats = [
     ...game.seats.slice(game.viewerSeat),

@@ -435,12 +435,6 @@ button:hover {
   font-weight: bold;
 }
 
-/* Hide 4th player in 3-player and 2-player modes */
-body[data-player-count="3"] .player:has(#player4),
-body[data-player-count="2"] .player:has(#player4) {
-  display: none;
-}
-
 /* Pyramid display styles */
 .pyramid-hand {
   display: grid;
