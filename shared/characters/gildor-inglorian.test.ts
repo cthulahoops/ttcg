@@ -232,7 +232,9 @@ describe("GildorInglorian", () => {
     });
 
     test("has correct objective text", () => {
-      expect(GildorInglorian.objective.text).toBe("Play a forests card in final trick");
+      expect(GildorInglorian.objective.text).toBe(
+        "Play a forests card in final trick"
+      );
     });
   });
 });

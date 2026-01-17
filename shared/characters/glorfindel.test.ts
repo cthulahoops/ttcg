@@ -145,7 +145,9 @@ describe("Glorfindel", () => {
       const glorfindelSeat = game.seats[0]!;
       const otherSeat = game.seats[1]!;
       addWonCards(otherSeat, [{ suit: "shadows", value: 1 }]);
-      expect(Glorfindel.objective.isCompletable(game, glorfindelSeat)).toBe(false);
+      expect(Glorfindel.objective.isCompletable(game, glorfindelSeat)).toBe(
+        false
+      );
     });
 
     test("returns false when another player wins the 8 of shadows", () => {
@@ -153,7 +155,9 @@ describe("Glorfindel", () => {
       const glorfindelSeat = game.seats[0]!;
       const otherSeat = game.seats[1]!;
       addWonCards(otherSeat, [{ suit: "shadows", value: 8 }]);
-      expect(Glorfindel.objective.isCompletable(game, glorfindelSeat)).toBe(false);
+      expect(Glorfindel.objective.isCompletable(game, glorfindelSeat)).toBe(
+        false
+      );
     });
 
     test("returns true when Glorfindel has won all shadows cards", () => {
@@ -182,7 +186,9 @@ describe("Glorfindel", () => {
         { suit: "hills", value: 3 },
         { suit: "rings", value: 4 },
       ]);
-      expect(Glorfindel.objective.isCompletable(game, glorfindelSeat)).toBe(true);
+      expect(Glorfindel.objective.isCompletable(game, glorfindelSeat)).toBe(
+        true
+      );
     });
   });
 

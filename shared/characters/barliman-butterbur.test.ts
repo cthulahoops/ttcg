@@ -32,7 +32,11 @@ function createTestGame(numCharacters: number): Game {
 }
 
 // Test helper: add a trick with a specific trick number to a seat
-function addTrickWithNumber(seat: Seat, trickNumber: number, cards: Card[]): void {
+function addTrickWithNumber(
+  seat: Seat,
+  trickNumber: number,
+  cards: Card[]
+): void {
   seat.addTrick(trickNumber, cards);
 }
 
@@ -217,7 +221,9 @@ describe("BarlimanButterbur", () => {
     });
 
     test("has correct objective text", () => {
-      expect(BarlimanButterbur.objective.text).toBe("Win at least one of the last three tricks");
+      expect(BarlimanButterbur.objective.text).toBe(
+        "Win at least one of the last three tricks"
+      );
     });
   });
 });

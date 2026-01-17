@@ -32,7 +32,11 @@ function createTestGame(numCharacters: number): Game {
 }
 
 // Test helper: add won trick to a seat with a specific trick number
-function addTrickWithNumber(seat: Seat, trickNumber: number, cards: Card[]): void {
+function addTrickWithNumber(
+  seat: Seat,
+  trickNumber: number,
+  cards: Card[]
+): void {
   seat.addTrick(trickNumber, cards);
 }
 

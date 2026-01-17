@@ -284,11 +284,15 @@ describe("Galadriel", () => {
     });
 
     test("has correct setupText", () => {
-      expect(Galadriel.setupText).toBe("Exchange with either the lost card or Gandalf");
+      expect(Galadriel.setupText).toBe(
+        "Exchange with either the lost card or Gandalf"
+      );
     });
 
     test("has correct objective text", () => {
-      expect(Galadriel.objective.text).toBe("Win neither the fewest nor the most tricks");
+      expect(Galadriel.objective.text).toBe(
+        "Win neither the fewest nor the most tricks"
+      );
     });
   });
 });

@@ -272,7 +272,9 @@ describe("Elrond", () => {
     });
 
     test("has correct objective text", () => {
-      expect(Elrond.objective.text).toBe("Every character must win a ring card");
+      expect(Elrond.objective.text).toBe(
+        "Every character must win a ring card"
+      );
     });
   });
 });

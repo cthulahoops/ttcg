@@ -148,7 +148,9 @@ describe("Farmer Maggot", () => {
         { suit: "hills", value: 3 },
       ]);
       // Maggot has 0 + only 1 available = 1, needs 2
-      expect(FarmerMaggot.objective.isCompletable(game, maggotSeat)).toBe(false);
+      expect(FarmerMaggot.objective.isCompletable(game, maggotSeat)).toBe(
+        false
+      );
     });
 
     test("returns true when player has 1 and 1 more available", () => {
@@ -181,7 +183,9 @@ describe("Farmer Maggot", () => {
         { suit: "forests", value: 7 },
       ]);
       // Maggot has 0 + 1 available = 1, needs 2
-      expect(FarmerMaggot.objective.isCompletable(game, maggotSeat)).toBe(false);
+      expect(FarmerMaggot.objective.isCompletable(game, maggotSeat)).toBe(
+        false
+      );
     });
 
     test("returns true for high threat card when cards available", () => {
