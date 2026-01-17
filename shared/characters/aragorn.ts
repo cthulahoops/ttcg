@@ -36,7 +36,7 @@ export const Aragorn: CharacterDefinition = {
       const met = Aragorn.objective.check(game, seat);
       const completable = Aragorn.objective.isCompletable(game, seat);
       const completed = Aragorn.objective.isCompleted(game, seat);
-      return game.displayThreatCard(seat, met, completable, completed);
+      return { met, completable, completed };
     },
   },
 };

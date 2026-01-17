@@ -80,7 +80,7 @@ export const Galadriel: CharacterDefinition = {
       const met = Galadriel.objective.check(game, seat);
       const completable = Galadriel.objective.isCompletable(game, seat);
       const completed = Galadriel.objective.isCompleted(game, seat);
-      return game.displaySimple(met, completable, completed);
+      return { met, completable, completed };
     },
   },
 };

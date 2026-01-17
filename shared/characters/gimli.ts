@@ -32,7 +32,7 @@ export const Gimli: CharacterDefinition = {
       const met = Gimli.objective.check(game, seat);
       const completable = Gimli.objective.isCompletable(game, seat);
       const completed = Gimli.objective.isCompleted(game, seat);
-      return game.displayThreatCard(seat, met, completable, completed);
+      return { met, completable, completed };
     },
   },
 };

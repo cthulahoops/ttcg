@@ -20,7 +20,7 @@ export const Gandalf: CharacterDefinition = {
     renderStatus: (game, seat) => {
       const met = Gandalf.objective.check(game, seat);
       const completed = Gandalf.objective.isCompleted(game, seat);
-      return game.displaySimple(met, true, completed);
+      return { met, completable: true, completed };
     },
   },
 };

@@ -42,7 +42,7 @@ export const Pippin: CharacterDefinition = {
       const met = Pippin.objective.check(game, seat);
       const completable = Pippin.objective.isCompletable(game, seat);
       const completed = Pippin.objective.isCompleted(game, seat);
-      return game.displaySimple(met, completable, completed);
+      return { met, completable, completed };
     },
   },
 };
