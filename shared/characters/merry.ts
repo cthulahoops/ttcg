@@ -5,7 +5,9 @@ export const Merry: CharacterDefinition = {
   setupText: "Exchange with Frodo, Pippin, or Sam",
 
   setup: async (game, seat, setupContext) => {
-    await game.exchange(seat, setupContext, (c: string) => ["Frodo", "Pippin", "Sam"].includes(c));
+    await game.exchange(seat, setupContext, (c: string) =>
+      ["Frodo", "Pippin", "Sam"].includes(c)
+    );
   },
 
   objective: {
@@ -15,7 +17,8 @@ export const Merry: CharacterDefinition = {
       return count === 1 || count === 2;
     },
     isCompletable: (_game, seat) => seat.getTrickCount() < 3,
-    isCompleted: (game, seat) => game.finished && Merry.objective.check(game, seat),
+    isCompleted: (game, seat) =>
+      game.finished && Merry.objective.check(game, seat),
   },
 
   display: {

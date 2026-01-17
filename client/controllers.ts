@@ -1,6 +1,11 @@
 import { Controller } from "@shared/controllers";
 import { createCardElement } from "./utils";
-import type { Card, AnyCard, ChoiceButtonOptions, ChoiceCardOptions } from "@shared/types";
+import type {
+  Card,
+  AnyCard,
+  ChoiceButtonOptions,
+  ChoiceCardOptions,
+} from "@shared/types";
 
 export class HumanController extends Controller {
   private _cardSelectionResolver: ((card: Card) => void) | null;

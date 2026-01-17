@@ -15,7 +15,12 @@ export class Seat {
   controller: Controller;
   isPyramid: boolean;
 
-  constructor(seatIndex: number, controller: Controller, hand: Hand, isPyramid: boolean) {
+  constructor(
+    seatIndex: number,
+    controller: Controller,
+    hand: Hand,
+    isPyramid: boolean
+  ) {
     this.seatIndex = seatIndex;
     this.hand = hand; // Hand instance
     this.character = null; // Character definition from registry
@@ -36,7 +41,8 @@ export class Seat {
       }
     } else {
       // Use player name if available, otherwise fall back to "Player X"
-      const baseName = this.controller.playerName ?? `Player ${this.seatIndex + 1}`;
+      const baseName =
+        this.controller.playerName ?? `Player ${this.seatIndex + 1}`;
       if (this.isPyramid) {
         return `${baseName} (Pyramid)`;
       } else {

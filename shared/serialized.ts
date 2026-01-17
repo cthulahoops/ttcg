@@ -43,7 +43,10 @@ export type SerializedSolitaireHand = {
   cards: (Card | "hidden")[]; // Revealed cards first, then hidden
 };
 
-export type SerializedHand = SerializedPlayerHand | SerializedPyramidHand | SerializedSolitaireHand;
+export type SerializedHand =
+  | SerializedPlayerHand
+  | SerializedPyramidHand
+  | SerializedSolitaireHand;
 
 /**
  * Serialized representation of a Seat.

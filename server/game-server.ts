@@ -59,11 +59,20 @@ export function newGame(controllers: Controller[]): Game {
   }
 
   // Frodo + 1 spare per seat, so numCharacters non-Frodo characters + Frodo = numCharacters + 1 total
-  const availableCharacters = shuffleDeck(allCharacters).slice(0, numCharacters);
+  const availableCharacters = shuffleDeck(allCharacters).slice(
+    0,
+    numCharacters
+  );
   availableCharacters.push("Frodo");
   availableCharacters.sort();
 
-  const gameState = new Game(playerCount, numCharacters, seats, lostCard, startPlayer);
+  const gameState = new Game(
+    playerCount,
+    numCharacters,
+    seats,
+    lostCard,
+    startPlayer
+  );
   gameState.availableCharacters = availableCharacters;
 
   return gameState;
@@ -95,7 +104,11 @@ function dealCards(numCharacters: number) {
   };
 }
 
-function createHand(cards: Card[], playerCount: number, isPyramid: boolean): Hand {
+function createHand(
+  cards: Card[],
+  playerCount: number,
+  isPyramid: boolean
+): Hand {
   if (playerCount == 1) {
     return new SolitaireHand(cards);
   }
@@ -107,7 +120,9 @@ function createHand(cards: Card[], playerCount: number, isPyramid: boolean): Han
 
 function findPlayerWithCard(hands: Card[][], needle: Card): number {
   const idx = hands.findIndex((hand: Card[]) =>
-    hand.some((card) => card.suit === needle.suit && card.value === needle.value)
+    hand.some(
+      (card) => card.suit === needle.suit && card.value === needle.value
+    )
   );
   if (idx < 0) {
     throw new Error("Needle not found");

@@ -6,7 +6,9 @@ export const Galadriel: CharacterDefinition = {
   setupText: "Exchange with either the lost card or Gandalf",
 
   setup: async (game, seat, setupContext) => {
-    const gandalfInPlay = game.seats.some((s) => s.character?.name === "Gandalf");
+    const gandalfInPlay = game.seats.some(
+      (s) => s.character?.name === "Gandalf"
+    );
     const lostCardExists = game.lostCard !== null;
 
     // If Gandalf is in play, exchange is required (choose Gandalf or lost card if available)
@@ -28,7 +30,10 @@ export const Galadriel: CharacterDefinition = {
 
     // Gandalf not in play - lost card exchange is optional
     if (lostCardExists) {
-      const choice = await game.choice(seat, "Exchange with?", ["Lost Card", "Skip"]);
+      const choice = await game.choice(seat, "Exchange with?", [
+        "Lost Card",
+        "Skip",
+      ]);
 
       if (choice === "Lost Card") {
         await game.exchangeWithLostCard(seat, setupContext);
@@ -62,9 +67,12 @@ export const Galadriel: CharacterDefinition = {
       const tricksNeededForGaladriel = targetGaladriel - myCount;
       const tricksNeededForMax = targetMax - maxCount;
 
-      return tricksNeededForGaladriel + tricksNeededForMax <= game.tricksRemaining();
+      return (
+        tricksNeededForGaladriel + tricksNeededForMax <= game.tricksRemaining()
+      );
     },
-    isCompleted: (game, seat) => game.finished && Galadriel.objective.check(game, seat),
+    isCompleted: (game, seat) =>
+      game.finished && Galadriel.objective.check(game, seat),
   },
 
   display: {

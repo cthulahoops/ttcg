@@ -16,7 +16,8 @@ export const BarlimanButterbur: CharacterDefinition = {
     isCompletable: () => {
       return true;
     },
-    isCompleted: (game, seat) => game.finished && BarlimanButterbur.objective.check(game, seat),
+    isCompleted: (game, seat) =>
+      game.finished && BarlimanButterbur.objective.check(game, seat),
   },
 
   display: {

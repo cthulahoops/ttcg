@@ -50,7 +50,10 @@ export class RoomManager {
     const existingLookup = this.socketToPlayer.get(socketId);
     if (existingLookup) {
       // If trying to join the same room, allow reconnection
-      if (existingLookup.roomCode === roomCode && existingLookup.playerId === playerId) {
+      if (
+        existingLookup.roomCode === roomCode &&
+        existingLookup.playerId === playerId
+      ) {
         // Reconnection - just update the player info
         const room = this.rooms.get(roomCode)!;
         const player = room.players.get(playerId);
@@ -60,10 +63,12 @@ export class RoomManager {
           player.name = playerName; // Update name in case it changed
         }
 
-        const players: Player[] = Array.from(room.players.values()).map((p) => ({
-          name: p.name,
-          connected: p.connected,
-        }));
+        const players: Player[] = Array.from(room.players.values()).map(
+          (p) => ({
+            name: p.name,
+            connected: p.connected,
+          })
+        );
 
         return { playerId, players };
       }
@@ -97,7 +102,9 @@ export class RoomManager {
         (p) => p.name === playerName
       );
       if (existingPlayerWithName) {
-        throw new Error(`Player name "${playerName}" is already taken in this room`);
+        throw new Error(
+          `Player name "${playerName}" is already taken in this room`
+        );
       }
 
       player = {
@@ -123,7 +130,9 @@ export class RoomManager {
   /**
    * Leave the current room
    */
-  leaveRoom(socketId: string): { roomCode: string; playerId: string; playerName: string } | null {
+  leaveRoom(
+    socketId: string
+  ): { roomCode: string; playerId: string; playerName: string } | null {
     const lookup = this.socketToPlayer.get(socketId);
     if (!lookup) {
       return null;
@@ -299,7 +308,10 @@ export class RoomManager {
             const seatIndex = seat?.seatIndex;
 
             // If player's seat is not in visibleTo, use the hidden message
-            if (seatIndex === undefined || !options.visibleTo.includes(seatIndex)) {
+            if (
+              seatIndex === undefined ||
+              !options.visibleTo.includes(seatIndex)
+            ) {
               messageToSend = options.hiddenMessage;
             }
           }
@@ -367,8 +379,8 @@ export class RoomManager {
     };
 
     // Ask each controller - first response wins
-    const controllerPromises = Array.from(room.controllers.values()).map((controller) =>
-      controller.chooseButton(options)
+    const controllerPromises = Array.from(room.controllers.values()).map(
+      (controller) => controller.chooseButton(options)
     );
 
     // Timeout defaults to false
@@ -414,7 +426,11 @@ export class RoomManager {
    * @param response - The decision response data
    * @throws Error if player is not in a room or not in a game
    */
-  handleDecisionResponse(socketId: string, requestId: string, response: unknown): void {
+  handleDecisionResponse(
+    socketId: string,
+    requestId: string,
+    response: unknown
+  ): void {
     const lookup = this.socketToPlayer.get(socketId);
     if (!lookup) {
       throw new Error("Not in a room");

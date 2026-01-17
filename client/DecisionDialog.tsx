@@ -10,7 +10,10 @@ export function DecisionDialog({ decision, onRespond }: DecisionDialogProps) {
   switch (decision.type) {
     case "choose_button":
       return (
-        <Dialog title={decision.options.title} message={decision.options.message}>
+        <Dialog
+          title={decision.options.title}
+          message={decision.options.message}
+        >
           {decision.options.buttons.map((btn) => (
             <button
               key={String(btn.value)}
@@ -25,7 +28,10 @@ export function DecisionDialog({ decision, onRespond }: DecisionDialogProps) {
 
     case "choose_card":
       return (
-        <Dialog title={decision.options.title} message={decision.options.message}>
+        <Dialog
+          title={decision.options.title}
+          message={decision.options.message}
+        >
           {decision.options.cards.map((card) => (
             <Card
               key={`${card.suit}-${card.value}`}

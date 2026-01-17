@@ -9,7 +9,9 @@ function parseRoomCode(): string | null {
 }
 
 export function useRoomCode() {
-  const [roomCode, setRoomCode] = useState<string | null>(() => parseRoomCode());
+  const [roomCode, setRoomCode] = useState<string | null>(() =>
+    parseRoomCode()
+  );
 
   // Keep state in sync with back/forward navigation
   useEffect(() => {

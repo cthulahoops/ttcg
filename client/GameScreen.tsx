@@ -15,7 +15,11 @@ type GameScreenProps = {
   onRespond: (requestId: string, response: unknown) => void;
 };
 
-export function GameScreen({ game, pendingDecision, onRespond }: GameScreenProps) {
+export function GameScreen({
+  game,
+  pendingDecision,
+  onRespond,
+}: GameScreenProps) {
   // Rotate seats so viewer's seat appears first
   const rotatedSeats = [
     ...game.seats.slice(game.viewerSeat),
@@ -46,7 +50,9 @@ export function GameScreen({ game, pendingDecision, onRespond }: GameScreenProps
       {showDialog && (
         <DecisionDialog
           decision={pendingDecision.decision}
-          onRespond={(response) => onRespond(pendingDecision.requestId, response)}
+          onRespond={(response) =>
+            onRespond(pendingDecision.requestId, response)
+          }
         />
       )}
 
@@ -60,7 +66,9 @@ export function GameScreen({ game, pendingDecision, onRespond }: GameScreenProps
           const isActive = seat.seatIndex === game.currentPlayer;
           // Only pass selectable cards to the active player's seat
           const selectableCards =
-            isActive && selectableCardsFromDecision ? selectableCardsFromDecision : null;
+            isActive && selectableCardsFromDecision
+              ? selectableCardsFromDecision
+              : null;
 
           return (
             <PlayerSeat

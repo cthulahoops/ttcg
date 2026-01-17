@@ -6,7 +6,9 @@ export const Aragorn: CharacterDefinition = {
 
   setup: async (game, seat, setupContext) => {
     await game.chooseThreatCard(seat);
-    await game.exchange(seat, setupContext, (c: string) => ["Gimli", "Legolas"].includes(c));
+    await game.exchange(seat, setupContext, (c: string) =>
+      ["Gimli", "Legolas"].includes(c)
+    );
   },
 
   objective: {
@@ -25,7 +27,8 @@ export const Aragorn: CharacterDefinition = {
       const tricksNeeded = target - current;
       return game.tricksRemaining() >= tricksNeeded;
     },
-    isCompleted: (game, seat) => game.finished && Aragorn.objective.check(game, seat),
+    isCompleted: (game, seat) =>
+      game.finished && Aragorn.objective.check(game, seat),
   },
 
   display: {

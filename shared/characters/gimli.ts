@@ -2,13 +2,16 @@ import type { CharacterDefinition } from "./types";
 
 export const Gimli: CharacterDefinition = {
   name: "Gimli",
-  setupText: "Draw a Mountains threat card, then exchange with Legolas or Aragorn",
+  setupText:
+    "Draw a Mountains threat card, then exchange with Legolas or Aragorn",
 
   setup: async (game, seat, setupContext) => {
     await game.drawThreatCard(seat, {
       exclude: game.lostCard?.value,
     });
-    await game.exchange(seat, setupContext, (c: string) => ["Legolas", "Aragorn"].includes(c));
+    await game.exchange(seat, setupContext, (c: string) =>
+      ["Legolas", "Aragorn"].includes(c)
+    );
   },
 
   objective: {

@@ -5,7 +5,10 @@ type LobbyMenuProps = {
   onJoinRoom: (playerName: string, roomCode: string) => void;
 };
 
-export function LobbyMenu({ playerName: initialPlayerName, onJoinRoom }: LobbyMenuProps) {
+export function LobbyMenu({
+  playerName: initialPlayerName,
+  onJoinRoom,
+}: LobbyMenuProps) {
   const [playerName, setPlayerName] = useState(initialPlayerName ?? "");
   const [roomCode, setRoomCode] = useState("");
   const [error, setError] = useState<string | null>(null);

@@ -13,7 +13,13 @@ export const CARDS_PER_SUIT: Record<Suit, number> = {
   rings: 5,
 };
 
-export const SUITS: Suit[] = ["mountains", "shadows", "forests", "hills", "rings"];
+export const SUITS: Suit[] = [
+  "mountains",
+  "shadows",
+  "forests",
+  "hills",
+  "rings",
+];
 
 type BaseCard<T> = { suit: T; value: number };
 

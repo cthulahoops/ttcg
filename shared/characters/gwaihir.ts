@@ -3,7 +3,9 @@ import type { Seat } from "../seat";
 import type { CharacterDefinition } from "./types";
 
 const countMountainTricks = (seat: Seat) =>
-  seat.tricksWon.filter((trick) => trick.cards.some((c: Card) => c.suit === "mountains")).length;
+  seat.tricksWon.filter((trick) =>
+    trick.cards.some((c: Card) => c.suit === "mountains")
+  ).length;
 
 export const Gwaihir: CharacterDefinition = {
   name: "Gwaihir",

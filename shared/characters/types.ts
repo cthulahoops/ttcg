@@ -19,7 +19,11 @@ export interface CharacterDisplay {
 export interface CharacterDefinition {
   name: string;
   setupText: string;
-  setup: (game: Game, seat: Seat, setupContext: GameSetupContext) => Promise<void>;
+  setup: (
+    game: Game,
+    seat: Seat,
+    setupContext: GameSetupContext
+  ) => Promise<void>;
   objective: CharacterObjective;
   display: CharacterDisplay;
 }

@@ -12,7 +12,9 @@ export const Glorfindel: CharacterDefinition = {
   objective: {
     text: "Win every Shadows card",
     check: (_game, seat) => {
-      const shadowsCards = seat.getAllWonCards().filter((c: Card) => c.suit === "shadows");
+      const shadowsCards = seat
+        .getAllWonCards()
+        .filter((c: Card) => c.suit === "shadows");
       return shadowsCards.length === CARDS_PER_SUIT.shadows;
     },
     isCompletable: (game, seat) => {
@@ -28,7 +30,9 @@ export const Glorfindel: CharacterDefinition = {
 
   display: {
     renderStatus: (game, seat) => {
-      const shadowsCards = seat.getAllWonCards().filter((c: Card) => c.suit === "shadows");
+      const shadowsCards = seat
+        .getAllWonCards()
+        .filter((c: Card) => c.suit === "shadows");
       const met = Glorfindel.objective.check(game, seat);
       const completable = Glorfindel.objective.isCompletable(game, seat);
       const completed = Glorfindel.objective.isCompleted(game, seat);

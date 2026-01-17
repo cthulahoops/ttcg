@@ -6,7 +6,9 @@ export const Pippin: CharacterDefinition = {
   setupText: "Exchange with Frodo, Merry, or Sam",
 
   setup: async (game, seat, setupContext) => {
-    await game.exchange(seat, setupContext, (c: string) => ["Frodo", "Merry", "Sam"].includes(c));
+    await game.exchange(seat, setupContext, (c: string) =>
+      ["Frodo", "Merry", "Sam"].includes(c)
+    );
   },
 
   objective: {
@@ -31,7 +33,8 @@ export const Pippin: CharacterDefinition = {
       // Can still complete if other players can catch up with remaining tricks
       return totalGap <= game.tricksRemaining();
     },
-    isCompleted: (game, seat) => game.finished && Pippin.objective.check(game, seat),
+    isCompleted: (game, seat) =>
+      game.finished && Pippin.objective.check(game, seat),
   },
 
   display: {

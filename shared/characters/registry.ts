@@ -1,7 +1,11 @@
 // Character Registry
 // Re-exports character definitions from individual files
 
-export type { CharacterDefinition, CharacterObjective, CharacterDisplay } from "./types";
+export type {
+  CharacterDefinition,
+  CharacterObjective,
+  CharacterDisplay,
+} from "./types";
 
 import { Frodo } from "./frodo";
 import { Gandalf } from "./gandalf";

@@ -1,5 +1,10 @@
 import { delay } from "./utils";
-import type { Card, AnyCard, ChoiceButtonOptions, ChoiceCardOptions } from "./types";
+import type {
+  Card,
+  AnyCard,
+  ChoiceButtonOptions,
+  ChoiceCardOptions,
+} from "./types";
 import type { Game } from "./game";
 import type { Seat } from "./seat";
 
@@ -10,7 +15,9 @@ export abstract class Controller {
     throw new Error("Abstract");
   }
 
-  async chooseCard<T extends AnyCard = AnyCard>(_options: ChoiceCardOptions<T>): Promise<T> {
+  async chooseCard<T extends AnyCard = AnyCard>(
+    _options: ChoiceCardOptions<T>
+  ): Promise<T> {
     throw new Error("Abstract");
   }
 
@@ -35,7 +42,9 @@ export class AIController extends Controller {
     return randomChoice(buttons).value;
   }
 
-  async chooseCard<T extends AnyCard = AnyCard>({ cards }: ChoiceCardOptions<T>): Promise<T> {
+  async chooseCard<T extends AnyCard = AnyCard>({
+    cards,
+  }: ChoiceCardOptions<T>): Promise<T> {
     await delay(this.delay);
     return randomChoice(cards);
   }
@@ -60,7 +69,9 @@ export class ProxyController extends Controller {
     return this.realController.chooseButton(options);
   }
 
-  chooseCard<T extends AnyCard = AnyCard>(options: ChoiceCardOptions<T>): Promise<T> {
+  chooseCard<T extends AnyCard = AnyCard>(
+    options: ChoiceCardOptions<T>
+  ): Promise<T> {
     if (!this.realController) {
       throw new Error("Controller must be assigned!");
     }

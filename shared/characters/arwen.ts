@@ -10,7 +10,9 @@ export const Arwen: CharacterDefinition = {
   setupText: "Exchange with Elrond or Aragorn",
 
   setup: async (game, seat, setupContext) => {
-    await game.exchange(seat, setupContext, (c: string) => ["Elrond", "Aragorn"].includes(c));
+    await game.exchange(seat, setupContext, (c: string) =>
+      ["Elrond", "Aragorn"].includes(c)
+    );
   },
 
   objective: {
@@ -41,7 +43,8 @@ export const Arwen: CharacterDefinition = {
 
       return myCounts + forestsRemaining > othersMaxCounts;
     },
-    isCompleted: (game, seat) => game.finished && Arwen.objective.check(game, seat),
+    isCompleted: (game, seat) =>
+      game.finished && Arwen.objective.check(game, seat),
   },
 
   display: {

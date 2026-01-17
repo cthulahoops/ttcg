@@ -19,7 +19,9 @@ export function useGameWebSocket() {
   const [connected, setConnected] = useState<boolean>(false);
 
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
   const reconnectAttemptRef = useRef(0);
 
   useEffect(() => {
@@ -51,9 +53,14 @@ export function useGameWebSocket() {
         setConnected(false);
 
         // Reconnect with exponential backoff (max 10 seconds)
-        const delay = Math.min(1000 * Math.pow(2, reconnectAttemptRef.current), 10000);
+        const delay = Math.min(
+          1000 * Math.pow(2, reconnectAttemptRef.current),
+          10000
+        );
         reconnectAttemptRef.current++;
-        console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttemptRef.current})`);
+        console.log(
+          `Reconnecting in ${delay}ms (attempt ${reconnectAttemptRef.current})`
+        );
         reconnectTimeoutRef.current = setTimeout(connect, delay);
       };
     }

@@ -10,7 +10,12 @@ type RoomLobbyProps = {
   onLeaveRoom: () => void;
 };
 
-export function RoomLobby({ roomCode, players, onStartGame, onLeaveRoom }: RoomLobbyProps) {
+export function RoomLobby({
+  roomCode,
+  players,
+  onStartGame,
+  onLeaveRoom,
+}: RoomLobbyProps) {
   const canStartGame = players.length >= 1;
 
   return (
@@ -28,7 +33,10 @@ export function RoomLobby({ roomCode, players, onStartGame, onLeaveRoom }: RoomL
 
         <ul>
           {players.map((player) => (
-            <li key={player.name} className={!player.connected ? "disconnected" : undefined}>
+            <li
+              key={player.name}
+              className={!player.connected ? "disconnected" : undefined}
+            >
               {player.name}
             </li>
           ))}

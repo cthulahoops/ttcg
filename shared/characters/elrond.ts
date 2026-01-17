@@ -35,19 +35,24 @@ export const Elrond: CharacterDefinition = {
     text: "Every character must win a ring card",
     check: (game, _seat) => {
       return game.seats.every((s: Seat) => {
-        const ringCards = s.getAllWonCards().filter((c: Card) => c.suit === "rings");
+        const ringCards = s
+          .getAllWonCards()
+          .filter((c: Card) => c.suit === "rings");
         return ringCards.length >= 1;
       });
     },
     isCompletable: (game, _seat) => {
       const seatsNeedingRing = game.seats.filter((s: Seat) => {
-        const ringCards = s.getAllWonCards().filter((c: Card) => c.suit === "rings");
+        const ringCards = s
+          .getAllWonCards()
+          .filter((c: Card) => c.suit === "rings");
         return ringCards.length === 0;
       }).length;
 
       const totalRingCardsWon = game.seats.reduce(
         (total: number, s: Seat) =>
-          total + s.getAllWonCards().filter((c: Card) => c.suit === "rings").length,
+          total +
+          s.getAllWonCards().filter((c: Card) => c.suit === "rings").length,
         0
       );
       const ringsRemaining = 5 - totalRingCardsWon;
@@ -60,7 +65,9 @@ export const Elrond: CharacterDefinition = {
   display: {
     renderStatus: (game, seat) => {
       const seatsWithRings = game.seats.filter((s: Seat) => {
-        const ringCards = s.getAllWonCards().filter((c: Card) => c.suit === "rings");
+        const ringCards = s
+          .getAllWonCards()
+          .filter((c: Card) => c.suit === "rings");
         return ringCards.length >= 1;
       }).length;
 

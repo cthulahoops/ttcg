@@ -1,5 +1,10 @@
 import { Controller } from "../shared/controllers";
-import type { Card, AnyCard, ChoiceButtonOptions, ChoiceCardOptions } from "../shared/types";
+import type {
+  Card,
+  AnyCard,
+  ChoiceButtonOptions,
+  ChoiceCardOptions,
+} from "../shared/types";
 import type { ServerMessage, DecisionRequest } from "../shared/protocol";
 import type { Game } from "../shared/game";
 import type { Seat } from "../shared/seat";
@@ -18,7 +23,11 @@ export class NetworkController extends Controller {
   // Using PendingRequest<unknown> since requests store heterogeneous response types
   private pendingRequests: Map<string, PendingRequest<unknown>>;
 
-  constructor(sendMessage: (message: ServerMessage) => void, playerId: string, playerName: string) {
+  constructor(
+    sendMessage: (message: ServerMessage) => void,
+    playerId: string,
+    playerName: string
+  ) {
     super();
     this.playerId = playerId;
     this.sendMessage = sendMessage;
@@ -38,7 +47,9 @@ export class NetworkController extends Controller {
       this.pendingRequests.delete(requestId);
       pending.resolve(response);
     } else {
-      console.log(`[NetworkController] Received response for unknown request ${requestId}`);
+      console.log(
+        `[NetworkController] Received response for unknown request ${requestId}`
+      );
     }
   }
 
@@ -47,7 +58,9 @@ export class NetworkController extends Controller {
    * Called when a player reconnects to ensure they receive any decisions they missed
    */
   resendPendingRequests(): void {
-    console.log(`[NetworkController] Resending ${this.pendingRequests.size} pending requests`);
+    console.log(
+      `[NetworkController] Resending ${this.pendingRequests.size} pending requests`
+    );
     for (const pending of this.pendingRequests.values()) {
       console.log(
         `[NetworkController] Resending request ${pending.requestId} with decision type: ${pending.decision?.type}`
@@ -97,7 +110,9 @@ export class NetworkController extends Controller {
     });
   }
 
-  async chooseCard<T extends AnyCard = AnyCard>(options: ChoiceCardOptions<T>): Promise<T> {
+  async chooseCard<T extends AnyCard = AnyCard>(
+    options: ChoiceCardOptions<T>
+  ): Promise<T> {
     return this.sendRequest<T>({
       type: "choose_card",
       options,

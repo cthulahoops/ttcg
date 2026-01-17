@@ -10,17 +10,40 @@ type PlayerSeatProps = {
   onSelectCard?: (card: CardType) => void;
 };
 
-export function PlayerSeat({ seat, isActive, selectableCards, onSelectCard }: PlayerSeatProps) {
-  const { seatIndex, playerName, character, objective, tricksWon, status, threatCard, hand } = seat;
+export function PlayerSeat({
+  seat,
+  isActive,
+  selectableCards,
+  onSelectCard,
+}: PlayerSeatProps) {
+  const {
+    seatIndex,
+    playerName,
+    character,
+    objective,
+    tricksWon,
+    status,
+    threatCard,
+    hand,
+  } = seat;
 
   // Show character name when assigned, otherwise player name
   const displayName = character ?? playerName ?? `Player ${seatIndex + 1}`;
 
   // Compact status icon
-  const statusIcon = status ? (status.completed ? "★" : status.met ? "✓" : "✗") : null;
+  const statusIcon = status
+    ? status.completed
+      ? "★"
+      : status.met
+        ? "✓"
+        : "✗"
+    : null;
 
   return (
-    <section className={`player ${isActive ? "active" : ""}`} data-player={seatIndex + 1}>
+    <section
+      className={`player ${isActive ? "active" : ""}`}
+      data-player={seatIndex + 1}
+    >
       {/* Compact header for mobile */}
       <div className="player-header-compact">
         <h3>{displayName}</h3>
@@ -60,11 +83,19 @@ export function PlayerSeat({ seat, isActive, selectableCards, onSelectCard }: Pl
         </div>
 
         <div className="threat-card-area">
-          {threatCard !== null && <Card card={{ suit: "threat", value: threatCard }} />}
+          {threatCard !== null && (
+            <Card card={{ suit: "threat", value: threatCard }} />
+          )}
         </div>
       </div>
 
-      {hand && <Hand hand={hand} selectableCards={selectableCards} onSelectCard={onSelectCard} />}
+      {hand && (
+        <Hand
+          hand={hand}
+          selectableCards={selectableCards}
+          onSelectCard={onSelectCard}
+        />
+      )}
     </section>
   );
 }

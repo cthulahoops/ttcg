@@ -15,15 +15,22 @@ export const Frodo: CharacterDefinition = {
     },
     check: (game, seat) => {
       const ringsNeeded = game.numCharacters === 3 ? 4 : 2;
-      const ringCards = seat.getAllWonCards().filter((c: Card) => c.suit === "rings");
+      const ringCards = seat
+        .getAllWonCards()
+        .filter((c: Card) => c.suit === "rings");
       return ringCards.length >= ringsNeeded;
     },
     isCompletable: (game, seat) => {
       const ringsNeeded = game.numCharacters === 3 ? 4 : 2;
-      const myRings = seat.getAllWonCards().filter((c: Card) => c.suit === "rings").length;
+      const myRings = seat
+        .getAllWonCards()
+        .filter((c: Card) => c.suit === "rings").length;
       const othersRings = game.seats.reduce((total: number, s: Seat) => {
         if (s.seatIndex !== seat.seatIndex) {
-          return total + s.getAllWonCards().filter((c: Card) => c.suit === "rings").length;
+          return (
+            total +
+            s.getAllWonCards().filter((c: Card) => c.suit === "rings").length
+          );
         }
         return total;
       }, 0);
@@ -35,7 +42,9 @@ export const Frodo: CharacterDefinition = {
 
   display: {
     renderStatus: (game, seat) => {
-      const ringCards = seat.getAllWonCards().filter((c: Card) => c.suit === "rings");
+      const ringCards = seat
+        .getAllWonCards()
+        .filter((c: Card) => c.suit === "rings");
       const ringsNeeded = game.numCharacters === 3 ? 4 : 2;
       const met = ringCards.length >= ringsNeeded;
       const completable = Frodo.objective.isCompletable(game, seat);
