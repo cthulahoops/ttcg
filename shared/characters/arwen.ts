@@ -30,12 +30,12 @@ export const Arwen: CharacterDefinition = {
       const othersMaxCounts = Math.max(
         ...game.seats
           .filter((s: Seat) => s.seatIndex !== seat.seatIndex)
-          .map((s: Seat) => countForestsWon(s)),
+          .map((s: Seat) => countForestsWon(s))
       );
 
       const totalForestsWon = game.seats.reduce(
         (total: number, s: Seat) => total + countForestsWon(s),
-        0,
+        0
       );
       const forestsRemaining = CARDS_PER_SUIT.forests - totalForestsWon;
 

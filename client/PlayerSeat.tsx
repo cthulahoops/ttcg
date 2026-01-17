@@ -11,28 +11,13 @@ type PlayerSeatProps = {
 };
 
 export function PlayerSeat({ seat, isActive, selectableCards, onSelectCard }: PlayerSeatProps) {
-  const {
-    seatIndex,
-    playerName,
-    character,
-    objective,
-    tricksWon,
-    status,
-    threatCard,
-    hand,
-  } = seat;
+  const { seatIndex, playerName, character, objective, tricksWon, status, threatCard, hand } = seat;
 
   // Show character name when assigned, otherwise player name
   const displayName = character ?? playerName ?? `Player ${seatIndex + 1}`;
 
   // Compact status icon
-  const statusIcon = status
-    ? status.completed
-      ? "★"
-      : status.met
-        ? "✓"
-        : "✗"
-    : null;
+  const statusIcon = status ? (status.completed ? "★" : status.met ? "✓" : "✗") : null;
 
   return (
     <section className={`player ${isActive ? "active" : ""}`} data-player={seatIndex + 1}>

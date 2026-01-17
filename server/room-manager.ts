@@ -367,8 +367,8 @@ export class RoomManager {
     };
 
     // Ask each controller - first response wins
-    const controllerPromises = Array.from(room.controllers.values()).map(
-      (controller) => controller.chooseButton(options)
+    const controllerPromises = Array.from(room.controllers.values()).map((controller) =>
+      controller.chooseButton(options)
     );
 
     // Timeout defaults to false

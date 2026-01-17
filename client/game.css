@@ -658,8 +658,12 @@ button:hover {
     --card-height: 68px;
   }
 
-  .value { font-size: 18px; }
-  .suit { font-size: 8px; }
+  .value {
+    font-size: 18px;
+  }
+  .suit {
+    font-size: 8px;
+  }
 
   /* Reduced section padding */
   section {

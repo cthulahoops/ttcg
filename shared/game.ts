@@ -708,9 +708,7 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
       !isGameOver(gameState) // No need to choose if game is ending
     ) {
       // Build list of players who have cards to play
-      const eligibleLeaders = gameState.seats.filter(
-        (seat) => !seat.hand.isEmpty()
-      );
+      const eligibleLeaders = gameState.seats.filter((seat) => !seat.hand.isEmpty());
 
       if (eligibleLeaders.length > 1) {
         // Offer choice only if there's more than one option
