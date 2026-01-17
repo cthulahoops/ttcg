@@ -1,4 +1,4 @@
-import type { Card } from "../types";
+import type { Card, ObjectiveCard } from "../types";
 import type { CharacterDefinition } from "./types";
 
 export const Goldberry: CharacterDefinition = {
@@ -66,6 +66,10 @@ export const Goldberry: CharacterDefinition = {
       const completable = Goldberry.objective.isCompletable(game, seat);
       const completed = Goldberry.objective.isCompleted(game, seat);
       return { met, completable, completed };
+    },
+    getObjectiveCards: (_game, seat) => {
+      const cards: ObjectiveCard[] = Array(seat.getTrickCount()).fill("trick");
+      return { cards };
     },
   },
 };

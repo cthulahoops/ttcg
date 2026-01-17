@@ -23,9 +23,9 @@ export function PlayerSeat({
     objective,
     tricksWon,
     status,
-    threatCard,
     hand,
     asideCard,
+    objectiveCards,
   } = seat;
 
   // Show character name when assigned, otherwise player name
@@ -51,9 +51,16 @@ export function PlayerSeat({
         {statusIcon && <span className="compact-status">{statusIcon}</span>}
         <span className="compact-tricks">T:{tricksWon.length}</span>
         <span className="compact-objective">{objective}</span>
-        {threatCard !== null && (
-          <div className="threat-card-inline">
-            <Card card={{ suit: "threat", value: threatCard }} />
+        {objectiveCards && objectiveCards.cards.length > 0 && (
+          <div className="objective-cards-inline">
+            {objectiveCards.cards.slice(0, 3).map((card, i) => (
+              <Card key={i} card={card} />
+            ))}
+            {objectiveCards.cards.length > 3 && (
+              <span className="objective-cards-overflow">
+                +{objectiveCards.cards.length - 3}
+              </span>
+            )}
           </div>
         )}
       </div>
@@ -83,10 +90,10 @@ export function PlayerSeat({
           )}
         </div>
 
-        <div className="threat-card-area">
-          {threatCard !== null && (
-            <Card card={{ suit: "threat", value: threatCard }} />
-          )}
+        <div className="objective-cards-area">
+          {objectiveCards?.cards.map((card, i) => (
+            <Card key={i} card={card} />
+          ))}
         </div>
 
         {asideCard && (

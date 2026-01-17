@@ -1,3 +1,4 @@
+import type { ObjectiveCard } from "../types";
 import type { CharacterDefinition } from "./types";
 
 export const Sam: CharacterDefinition = {
@@ -33,6 +34,16 @@ export const Sam: CharacterDefinition = {
       const completable = Sam.objective.isCompletable(game, seat);
       const completed = Sam.objective.isCompleted(game, seat);
       return { met, completable, completed };
+    },
+    getObjectiveCards: (game, seat) => {
+      const cards: ObjectiveCard[] = [];
+      if (seat.threatCard !== null) {
+        cards.push({ suit: "threat", value: seat.threatCard });
+        if (game.hasCard(seat, "hills", seat.threatCard)) {
+          cards.push({ suit: "hills", value: seat.threatCard });
+        }
+      }
+      return { cards };
     },
   },
 };

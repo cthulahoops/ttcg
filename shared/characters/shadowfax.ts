@@ -60,5 +60,13 @@ export const Shadowfax: CharacterDefinition = {
         details: `Tricks with hills: ${tricksWithHills.length}/2`,
       };
     },
+    getObjectiveCards: (_game, seat) => {
+      // Show hills cards won in tricks
+      const hillsCards = seat
+        .getAllWonCards()
+        .filter((c: Card) => c.suit === "hills")
+        .sort((a, b) => a.value - b.value);
+      return { cards: hillsCards };
+    },
   },
 };

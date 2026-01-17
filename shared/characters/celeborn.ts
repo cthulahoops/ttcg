@@ -43,5 +43,24 @@ export const Celeborn: CharacterDefinition = {
         details: ranksWithCounts || undefined,
       };
     },
+    getObjectiveCards: (_game, seat) => {
+      const rankCounts: Record<number, Card[]> = {};
+      seat.getAllWonCards().forEach((card: Card) => {
+        if (!rankCounts[card.value]) {
+          rankCounts[card.value] = [];
+        }
+        rankCounts[card.value]!.push(card);
+      });
+
+      // Find the best rank (highest count, at least 2)
+      let bestCards: Card[] = [];
+      for (const cards of Object.values(rankCounts)) {
+        if (cards.length >= 2 && cards.length > bestCards.length) {
+          bestCards = cards;
+        }
+      }
+
+      return { cards: bestCards };
+    },
   },
 };

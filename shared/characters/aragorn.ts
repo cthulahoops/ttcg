@@ -1,3 +1,4 @@
+import type { ObjectiveCard } from "../types";
 import type { CharacterDefinition } from "./types";
 
 export const Aragorn: CharacterDefinition = {
@@ -37,6 +38,14 @@ export const Aragorn: CharacterDefinition = {
       const completable = Aragorn.objective.isCompletable(game, seat);
       const completed = Aragorn.objective.isCompleted(game, seat);
       return { met, completable, completed };
+    },
+    getObjectiveCards: (_game, seat) => {
+      const cards: ObjectiveCard[] = [];
+      if (seat.threatCard !== null) {
+        cards.push({ suit: "threat", value: seat.threatCard });
+      }
+      cards.push(...Array(seat.getTrickCount()).fill("trick"));
+      return { cards };
     },
   },
 };

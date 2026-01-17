@@ -41,6 +41,11 @@ function serializeSeat(
     asideCard = isOwnSeat || handRevealed ? seat.asideCard : "hidden";
   }
 
+  const objectiveCards = seat.character?.display.getObjectiveCards?.(
+    game,
+    seat
+  );
+
   return {
     seatIndex: seat.seatIndex,
     playerName: seat.controller.playerName,
@@ -52,6 +57,7 @@ function serializeSeat(
     objective,
     hand: seat.hand ? seat.hand.serializeForViewer(isOwnSeat) : null,
     asideCard,
+    objectiveCards,
   };
 }
 

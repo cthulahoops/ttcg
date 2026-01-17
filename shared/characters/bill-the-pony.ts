@@ -1,3 +1,4 @@
+import type { ObjectiveCard } from "../types";
 import type { CharacterDefinition } from "./types";
 
 export const BillThePony: CharacterDefinition = {
@@ -43,6 +44,10 @@ export const BillThePony: CharacterDefinition = {
       const completable = BillThePony.objective.isCompletable(game, seat);
       const completed = BillThePony.objective.isCompleted(game, seat);
       return { met, completable, completed };
+    },
+    getObjectiveCards: (_game, seat) => {
+      const cards: ObjectiveCard[] = Array(seat.getTrickCount()).fill("trick");
+      return { cards };
     },
   },
 };

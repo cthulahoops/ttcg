@@ -60,5 +60,12 @@ export const Arwen: CharacterDefinition = {
         details: `Forests: ${countForestsWon(seat)}`,
       };
     },
+    getObjectiveCards: (_game, seat) => {
+      const cards = seat
+        .getAllWonCards()
+        .filter((c: Card) => c.suit === "forests")
+        .sort((a, b) => a.value - b.value);
+      return { cards };
+    },
   },
 };

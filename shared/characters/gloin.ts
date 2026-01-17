@@ -73,5 +73,12 @@ export const Gloin: CharacterDefinition = {
         details: `Mountains: ${myCounts}`,
       };
     },
+    getObjectiveCards: (_game, seat) => {
+      const cards = seat
+        .getAllWonCards()
+        .filter((c: Card) => c.suit === "mountains")
+        .sort((a, b) => a.value - b.value);
+      return { cards };
+    },
   },
 };
