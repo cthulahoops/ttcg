@@ -84,8 +84,8 @@ export class Game {
 
   get finished(): boolean {
     // Game is finished when (numCharacters - 1) players have no cards
-    const playersWithNoCards = this.seats.filter((seat) =>
-      seat.hand.isEmpty()
+    const playersWithNoCards = this.seats.filter(
+      (seat) => seat.hand.isEmpty() && !seat.asideCard
     ).length;
     return playersWithNoCards >= this.numCharacters - 1;
   }
