@@ -22,6 +22,7 @@ export abstract class Hand {
   getCards?(): Card[];
 
   abstract reveal(): void;
+  abstract isRevealed(): boolean;
 }
 
 export class PlayerHand extends Hand {
@@ -36,6 +37,10 @@ export class PlayerHand extends Hand {
 
   reveal() {
     this._revealed = true;
+  }
+
+  isRevealed(): boolean {
+    return this._revealed;
   }
 
   addCard(card: Card): void {
@@ -127,6 +132,11 @@ export class PyramidHand extends Hand {
     for (let i = 0; i < this._faceUp.length; i++) {
       this._faceUp[i] = true;
     }
+  }
+
+  // Pyramid is always visible to players (it's a shared hand)
+  isRevealed(): boolean {
+    return true;
   }
 
   addCard(card: Card): void {
@@ -282,6 +292,11 @@ export class SolitaireHand extends Hand {
       this._revealedCards.push(card);
     }
     this._hiddenCards = [];
+  }
+
+  // Solitaire is single-player so aside card is always visible to the player
+  isRevealed(): boolean {
+    return true;
   }
 
   constructor(cards: Card[] = []) {

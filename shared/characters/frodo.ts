@@ -1,6 +1,31 @@
 import type { Card } from "../types";
 import type { Seat } from "../seat";
+import type { Game } from "../game";
 import type { CharacterDefinition } from "./types";
+
+/**
+ * Calculate how many rings Frodo needs to win.
+ * In 3-player mode and solo mode, Frodo normally needs 4 rings.
+ * However, if Elrond is in the game (requiring all players to win a ring),
+ * Frodo only needs 2 rings to make the combined objectives achievable.
+ */
+function getRingsNeeded(game: Game): number {
+  // Check if Elrond is in play
+  const elrondInPlay = game.seats.some(
+    (s: Seat) => s.character?.name === "Elrond"
+  );
+
+  // Solo mode (1 player controls all 4 seats) uses the harder 4-ring requirement
+  const isSoloMode = game.playerCount === 1;
+
+  // In 3-player with Elrond, reduce to 2 (otherwise 4 + 3 players needing rings = impossible)
+  if (game.numCharacters === 3 && elrondInPlay) {
+    return 2;
+  }
+
+  // Standard: 3-player and solo need 4, all others need 2
+  return game.numCharacters === 3 || isSoloMode ? 4 : 2;
+}
 
 export const Frodo: CharacterDefinition = {
   name: "Frodo",
@@ -10,18 +35,19 @@ export const Frodo: CharacterDefinition = {
 
   objective: {
     getText: (game) => {
-      const needed = game.numCharacters === 3 ? "four" : "two";
-      return `Win at least ${needed} ring cards`;
+      const needed = getRingsNeeded(game);
+      const neededText = needed === 4 ? "four" : "two";
+      return `Win at least ${neededText} ring cards`;
     },
     check: (game, seat) => {
-      const ringsNeeded = game.numCharacters === 3 ? 4 : 2;
+      const ringsNeeded = getRingsNeeded(game);
       const ringCards = seat
         .getAllWonCards()
         .filter((c: Card) => c.suit === "rings");
       return ringCards.length >= ringsNeeded;
     },
     isCompletable: (game, seat) => {
-      const ringsNeeded = game.numCharacters === 3 ? 4 : 2;
+      const ringsNeeded = getRingsNeeded(game);
       const myRings = seat
         .getAllWonCards()
         .filter((c: Card) => c.suit === "rings").length;
@@ -45,7 +71,7 @@ export const Frodo: CharacterDefinition = {
       const ringCards = seat
         .getAllWonCards()
         .filter((c: Card) => c.suit === "rings");
-      const ringsNeeded = game.numCharacters === 3 ? 4 : 2;
+      const ringsNeeded = getRingsNeeded(game);
       const met = ringCards.length >= ringsNeeded;
       const completable = Frodo.objective.isCompletable(game, seat);
       const completed = Frodo.objective.isCompleted(game, seat);

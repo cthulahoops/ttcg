@@ -423,23 +423,6 @@ export class Game {
     this.notifyStateChange();
   }
 
-  displaySimple(
-    met: boolean,
-    completable: boolean,
-    completed: boolean
-  ): { met: boolean; completable: boolean; completed: boolean } {
-    return { met, completable, completed };
-  }
-
-  displayThreatCard(
-    _seat: Seat,
-    met: boolean,
-    completable: boolean,
-    completed: boolean
-  ): { met: boolean; completable: boolean; completed: boolean } {
-    return this.displaySimple(met, completable, completed);
-  }
-
   async giveCard(fromSeat: Seat, toSeat: Seat): Promise<void> {
     const availableCards = fromSeat.hand.getAvailableCards();
 

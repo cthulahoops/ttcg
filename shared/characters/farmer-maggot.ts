@@ -54,7 +54,7 @@ export const FarmerMaggot: CharacterDefinition = {
   display: {
     renderStatus: (game, seat) => {
       if (!seat.threatCard) {
-        return game.displaySimple(false, true, false);
+        return { met: false, completable: true, completed: false };
       }
 
       const matchingCards = seat

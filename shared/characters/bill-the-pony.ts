@@ -42,7 +42,7 @@ export const BillThePony: CharacterDefinition = {
       const met = BillThePony.objective.check(game, seat);
       const completable = BillThePony.objective.isCompletable(game, seat);
       const completed = BillThePony.objective.isCompleted(game, seat);
-      return game.displaySimple(met, completable, completed);
+      return { met, completable, completed };
     },
   },
 };

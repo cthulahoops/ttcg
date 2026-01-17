@@ -155,8 +155,6 @@ The `Game` class tracks:
 **Game State Queries:**
 - `hasCard(seat, suit, value)` - Check if a seat has won a specific card
 - `cardGone(seat, suit, value)` - Check if a card has been won by someone else
-- `displaySimple(met, completable)` - Return status icon HTML
-- `displayThreatCard(seat, met, completable)` - Return threat card status HTML
 
 #### Examples
 
