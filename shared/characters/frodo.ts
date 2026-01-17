@@ -5,7 +5,7 @@ import type { CharacterDefinition } from "./types";
 
 /**
  * Calculate how many rings Frodo needs to win.
- * In 3-player mode, Frodo normally needs 4 rings.
+ * In 3-player mode and solo mode, Frodo normally needs 4 rings.
  * However, if Elrond is in the game (requiring all players to win a ring),
  * Frodo only needs 2 rings to make the combined objectives achievable.
  */
@@ -15,13 +15,16 @@ function getRingsNeeded(game: Game): number {
     (s: Seat) => s.character?.name === "Elrond"
   );
 
+  // Solo mode (1 player controls all 4 seats) uses the harder 4-ring requirement
+  const isSoloMode = game.playerCount === 1;
+
   // In 3-player with Elrond, reduce to 2 (otherwise 4 + 3 players needing rings = impossible)
   if (game.numCharacters === 3 && elrondInPlay) {
     return 2;
   }
 
-  // Standard: 3-player needs 4, all others need 2
-  return game.numCharacters === 3 ? 4 : 2;
+  // Standard: 3-player and solo need 4, all others need 2
+  return game.numCharacters === 3 || isSoloMode ? 4 : 2;
 }
 
 export const Frodo: CharacterDefinition = {
