@@ -1,4 +1,4 @@
-import type { Suit } from "../types";
+import type { Suit, ObjectiveCard, Card } from "../types";
 import type { CharacterDefinition } from "./types";
 
 export const FarmerMaggot: CharacterDefinition = {
@@ -70,6 +70,17 @@ export const FarmerMaggot: CharacterDefinition = {
         completed,
         details: `Threat: ${seat.threatCard}, Won: ${matchingCards.length}/2`,
       };
+    },
+    getObjectiveCards: (_game, seat) => {
+      const cards: ObjectiveCard[] = [];
+      if (seat.threatCard !== null) {
+        cards.push({ suit: "threat", value: seat.threatCard });
+        const matchingCards = seat
+          .getAllWonCards()
+          .filter((c: Card) => c.value === seat.threatCard);
+        cards.push(...matchingCards);
+      }
+      return { cards };
     },
   },
 };

@@ -138,5 +138,19 @@ export const TomBombadil: CharacterDefinition = {
         details: countsDisplay || undefined,
       };
     },
+    getObjectiveCards: (_game, seat) => {
+      const cardsInHand = seat.hand.getAvailableCards();
+      const suitsInHand = new Set(cardsInHand.map((c) => c.suit));
+
+      // Show won cards from suits still in hand
+      const cards = seat
+        .getAllWonCards()
+        .filter((c: Card) => suitsInHand.has(c.suit))
+        .sort((a, b) => {
+          if (a.suit !== b.suit) return a.suit.localeCompare(b.suit);
+          return a.value - b.value;
+        });
+      return { cards };
+    },
   },
 };

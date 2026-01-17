@@ -1,8 +1,8 @@
 // client/components/CardView.tsx
-import type { AnyCard } from "@shared/types";
+import type { AnyCard, ObjectiveCard } from "@shared/types";
 
 type CardProps = {
-  card: AnyCard | "hidden";
+  card: AnyCard | ObjectiveCard | "hidden";
   clickable?: boolean;
   onClick?: () => void;
 };
@@ -14,6 +14,10 @@ export function Card({ card, clickable = false, onClick }: CardProps) {
         <div className="value">?</div>
       </div>
     );
+  }
+
+  if (card === "trick") {
+    return <div className="card trick"></div>;
   }
 
   return (

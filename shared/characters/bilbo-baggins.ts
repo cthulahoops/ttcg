@@ -1,3 +1,4 @@
+import type { ObjectiveCard } from "../types";
 import type { CharacterDefinition } from "./types";
 
 export const BilboBaggins: CharacterDefinition = {
@@ -48,6 +49,10 @@ export const BilboBaggins: CharacterDefinition = {
       const details = `Tricks: ${tricksIcon}, 1-Ring: ${oneRingIcon}`;
 
       return { met, completable, completed, details };
+    },
+    getObjectiveCards: (_game, seat) => {
+      const cards: ObjectiveCard[] = Array(seat.getTrickCount()).fill("trick");
+      return { cards };
     },
   },
 };

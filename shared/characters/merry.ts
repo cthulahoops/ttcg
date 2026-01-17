@@ -1,3 +1,4 @@
+import type { ObjectiveCard } from "../types";
 import type { CharacterDefinition } from "./types";
 
 export const Merry: CharacterDefinition = {
@@ -27,6 +28,10 @@ export const Merry: CharacterDefinition = {
       const completable = Merry.objective.isCompletable(game, seat);
       const completed = Merry.objective.isCompleted(game, seat);
       return { met, completable, completed };
+    },
+    getObjectiveCards: (_game, seat) => {
+      const cards: ObjectiveCard[] = Array(seat.getTrickCount()).fill("trick");
+      return { cards };
     },
   },
 };

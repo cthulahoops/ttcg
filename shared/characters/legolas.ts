@@ -1,3 +1,4 @@
+import type { ObjectiveCard } from "../types";
 import type { CharacterDefinition } from "./types";
 
 export const Legolas: CharacterDefinition = {
@@ -32,6 +33,16 @@ export const Legolas: CharacterDefinition = {
       const completable = Legolas.objective.isCompletable(game, seat);
       const completed = Legolas.objective.isCompleted(game, seat);
       return { met, completable, completed };
+    },
+    getObjectiveCards: (game, seat) => {
+      const cards: ObjectiveCard[] = [];
+      if (seat.threatCard !== null) {
+        cards.push({ suit: "threat", value: seat.threatCard });
+        if (game.hasCard(seat, "forests", seat.threatCard)) {
+          cards.push({ suit: "forests", value: seat.threatCard });
+        }
+      }
+      return { cards };
     },
   },
 };

@@ -2,7 +2,13 @@
 // These types define the boundary for what data gets sent over the network,
 // preventing accidental transmission of large object graphs or sensitive data.
 
-import type { Card, Suit, Trick, CharacterStatus } from "./types";
+import type {
+  Card,
+  Suit,
+  Trick,
+  CharacterStatus,
+  ObjectiveCards,
+} from "./types";
 
 /**
  * Serialized representation of a trick play.
@@ -63,6 +69,7 @@ export interface SerializedSeat {
   objective: string;
   hand: SerializedHand | null;
   asideCard: Card | "hidden" | null; // Shadowfax aside card (hidden to other players)
+  objectiveCards?: ObjectiveCards;
 }
 
 /**

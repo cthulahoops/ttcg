@@ -1,4 +1,5 @@
 import type { Seat } from "../seat";
+import type { ObjectiveCard } from "../types";
 import type { CharacterDefinition } from "./types";
 
 export const Galadriel: CharacterDefinition = {
@@ -81,6 +82,10 @@ export const Galadriel: CharacterDefinition = {
       const completable = Galadriel.objective.isCompletable(game, seat);
       const completed = Galadriel.objective.isCompleted(game, seat);
       return { met, completable, completed };
+    },
+    getObjectiveCards: (_game, seat) => {
+      const cards: ObjectiveCard[] = Array(seat.getTrickCount()).fill("trick");
+      return { cards };
     },
   },
 };

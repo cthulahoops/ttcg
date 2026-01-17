@@ -1,3 +1,4 @@
+import type { ObjectiveCard } from "../types";
 import type { CharacterDefinition } from "./types";
 
 export const BarlimanButterbur: CharacterDefinition = {
@@ -26,6 +27,10 @@ export const BarlimanButterbur: CharacterDefinition = {
       const completable = BarlimanButterbur.objective.isCompletable(game, seat);
       const completed = BarlimanButterbur.objective.isCompleted(game, seat);
       return { met, completable, completed };
+    },
+    getObjectiveCards: (_game, seat) => {
+      const cards: ObjectiveCard[] = Array(seat.getTrickCount()).fill("trick");
+      return { cards };
     },
   },
 };

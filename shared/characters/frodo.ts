@@ -89,5 +89,12 @@ export const Frodo: CharacterDefinition = {
 
       return { met, completable, completed, details };
     },
+    getObjectiveCards: (_game, seat) => {
+      const ringCards = seat
+        .getAllWonCards()
+        .filter((c: Card) => c.suit === "rings")
+        .sort((a, b) => a.value - b.value);
+      return { cards: ringCards };
+    },
   },
 };

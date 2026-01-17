@@ -1,3 +1,4 @@
+import type { ObjectiveCard } from "../types";
 import type { CharacterDefinition } from "./types";
 
 export const Gandalf: CharacterDefinition = {
@@ -21,6 +22,10 @@ export const Gandalf: CharacterDefinition = {
       const met = Gandalf.objective.check(game, seat);
       const completed = Gandalf.objective.isCompleted(game, seat);
       return { met, completable: true, completed };
+    },
+    getObjectiveCards: (_game, seat) => {
+      const cards: ObjectiveCard[] = Array(seat.getTrickCount()).fill("trick");
+      return { cards };
     },
   },
 };

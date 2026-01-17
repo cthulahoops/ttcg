@@ -1,3 +1,4 @@
+import type { ObjectiveCard } from "../types";
 import type { CharacterDefinition } from "./types";
 
 export const Gimli: CharacterDefinition = {
@@ -33,6 +34,16 @@ export const Gimli: CharacterDefinition = {
       const completable = Gimli.objective.isCompletable(game, seat);
       const completed = Gimli.objective.isCompleted(game, seat);
       return { met, completable, completed };
+    },
+    getObjectiveCards: (game, seat) => {
+      const cards: ObjectiveCard[] = [];
+      if (seat.threatCard !== null) {
+        cards.push({ suit: "threat", value: seat.threatCard });
+        if (game.hasCard(seat, "mountains", seat.threatCard)) {
+          cards.push({ suit: "mountains", value: seat.threatCard });
+        }
+      }
+      return { cards };
     },
   },
 };

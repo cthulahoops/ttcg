@@ -62,3 +62,14 @@ export interface CharacterStatus {
   completed: boolean;
   details?: string;
 }
+
+// Represents a trick won (UI decides how to render - e.g., as card back)
+export type ObjectiveTrick = "trick";
+
+// Objective cards can be real cards, threat cards, or tricks
+export type ObjectiveCard = Card | ThreatCard | ObjectiveTrick;
+
+// The full objective display for a seat
+export interface ObjectiveCards {
+  cards: ObjectiveCard[];
+}

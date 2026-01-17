@@ -1,4 +1,4 @@
-import type { Card } from "../types";
+import type { Card, ObjectiveCard } from "../types";
 import type { Seat } from "../seat";
 import type { CharacterDefinition } from "./types";
 
@@ -39,6 +39,10 @@ export const Gwaihir: CharacterDefinition = {
         completed,
         details: `Tricks with mountains: ${countMountainTricks(seat)}/2`,
       };
+    },
+    getObjectiveCards: (_game, seat) => {
+      const cards: ObjectiveCard[] = Array(seat.getTrickCount()).fill("trick");
+      return { cards };
     },
   },
 };

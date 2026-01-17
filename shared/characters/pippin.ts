@@ -1,4 +1,5 @@
 import type { Seat } from "../seat";
+import type { ObjectiveCard } from "../types";
 import type { CharacterDefinition } from "./types";
 
 export const Pippin: CharacterDefinition = {
@@ -43,6 +44,10 @@ export const Pippin: CharacterDefinition = {
       const completable = Pippin.objective.isCompletable(game, seat);
       const completed = Pippin.objective.isCompleted(game, seat);
       return { met, completable, completed };
+    },
+    getObjectiveCards: (_game, seat) => {
+      const cards: ObjectiveCard[] = Array(seat.getTrickCount()).fill("trick");
+      return { cards };
     },
   },
 };
