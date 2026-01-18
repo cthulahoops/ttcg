@@ -15,13 +15,13 @@ function getRingsNeeded(game: Game): number {
     (s: Seat) => s.character?.name === "Elrond"
   );
 
-  // Solo mode (1 player controls all 4 seats) uses the harder 4-ring requirement
-  const isSoloMode = game.playerCount === 1;
-
-  // In 3-player with Elrond, reduce to 2 (otherwise 4 + 3 players needing rings = impossible)
-  if (game.numCharacters === 3 && elrondInPlay) {
+  // With Elrond in play, reduce to 2 (otherwise 4 + 3 players needing rings = impossible)
+  if (elrondInPlay) {
     return 2;
   }
+
+  // Solo mode (1 player controls all 4 seats) uses the harder 4-ring requirement
+  const isSoloMode = game.playerCount === 1;
 
   // Standard: 3-player and solo need 4, all others need 2
   return game.numCharacters === 3 || isSoloMode ? 4 : 2;
