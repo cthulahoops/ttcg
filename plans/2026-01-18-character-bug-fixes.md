@@ -36,6 +36,7 @@ Bug 4: Arwen - "Win the most forests cards"
     Use strict > because ties don't count as "most"
 
 Bug 5: Gloin - "Win the most mountains cards"
+    Status: DONE
 
     File: shared/characters/gloin.ts
     Same logic as Arwen but for mountains suit
