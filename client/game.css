@@ -545,10 +545,17 @@ button:hover {
 .join-room-group {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .join-room-group input {
   flex: 1;
+  min-width: 0;
+}
+
+.join-room-group .secondary-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .primary-btn,
