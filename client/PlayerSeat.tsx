@@ -23,7 +23,6 @@ export function PlayerSeat({
     objective,
     tricksWon,
     objectiveStatus,
-    statusDetails,
     hand,
     asideCard,
     objectiveCards,
@@ -47,93 +46,56 @@ export function PlayerSeat({
         : "✗" // failure → not met
     : null;
 
-  const isImpossible = finality === "final" && outcome === "failure";
-
   return (
     <section
       className={`player ${isActive ? "active" : ""}`}
       data-player={seatIndex + 1}
     >
-      {/* Compact header for mobile */}
-      <div className="player-header-compact">
-        <h3>{displayName}</h3>
-        {statusIcon && <span className="compact-status">{statusIcon}</span>}
-        <span className="compact-tricks">T:{tricksWon.length}</span>
-        <span className="compact-objective">{objective}</span>
+      <div className="player-header">
+        <div className="player-info">
+          <h3>
+            {displayName}
+            {statusIcon && <span className="compact-status">{statusIcon}</span>}
+            <span className="compact-tricks">T:{tricksWon.length}</span>
+          </h3>
+          <span className="compact-objective">{objective}</span>
+        </div>
         {objectiveCards && objectiveCards.cards.length > 0 && (
-          <div className="objective-cards-inline">
-            {objectiveCards.cards.slice(0, 3).map((card, i) => (
+          <div className="objective-cards">
+            {objectiveCards.cards.map((card, i) => (
               <Card key={i} card={card} />
             ))}
-            {objectiveCards.cards.length > 3 && (
-              <span className="objective-cards-overflow">
-                +{objectiveCards.cards.length - 3}
-              </span>
-            )}
           </div>
         )}
       </div>
 
-      {/* Full header for desktop */}
-      <div className="player-header-full">
-        <h3>{displayName}</h3>
-
-        <div className="objective">{objective && `Goal: ${objective}`}</div>
-
-        <div className="tricks-won">Tricks: {tricksWon.length}</div>
-
-        <div className="objective-status">
-          {objectiveStatus && (
-            <>
-              {finality === "final" && outcome === "success" ? (
-                <span className="completed">★</span>
-              ) : outcome === "success" ? (
-                <span className="success">✓</span>
-              ) : isImpossible ? (
-                <span className="fail">✗ (impossible)</span>
-              ) : (
-                <span className="fail">✗</span>
-              )}
-              {statusDetails && ` ${statusDetails}`}
-            </>
-          )}
+      {asideCard && (
+        <div className="aside-card">
+          <span className="aside-label">
+            {asideCard === "hidden" ? "Has card aside" : "Aside:"}
+          </span>
+          {(() => {
+            if (asideCard === "hidden") {
+              return <Card card="hidden" />;
+            }
+            const isSelectable =
+              selectableCards?.some(
+                (c) => c.suit === asideCard.suit && c.value === asideCard.value
+              ) ?? false;
+            return (
+              <Card
+                card={asideCard}
+                clickable={isSelectable}
+                onClick={
+                  isSelectable && onSelectCard
+                    ? () => onSelectCard(asideCard)
+                    : undefined
+                }
+              />
+            );
+          })()}
         </div>
-
-        <div className="objective-cards-area">
-          {objectiveCards?.cards.map((card, i) => (
-            <Card key={i} card={card} />
-          ))}
-        </div>
-
-        {asideCard && (
-          <div className="aside-card">
-            <span className="aside-label">
-              {asideCard === "hidden" ? "Has card aside" : "Aside:"}
-            </span>
-            {(() => {
-              if (asideCard === "hidden") {
-                return <Card card="hidden" />;
-              }
-              const isSelectable =
-                selectableCards?.some(
-                  (c) =>
-                    c.suit === asideCard.suit && c.value === asideCard.value
-                ) ?? false;
-              return (
-                <Card
-                  card={asideCard}
-                  clickable={isSelectable}
-                  onClick={
-                    isSelectable && onSelectCard
-                      ? () => onSelectCard(asideCard)
-                      : undefined
-                  }
-                />
-              );
-            })()}
-          </div>
-        )}
-      </div>
+      )}
 
       {hand && (
         <Hand

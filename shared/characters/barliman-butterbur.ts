@@ -31,8 +31,11 @@ export const BarlimanButterbur: CharacterDefinition = {
   },
 
   display: {
-    getObjectiveCards: (_game, seat) => {
-      const cards: ObjectiveCard[] = Array(seat.getTrickCount()).fill("trick");
+    getObjectiveCards: (game, seat) => {
+      const tricksWon = seat.tricksWon.filter(
+        (t) => t.number >= game.tricksToPlay - 3
+      ).length;
+      const cards: ObjectiveCard[] = Array(tricksWon).fill("trick");
       return { cards };
     },
   },

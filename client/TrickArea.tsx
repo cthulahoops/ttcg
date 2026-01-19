@@ -33,12 +33,6 @@ export function TrickArea({ game, lostCard }: TrickAreaProps) {
         >
           Rings: {game.ringsBroken ? "Broken" : "Sealed"}
         </span>
-        {/* Inline lost card for mobile (hidden on desktop via CSS) */}
-        {lostCard && (
-          <div className="lost-card-inline">
-            <Card card={lostCard} />
-          </div>
-        )}
       </div>
 
       <div className="trick-cards">
