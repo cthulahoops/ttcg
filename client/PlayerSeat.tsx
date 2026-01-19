@@ -111,14 +111,20 @@ export function PlayerSeat({
               if (asideCard === "hidden") {
                 return <Card card="hidden" />;
               }
-              const isSelectable = selectableCards?.some(
-                (c) => c.suit === asideCard.suit && c.value === asideCard.value
-              ) ?? false;
+              const isSelectable =
+                selectableCards?.some(
+                  (c) =>
+                    c.suit === asideCard.suit && c.value === asideCard.value
+                ) ?? false;
               return (
                 <Card
                   card={asideCard}
                   clickable={isSelectable}
-                  onClick={isSelectable && onSelectCard ? () => onSelectCard(asideCard) : undefined}
+                  onClick={
+                    isSelectable && onSelectCard
+                      ? () => onSelectCard(asideCard)
+                      : undefined
+                  }
                 />
               );
             })()}
