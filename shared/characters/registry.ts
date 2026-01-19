@@ -5,6 +5,11 @@ export type {
   CharacterDefinition,
   CharacterObjective,
   CharacterDisplay,
+  NewCharacterDefinition,
+  NewCharacterObjective,
+  NewCharacterDisplay,
+  AnyCharacterDefinition,
+  AnyCharacterObjective,
 } from "./types";
 
 import { Frodo } from "./frodo";
@@ -32,9 +37,9 @@ import { Gloin } from "./gloin";
 import { BilboBaggins } from "./bilbo-baggins";
 import { Gwaihir } from "./gwaihir";
 import { Shadowfax } from "./shadowfax";
-import type { CharacterDefinition } from "./types";
+import type { AnyCharacterDefinition } from "./types";
 
-export const characterRegistry = new Map<string, CharacterDefinition>([
+export const characterRegistry = new Map<string, AnyCharacterDefinition>([
   [Frodo.name, Frodo],
   [Gandalf.name, Gandalf],
   [Merry.name, Merry],

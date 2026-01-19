@@ -3,12 +3,12 @@
 
 import type { Hand } from "./hands";
 import type { Card, Trick, Controller } from "./types";
-import type { CharacterDefinition } from "./characters/types";
+import type { AnyCharacterDefinition } from "./characters/types";
 
 export class Seat {
   seatIndex: number;
   hand: Hand;
-  character: CharacterDefinition | null;
+  character: AnyCharacterDefinition | null;
   threatCard: number | null;
   tricksWon: Trick[];
   playedCards: Card[];

@@ -1,7 +1,26 @@
 import type { Game } from "../game";
 import type { Seat } from "../seat";
 import type { ObjectiveStatus, Finality, Outcome } from "../types";
-import type { CharacterObjective, CharacterDefinition } from "./types";
+import type {
+  CharacterObjective,
+  CharacterDefinition,
+  AnyCharacterObjective,
+  AnyCharacterDefinition,
+} from "./types";
+
+// Type guard: check if objective uses legacy API
+function isLegacyObjective(
+  obj: AnyCharacterObjective
+): obj is CharacterObjective {
+  return "check" in obj;
+}
+
+// Type guard: check if character uses legacy API
+function isLegacyCharacter(
+  char: AnyCharacterDefinition
+): char is CharacterDefinition {
+  return "renderStatus" in char.display;
+}
 
 /**
  * Convert legacy boolean trio to ObjectiveStatus tuple.
@@ -37,16 +56,21 @@ export function booleansToStatus(
  * one at a time while the system keeps working.
  */
 export function getObjectiveStatus(
-  objective: CharacterObjective,
+  objective: AnyCharacterObjective,
   game: Game,
   seat: Seat
 ): ObjectiveStatus {
-  // Prefer new API if available
+  // New API: use getStatus directly
+  if (!isLegacyObjective(objective)) {
+    return objective.getStatus(game, seat);
+  }
+
+  // Legacy API with optional getStatus override
   if (objective.getStatus) {
     return objective.getStatus(game, seat);
   }
 
-  // Fallback: call legacy methods and convert
+  // Legacy fallback: convert boolean trio
   const met = objective.check(game, seat);
   const completable = objective.isCompletable(game, seat);
   const completed = objective.isCompleted(game, seat);
@@ -66,7 +90,7 @@ export function getObjectiveStatus(
  * Once all characters are migrated, the fallback path is removed.
  */
 export function getObjectiveDetails(
-  character: CharacterDefinition,
+  character: AnyCharacterDefinition,
   game: Game,
   seat: Seat
 ): string | undefined {
@@ -75,7 +99,12 @@ export function getObjectiveDetails(
     return character.objective.getDetails(game, seat);
   }
 
-  // Fallback: extract from legacy renderStatus
-  const legacyStatus = character.display.renderStatus(game, seat);
-  return legacyStatus.details;
+  // Fallback: extract from legacy renderStatus (only on legacy characters)
+  if (isLegacyCharacter(character)) {
+    const legacyStatus = character.display.renderStatus(game, seat);
+    return legacyStatus.details;
+  }
+
+  // New character without getDetails - no details available
+  return undefined;
 }
