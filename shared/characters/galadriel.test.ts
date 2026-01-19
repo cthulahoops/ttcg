@@ -172,14 +172,154 @@ describe("Galadriel", () => {
   });
 
   describe("objective.isCompleted", () => {
-    test("returns false when game is not finished even if objective met", () => {
+    test("returns true early when guaranteed in middle position", () => {
+      const game2 = createTestGame(4);
+      game2.currentTrickNumber = 7; // 2 tricks remaining
+      const seat2 = game2.seats[0]!;
+      for (const s of game2.seats) {
+        s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
+      }
+
+      // Galadriel: 3 tricks
+      // Seat 1: 0 tricks (max possible = 0 + 2 = 2, which is < 3)
+      // Seat 2: 6 tricks (min above = 6, Galadriel max = 3 + 2 = 5 < 6)
+      // Seat 3: 0 tricks (max possible = 0 + 2 = 2, which is < 3)
+      addWonCards(seat2, [{ suit: "mountains", value: 1 }]);
+      addWonCards(seat2, [{ suit: "shadows", value: 1 }]);
+      addWonCards(seat2, [{ suit: "forests", value: 1 }]);
+      addWonCards(game2.seats[2]!, [{ suit: "hills", value: 1 }]);
+      addWonCards(game2.seats[2]!, [{ suit: "rings", value: 1 }]);
+      addWonCards(game2.seats[2]!, [{ suit: "mountains", value: 2 }]);
+      addWonCards(game2.seats[2]!, [{ suit: "shadows", value: 2 }]);
+      addWonCards(game2.seats[2]!, [{ suit: "forests", value: 2 }]);
+      addWonCards(game2.seats[2]!, [{ suit: "hills", value: 2 }]);
+
+      expect(game2.finished).toBe(false);
+      expect(game2.tricksRemaining()).toBe(2);
+      expect(seat2.getTrickCount()).toBe(3);
+      expect(game2.seats[1]!.getTrickCount()).toBe(0);
+      expect(game2.seats[2]!.getTrickCount()).toBe(6);
+      expect(game2.seats[3]!.getTrickCount()).toBe(0);
+
+      // Galadriel is guaranteed to be in the middle:
+      // - Players below her (0 tricks each) can get at most 2 more = 2 tricks < 3
+      // - Galadriel can get at most 3 + 2 = 5 tricks < 6 (the minimum above)
+      expect(Galadriel.objective.isCompleted(game2, seat2)).toBe(true);
+    });
+
+    test("returns false early when could still become fewest", () => {
+      const game = createTestGame(4);
+      game.currentTrickNumber = 6; // 3 tricks remaining
+      const seat = game.seats[0]!;
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
+      }
+
+      // Galadriel: 2 tricks
+      // Seat 1: 0 tricks (can reach 0 + 3 = 3 > 2, so Galadriel could be fewest)
+      // Seat 2: 5 tricks (above)
+      // Seat 3: 1 trick (below, can reach 1 + 3 = 4 > 2)
+      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
+      addWonCards(seat, [{ suit: "shadows", value: 1 }]);
+      addWonCards(game.seats[2]!, [{ suit: "forests", value: 1 }]);
+      addWonCards(game.seats[2]!, [{ suit: "hills", value: 1 }]);
+      addWonCards(game.seats[2]!, [{ suit: "rings", value: 1 }]);
+      addWonCards(game.seats[2]!, [{ suit: "mountains", value: 2 }]);
+      addWonCards(game.seats[2]!, [{ suit: "shadows", value: 2 }]);
+      addWonCards(game.seats[3]!, [{ suit: "forests", value: 2 }]);
+
+      expect(game.finished).toBe(false);
+      expect(seat.getTrickCount()).toBe(2);
+      // Seat 1 at 0 can reach 3, which is > 2, so Galadriel could become fewest
+      expect(Galadriel.objective.isCompleted(game, seat)).toBe(false);
+    });
+
+    test("returns false early when could still become most", () => {
+      const game = createTestGame(4);
+      game.currentTrickNumber = 6; // 3 tricks remaining
+      const seat = game.seats[0]!;
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
+      }
+
+      // Galadriel: 3 tricks
+      // Seat 1: 0 tricks (below)
+      // Seat 2: 4 tricks (above, but Galadriel can reach 3 + 3 = 6 > 4)
+      // Seat 3: 1 trick (below)
+      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
+      addWonCards(seat, [{ suit: "shadows", value: 1 }]);
+      addWonCards(seat, [{ suit: "forests", value: 1 }]);
+      addWonCards(game.seats[2]!, [{ suit: "hills", value: 1 }]);
+      addWonCards(game.seats[2]!, [{ suit: "rings", value: 1 }]);
+      addWonCards(game.seats[2]!, [{ suit: "mountains", value: 2 }]);
+      addWonCards(game.seats[2]!, [{ suit: "shadows", value: 2 }]);
+      addWonCards(game.seats[3]!, [{ suit: "forests", value: 2 }]);
+
+      expect(game.finished).toBe(false);
+      expect(seat.getTrickCount()).toBe(3);
+      // Galadriel at 3 can reach 6, which is > 4 (min above), could become most
+      expect(Galadriel.objective.isCompleted(game, seat)).toBe(false);
+    });
+
+    test("returns false early when no one is above (could become most)", () => {
+      const game = createTestGame(4);
+      game.currentTrickNumber = 7; // 2 tricks remaining
+      const seat = game.seats[0]!;
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
+      }
+
+      // Galadriel: 2 tricks (tied for max)
+      // Seat 1: 0 tricks
+      // Seat 2: 2 tricks (tied with Galadriel)
+      // Seat 3: 1 trick
+      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
+      addWonCards(seat, [{ suit: "shadows", value: 1 }]);
+      addWonCards(game.seats[2]!, [{ suit: "forests", value: 1 }]);
+      addWonCards(game.seats[2]!, [{ suit: "hills", value: 1 }]);
+      addWonCards(game.seats[3]!, [{ suit: "rings", value: 1 }]);
+
+      expect(game.finished).toBe(false);
+      // Galadriel is tied for max, no one strictly above her, can't guarantee not-most
+      expect(Galadriel.objective.isCompleted(game, seat)).toBe(false);
+    });
+
+    test("returns false early when no one is below (could become fewest)", () => {
+      const game = createTestGame(4);
+      game.currentTrickNumber = 7; // 2 tricks remaining
+      const seat = game.seats[0]!;
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
+      }
+
+      // Galadriel: 2 tricks (tied for min)
+      // Seat 1: 2 tricks (tied with Galadriel)
+      // Seat 2: 4 tricks (above)
+      // Seat 3: 2 tricks (tied with Galadriel)
+      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
+      addWonCards(seat, [{ suit: "shadows", value: 1 }]);
+      addWonCards(game.seats[1]!, [{ suit: "forests", value: 1 }]);
+      addWonCards(game.seats[1]!, [{ suit: "hills", value: 1 }]);
+      addWonCards(game.seats[2]!, [{ suit: "rings", value: 1 }]);
+      addWonCards(game.seats[2]!, [{ suit: "mountains", value: 2 }]);
+      addWonCards(game.seats[2]!, [{ suit: "shadows", value: 2 }]);
+      addWonCards(game.seats[2]!, [{ suit: "forests", value: 2 }]);
+      addWonCards(game.seats[3]!, [{ suit: "hills", value: 2 }]);
+      addWonCards(game.seats[3]!, [{ suit: "rings", value: 2 }]);
+
+      expect(game.finished).toBe(false);
+      // Galadriel is tied for min, no one strictly below her, can't guarantee not-fewest
+      expect(Galadriel.objective.isCompleted(game, seat)).toBe(false);
+    });
+
+    test("returns false when game is not finished and not guaranteed", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       // Add cards to hands so game is not finished
       for (const s of game.seats) {
         s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
       }
-      // Galadriel: 1, others: 0, 2, 2 - in middle
+      // Galadriel: 1, others: 0, 2, 2 - in middle but not guaranteed
       addWonCards(seat, [{ suit: "mountains", value: 5 }]);
       addWonCards(game.seats[2]!, [{ suit: "shadows", value: 6 }]);
       addWonCards(game.seats[2]!, [{ suit: "forests", value: 7 }]);
@@ -187,6 +327,7 @@ describe("Galadriel", () => {
       addWonCards(game.seats[3]!, [{ suit: "rings", value: 2 }]);
       expect(game.finished).toBe(false);
       expect(Galadriel.objective.check(game, seat)).toBe(true);
+      // With many tricks remaining, positions can still change
       expect(Galadriel.objective.isCompleted(game, seat)).toBe(false);
     });
 

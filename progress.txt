@@ -1,0 +1,165 @@
+## 2026-01-17: Fix Frodo+Elrond impossible objective combo
+
+**Issue**: In 3-player mode, when Elrond is in play, the combined objectives were mathematically impossible:
+- Elrond requires every player to win at least 1 ring card (3 rings minimum distributed)
+- Frodo requires 4 ring cards in 3-player mode
+- Only 5 rings exist in the deck
+
+**Solution**: Added `getRingsNeeded()` helper function in `shared/characters/frodo.ts` that:
+- Checks if Elrond is in the game
+- Reduces Frodo's ring requirement from 4 to 2 when Elrond is present in 3-player mode
+- Keeps all other modes unchanged (2 rings for 2/4-player, 4 rings for 3-player without Elrond)
+
+**Files changed**: `shared/characters/frodo.ts`
+
+## 2026-01-17: Fix Tom Bombadil isCompletable to account for lost card
+
+**Issue**: Tom Bombadil's `isCompletable` check calculated remaining cards in a suit as `CARDS_PER_SUIT[suit] - totalWonBySuit[suit]`, which didn't account for the lost card. If the lost card was of a suit Tom needed, the game could incorrectly show the objective as completable when it wasn't.
+
+**Solution**: Added lost card accounting in the isCompletable loop:
+- Calculate `lostCardOfSuit = game.lostCard?.suit === suit ? 1 : 0`
+- Subtract this from `remainingInPlay` calculation: `CARDS_PER_SUIT[suit] - totalWonBySuit[suit] - lostCardOfSuit`
+
+**Files changed**: `shared/characters/tom-bombadil.ts`
+
+## 2026-01-17: Make Frodo require 4 rings in solo mode
+
+**Issue**: In solo mode (1 player controlling all 4 seats), Frodo only required 2 rings to win, which was too easy. The task specified Frodo should use "three player side" (4 rings) in solo mode for better balance.
+
+**Solution**: Extended `getRingsNeeded()` in `shared/characters/frodo.ts` to:
+- Check if game is in solo mode via `game.playerCount === 1`
+- Return 4 rings for solo mode (same as 3-player mode)
+- Keep 2/4-player modes unchanged (2 rings)
+
+**Files changed**: `shared/characters/frodo.ts`
+
+## 2026-01-17: Make pyramid aside card visible to players
+
+**Issue**: In 2-player mode, when the pyramid seat has an aside card (from Shadowfax character), the controlling player couldn't see what card was set aside. The aside card was serialized as "hidden" for all viewers except the seat owner. This also affected other cases where hands are revealed (Goldberry, Fatty Bolger).
+
+**Solution**: Added `isRevealed()` method to the Hand base class:
+- `PlayerHand.isRevealed()` returns `true` when `reveal()` has been called (Goldberry, Fatty Bolger)
+- `PyramidHand.isRevealed()` always returns `true` (pyramid is always visible)
+- `SolitaireHand.isRevealed()` always returns `true` (single player controls all seats)
+
+Updated `shared/serialize.ts` to check `hand.isRevealed()` when determining aside card visibility.
+
+**Files changed**: `shared/hands.ts`, `shared/serialize.ts`
+
+## 2026-01-17: Remove vestigial displaySimple and displayThreatCard wrappers
+
+**Issue**: The `Game` class had two methods (`displaySimple` and `displayThreatCard`) that were pure pass-through wrappers - they just returned their arguments as `{ met, completable, completed }`. These added unnecessary indirection and method calls.
+
+**Solution**: Removed both methods from `shared/game.ts` and updated all 13 character files that used them to return the object literal directly:
+- `game.displaySimple(met, completable, completed)` → `{ met, completable, completed }`
+- `game.displayThreatCard(seat, met, completable, completed)` → `{ met, completable, completed }`
+
+Also updated `CLAUDE.md` to remove references to these methods from the Game API documentation.
+
+**Files changed**: `shared/game.ts`, `shared/characters/aragorn.ts`, `shared/characters/barliman-butterbur.ts`, `shared/characters/bill-the-pony.ts`, `shared/characters/farmer-maggot.ts`, `shared/characters/fatty-bolger.ts`, `shared/characters/galadriel.ts`, `shared/characters/gandalf.ts`, `shared/characters/gimli.ts`, `shared/characters/goldberry.ts`, `shared/characters/legolas.ts`, `shared/characters/merry.ts`, `shared/characters/pippin.ts`, `shared/characters/sam.ts`, `CLAUDE.md`
+
+## 2026-01-17: Add ObjectiveCards types for objective display feature
+
+**Feature**: Foundation types for a new UI feature that will display objective progress cards (won cards, threat cards, trick markers) in the player seat area.
+
+**Solution**: Added three new types to `shared/types.ts`:
+- `ObjectiveTrick = "trick"` - Literal type representing a trick marker in the display
+- `ObjectiveCard = Card | ThreatCard | ObjectiveTrick` - Union of all card types that can appear in objective display
+- `ObjectiveCards = { cards: ObjectiveCard[] }` - Container interface for the array of objective cards
+
+**Files changed**: `shared/types.ts`
+
+## 2026-01-17: Add getObjectiveCards method to CharacterDisplay interface
+
+**Feature**: Extends the character display system to support computing objective progress cards for each character.
+
+**Solution**: Added optional `getObjectiveCards` method to `CharacterDisplay` interface in `shared/characters/types.ts`:
+- Signature: `getObjectiveCards?: (game: Game, seat: Seat) => ObjectiveCards`
+- Returns the cards that represent a character's objective progress (won cards, threat cards, trick markers)
+- Optional to allow gradual implementation across character files
+
+**Files changed**: `shared/characters/types.ts`
+
+## 2026-01-17: Add objectiveCards field to SerializedSeat
+
+**Feature**: Extends the serialized seat type to include objective cards data for network transmission to clients.
+
+**Solution**: Added optional `objectiveCards?: ObjectiveCards` field to `SerializedSeat` interface in `shared/serialized.ts`. This field will be populated by the serialize function when a character's `getObjectiveCards` method is available.
+
+**Files changed**: `shared/serialized.ts`
+
+## 2026-01-17: Compute and serialize objectiveCards in serializeSeat()
+
+**Feature**: Connects the `getObjectiveCards` method to the serialization pipeline so clients receive objective progress data.
+
+**Solution**: In `shared/serialize.ts` `serializeSeat()` function:
+- Call `seat.character?.display.getObjectiveCards?.(game, seat)` to compute objective cards
+- Include the result in the returned `SerializedSeat` object
+
+This enables the client to receive objective progress cards for each seat when the character has implemented the `getObjectiveCards` method.
+
+**Files changed**: `shared/serialize.ts`
+
+## 2026-01-17: Add trick type handling to Card component
+
+**Feature**: Enable the Card component to render trick markers for the objective cards display.
+
+**Solution**: Updated `client/Card.tsx` to:
+- Import `ObjectiveCard` type alongside `AnyCard`
+- Extend `CardProps.card` type to accept `ObjectiveCard | "hidden"`
+- Add early return for `card === "trick"` that renders `<div className="card trick"></div>`
+
+This allows the objective cards display to show trick counts as visual card backs.
+
+**Files changed**: `client/Card.tsx`
+
+## 2026-01-18: Fix Pippin early completion detection
+
+**Issue**: Pippin's `isCompleted()` only returned `true` when the game ended, but it should also return `true` early when Pippin is *guaranteed* to have the fewest (or joint fewest) tricks, regardless of remaining gameplay.
+
+**Solution**: Updated `isCompleted()` in `shared/characters/pippin.ts` to check for guaranteed success before game ends:
+- Calculate `myMax = myCount + tricksRemaining` (worst case: Pippin wins all remaining tricks)
+- Calculate `othersMin = Math.min(other players' current trick counts)`
+- Return `true` if `myMax <= othersMin` (guaranteed to be at or below the current minimum)
+- Uses `<=` because joint fewest is acceptable per objective text
+
+**Files changed**: `shared/characters/pippin.ts`, `shared/characters/pippin.test.ts`
+
+## 2026-01-18: Fix Arwen early completion detection
+
+**Issue**: Arwen's `isCompleted()` only returned `true` when the game ended, but it should also return `true` early when Arwen is *guaranteed* to have the most forests, regardless of remaining gameplay.
+
+**Solution**: Updated `isCompleted()` in `shared/characters/arwen.ts` to check for guaranteed success before game ends:
+- Calculate `forestsRemaining = CARDS_PER_SUIT.forests - totalForestsWon`
+- Calculate `othersMax = max(otherCount + forestsRemaining)` for each other player
+- Return `true` if `myCount > othersMax` (guaranteed to have most)
+- Uses strict `>` because ties don't count as "most"
+
+**Files changed**: `shared/characters/arwen.ts`, `shared/characters/arwen.test.ts`
+
+## 2026-01-18: Fix Gloin early completion detection
+
+**Issue**: Gloin's `isCompleted()` only returned `true` when the game ended, but it should also return `true` early when Gloin is *guaranteed* to have the most mountains, regardless of remaining gameplay.
+
+**Solution**: Updated `isCompleted()` in `shared/characters/gloin.ts` to check for guaranteed success before game ends:
+- Calculate `mountainsRemaining = CARDS_PER_SUIT.mountains - totalMountainsWon`
+- Calculate `othersMax = max(otherCount + mountainsRemaining)` for each other player
+- Return `true` if `myCount > othersMax` (guaranteed to have most)
+- Uses strict `>` because ties don't count as "most"
+
+Also refactored to use `countMountainsWon()` helper function for consistency with Arwen's pattern.
+
+**Files changed**: `shared/characters/gloin.ts`, `shared/characters/gloin.test.ts`
+
+## 2026-01-19: Fix Galadriel early completion detection
+
+**Issue**: Galadriel's `isCompleted()` only returned `true` when the game ended, but it should also return `true` early when Galadriel is *guaranteed* to be neither the fewest nor the most tricks, regardless of remaining gameplay.
+
+**Solution**: Updated `isCompleted()` in `shared/characters/galadriel.ts` to check for guaranteed success before game ends:
+- Find players strictly below (`playersBelow`) and strictly above (`playersAbove`) Galadriel's trick count
+- Must have at least one player in each group (otherwise could be fewest or most)
+- Guaranteed not fewest: `maxBelow + tricksRemaining < myCount` (even the highest below can't catch up)
+- Guaranteed not most: `myCount + tricksRemaining < minAbove` (even if Galadriel wins all remaining, can't exceed minimum above)
+- Uses strict `<` because ties count as fewest/most per objective text
+
+**Files changed**: `shared/characters/galadriel.ts`, `shared/characters/galadriel.test.ts`

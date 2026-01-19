@@ -43,6 +43,7 @@ Bug 5: Gloin - "Win the most mountains cards"
     Logic: myMin > othersMax
 
 Bug 6: Galadriel - "Win neither the fewest nor the most tricks"
+    Status: DONE
 
     File: shared/characters/galadriel.ts
     Update isCompleted() to check if guaranteed neither

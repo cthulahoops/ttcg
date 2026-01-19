@@ -72,8 +72,39 @@ export const Galadriel: CharacterDefinition = {
         tricksNeededForGaladriel + tricksNeededForMax <= game.tricksRemaining()
       );
     },
-    isCompleted: (game, seat) =>
-      game.finished && Galadriel.objective.check(game, seat),
+    isCompleted: (game, seat) => {
+      if (game.finished) {
+        return Galadriel.objective.check(game, seat);
+      }
+      // Early completion: check if guaranteed to be neither fewest nor most
+      const myCount = seat.getTrickCount();
+      const tricksRemaining = game.tricksRemaining();
+
+      const otherCounts = game.seats
+        .filter((s: Seat) => s.seatIndex !== seat.seatIndex)
+        .map((s: Seat) => s.getTrickCount());
+
+      // Find players strictly below and above Galadriel
+      const playersBelow = otherCounts.filter((c) => c < myCount);
+      const playersAbove = otherCounts.filter((c) => c > myCount);
+
+      // Must have at least one player below AND one player above
+      if (playersBelow.length === 0 || playersAbove.length === 0) {
+        return false;
+      }
+
+      // Guaranteed not fewest: even the highest player below can't catch up
+      // maxBelow + tricksRemaining < myCount (strict because ties = fewest)
+      const maxBelow = Math.max(...playersBelow);
+      const guaranteedNotFewest = maxBelow + tricksRemaining < myCount;
+
+      // Guaranteed not most: even if Galadriel wins all remaining, can't exceed min above
+      // myCount + tricksRemaining < minAbove (strict because ties = most)
+      const minAbove = Math.min(...playersAbove);
+      const guaranteedNotMost = myCount + tricksRemaining < minAbove;
+
+      return guaranteedNotFewest && guaranteedNotMost;
+    },
   },
 
   display: {
