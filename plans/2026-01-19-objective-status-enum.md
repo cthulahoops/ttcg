@@ -41,7 +41,7 @@ return [finality, outcome];
 
 ## Phase 1: Foundation + Protocol (2 commits)
 
-### Step 1.1: Add Types and Adapter Layer
+### Step 1.1: Add Types and Adapter Layer ✓ DONE
 
 **Files changed:**
 - `shared/types.ts` - Add `ObjectiveStatus` type
@@ -78,7 +78,7 @@ export interface CharacterObjective {
 
 ---
 
-### Step 1.2: Update Protocol and Client
+### Step 1.2: Update Protocol and Client ✓ DONE
 
 **Files changed:**
 - `shared/serialized.ts` - Replace `status` with new fields
