@@ -63,6 +63,13 @@ export interface CharacterStatus {
   details?: string;
 }
 
+export type ObjectiveStatus = "pending" | "met" | "failed" | "complete";
+
+export interface ObjectiveState {
+  status: ObjectiveStatus;
+  details?: string;
+}
+
 // Represents a trick won (UI decides how to render - e.g., as card back)
 export type ObjectiveTrick = "trick";
 
