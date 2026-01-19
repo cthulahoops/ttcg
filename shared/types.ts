@@ -63,6 +63,19 @@ export interface CharacterStatus {
   details?: string;
 }
 
+// ObjectiveStatus represents a character's objective state as a two-axis tuple:
+//   Finality: "tentative" (can still change) vs "final" (locked in)
+//   Outcome: "failure" (not met) vs "success" (met)
+//
+// Combinations:
+//   [tentative, failure] → not met yet, still achievable
+//   [tentative, success] → currently met, could change
+//   [final, failure]     → impossible to achieve
+//   [final, success]     → guaranteed/locked in
+export type Finality = "tentative" | "final";
+export type Outcome = "failure" | "success";
+export type ObjectiveStatus = [Finality, Outcome];
+
 // Represents a trick won (UI decides how to render - e.g., as card back)
 export type ObjectiveTrick = "trick";
 
