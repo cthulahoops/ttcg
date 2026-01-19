@@ -107,7 +107,27 @@ export function PlayerSeat({
             <span className="aside-label">
               {asideCard === "hidden" ? "Has card aside" : "Aside:"}
             </span>
-            {asideCard !== "hidden" && <Card card={asideCard} />}
+            {(() => {
+              if (asideCard === "hidden") {
+                return <Card card="hidden" />;
+              }
+              const isSelectable =
+                selectableCards?.some(
+                  (c) =>
+                    c.suit === asideCard.suit && c.value === asideCard.value
+                ) ?? false;
+              return (
+                <Card
+                  card={asideCard}
+                  clickable={isSelectable}
+                  onClick={
+                    isSelectable && onSelectCard
+                      ? () => onSelectCard(asideCard)
+                      : undefined
+                  }
+                />
+              );
+            })()}
           </div>
         )}
       </div>
