@@ -217,6 +217,73 @@ describe("Gwaihir", () => {
     });
   });
 
+  describe("display.getObjectiveCards", () => {
+    test("returns empty array when no tricks won", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      const result = Gwaihir.display.getObjectiveCards!(game, seat);
+      expect(result.cards).toEqual([]);
+    });
+
+    test("returns empty array when won tricks have no mountains", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      addWonCards(seat, [
+        { suit: "forests", value: 3 },
+        { suit: "hills", value: 5 },
+      ]);
+      addWonCards(seat, [
+        { suit: "shadows", value: 2 },
+        { suit: "rings", value: 1 },
+      ]);
+      const result = Gwaihir.display.getObjectiveCards!(game, seat);
+      expect(result.cards).toEqual([]);
+    });
+
+    test("returns 1 trick marker when 1 trick contains mountains", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      addWonCards(seat, [
+        { suit: "mountains", value: 4 },
+        { suit: "forests", value: 2 },
+      ]);
+      addWonCards(seat, [
+        { suit: "shadows", value: 3 },
+        { suit: "hills", value: 6 },
+      ]);
+      const result = Gwaihir.display.getObjectiveCards!(game, seat);
+      expect(result.cards).toEqual(["trick"]);
+    });
+
+    test("returns 2 trick markers when 2 tricks contain mountains", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      addWonCards(seat, [
+        { suit: "mountains", value: 4 },
+        { suit: "forests", value: 2 },
+      ]);
+      addWonCards(seat, [
+        { suit: "mountains", value: 7 },
+        { suit: "hills", value: 1 },
+      ]);
+      const result = Gwaihir.display.getObjectiveCards!(game, seat);
+      expect(result.cards).toEqual(["trick", "trick"]);
+    });
+
+    test("returns trick markers for each qualifying trick, not individual mountain cards", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      // One trick with 3 mountain cards - should show as 1 trick marker
+      addWonCards(seat, [
+        { suit: "mountains", value: 1 },
+        { suit: "mountains", value: 2 },
+        { suit: "mountains", value: 3 },
+      ]);
+      const result = Gwaihir.display.getObjectiveCards!(game, seat);
+      expect(result.cards).toEqual(["trick"]);
+    });
+  });
+
   describe("metadata", () => {
     test("has correct name", () => {
       expect(Gwaihir.name).toBe("Gwaihir");

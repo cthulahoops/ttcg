@@ -9,6 +9,7 @@ Bug 1: Shadowfax
     Expected: Show 0-2+ trick card backs, not individual hills cards
 
 Bug 2: Gwaihir
+    Status: DONE
 
     File: shared/characters/gwaihir.ts
     Change getObjectiveCards() to return only mountain trick markers
