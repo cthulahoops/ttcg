@@ -180,21 +180,6 @@ describe("Arwen", () => {
   });
 
   describe("objective.isCompleted", () => {
-    test("returns false when game not finished even if check passes", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      // Give cards to make game not finished
-      seat.hand.addCard({ suit: "mountains", value: 1 });
-      game.seats[1]!.hand.addCard({ suit: "mountains", value: 2 });
-      addWonCards(seat, [
-        { suit: "forests", value: 1 },
-        { suit: "forests", value: 2 },
-      ]);
-      expect(Arwen.objective.check(game, seat)).toBe(true);
-      expect(game.finished).toBe(false);
-      expect(Arwen.objective.isCompleted(game, seat)).toBe(false);
-    });
-
     test("returns true when game finished and check passes", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
@@ -211,6 +196,99 @@ describe("Arwen", () => {
       const seat = game.seats[0]!;
       expect(game.finished).toBe(true);
       expect(Arwen.objective.isCompleted(game, seat)).toBe(false);
+    });
+
+    test("returns true early when guaranteed to have most forests", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
+      }
+      expect(game.finished).toBe(false);
+      // Arwen has 6 forests, others have 0, only 2 forests remain
+      // Others can at most get 2, so Arwen is guaranteed to have most
+      addWonCards(seat, [
+        { suit: "forests", value: 1 },
+        { suit: "forests", value: 2 },
+        { suit: "forests", value: 3 },
+        { suit: "forests", value: 4 },
+        { suit: "forests", value: 5 },
+        { suit: "forests", value: 6 },
+      ]);
+      expect(Arwen.objective.isCompleted(game, seat)).toBe(true);
+    });
+
+    test("returns false early when another player could catch up", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      const otherSeat = game.seats[1]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
+      }
+      expect(game.finished).toBe(false);
+      // Arwen has 3, other has 2, 3 forests remain
+      // Other could get all 3 and have 5, tying or exceeding Arwen's 3
+      addWonCards(seat, [
+        { suit: "forests", value: 1 },
+        { suit: "forests", value: 2 },
+        { suit: "forests", value: 3 },
+      ]);
+      addWonCards(otherSeat, [
+        { suit: "forests", value: 4 },
+        { suit: "forests", value: 5 },
+      ]);
+      expect(Arwen.objective.isCompleted(game, seat)).toBe(false);
+    });
+
+    test("returns false early when tied (ties don't count as most)", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      const otherSeat = game.seats[1]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
+      }
+      expect(game.finished).toBe(false);
+      // Both have 4 forests, no forests remain - a tie is not "most"
+      addWonCards(seat, [
+        { suit: "forests", value: 1 },
+        { suit: "forests", value: 2 },
+        { suit: "forests", value: 3 },
+        { suit: "forests", value: 4 },
+      ]);
+      addWonCards(otherSeat, [
+        { suit: "forests", value: 5 },
+        { suit: "forests", value: 6 },
+        { suit: "forests", value: 7 },
+        { suit: "forests", value: 8 },
+      ]);
+      // No forests remain, but game not finished (has other cards in hand)
+      // Arwen has 4, other has 4 - tie, so not completed
+      expect(Arwen.objective.isCompleted(game, seat)).toBe(false);
+    });
+
+    test("returns true early with comfortable lead", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      const otherSeat = game.seats[1]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
+      }
+      expect(game.finished).toBe(false);
+      // Arwen has 5 forests, other has 1, 2 forests remain
+      // Other could get 1+2=3, still less than 5
+      addWonCards(seat, [
+        { suit: "forests", value: 1 },
+        { suit: "forests", value: 2 },
+        { suit: "forests", value: 3 },
+        { suit: "forests", value: 4 },
+        { suit: "forests", value: 5 },
+      ]);
+      addWonCards(otherSeat, [{ suit: "forests", value: 6 }]);
+      expect(Arwen.objective.isCompleted(game, seat)).toBe(true);
     });
   });
 

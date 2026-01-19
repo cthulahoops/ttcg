@@ -154,6 +154,7 @@ describe("Pippin", () => {
       // Everyone has 0 tricks - Pippin is tied for fewest
       expect(game.finished).toBe(false);
       expect(Pippin.objective.check(game, seat)).toBe(true);
+      // Not completed yet - could still win more tricks
       expect(Pippin.objective.isCompleted(game, seat)).toBe(false);
     });
 
@@ -179,6 +180,79 @@ describe("Pippin", () => {
       addWonCards(game.seats[2]!, [{ suit: "hills", value: 4 }]);
       addWonCards(game.seats[3]!, [{ suit: "rings", value: 1 }]);
       expect(game.finished).toBe(true);
+      expect(Pippin.objective.isCompleted(game, seat)).toBe(false);
+    });
+
+    test("returns true early when guaranteed fewest (myMax <= othersMin)", () => {
+      const game = createTestGame(4);
+      game.currentTrickNumber = 7; // 2 tricks remaining (9-7=2)
+      const seat = game.seats[0]!;
+      // Pippin has 0 tricks, others have 3 tricks each
+      // myMax = 0 + 2 = 2
+      // othersMin = 3
+      // 2 <= 3, so guaranteed fewest
+      addWonCards(game.seats[1]!, [{ suit: "mountains", value: 1 }]);
+      addWonCards(game.seats[1]!, [{ suit: "mountains", value: 2 }]);
+      addWonCards(game.seats[1]!, [{ suit: "mountains", value: 3 }]);
+      addWonCards(game.seats[2]!, [{ suit: "shadows", value: 1 }]);
+      addWonCards(game.seats[2]!, [{ suit: "shadows", value: 2 }]);
+      addWonCards(game.seats[2]!, [{ suit: "shadows", value: 3 }]);
+      addWonCards(game.seats[3]!, [{ suit: "forests", value: 1 }]);
+      addWonCards(game.seats[3]!, [{ suit: "forests", value: 2 }]);
+      addWonCards(game.seats[3]!, [{ suit: "forests", value: 3 }]);
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "hills", value: s.seatIndex + 1 });
+      }
+      expect(game.finished).toBe(false);
+      expect(Pippin.objective.isCompleted(game, seat)).toBe(true);
+    });
+
+    test("returns true early when can tie for joint fewest", () => {
+      const game = createTestGame(4);
+      game.currentTrickNumber = 8; // 1 trick remaining (9-8=1)
+      const seat = game.seats[0]!;
+      // Pippin has 1 trick, one other has 2 tricks
+      // myMax = 1 + 1 = 2
+      // othersMin = 2
+      // 2 <= 2, so guaranteed joint fewest
+      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
+      addWonCards(game.seats[1]!, [{ suit: "shadows", value: 1 }]);
+      addWonCards(game.seats[1]!, [{ suit: "shadows", value: 2 }]);
+      addWonCards(game.seats[2]!, [{ suit: "forests", value: 1 }]);
+      addWonCards(game.seats[2]!, [{ suit: "forests", value: 2 }]);
+      addWonCards(game.seats[2]!, [{ suit: "forests", value: 3 }]);
+      addWonCards(game.seats[3]!, [{ suit: "hills", value: 1 }]);
+      addWonCards(game.seats[3]!, [{ suit: "hills", value: 2 }]);
+      addWonCards(game.seats[3]!, [{ suit: "hills", value: 3 }]);
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "rings", value: s.seatIndex + 1 });
+      }
+      expect(game.finished).toBe(false);
+      expect(Pippin.objective.isCompleted(game, seat)).toBe(true);
+    });
+
+    test("returns false when not guaranteed fewest (myMax > othersMin)", () => {
+      const game = createTestGame(4);
+      game.currentTrickNumber = 6; // 3 tricks remaining (9-6=3)
+      const seat = game.seats[0]!;
+      // Pippin has 1 trick, others have 2 tricks each
+      // myMax = 1 + 3 = 4
+      // othersMin = 2
+      // 4 > 2, so not guaranteed fewest
+      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
+      addWonCards(game.seats[1]!, [{ suit: "shadows", value: 1 }]);
+      addWonCards(game.seats[1]!, [{ suit: "shadows", value: 2 }]);
+      addWonCards(game.seats[2]!, [{ suit: "forests", value: 1 }]);
+      addWonCards(game.seats[2]!, [{ suit: "forests", value: 2 }]);
+      addWonCards(game.seats[3]!, [{ suit: "hills", value: 1 }]);
+      addWonCards(game.seats[3]!, [{ suit: "hills", value: 2 }]);
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "rings", value: s.seatIndex + 1 });
+      }
+      expect(game.finished).toBe(false);
       expect(Pippin.objective.isCompleted(game, seat)).toBe(false);
     });
   });

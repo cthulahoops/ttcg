@@ -34,8 +34,23 @@ export const Pippin: CharacterDefinition = {
       // Can still complete if other players can catch up with remaining tricks
       return totalGap <= game.tricksRemaining();
     },
-    isCompleted: (game, seat) =>
-      game.finished && Pippin.objective.check(game, seat),
+    isCompleted: (game, seat) => {
+      if (game.finished) {
+        return Pippin.objective.check(game, seat);
+      }
+      // Early completion: check if guaranteed to have fewest (or joint fewest) tricks
+      const myCount = seat.getTrickCount();
+      const tricksRemaining = game.tricksRemaining();
+      const myMax = myCount + tricksRemaining;
+
+      const otherCounts = game.seats
+        .filter((s: Seat) => s.seatIndex !== seat.seatIndex)
+        .map((s: Seat) => s.getTrickCount());
+      const othersMin = Math.min(...otherCounts);
+
+      // Guaranteed fewest if even winning all remaining tricks keeps us at or below current minimum
+      return myMax <= othersMin;
+    },
   },
 
   display: {

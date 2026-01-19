@@ -180,21 +180,6 @@ describe("Gloin", () => {
   });
 
   describe("objective.isCompleted", () => {
-    test("returns false when game not finished even if check passes", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      // Give cards to make game not finished
-      seat.hand.addCard({ suit: "forests", value: 1 });
-      game.seats[1]!.hand.addCard({ suit: "forests", value: 2 });
-      addWonCards(seat, [
-        { suit: "mountains", value: 1 },
-        { suit: "mountains", value: 2 },
-      ]);
-      expect(Gloin.objective.check(game, seat)).toBe(true);
-      expect(game.finished).toBe(false);
-      expect(Gloin.objective.isCompleted(game, seat)).toBe(false);
-    });
-
     test("returns true when game finished and check passes", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
@@ -211,6 +196,99 @@ describe("Gloin", () => {
       const seat = game.seats[0]!;
       expect(game.finished).toBe(true);
       expect(Gloin.objective.isCompleted(game, seat)).toBe(false);
+    });
+
+    test("returns true early when guaranteed to have most mountains", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
+      expect(game.finished).toBe(false);
+      // Gloin has 6 mountains, others have 0, only 2 mountains remain
+      // Others can at most get 2, so Gloin is guaranteed to have most
+      addWonCards(seat, [
+        { suit: "mountains", value: 1 },
+        { suit: "mountains", value: 2 },
+        { suit: "mountains", value: 3 },
+        { suit: "mountains", value: 4 },
+        { suit: "mountains", value: 5 },
+        { suit: "mountains", value: 6 },
+      ]);
+      expect(Gloin.objective.isCompleted(game, seat)).toBe(true);
+    });
+
+    test("returns false early when another player could catch up", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      const otherSeat = game.seats[1]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
+      expect(game.finished).toBe(false);
+      // Gloin has 3, other has 2, 3 mountains remain
+      // Other could get all 3 and have 5, tying or exceeding Gloin's 3
+      addWonCards(seat, [
+        { suit: "mountains", value: 1 },
+        { suit: "mountains", value: 2 },
+        { suit: "mountains", value: 3 },
+      ]);
+      addWonCards(otherSeat, [
+        { suit: "mountains", value: 4 },
+        { suit: "mountains", value: 5 },
+      ]);
+      expect(Gloin.objective.isCompleted(game, seat)).toBe(false);
+    });
+
+    test("returns false early when tied (ties don't count as most)", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      const otherSeat = game.seats[1]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
+      expect(game.finished).toBe(false);
+      // Both have 4 mountains, no mountains remain - a tie is not "most"
+      addWonCards(seat, [
+        { suit: "mountains", value: 1 },
+        { suit: "mountains", value: 2 },
+        { suit: "mountains", value: 3 },
+        { suit: "mountains", value: 4 },
+      ]);
+      addWonCards(otherSeat, [
+        { suit: "mountains", value: 5 },
+        { suit: "mountains", value: 6 },
+        { suit: "mountains", value: 7 },
+        { suit: "mountains", value: 8 },
+      ]);
+      // No mountains remain, but game not finished (has other cards in hand)
+      // Gloin has 4, other has 4 - tie, so not completed
+      expect(Gloin.objective.isCompleted(game, seat)).toBe(false);
+    });
+
+    test("returns true early with comfortable lead", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      const otherSeat = game.seats[1]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
+      expect(game.finished).toBe(false);
+      // Gloin has 5 mountains, other has 1, 2 mountains remain
+      // Other could get 1+2=3, still less than 5
+      addWonCards(seat, [
+        { suit: "mountains", value: 1 },
+        { suit: "mountains", value: 2 },
+        { suit: "mountains", value: 3 },
+        { suit: "mountains", value: 4 },
+        { suit: "mountains", value: 5 },
+      ]);
+      addWonCards(otherSeat, [{ suit: "mountains", value: 6 }]);
+      expect(Gloin.objective.isCompleted(game, seat)).toBe(true);
     });
   });
 

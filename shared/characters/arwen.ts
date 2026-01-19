@@ -43,8 +43,30 @@ export const Arwen: CharacterDefinition = {
 
       return myCounts + forestsRemaining > othersMaxCounts;
     },
-    isCompleted: (game, seat) =>
-      game.finished && Arwen.objective.check(game, seat),
+    isCompleted: (game, seat) => {
+      if (game.finished) {
+        return Arwen.objective.check(game, seat);
+      }
+      // Early completion: check if guaranteed to have the most forests
+      const myCount = countForestsWon(seat);
+
+      const totalForestsWon = game.seats.reduce(
+        (total: number, s: Seat) => total + countForestsWon(s),
+        0
+      );
+      const forestsRemaining = CARDS_PER_SUIT.forests - totalForestsWon;
+
+      // Calculate the maximum forests any other player could end up with
+      const othersMax = Math.max(
+        ...game.seats
+          .filter((s: Seat) => s.seatIndex !== seat.seatIndex)
+          .map((s: Seat) => countForestsWon(s) + forestsRemaining)
+      );
+
+      // Guaranteed most if our current count exceeds their max possible
+      // Use strict > because ties don't count as "most"
+      return myCount > othersMax;
+    },
   },
 
   display: {

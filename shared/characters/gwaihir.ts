@@ -41,7 +41,10 @@ export const Gwaihir: CharacterDefinition = {
       };
     },
     getObjectiveCards: (_game, seat) => {
-      const cards: ObjectiveCard[] = Array(seat.getTrickCount()).fill("trick");
+      // Show trick markers for tricks containing mountain cards
+      const cards: ObjectiveCard[] = Array(countMountainTricks(seat)).fill(
+        "trick"
+      );
       return { cards };
     },
   },
