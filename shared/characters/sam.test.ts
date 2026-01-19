@@ -37,37 +37,46 @@ function addWonCards(seat: Seat, cards: Card[]): void {
 }
 
 describe("Sam", () => {
-  describe("objective.check", () => {
-    test("returns false when no threat card assigned", () => {
+  describe("objective.getStatus", () => {
+    test("returns [tentative, failure] when no threat card assigned", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
-      expect(Sam.objective.check(game, seat)).toBe(false);
+      expect(Sam.objective.getStatus(game, seat)).toEqual([
+        "tentative",
+        "failure",
+      ]);
     });
 
-    test("returns false when threat card assigned but not won", () => {
+    test("returns [tentative, failure] when threat card assigned but not won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       seat.threatCard = 5;
-      expect(Sam.objective.check(game, seat)).toBe(false);
+      expect(Sam.objective.getStatus(game, seat)).toEqual([
+        "tentative",
+        "failure",
+      ]);
     });
 
-    test("returns false when different hills card won", () => {
+    test("returns [tentative, failure] when different hills card won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       seat.threatCard = 5;
       addWonCards(seat, [{ suit: "hills", value: 3 }]);
-      expect(Sam.objective.check(game, seat)).toBe(false);
+      expect(Sam.objective.getStatus(game, seat)).toEqual([
+        "tentative",
+        "failure",
+      ]);
     });
 
-    test("returns true when matching hills card won", () => {
+    test("returns [final, success] when matching hills card won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       seat.threatCard = 5;
       addWonCards(seat, [{ suit: "hills", value: 5 }]);
-      expect(Sam.objective.check(game, seat)).toBe(true);
+      expect(Sam.objective.getStatus(game, seat)).toEqual(["final", "success"]);
     });
 
-    test("returns true when matching hills card is among other cards", () => {
+    test("returns [final, success] when matching hills card is among other cards", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       seat.threatCard = 3;
@@ -76,7 +85,7 @@ describe("Sam", () => {
         { suit: "hills", value: 3 },
         { suit: "shadows", value: 7 },
       ]);
-      expect(Sam.objective.check(game, seat)).toBe(true);
+      expect(Sam.objective.getStatus(game, seat)).toEqual(["final", "success"]);
     });
 
     test("ignores non-hills cards with matching value", () => {
@@ -88,92 +97,34 @@ describe("Sam", () => {
         { suit: "shadows", value: 5 },
         { suit: "forests", value: 5 },
       ]);
-      expect(Sam.objective.check(game, seat)).toBe(false);
-    });
-  });
-
-  describe("objective.isCompletable", () => {
-    test("returns true when no threat card assigned", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      expect(Sam.objective.isCompletable(game, seat)).toBe(true);
+      expect(Sam.objective.getStatus(game, seat)).toEqual([
+        "tentative",
+        "failure",
+      ]);
     });
 
-    test("returns true when threat card not yet won by anyone", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 5;
-      expect(Sam.objective.isCompletable(game, seat)).toBe(true);
-    });
-
-    test("returns true when Sam has won the threat card", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 5;
-      addWonCards(seat, [{ suit: "hills", value: 5 }]);
-      expect(Sam.objective.isCompletable(game, seat)).toBe(true);
-    });
-
-    test("returns false when another player has won the threat card", () => {
+    test("returns [final, failure] when another player has won the threat card", () => {
       const game = createTestGame(4);
       const samSeat = game.seats[0]!;
       const otherSeat = game.seats[1]!;
       samSeat.threatCard = 5;
       addWonCards(otherSeat, [{ suit: "hills", value: 5 }]);
-      expect(Sam.objective.isCompletable(game, samSeat)).toBe(false);
+      expect(Sam.objective.getStatus(game, samSeat)).toEqual([
+        "final",
+        "failure",
+      ]);
     });
 
-    test("returns true when another player won a different hills card", () => {
+    test("returns [tentative, failure] when another player won a different hills card", () => {
       const game = createTestGame(4);
       const samSeat = game.seats[0]!;
       const otherSeat = game.seats[1]!;
       samSeat.threatCard = 5;
       addWonCards(otherSeat, [{ suit: "hills", value: 3 }]);
-      expect(Sam.objective.isCompletable(game, samSeat)).toBe(true);
-    });
-  });
-
-  describe("objective.isCompleted", () => {
-    test("returns same result as check", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 5;
-      addWonCards(seat, [{ suit: "hills", value: 5 }]);
-      expect(Sam.objective.isCompleted(game, seat)).toBe(
-        Sam.objective.check(game, seat)
-      );
-    });
-  });
-
-  describe("display.renderStatus", () => {
-    test("shows met=false when objective not met", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 5;
-      const status = Sam.display.renderStatus(game, seat);
-      expect(status.met).toBe(false);
-      expect(status.completable).toBe(true);
-    });
-
-    test("shows met=true when objective is met", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 5;
-      addWonCards(seat, [{ suit: "hills", value: 5 }]);
-      const status = Sam.display.renderStatus(game, seat);
-      expect(status.met).toBe(true);
-      expect(status.completed).toBe(true);
-    });
-
-    test("shows completable=false when card won by another", () => {
-      const game = createTestGame(4);
-      const samSeat = game.seats[0]!;
-      const otherSeat = game.seats[1]!;
-      samSeat.threatCard = 5;
-      addWonCards(otherSeat, [{ suit: "hills", value: 5 }]);
-      const status = Sam.display.renderStatus(game, samSeat);
-      expect(status.met).toBe(false);
-      expect(status.completable).toBe(false);
+      expect(Sam.objective.getStatus(game, samSeat)).toEqual([
+        "tentative",
+        "failure",
+      ]);
     });
   });
 

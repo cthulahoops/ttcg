@@ -22,7 +22,8 @@ export function PlayerSeat({
     character,
     objective,
     tricksWon,
-    status,
+    objectiveStatus,
+    statusDetails,
     hand,
     asideCard,
     objectiveCards,
@@ -31,14 +32,19 @@ export function PlayerSeat({
   // Show character name when assigned, otherwise player name
   const displayName = character ?? playerName ?? `Player ${seatIndex + 1}`;
 
-  // Compact status icon
-  const statusIcon = status
-    ? status.completed
-      ? "★"
-      : status.met
-        ? "✓"
-        : "✗"
+  // Destructure the tuple format: [Finality, Outcome]
+  const [finality, outcome] = objectiveStatus ?? [null, null];
+
+  // Status icon based on objective status
+  const statusIcon = objectiveStatus
+    ? finality === "final" && outcome === "success"
+      ? "★" // [final, success] → guaranteed
+      : outcome === "success"
+        ? "✓" // [tentative, success] → currently met
+        : "✗" // [*, failure] → not met
     : null;
+
+  const isImpossible = finality === "final" && outcome === "failure";
 
   return (
     <section
@@ -74,18 +80,18 @@ export function PlayerSeat({
         <div className="tricks-won">Tricks: {tricksWon.length}</div>
 
         <div className="objective-status">
-          {status && (
+          {objectiveStatus && (
             <>
-              {status.completed ? (
+              {finality === "final" && outcome === "success" ? (
                 <span className="completed">★</span>
-              ) : status.met ? (
+              ) : outcome === "success" ? (
                 <span className="success">✓</span>
-              ) : status.completable ? (
-                <span className="fail">✗</span>
-              ) : (
+              ) : isImpossible ? (
                 <span className="fail">✗ (impossible)</span>
+              ) : (
+                <span className="fail">✗</span>
               )}
-              {status.details && ` ${status.details}`}
+              {statusDetails && ` ${statusDetails}`}
             </>
           )}
         </div>

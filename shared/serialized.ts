@@ -6,7 +6,7 @@ import type {
   Card,
   Suit,
   Trick,
-  CharacterStatus,
+  ObjectiveStatus,
   ObjectiveCards,
 } from "./types";
 
@@ -65,7 +65,8 @@ export interface SerializedSeat {
   threatCard: number | null;
   tricksWon: Trick[];
   playedCards: Card[];
-  status?: CharacterStatus;
+  objectiveStatus?: ObjectiveStatus;
+  statusDetails?: string;
   objective: string;
   hand: SerializedHand | null;
   asideCard: Card | "hidden" | null; // Shadowfax aside card (hidden to other players)

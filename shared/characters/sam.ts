@@ -1,7 +1,7 @@
-import type { ObjectiveCard } from "../types";
-import type { CharacterDefinition } from "./types";
+import type { ObjectiveCard, ObjectiveStatus } from "../types";
+import type { NewCharacterDefinition } from "./types";
 
-export const Sam: CharacterDefinition = {
+export const Sam: NewCharacterDefinition = {
   name: "Sam",
   setupText:
     "Draw a Hills threat card, then exchange with Frodo, Merry, or Pippin",
@@ -17,24 +17,25 @@ export const Sam: CharacterDefinition = {
 
   objective: {
     text: "Win the Hills card matching your threat card",
-    check: (game, seat) => {
-      if (!seat.threatCard) return false;
-      return game.hasCard(seat, "hills", seat.threatCard);
+
+    getStatus: (game, seat): ObjectiveStatus => {
+      if (!seat.threatCard) {
+        return ["tentative", "failure"];
+      }
+      const hasCard = game.hasCard(seat, "hills", seat.threatCard);
+      const cardGone = game.cardGone(seat, "hills", seat.threatCard);
+
+      if (hasCard) {
+        return ["final", "success"];
+      } else if (cardGone) {
+        return ["final", "failure"];
+      } else {
+        return ["tentative", "failure"];
+      }
     },
-    isCompletable: (game, seat) => {
-      if (!seat.threatCard) return true;
-      return !game.cardGone(seat, "hills", seat.threatCard);
-    },
-    isCompleted: (game, seat) => Sam.objective.check(game, seat),
   },
 
   display: {
-    renderStatus: (game, seat) => {
-      const met = Sam.objective.check(game, seat);
-      const completable = Sam.objective.isCompletable(game, seat);
-      const completed = Sam.objective.isCompleted(game, seat);
-      return { met, completable, completed };
-    },
     getObjectiveCards: (game, seat) => {
       const cards: ObjectiveCard[] = [];
       if (seat.threatCard !== null) {

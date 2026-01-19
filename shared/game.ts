@@ -2,6 +2,7 @@ import { shuffleDeck, sortHand, delay } from "./utils";
 import { Seat } from "./seat";
 import { ProxyController } from "./controllers";
 import { characterRegistry } from "./characters/registry";
+import { getObjectiveStatus } from "./characters/status-adapter";
 import type { Card, Suit, ThreatCard, ChoiceButton } from "./types";
 
 // ===== INTERFACES =====
@@ -492,15 +493,31 @@ function getLegalMoves(gameState: Game, seat: Seat): Card[] {
 // ===== EXCHANGE HELPER FUNCTIONS =====
 
 function checkObjective(gameState: Game, seat: Seat): boolean {
-  return seat.character!.objective.check(gameState, seat);
+  const [, outcome] = getObjectiveStatus(
+    seat.character!.objective,
+    gameState,
+    seat
+  );
+  return outcome === "success";
 }
 
 function isObjectiveCompletable(gameState: Game, seat: Seat): boolean {
-  return seat.character!.objective.isCompletable(gameState, seat);
+  const [finality, outcome] = getObjectiveStatus(
+    seat.character!.objective,
+    gameState,
+    seat
+  );
+  // Completable unless it's final failure
+  return !(finality === "final" && outcome === "failure");
 }
 
 function isObjectiveCompleted(gameState: Game, seat: Seat): boolean {
-  return seat.character!.objective.isCompleted(gameState, seat);
+  const [finality, outcome] = getObjectiveStatus(
+    seat.character!.objective,
+    gameState,
+    seat
+  );
+  return finality === "final" && outcome === "success";
 }
 
 function allObjectivesCompleted(gameState: Game): boolean {
