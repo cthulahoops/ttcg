@@ -231,7 +231,156 @@ export function getObjectiveDetails(
 
 ---
 
-## Phase 2: Migrate Characters (25 commits)
+## Phase 2: Sam Test Migration (delete old interface)
+
+Fully migrate Sam as a test case to validate the new interface works end-to-end. This includes **deleting** the legacy methods to prove the adapter fallback is no longer needed for migrated characters.
+
+### Step 2.1: Add getStatus to Sam
+
+**shared/characters/sam.ts:**
+```typescript
+import type { ObjectiveStatus } from "../types";
+
+objective: {
+  text: "Win the Hills card matching your threat card",
+
+  // Legacy methods (will be removed in Step 2.3)
+  check: (game, seat) => { ... },
+  isCompletable: (game, seat) => { ... },
+  isCompleted: (game, seat) => { ... },
+
+  // NEW
+  getStatus: (game, seat): ObjectiveStatus => {
+    if (!seat.threatCard) {
+      return ["tentative", "failure"];
+    }
+    const hasCard = game.hasCard(seat, "hills", seat.threatCard);
+    const cardGone = game.cardGone(seat, "hills", seat.threatCard);
+
+    if (hasCard) {
+      return ["final", "success"];
+    } else if (cardGone) {
+      return ["final", "failure"];
+    } else {
+      return ["tentative", "failure"];
+    }
+  },
+  // No getDetails needed - Sam has no details
+},
+```
+
+**Verification:** `bun run check` passes. Play a game with Sam - status displays correctly (now via getStatus, not adapter fallback).
+
+---
+
+### Step 2.2: Remove renderStatus from Sam
+
+Delete the `renderStatus` method from Sam's display object. The adapter's `getObjectiveDetails()` fallback is no longer needed since Sam has no details.
+
+**shared/characters/sam.ts:**
+```typescript
+display: {
+  // REMOVE: renderStatus - no longer needed
+  getObjectiveCards: (game, seat) => { ... },
+},
+```
+
+**Verification:** `bun run check` passes. Confirm status still displays correctly.
+
+---
+
+### Step 2.3: Delete legacy methods and update interface
+
+This step makes three coordinated changes so tests pass:
+
+1. **Update `CharacterObjective` interface** - Make legacy methods optional
+2. **Update adapter** - Add validation for missing methods
+3. **Delete legacy methods from Sam** - Remove `check`, `isCompletable`, `isCompleted`
+4. **Update Sam tests** - If any tests use the old API
+
+**shared/characters/types.ts:**
+```typescript
+export interface CharacterObjective {
+  text?: string;
+  getText?: (game: Game) => string;
+
+  // Legacy methods - optional during migration
+  // Characters with getStatus() don't need these
+  check?: (game: Game, seat: Seat) => boolean;
+  isCompletable?: (game: Game, seat: Seat) => boolean;
+  isCompleted?: (game: Game, seat: Seat) => boolean;
+
+  // New methods
+  getStatus?: (game: Game, seat: Seat) => ObjectiveStatus;
+  getDetails?: (game: Game, seat: Seat) => string | undefined;
+}
+```
+
+**shared/characters/status-adapter.ts:**
+```typescript
+export function getObjectiveStatus(
+  objective: CharacterObjective,
+  game: Game,
+  seat: Seat
+): ObjectiveStatus {
+  // Prefer new API if available
+  if (objective.getStatus) {
+    return objective.getStatus(game, seat);
+  }
+
+  // Fallback: call legacy methods and convert
+  // All three must exist for fallback to work
+  if (!objective.check || !objective.isCompletable || !objective.isCompleted) {
+    throw new Error("Character must have either getStatus() or all legacy methods");
+  }
+
+  const met = objective.check(game, seat);
+  const completable = objective.isCompletable(game, seat);
+  const completed = objective.isCompleted(game, seat);
+
+  return booleansToStatus(met, completable, completed);
+}
+```
+
+**shared/characters/sam.ts:**
+```typescript
+objective: {
+  text: "Win the Hills card matching your threat card",
+
+  getStatus: (game, seat): ObjectiveStatus => {
+    if (!seat.threatCard) {
+      return ["tentative", "failure"];
+    }
+    const hasCard = game.hasCard(seat, "hills", seat.threatCard);
+    const cardGone = game.cardGone(seat, "hills", seat.threatCard);
+
+    if (hasCard) {
+      return ["final", "success"];
+    } else if (cardGone) {
+      return ["final", "failure"];
+    } else {
+      return ["tentative", "failure"];
+    }
+  },
+},
+```
+
+**Verification:** `bun run check` and `bun test` pass. Sam works with new API, other characters work via legacy fallback.
+
+---
+
+### Phase 2 Outcome
+
+After completing Phase 2:
+- Sam is fully migrated (no legacy methods)
+- Interface allows either old or new API
+- Adapter validates that characters have one or the other
+- All other characters still work via adapter fallback
+- We've proven the migration path works
+
+---
+
+## Phase 3: Migrate Remaining Characters
 
 ### Migration Order (by complexity)
 
@@ -239,7 +388,7 @@ export function getObjectiveDetails(
 Gandalf, Merry, Pippin, Celeborn
 
 **Batch 2 - Simple with completability logic:**
-Sam, Legolas, Gimli, Elrond
+Legolas, Gimli, Elrond
 
 **Batch 3 - With details:**
 Frodo, Gloin, Bilbo Baggins
@@ -250,54 +399,52 @@ Aragorn, Goldberry, Galadriel, Tom Bombadil, Glorfindel
 **Batch 5 - Remaining:**
 Boromir, Farmer Maggot, Barliman Butterbur, Bill the Pony, Gildor Inglorian, Fatty Bolger, Arwen, Gwaihir, Shadowfax
 
-### Per-Character Migration
+### Per-Character Migration Pattern
 
-**Simple character (Gandalf):**
+For each character:
+1. Add `getStatus()` method
+2. Add `getDetails()` if character has details
+3. Remove `renderStatus()` from display
+4. Remove legacy `check`, `isCompletable`, `isCompleted`
+5. Update tests if needed
+
+**Example - Simple character (Gandalf):**
 ```typescript
 objective: {
   text: "Win at least one trick",
-  // Legacy methods (keep for now)
-  check: (_game, seat) => seat.getTrickCount() >= 1,
-  isCompletable: (_game, _seat) => true,
-  isCompleted: (game, seat) => Gandalf.objective.check(game, seat),
 
-  // NEW: Add getStatus - returns [Finality, Outcome] tuple
   getStatus: (_game, seat): ObjectiveStatus => {
     const hasTrick = seat.getTrickCount() >= 1;
-    // Always completable, so finality depends only on success
     return hasTrick ? ["final", "success"] : ["tentative", "failure"];
   },
-  // No getDetails needed - Gandalf has no details
 },
 ```
 
-**Character with details (Frodo):**
+**Example - Character with details (Frodo):**
 ```typescript
 objective: {
-  // ... legacy methods ...
+  getText: (game) => `Win ${getRingsNeeded(game)} Ring cards`,
 
   getStatus: (game, seat): ObjectiveStatus => {
     const ringsNeeded = getRingsNeeded(game);
-    const ringCount = seat.getAllWonCards()
-      .filter((c: Card) => c.suit === "rings").length;
+    const ringCards = seat.getAllWonCards().filter((c) => c.suit === "rings");
+    const ringCount = ringCards.length;
+    const ringsAvailable = 5 - game.seats.reduce((sum, s) =>
+      s !== seat ? sum + s.getAllWonCards().filter(c => c.suit === "rings").length : sum, 0);
 
-    const met = ringCount >= ringsNeeded;
-    const completable = Frodo.objective.isCompletable(game, seat);
-    const completed = Frodo.objective.isCompleted(game, seat);
-
-    const finality = completed || !completable ? "final" : "tentative";
-    const outcome = met ? "success" : "failure";
-    return [finality, outcome];
+    if (ringCount >= ringsNeeded) {
+      return ["final", "success"];
+    } else if (ringCount + ringsAvailable < ringsNeeded) {
+      return ["final", "failure"];
+    } else {
+      return ["tentative", "failure"];
+    }
   },
 
   getDetails: (_game, seat): string => {
-    const ringCards = seat.getAllWonCards()
-      .filter((c: Card) => c.suit === "rings");
+    const ringCards = seat.getAllWonCards().filter((c) => c.suit === "rings");
     if (ringCards.length > 0) {
-      const ringList = ringCards
-        .map((c) => c.value)
-        .sort((a, b) => a - b)
-        .join(", ");
+      const ringList = ringCards.map((c) => c.value).sort((a, b) => a - b).join(", ");
       return `Rings: ${ringList}`;
     }
     return "Rings: none";
@@ -305,19 +452,18 @@ objective: {
 },
 ```
 
-Note: During migration, `getStatus()` can call legacy `isCompletable()` and `isCompleted()` to avoid duplicating complex logic.
-
 ---
 
-## Phase 3: Cleanup (after all characters migrated)
+## Phase 4: Final Cleanup
+
+After all characters are migrated:
 
 1. Make `getStatus` required in `CharacterObjective` interface
-2. Remove `check`, `isCompletable`, `isCompleted` from interface
-3. Remove legacy methods from each character file
-4. Remove `renderStatus` from `CharacterDisplay` interface
-5. Remove `renderStatus` from each character file
-6. Remove fallback logic from adapter
-7. Update tests to use new API
+2. Remove optional `check`, `isCompletable`, `isCompleted` from interface
+3. Remove `renderStatus` from `CharacterDisplay` interface
+4. Remove fallback logic from adapter (the error throw)
+5. Remove `booleansToStatus()` helper (no longer needed)
+6. Update any remaining tests using old API
 
 ---
 
@@ -326,12 +472,13 @@ Note: During migration, `getStatus()` can call legacy `isCompletable()` and `isC
 | File | Phase | Changes |
 |------|-------|---------|
 | `shared/types.ts` | 1.1 | Add `ObjectiveStatus` type |
-| `shared/characters/types.ts` | 1.1 | Extend interface |
-| `shared/characters/status-adapter.ts` | 1.1 | New adapter module |
+| `shared/characters/types.ts` | 1.1, 2.4, 4 | Extend interface, make legacy optional, then remove |
+| `shared/characters/status-adapter.ts` | 1.1, 2.4, 4 | New adapter, add validation, then simplify |
 | `shared/serialized.ts` | 1.2 | Replace `status` with new fields |
 | `shared/serialize.ts` | 1.2 | Use adapter |
 | `client/PlayerSeat.tsx` | 1.2 | Use new format |
-| `shared/characters/*.ts` | 2 | Add `getStatus()` to each |
+| `shared/characters/sam.ts` | 2 | Full migration test case |
+| `shared/characters/*.ts` | 3 | Migrate remaining characters |
 
 ---
 
@@ -347,10 +494,17 @@ After Step 1.2:
 - `bun test` passes
 - Play a game - all status icons display correctly (via adapter fallback)
 
-After each character migration:
-- `bun test shared/characters/<name>.test.ts`
+After Phase 2 (Sam migration):
+- `bun run check` passes
+- `bun test` passes
+- Sam works in-game with new API only
+- Other characters still work via adapter fallback
+
+After each Phase 3 character migration:
+- `bun run check` passes
 - Play a game with that character
 
-After Phase 3:
+After Phase 4:
 - Full test suite passes
 - No references to legacy `renderStatus` or boolean methods remain
+- Adapter has no fallback path
