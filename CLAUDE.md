@@ -223,6 +223,8 @@ game.onStateChange → seat.controller.sendGameState(game, seat)
 
 ### Commands
 - **Type checking**: Use `bun run check` (NOT `bun run build`) to verify TypeScript types without building
+- **Code formatting**: Use `bun run format` to auto-format code with Prettier
+- **Format checking**: Use `bun run format:check` to verify code formatting (used in CI)
 
 ### AI Behavior
 - Plays random legal moves (no strategy)
