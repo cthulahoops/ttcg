@@ -2,6 +2,7 @@ Step-by-Step Fix Plan
 Phase 1: Display Bugs (getObjectiveCards)
 
 Bug 1: Shadowfax
+    Status: DONE
 
     File: shared/characters/shadowfax.ts
     Change getObjectiveCards() to return trick markers (count tricks containing hills)

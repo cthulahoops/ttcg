@@ -214,6 +214,73 @@ describe("Shadowfax", () => {
     });
   });
 
+  describe("display.getObjectiveCards", () => {
+    test("returns empty array when no tricks won", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      const result = Shadowfax.display.getObjectiveCards!(game, seat);
+      expect(result.cards).toEqual([]);
+    });
+
+    test("returns empty array when won tricks have no hills cards", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      addWonCards(seat, [
+        { suit: "forests", value: 3 },
+        { suit: "mountains", value: 5 },
+      ]);
+      addWonCards(seat, [
+        { suit: "shadows", value: 2 },
+        { suit: "rings", value: 1 },
+      ]);
+      const result = Shadowfax.display.getObjectiveCards!(game, seat);
+      expect(result.cards).toEqual([]);
+    });
+
+    test("returns 1 trick marker when 1 trick contains hills", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      addWonCards(seat, [
+        { suit: "hills", value: 4 },
+        { suit: "forests", value: 2 },
+      ]);
+      addWonCards(seat, [
+        { suit: "shadows", value: 3 },
+        { suit: "mountains", value: 6 },
+      ]);
+      const result = Shadowfax.display.getObjectiveCards!(game, seat);
+      expect(result.cards).toEqual(["trick"]);
+    });
+
+    test("returns 2 trick markers when 2 tricks contain hills", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      addWonCards(seat, [
+        { suit: "hills", value: 4 },
+        { suit: "forests", value: 2 },
+      ]);
+      addWonCards(seat, [
+        { suit: "hills", value: 7 },
+        { suit: "mountains", value: 1 },
+      ]);
+      const result = Shadowfax.display.getObjectiveCards!(game, seat);
+      expect(result.cards).toEqual(["trick", "trick"]);
+    });
+
+    test("returns trick markers for each qualifying trick, not individual hills cards", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      // One trick with 3 hills cards - should show as 1 trick marker
+      addWonCards(seat, [
+        { suit: "hills", value: 1 },
+        { suit: "hills", value: 2 },
+        { suit: "hills", value: 3 },
+      ]);
+      const result = Shadowfax.display.getObjectiveCards!(game, seat);
+      expect(result.cards).toEqual(["trick"]);
+    });
+  });
+
   describe("metadata", () => {
     test("has correct name", () => {
       expect(Shadowfax.name).toBe("Shadowfax");

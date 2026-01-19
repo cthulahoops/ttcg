@@ -163,3 +163,14 @@ Also refactored to use `countMountainsWon()` helper function for consistency wit
 - Uses strict `<` because ties count as fewest/most per objective text
 
 **Files changed**: `shared/characters/galadriel.ts`, `shared/characters/galadriel.test.ts`
+
+## 2026-01-19: Fix Shadowfax getObjectiveCards display
+
+**Issue**: Shadowfax's `getObjectiveCards()` returned individual hills cards won, but it should return trick markers representing the count of tricks containing hills cards. The objective is "Win at least two tricks containing a hills card" - the UI should show trick card backs (0-2+), not the individual hills cards.
+
+**Solution**: Updated `getObjectiveCards()` in `shared/characters/shadowfax.ts` to:
+- Add `countHillsTricks()` helper function that counts tricks containing at least one hills card
+- Return `Array(countHillsTricks(seat)).fill("trick")` to show trick markers
+- Also refactored `objective.check()` and `renderStatus()` to use the shared helper
+
+**Files changed**: `shared/characters/shadowfax.ts`, `shared/characters/shadowfax.test.ts`

@@ -1,6 +1,12 @@
-import type { Card } from "../types";
+import type { Card, ObjectiveCard } from "../types";
 import type { CharacterDefinition } from "./types";
+import type { Seat } from "../seat";
 import { sortHand } from "../utils";
+
+const countHillsTricks = (seat: Seat) =>
+  seat.tricksWon.filter((trick) =>
+    trick.cards.some((c: Card) => c.suit === "hills")
+  ).length;
 
 export const Shadowfax: CharacterDefinition = {
   name: "Shadowfax",
@@ -28,13 +34,7 @@ export const Shadowfax: CharacterDefinition = {
 
   objective: {
     text: "Win at least two tricks containing a hills card",
-    check: (_game, seat) => {
-      const tricksWithHills = seat.tricksWon.filter(
-        (trick: { number: number; cards: Card[] }) =>
-          trick.cards.some((c) => c.suit === "hills")
-      );
-      return tricksWithHills.length >= 2;
-    },
+    check: (_game, seat) => countHillsTricks(seat) >= 2,
     isCompletable: (_game, _seat) => {
       // Hard to determine without knowing remaining hills distribution
       // Simplified: always completable
@@ -45,10 +45,6 @@ export const Shadowfax: CharacterDefinition = {
 
   display: {
     renderStatus: (game, seat) => {
-      const tricksWithHills = seat.tricksWon.filter(
-        (trick: { number: number; cards: Card[] }) =>
-          trick.cards.some((c) => c.suit === "hills")
-      );
       const met = Shadowfax.objective.check(game, seat);
       const completable = Shadowfax.objective.isCompletable(game, seat);
       const completed = Shadowfax.objective.isCompleted(game, seat);
@@ -57,16 +53,15 @@ export const Shadowfax: CharacterDefinition = {
         met,
         completable,
         completed,
-        details: `Tricks with hills: ${tricksWithHills.length}/2`,
+        details: `Tricks with hills: ${countHillsTricks(seat)}/2`,
       };
     },
     getObjectiveCards: (_game, seat) => {
-      // Show hills cards won in tricks
-      const hillsCards = seat
-        .getAllWonCards()
-        .filter((c: Card) => c.suit === "hills")
-        .sort((a, b) => a.value - b.value);
-      return { cards: hillsCards };
+      // Show trick markers for tricks containing hills cards
+      const cards: ObjectiveCard[] = Array(countHillsTricks(seat)).fill(
+        "trick"
+      );
+      return { cards };
     },
   },
 };
