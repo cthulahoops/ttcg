@@ -1,7 +1,7 @@
 // Character type definitions
 
 import type { Seat } from "../seat";
-import type { CharacterStatus, ObjectiveCards } from "../types";
+import type { CharacterStatus, ObjectiveCards, ObjectiveState } from "../types";
 import type { Game, GameSetupContext } from "../game";
 
 export interface CharacterObjective {
@@ -14,6 +14,7 @@ export interface CharacterObjective {
 
 export interface CharacterDisplay {
   renderStatus: (game: Game, seat: Seat) => CharacterStatus;
+  getStatus?: (game: Game, seat: Seat) => ObjectiveState;
   getObjectiveCards?: (game: Game, seat: Seat) => ObjectiveCards;
 }
 
