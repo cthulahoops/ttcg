@@ -33,11 +33,17 @@ export function PlayerSeat({
 
   // Compact status icon
   const statusIcon = status
-    ? status.completed
-      ? "★"
-      : status.met
-        ? "✓"
-        : "✗"
+    ? (() => {
+        switch (status.status) {
+          case "complete":
+            return "★";
+          case "met":
+            return "✓";
+          case "failed":
+          case "pending":
+            return "✗";
+        }
+      })()
     : null;
 
   return (
@@ -76,15 +82,18 @@ export function PlayerSeat({
         <div className="objective-status">
           {status && (
             <>
-              {status.completed ? (
-                <span className="completed">★</span>
-              ) : status.met ? (
-                <span className="success">✓</span>
-              ) : status.completable ? (
-                <span className="fail">✗</span>
-              ) : (
-                <span className="fail">✗ (impossible)</span>
-              )}
+              {(() => {
+                switch (status.status) {
+                  case "complete":
+                    return <span className="completed">★</span>;
+                  case "met":
+                    return <span className="success">✓</span>;
+                  case "failed":
+                    return <span className="fail">✗ (impossible)</span>;
+                  case "pending":
+                    return <span className="fail">✗</span>;
+                }
+              })()}
               {status.details && ` ${status.details}`}
             </>
           )}
