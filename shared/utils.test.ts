@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { sortHand, shuffleDeck } from "./utils";
+import { sortHand, shuffleDeck, statusFromBooleans } from "./utils";
 import type { Card } from "./types";
 
 describe("sortHand", () => {
@@ -114,5 +114,38 @@ describe("shuffleDeck", () => {
     expect(shuffled).toContainEqual({ suit: "mountains", value: 1 });
     expect(shuffled).toContainEqual({ suit: "shadows", value: 2 });
     expect(shuffled).toContainEqual({ suit: "forests", value: 3 });
+  });
+});
+
+describe("statusFromBooleans", () => {
+  test("returns 'complete' when completed is true", () => {
+    expect(statusFromBooleans(true, true, true)).toBe("complete");
+    expect(statusFromBooleans(false, true, true)).toBe("complete");
+    expect(statusFromBooleans(true, false, true)).toBe("complete");
+    expect(statusFromBooleans(false, false, true)).toBe("complete");
+  });
+
+  test("returns 'failed' when not completable and not completed", () => {
+    expect(statusFromBooleans(false, false, false)).toBe("failed");
+    expect(statusFromBooleans(true, false, false)).toBe("failed");
+  });
+
+  test("returns 'met' when met is true, completable is true, and not completed", () => {
+    expect(statusFromBooleans(true, true, false)).toBe("met");
+  });
+
+  test("returns 'pending' when met is false, completable is true, and not completed", () => {
+    expect(statusFromBooleans(false, true, false)).toBe("pending");
+  });
+
+  test("respects priority: completed > failed > met > pending", () => {
+    // completed wins over everything
+    expect(statusFromBooleans(false, false, true)).toBe("complete");
+
+    // failed wins over met and pending
+    expect(statusFromBooleans(true, false, false)).toBe("failed");
+
+    // met wins over pending
+    expect(statusFromBooleans(true, true, false)).toBe("met");
   });
 });
