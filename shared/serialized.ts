@@ -6,7 +6,7 @@ import type {
   Card,
   Suit,
   Trick,
-  LegacyObjectiveStatus,
+  ObjectiveStatus,
   ObjectiveCards,
 } from "./types";
 
@@ -65,7 +65,7 @@ export interface SerializedSeat {
   threatCard: number | null;
   tricksWon: Trick[];
   playedCards: Card[];
-  objectiveStatus?: LegacyObjectiveStatus;
+  objectiveStatus?: ObjectiveStatus;
   statusDetails?: string;
   objective: string;
   hand: SerializedHand | null;

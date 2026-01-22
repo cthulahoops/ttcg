@@ -1,6 +1,11 @@
 import type { Game } from "../game";
 import type { Seat } from "../seat";
-import type { LegacyObjectiveStatus, Finality, Outcome } from "../types";
+import type {
+  LegacyObjectiveStatus,
+  ObjectiveStatus,
+  Finality,
+  Outcome,
+} from "../types";
 import type {
   CharacterObjective,
   CharacterDefinition,
@@ -46,10 +51,19 @@ export function booleansToStatus(
 }
 
 /**
- * Get LegacyObjectiveStatus for a character.
+ * Convert LegacyObjectiveStatus tuple to ObjectiveStatus object.
+ */
+export function tupleToObject(tuple: LegacyObjectiveStatus): ObjectiveStatus {
+  return { finality: tuple[0], outcome: tuple[1] };
+}
+
+/**
+ * Get ObjectiveStatus for a character.
  *
  * Strategy:
  * 1. If objective has getStatus(), use it directly (new API)
+ *    - If it returns a tuple (array), convert to object
+ *    - If it already returns object, use as-is
  * 2. Otherwise, call legacy boolean methods and convert (fallback)
  *
  * This allows incremental migration - characters can be updated
@@ -59,7 +73,7 @@ export function getObjectiveStatus(
   objective: AnyCharacterObjective,
   game: Game,
   seat: Seat
-): LegacyObjectiveStatus {
+): ObjectiveStatus {
   // New API: use getStatus directly
   if (!isLegacyObjective(objective)) {
     return objective.getStatus(game, seat);
@@ -67,7 +81,13 @@ export function getObjectiveStatus(
 
   // Legacy API with optional getStatus override
   if (objective.getStatus) {
-    return objective.getStatus(game, seat);
+    const status = objective.getStatus(game, seat);
+    // If it's a tuple (old format), convert to object
+    if (Array.isArray(status)) {
+      return tupleToObject(status);
+    }
+    // Already an object (new format)
+    return status;
   }
 
   // Legacy fallback: convert boolean trio
@@ -75,7 +95,8 @@ export function getObjectiveStatus(
   const completable = objective.isCompletable(game, seat);
   const completed = objective.isCompleted(game, seat);
 
-  return booleansToStatus(met, completable, completed);
+  const tuple = booleansToStatus(met, completable, completed);
+  return tupleToObject(tuple);
 }
 
 /**

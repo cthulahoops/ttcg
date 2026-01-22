@@ -32,16 +32,16 @@ export function PlayerSeat({
   // Show character name when assigned, otherwise player name
   const displayName = character ?? playerName ?? `Player ${seatIndex + 1}`;
 
-  // Destructure the tuple format: [Finality, Outcome]
-  const [finality, outcome] = objectiveStatus ?? [null, null];
+  // Destructure the object format: { finality, outcome }
+  const { finality, outcome } = objectiveStatus ?? { finality: null, outcome: null };
 
   // Status icon based on objective status
   const statusIcon = objectiveStatus
     ? finality === "final" && outcome === "success"
-      ? "★" // [final, success] → guaranteed
+      ? "★" // final success → guaranteed
       : outcome === "success"
-        ? "✓" // [tentative, success] → currently met
-        : "✗" // [*, failure] → not met
+        ? "✓" // tentative success → currently met
+        : "✗" // failure → not met
     : null;
 
   const isImpossible = finality === "final" && outcome === "failure";

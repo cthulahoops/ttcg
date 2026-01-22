@@ -5,6 +5,7 @@ import type {
   CharacterStatus,
   ObjectiveCards,
   LegacyObjectiveStatus,
+  ObjectiveStatus,
 } from "../types";
 import type { Game, GameSetupContext } from "../game";
 
@@ -18,7 +19,8 @@ export interface CharacterObjective {
   isCompleted: (game: Game, seat: Seat) => boolean;
 
   // New methods (optional during migration, required after)
-  getStatus?: (game: Game, seat: Seat) => LegacyObjectiveStatus;
+  // Can return either tuple (legacy) or object (new) format during migration
+  getStatus?: (game: Game, seat: Seat) => LegacyObjectiveStatus | ObjectiveStatus;
   getDetails?: (game: Game, seat: Seat) => string | undefined;
 }
 
@@ -46,7 +48,7 @@ export interface NewCharacterObjective {
   text?: string;
   getText?: (game: Game) => string;
 
-  getStatus: (game: Game, seat: Seat) => LegacyObjectiveStatus;
+  getStatus: (game: Game, seat: Seat) => ObjectiveStatus;
   getDetails?: (game: Game, seat: Seat) => string | undefined;
 }
 
