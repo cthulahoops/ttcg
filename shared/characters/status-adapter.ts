@@ -1,11 +1,6 @@
 import type { Game } from "../game";
 import type { Seat } from "../seat";
-import type {
-  LegacyObjectiveStatus,
-  ObjectiveStatus,
-  Finality,
-  Outcome,
-} from "../types";
+import type { ObjectiveStatus, Finality, Outcome } from "../types";
 import type {
   CharacterObjective,
   CharacterDefinition,
@@ -28,33 +23,26 @@ function isLegacyCharacter(
 }
 
 /**
- * Convert legacy boolean trio to LegacyObjectiveStatus tuple.
+ * Convert legacy boolean trio to ObjectiveStatus object.
  *
  * Two axes:
  *   Finality: "tentative" (can still change) vs "final" (locked in)
  *   Outcome: "failure" (not met) vs "success" (met)
  *
  * Mapping:
- *   [tentative, failure] → working toward it
- *   [tentative, success] → currently meeting it
- *   [final, failure]     → impossible
- *   [final, success]     → guaranteed
+ *   {tentative, failure} → working toward it
+ *   {tentative, success} → currently meeting it
+ *   {final, failure}     → impossible
+ *   {final, success}     → guaranteed
  */
 export function booleansToStatus(
   met: boolean,
   completable: boolean,
   completed: boolean
-): LegacyObjectiveStatus {
+): ObjectiveStatus {
   const finality: Finality = completed || !completable ? "final" : "tentative";
   const outcome: Outcome = met ? "success" : "failure";
-  return [finality, outcome];
-}
-
-/**
- * Convert LegacyObjectiveStatus tuple to ObjectiveStatus object.
- */
-export function tupleToObject(tuple: LegacyObjectiveStatus): ObjectiveStatus {
-  return { finality: tuple[0], outcome: tuple[1] };
+  return { finality, outcome };
 }
 
 /**
@@ -62,8 +50,6 @@ export function tupleToObject(tuple: LegacyObjectiveStatus): ObjectiveStatus {
  *
  * Strategy:
  * 1. If objective has getStatus(), use it directly (new API)
- *    - If it returns a tuple (array), convert to object
- *    - If it already returns object, use as-is
  * 2. Otherwise, call legacy boolean methods and convert (fallback)
  *
  * This allows incremental migration - characters can be updated
@@ -81,13 +67,7 @@ export function getObjectiveStatus(
 
   // Legacy API with optional getStatus override
   if (objective.getStatus) {
-    const status = objective.getStatus(game, seat);
-    // If it's a tuple (old format), convert to object
-    if (Array.isArray(status)) {
-      return tupleToObject(status);
-    }
-    // Already an object (new format)
-    return status;
+    return objective.getStatus(game, seat);
   }
 
   // Legacy fallback: convert boolean trio
@@ -95,8 +75,7 @@ export function getObjectiveStatus(
   const completable = objective.isCompletable(game, seat);
   const completed = objective.isCompleted(game, seat);
 
-  const tuple = booleansToStatus(met, completable, completed);
-  return tupleToObject(tuple);
+  return booleansToStatus(met, completable, completed);
 }
 
 /**

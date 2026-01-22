@@ -74,8 +74,7 @@ export interface CharacterStatus {
 //   {final, success}     → guaranteed/locked in
 export type Finality = "tentative" | "final";
 export type Outcome = "failure" | "success";
-export type LegacyObjectiveStatus = [Finality, Outcome]; // Old tuple format - temporary during migration
-export type ObjectiveStatus = { finality: Finality; outcome: Outcome }; // NEW object format
+export type ObjectiveStatus = { finality: Finality; outcome: Outcome };
 
 // Represents a trick won (UI decides how to render - e.g., as card back)
 export type ObjectiveTrick = "trick";
