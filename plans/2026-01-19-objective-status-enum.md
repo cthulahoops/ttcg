@@ -1,7 +1,17 @@
 # Objective Status Refactoring Plan
 
+## Status
+
+- ✅ **Phase 1: Foundation + Protocol** - COMPLETED
+- ✅ **Phase 2: Sam Test Migration** - COMPLETED
+- 📋 **Phase 3: Object Refactor** - PLANNED (tuple → object, rename types)
+- 📋 **Phase 4: Migrate Remaining Characters** - PLANNED
+- 📋 **Phase 5: Final Cleanup** - PLANNED
+
+---
+
 ## Goal
-Replace the boolean trio (`met`, `completable`, `completed`) with a two-axis tuple type and move status logic from `CharacterDisplay` to `CharacterObjective`.
+Replace the boolean trio (`met`, `completable`, `completed`) with a two-axis object type and move status logic from `CharacterDisplay` to `CharacterObjective`.
 
 ## Current State
 - `CharacterObjective` has: `check()`, `isCompletable()`, `isCompleted()` (booleans)
@@ -13,7 +23,7 @@ Replace the boolean trio (`met`, `completable`, `completed`) with a two-axis tup
 ```typescript
 type Finality = "tentative" | "final";
 type Outcome = "failure" | "success";
-type ObjectiveStatus = [Finality, Outcome];
+type ObjectiveStatus = { finality: Finality; outcome: Outcome };
 
 interface CharacterObjective {
   getStatus: (game: Game, seat: Seat) => ObjectiveStatus;
@@ -34,7 +44,7 @@ interface CharacterObjective {
 ```typescript
 const finality = completed || !completable ? "final" : "tentative";
 const outcome = met ? "success" : "failure";
-return [finality, outcome];
+return { finality, outcome };
 ```
 
 ---
@@ -52,7 +62,7 @@ return [finality, outcome];
 ```typescript
 export type Finality = "tentative" | "final";
 export type Outcome = "failure" | "success";
-export type ObjectiveStatus = [Finality, Outcome];
+export type LegacyObjectiveStatus = [Finality, Outcome]; // Temporary during migration
 ```
 
 **shared/characters/types.ts:**
@@ -87,12 +97,12 @@ export interface CharacterObjective {
 
 **shared/serialized.ts:**
 ```typescript
-import type { ObjectiveStatus } from "./types";
+import type { LegacyObjectiveStatus } from "./types";
 
 export interface SerializedSeat {
   // ... existing fields ...
   // REMOVE: status?: CharacterStatus;
-  objectiveStatus?: ObjectiveStatus;  // NEW: [Finality, Outcome] tuple
+  objectiveStatus?: LegacyObjectiveStatus;  // NEW: [Finality, Outcome] tuple (will become object later)
   statusDetails?: string;              // NEW
 }
 ```
@@ -140,11 +150,11 @@ const isImpossible = finality === "final" && outcome === "failure";
 ```typescript
 import type { Game } from "../game";
 import type { Seat } from "../seat";
-import type { ObjectiveStatus, Finality, Outcome } from "../types";
+import type { LegacyObjectiveStatus, Finality, Outcome } from "../types";
 import type { CharacterObjective, CharacterDefinition } from "./types";
 
 /**
- * Convert legacy boolean trio to ObjectiveStatus tuple.
+ * Convert legacy boolean trio to LegacyObjectiveStatus tuple.
  *
  * Two axes:
  *   Finality: "tentative" (can still change) vs "final" (locked in)
@@ -160,14 +170,14 @@ export function booleansToStatus(
   met: boolean,
   completable: boolean,
   completed: boolean
-): ObjectiveStatus {
+): LegacyObjectiveStatus {
   const finality: Finality = completed || !completable ? "final" : "tentative";
   const outcome: Outcome = met ? "success" : "failure";
   return [finality, outcome];
 }
 
 /**
- * Get ObjectiveStatus for a character.
+ * Get LegacyObjectiveStatus for a character.
  *
  * Strategy:
  * 1. If objective has getStatus(), use it directly (new API)
@@ -180,7 +190,7 @@ export function getObjectiveStatus(
   objective: CharacterObjective,
   game: Game,
   seat: Seat
-): ObjectiveStatus {
+): LegacyObjectiveStatus {
   // Prefer new API if available
   if (objective.getStatus) {
     return objective.getStatus(game, seat);
@@ -231,26 +241,26 @@ export function getObjectiveDetails(
 
 ---
 
-## Phase 2: Sam Test Migration (delete old interface)
+## Phase 2: Sam Test Migration
 
-Fully migrate Sam as a test case to validate the new interface works end-to-end. This includes **deleting** the legacy methods to prove the adapter fallback is no longer needed for migrated characters.
+Migrate Sam as a test case to validate the new interface works end-to-end. Sam will use the tuple format during this phase.
 
 ### Step 2.1: Add getStatus to Sam
 
 **shared/characters/sam.ts:**
 ```typescript
-import type { ObjectiveStatus } from "../types";
+import type { LegacyObjectiveStatus } from "../types";
 
 objective: {
   text: "Win the Hills card matching your threat card",
 
-  // Legacy methods (will be removed in Step 2.3)
+  // Legacy methods (keep for now)
   check: (game, seat) => { ... },
   isCompletable: (game, seat) => { ... },
   isCompleted: (game, seat) => { ... },
 
   // NEW
-  getStatus: (game, seat): ObjectiveStatus => {
+  getStatus: (game, seat): LegacyObjectiveStatus => {
     if (!seat.threatCard) {
       return ["tentative", "failure"];
     }
@@ -289,35 +299,202 @@ display: {
 
 ---
 
-### Step 2.3: Delete legacy methods and update interface
+### Phase 2 Outcome
 
-This step makes three coordinated changes so tests pass:
+After completing Phase 2:
+- Sam has `getStatus()` method that returns tuple format
+- Sam keeps legacy methods for now
+- `renderStatus()` removed from Sam's display
+- All other characters still work via adapter fallback
+- We've proven the migration path works with tuple format
 
-1. **Update `CharacterObjective` interface** - Make legacy methods optional
-2. **Update adapter** - Add validation for missing methods
-3. **Delete legacy methods from Sam** - Remove `check`, `isCompletable`, `isCompleted`
-4. **Update Sam tests** - If any tests use the old API
+---
+
+## Phase 3: Object Refactor
+
+Convert from tuple `[Finality, Outcome]` to object `{ finality, outcome }` and rename types appropriately.
+
+### Step 3.1: Add ObjectiveStatus object type
+
+**shared/types.ts:**
+```typescript
+export type Finality = "tentative" | "final";
+export type Outcome = "failure" | "success";
+export type LegacyObjectiveStatus = [Finality, Outcome]; // Old tuple format
+export type ObjectiveStatus = { finality: Finality; outcome: Outcome }; // NEW object format
+```
+
+**Verification:** `bun run check` passes. Both types coexist.
+
+---
+
+### Step 3.2: Update adapter to convert tuple → object
+
+**shared/characters/status-adapter.ts:**
+```typescript
+import type { LegacyObjectiveStatus, ObjectiveStatus, Finality, Outcome } from "../types";
+
+// Keep old helper for legacy fallback
+export function booleansToStatus(
+  met: boolean,
+  completable: boolean,
+  completed: boolean
+): LegacyObjectiveStatus {
+  const finality: Finality = completed || !completable ? "final" : "tentative";
+  const outcome: Outcome = met ? "success" : "failure";
+  return [finality, outcome];
+}
+
+// NEW: Convert tuple to object
+export function tupleToObject(tuple: LegacyObjectiveStatus): ObjectiveStatus {
+  return { finality: tuple[0], outcome: tuple[1] };
+}
+
+export function getObjectiveStatus(
+  objective: CharacterObjective,
+  game: Game,
+  seat: Seat
+): ObjectiveStatus {
+  // Prefer new API if available
+  if (objective.getStatus) {
+    const status = objective.getStatus(game, seat);
+    // If it's a tuple (old format), convert to object
+    if (Array.isArray(status)) {
+      return tupleToObject(status);
+    }
+    // Already an object (new format)
+    return status;
+  }
+
+  // Fallback: call legacy methods and convert
+  const met = objective.check(game, seat);
+  const completable = objective.isCompletable(game, seat);
+  const completed = objective.isCompleted(game, seat);
+
+  const tuple = booleansToStatus(met, completable, completed);
+  return tupleToObject(tuple);
+}
+```
+
+**Verification:** `bun run check` passes. Adapter now always returns object format.
+
+---
+
+### Step 3.3: Update protocol and client to use object format
+
+**shared/serialized.ts:**
+```typescript
+import type { ObjectiveStatus } from "./types";
+
+export interface SerializedSeat {
+  // ... existing fields ...
+  objectiveStatus?: ObjectiveStatus;  // NOW: { finality, outcome } object
+  statusDetails?: string;
+}
+```
+
+**client/PlayerSeat.tsx:**
+```typescript
+// Replace tuple destructuring with object destructuring
+const { finality, outcome } = seat.objectiveStatus ?? { finality: null, outcome: null };
+
+const statusIcon = seat.objectiveStatus
+  ? finality === "final" && outcome === "success"
+    ? "★"                          // final success → guaranteed
+    : outcome === "success"
+      ? "✓"                        // tentative success → currently met
+      : "✗"                        // failure → not met
+  : null;
+
+const isImpossible = finality === "final" && outcome === "failure";
+```
+
+**Verification:** `bun run check` and `bun test` pass. UI works with object format. Sam's tuple return value gets converted by adapter.
+
+---
+
+### Step 3.4: Update Sam to return object format
+
+**shared/characters/sam.ts:**
+```typescript
+import type { ObjectiveStatus } from "../types";
+
+objective: {
+  text: "Win the Hills card matching your threat card",
+
+  // Legacy methods (keep for now)
+  check: (game, seat) => { ... },
+  isCompletable: (game, seat) => { ... },
+  isCompleted: (game, seat) => { ... },
+
+  getStatus: (game, seat): ObjectiveStatus => {
+    if (!seat.threatCard) {
+      return { finality: "tentative", outcome: "failure" };
+    }
+    const hasCard = game.hasCard(seat, "hills", seat.threatCard);
+    const cardGone = game.cardGone(seat, "hills", seat.threatCard);
+
+    if (hasCard) {
+      return { finality: "final", outcome: "success" };
+    } else if (cardGone) {
+      return { finality: "final", outcome: "failure" };
+    } else {
+      return { finality: "tentative", outcome: "failure" };
+    }
+  },
+},
+```
+
+**Verification:** `bun run check` and `bun test` pass. Sam now returns object format directly.
+
+---
+
+### Step 3.5: Update CharacterObjective interface
 
 **shared/characters/types.ts:**
 ```typescript
+import type { ObjectiveStatus, LegacyObjectiveStatus } from "../types";
+
 export interface CharacterObjective {
   text?: string;
   getText?: (game: Game) => string;
 
-  // Legacy methods - optional during migration
-  // Characters with getStatus() don't need these
-  check?: (game: Game, seat: Seat) => boolean;
-  isCompletable?: (game: Game, seat: Seat) => boolean;
-  isCompleted?: (game: Game, seat: Seat) => boolean;
+  // Legacy methods (keep during migration)
+  check: (game: Game, seat: Seat) => boolean;
+  isCompletable: (game: Game, seat: Seat) => boolean;
+  isCompleted: (game: Game, seat: Seat) => boolean;
 
-  // New methods
-  getStatus?: (game: Game, seat: Seat) => ObjectiveStatus;
+  // New method - can return either format during migration
+  getStatus?: (game: Game, seat: Seat) => ObjectiveStatus | LegacyObjectiveStatus;
   getDetails?: (game: Game, seat: Seat) => string | undefined;
 }
 ```
 
+**Verification:** `bun run check` passes. Interface accepts both tuple and object returns.
+
+---
+
+### Step 3.6: Remove LegacyObjectiveStatus and tuple conversion
+
+Once Sam is confirmed working with object format, clean up:
+
 **shared/characters/status-adapter.ts:**
 ```typescript
+import type { ObjectiveStatus, Finality, Outcome } from "../types";
+
+// Remove: tupleToObject (no longer needed)
+// Remove: LegacyObjectiveStatus imports
+
+export function booleansToStatus(
+  met: boolean,
+  completable: boolean,
+  completed: boolean
+): ObjectiveStatus {
+  const finality: Finality = completed || !completable ? "final" : "tentative";
+  const outcome: Outcome = met ? "success" : "failure";
+  return { finality, outcome }; // Return object directly
+}
+
 export function getObjectiveStatus(
   objective: CharacterObjective,
   game: Game,
@@ -329,11 +506,6 @@ export function getObjectiveStatus(
   }
 
   // Fallback: call legacy methods and convert
-  // All three must exist for fallback to work
-  if (!objective.check || !objective.isCompletable || !objective.isCompleted) {
-    throw new Error("Character must have either getStatus() or all legacy methods");
-  }
-
   const met = objective.check(game, seat);
   const completable = objective.isCompletable(game, seat);
   const completed = objective.isCompleted(game, seat);
@@ -342,45 +514,48 @@ export function getObjectiveStatus(
 }
 ```
 
-**shared/characters/sam.ts:**
+**shared/types.ts:**
 ```typescript
-objective: {
-  text: "Win the Hills card matching your threat card",
-
-  getStatus: (game, seat): ObjectiveStatus => {
-    if (!seat.threatCard) {
-      return ["tentative", "failure"];
-    }
-    const hasCard = game.hasCard(seat, "hills", seat.threatCard);
-    const cardGone = game.cardGone(seat, "hills", seat.threatCard);
-
-    if (hasCard) {
-      return ["final", "success"];
-    } else if (cardGone) {
-      return ["final", "failure"];
-    } else {
-      return ["tentative", "failure"];
-    }
-  },
-},
+export type Finality = "tentative" | "final";
+export type Outcome = "failure" | "success";
+export type ObjectiveStatus = { finality: Finality; outcome: Outcome };
+// Remove: LegacyObjectiveStatus
 ```
 
-**Verification:** `bun run check` and `bun test` pass. Sam works with new API, other characters work via legacy fallback.
+**shared/characters/types.ts:**
+```typescript
+export interface CharacterObjective {
+  text?: string;
+  getText?: (game: Game) => string;
+
+  // Legacy methods (keep during migration)
+  check: (game: Game, seat: Seat) => boolean;
+  isCompletable: (game: Game, seat: Seat) => boolean;
+  isCompleted: (game: Game, seat: Seat) => boolean;
+
+  // New method - returns object format only
+  getStatus?: (game: Game, seat: Seat) => ObjectiveStatus;
+  getDetails?: (game: Game, seat: Seat) => string | undefined;
+}
+```
+
+**Verification:** `bun run check` and `bun test` pass. Only object format remains.
 
 ---
 
-### Phase 2 Outcome
+### Phase 3 Outcome
 
-After completing Phase 2:
-- Sam is fully migrated (no legacy methods)
-- Interface allows either old or new API
-- Adapter validates that characters have one or the other
-- All other characters still work via adapter fallback
-- We've proven the migration path works
+After completing Phase 3:
+- `ObjectiveStatus` is now `{ finality, outcome }` object format
+- Tuple format `LegacyObjectiveStatus` removed completely
+- Sam uses object format in `getStatus()`
+- All unmigrated characters converted via `booleansToStatus()` to object
+- Client UI uses object destructuring
+- All code uses the final object format going forward
 
 ---
 
-## Phase 3: Migrate Remaining Characters
+## Phase 4: Migrate Remaining Characters
 
 ### Migration Order (by complexity)
 
@@ -415,7 +590,9 @@ objective: {
 
   getStatus: (_game, seat): ObjectiveStatus => {
     const hasTrick = seat.getTrickCount() >= 1;
-    return hasTrick ? ["final", "success"] : ["tentative", "failure"];
+    return hasTrick
+      ? { finality: "final", outcome: "success" }
+      : { finality: "tentative", outcome: "failure" };
   },
 },
 ```
@@ -433,11 +610,11 @@ objective: {
       s !== seat ? sum + s.getAllWonCards().filter(c => c.suit === "rings").length : sum, 0);
 
     if (ringCount >= ringsNeeded) {
-      return ["final", "success"];
+      return { finality: "final", outcome: "success" };
     } else if (ringCount + ringsAvailable < ringsNeeded) {
-      return ["final", "failure"];
+      return { finality: "final", outcome: "failure" };
     } else {
-      return ["tentative", "failure"];
+      return { finality: "tentative", outcome: "failure" };
     }
   },
 
@@ -454,7 +631,7 @@ objective: {
 
 ---
 
-## Phase 4: Final Cleanup
+## Phase 5: Final Cleanup
 
 After all characters are migrated:
 
@@ -472,13 +649,13 @@ After all characters are migrated:
 | File | Phase | Changes |
 |------|-------|---------|
 | `shared/types.ts` | 1.1 | Add `ObjectiveStatus` type |
-| `shared/characters/types.ts` | 1.1, 2.4, 4 | Extend interface, make legacy optional, then remove |
-| `shared/characters/status-adapter.ts` | 1.1, 2.4, 4 | New adapter, add validation, then simplify |
+| `shared/characters/types.ts` | 1.1, 3, 5 | Extend interface, update for objects, then remove legacy |
+| `shared/characters/status-adapter.ts` | 1.1, 3, 5 | New adapter, add object conversion, then simplify |
 | `shared/serialized.ts` | 1.2 | Replace `status` with new fields |
 | `shared/serialize.ts` | 1.2 | Use adapter |
 | `client/PlayerSeat.tsx` | 1.2 | Use new format |
-| `shared/characters/sam.ts` | 2 | Full migration test case |
-| `shared/characters/*.ts` | 3 | Migrate remaining characters |
+| `shared/characters/sam.ts` | 2, 3 | Migration test case - tuple then object |
+| `shared/characters/*.ts` | 4 | Migrate remaining characters |
 
 ---
 
@@ -497,14 +674,21 @@ After Step 1.2:
 After Phase 2 (Sam migration):
 - `bun run check` passes
 - `bun test` passes
-- Sam works in-game with new API only
+- Sam works in-game with tuple format
 - Other characters still work via adapter fallback
 
-After each Phase 3 character migration:
+After Phase 3 (Object refactor):
+- `bun run check` passes
+- `bun test` passes
+- All code uses object format `{ finality, outcome }`
+- Sam migrated to object format
+- Tuple format completely removed
+
+After each Phase 4 character migration:
 - `bun run check` passes
 - Play a game with that character
 
-After Phase 4:
+After Phase 5:
 - Full test suite passes
 - No references to legacy `renderStatus` or boolean methods remain
 - Adapter has no fallback path
