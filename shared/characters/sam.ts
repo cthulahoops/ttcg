@@ -1,4 +1,4 @@
-import type { ObjectiveCard, ObjectiveStatus } from "../types";
+import type { ObjectiveCard, LegacyObjectiveStatus } from "../types";
 import type { NewCharacterDefinition } from "./types";
 
 export const Sam: NewCharacterDefinition = {
@@ -18,7 +18,7 @@ export const Sam: NewCharacterDefinition = {
   objective: {
     text: "Win the Hills card matching your threat card",
 
-    getStatus: (game, seat): ObjectiveStatus => {
+    getStatus: (game, seat): LegacyObjectiveStatus => {
       if (!seat.threatCard) {
         return ["tentative", "failure"];
       }

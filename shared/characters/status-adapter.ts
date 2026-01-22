@@ -1,6 +1,6 @@
 import type { Game } from "../game";
 import type { Seat } from "../seat";
-import type { ObjectiveStatus, Finality, Outcome } from "../types";
+import type { LegacyObjectiveStatus, Finality, Outcome } from "../types";
 import type {
   CharacterObjective,
   CharacterDefinition,
@@ -23,7 +23,7 @@ function isLegacyCharacter(
 }
 
 /**
- * Convert legacy boolean trio to ObjectiveStatus tuple.
+ * Convert legacy boolean trio to LegacyObjectiveStatus tuple.
  *
  * Two axes:
  *   Finality: "tentative" (can still change) vs "final" (locked in)
@@ -39,14 +39,14 @@ export function booleansToStatus(
   met: boolean,
   completable: boolean,
   completed: boolean
-): ObjectiveStatus {
+): LegacyObjectiveStatus {
   const finality: Finality = completed || !completable ? "final" : "tentative";
   const outcome: Outcome = met ? "success" : "failure";
   return [finality, outcome];
 }
 
 /**
- * Get ObjectiveStatus for a character.
+ * Get LegacyObjectiveStatus for a character.
  *
  * Strategy:
  * 1. If objective has getStatus(), use it directly (new API)
@@ -59,7 +59,7 @@ export function getObjectiveStatus(
   objective: AnyCharacterObjective,
   game: Game,
   seat: Seat
-): ObjectiveStatus {
+): LegacyObjectiveStatus {
   // New API: use getStatus directly
   if (!isLegacyObjective(objective)) {
     return objective.getStatus(game, seat);
