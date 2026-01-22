@@ -543,13 +543,75 @@ export interface CharacterObjective {
 
 ---
 
+### Step 3.7: Rename type hierarchy
+
+Rename the character interface types to reflect that "New" is now the canonical API:
+
+**shared/characters/types.ts:**
+```typescript
+// Rename NewCharacterObjective → CharacterObjective
+// Rename CharacterObjective → LegacyCharacterObjective
+// Rename NewCharacterDefinition → CharacterDefinition
+// Rename CharacterDefinition → LegacyCharacterDefinition
+
+export interface LegacyCharacterObjective {
+  text?: string;
+  getText?: (game: Game) => string;
+
+  // Legacy methods (for unmigrated characters)
+  check: (game: Game, seat: Seat) => boolean;
+  isCompletable: (game: Game, seat: Seat) => boolean;
+  isCompleted: (game: Game, seat: Seat) => boolean;
+
+  // New methods (optional - added during migration)
+  getStatus?: (game: Game, seat: Seat) => ObjectiveStatus;
+  getDetails?: (game: Game, seat: Seat) => string | undefined;
+}
+
+export interface CharacterObjective {
+  text?: string;
+  getText?: (game: Game) => string;
+
+  // New API only
+  getStatus: (game: Game, seat: Seat) => ObjectiveStatus;
+  getDetails?: (game: Game, seat: Seat) => string | undefined;
+}
+
+export interface LegacyCharacterDefinition {
+  name: string;
+  setupText: string;
+  setup: SetupFunction;
+  objective: LegacyCharacterObjective;
+  display: CharacterDisplay;
+}
+
+export interface CharacterDefinition {
+  name: string;
+  setupText: string;
+  setup: SetupFunction;
+  objective: CharacterObjective;
+  display: CharacterDisplay;
+}
+```
+
+**Update all character imports:**
+- Sam already uses `NewCharacterDefinition` → update to `CharacterDefinition`
+- All unmigrated characters use implicit `CharacterDefinition` → update to `LegacyCharacterDefinition`
+- Update registry and adapter to accept both types
+
+**Verification:** `bun run check` and `bun test` pass. Type names now reflect the target API.
+
+---
+
 ### Phase 3 Outcome
 
 After completing Phase 3:
 - `ObjectiveStatus` is now `{ finality, outcome }` object format
 - Tuple format `LegacyObjectiveStatus` removed completely
-- Sam uses object format in `getStatus()`
-- All unmigrated characters converted via `booleansToStatus()` to object
+- `CharacterObjective` is the new canonical interface (with `getStatus()` required)
+- `LegacyCharacterObjective` is the old interface (with boolean methods)
+- Sam uses `CharacterDefinition` (new API)
+- All unmigrated characters use `LegacyCharacterDefinition` (old API)
 - Client UI uses object destructuring
 - All code uses the final object format going forward
 
