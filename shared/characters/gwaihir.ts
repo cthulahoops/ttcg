@@ -1,13 +1,13 @@
 import type { Card, ObjectiveCard } from "../types";
 import type { Seat } from "../seat";
-import type { CharacterDefinition } from "./types";
+import type { LegacyCharacterDefinition } from "./types";
 
 const countMountainTricks = (seat: Seat) =>
   seat.tricksWon.filter((trick) =>
     trick.cards.some((c: Card) => c.suit === "mountains")
   ).length;
 
-export const Gwaihir: CharacterDefinition = {
+export const Gwaihir: LegacyCharacterDefinition = {
   name: "Gwaihir",
   setupText: "Exchange with Gandalf twice",
 

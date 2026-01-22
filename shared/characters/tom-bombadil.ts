@@ -1,7 +1,7 @@
 import { CARDS_PER_SUIT, type Card, type Suit } from "../types";
-import type { CharacterDefinition } from "./types";
+import type { LegacyCharacterDefinition } from "./types";
 
-export const TomBombadil: CharacterDefinition = {
+export const TomBombadil: LegacyCharacterDefinition = {
   name: "Tom Bombadil",
   setupText: "Take the lost card, then exchange with Frodo",
 

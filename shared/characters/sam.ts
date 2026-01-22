@@ -1,7 +1,7 @@
 import type { ObjectiveCard, ObjectiveStatus } from "../types";
-import type { NewCharacterDefinition } from "./types";
+import type { CharacterDefinition } from "./types";
 
-export const Sam: NewCharacterDefinition = {
+export const Sam: CharacterDefinition = {
   name: "Sam",
   setupText:
     "Draw a Hills threat card, then exchange with Frodo, Merry, or Pippin",

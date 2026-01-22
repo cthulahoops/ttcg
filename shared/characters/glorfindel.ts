@@ -1,7 +1,7 @@
 import { CARDS_PER_SUIT, type Card } from "../types";
-import type { CharacterDefinition } from "./types";
+import type { LegacyCharacterDefinition } from "./types";
 
-export const Glorfindel: CharacterDefinition = {
+export const Glorfindel: LegacyCharacterDefinition = {
   name: "Glorfindel",
   setupText: "Take the lost card",
 

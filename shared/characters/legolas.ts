@@ -1,7 +1,7 @@
 import type { ObjectiveCard } from "../types";
-import type { CharacterDefinition } from "./types";
+import type { LegacyCharacterDefinition } from "./types";
 
-export const Legolas: CharacterDefinition = {
+export const Legolas: LegacyCharacterDefinition = {
   name: "Legolas",
   setupText: "Draw a Forests threat card, then exchange with Gimli or Aragorn",
 

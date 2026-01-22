@@ -1,11 +1,11 @@
 import { CARDS_PER_SUIT, type Card } from "../types";
 import type { Seat } from "../seat";
-import type { CharacterDefinition } from "./types";
+import type { LegacyCharacterDefinition } from "./types";
 
 const countMountainsWon = (seat: Seat) =>
   seat.getAllWonCards().filter((c: Card) => c.suit === "mountains").length;
 
-export const Gloin: CharacterDefinition = {
+export const Gloin: LegacyCharacterDefinition = {
   name: "Gloin",
   setupText: "Exchange with Bilbo or Gimli",
 

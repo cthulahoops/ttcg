@@ -1,7 +1,7 @@
 import type { ObjectiveCard } from "../types";
-import type { CharacterDefinition } from "./types";
+import type { LegacyCharacterDefinition } from "./types";
 
-export const BarlimanButterbur: CharacterDefinition = {
+export const BarlimanButterbur: LegacyCharacterDefinition = {
   name: "Barliman Butterbur",
   setupText: "Exchange with any player",
 

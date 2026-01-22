@@ -1,7 +1,7 @@
 import type { ObjectiveCard } from "../types";
-import type { CharacterDefinition } from "./types";
+import type { LegacyCharacterDefinition } from "./types";
 
-export const FattyBolger: CharacterDefinition = {
+export const FattyBolger: LegacyCharacterDefinition = {
   name: "Fatty Bolger",
   setupText: "Give a card to every other character (don't take any back)",
 

@@ -1,11 +1,11 @@
 import { CARDS_PER_SUIT, type Card } from "../types";
 import type { Seat } from "../seat";
-import type { CharacterDefinition } from "./types";
+import type { LegacyCharacterDefinition } from "./types";
 
 const countForestsWon = (seat: Seat) =>
   seat.getAllWonCards().filter((c: Card) => c.suit === "forests").length;
 
-export const Arwen: CharacterDefinition = {
+export const Arwen: LegacyCharacterDefinition = {
   name: "Arwen",
   setupText: "Exchange with Elrond or Aragorn",
 

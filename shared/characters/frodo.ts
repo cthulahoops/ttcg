@@ -1,7 +1,7 @@
 import type { Card } from "../types";
 import type { Seat } from "../seat";
 import type { Game } from "../game";
-import type { CharacterDefinition } from "./types";
+import type { LegacyCharacterDefinition } from "./types";
 
 /**
  * Calculate how many rings Frodo needs to win.
@@ -27,7 +27,7 @@ function getRingsNeeded(game: Game): number {
   return game.numCharacters === 3 || isSoloMode ? 4 : 2;
 }
 
-export const Frodo: CharacterDefinition = {
+export const Frodo: LegacyCharacterDefinition = {
   name: "Frodo",
   setupText: "No setup action",
 

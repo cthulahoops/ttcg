@@ -1,7 +1,7 @@
 import type { ObjectiveCard } from "../types";
-import type { CharacterDefinition } from "./types";
+import type { LegacyCharacterDefinition } from "./types";
 
-export const BilboBaggins: CharacterDefinition = {
+export const BilboBaggins: LegacyCharacterDefinition = {
   name: "Bilbo Baggins",
   setupText: "No setup action",
 

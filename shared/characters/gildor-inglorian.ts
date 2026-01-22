@@ -1,7 +1,7 @@
 import type { Card } from "../types";
-import type { CharacterDefinition } from "./types";
+import type { LegacyCharacterDefinition } from "./types";
 
-export const GildorInglorian: CharacterDefinition = {
+export const GildorInglorian: LegacyCharacterDefinition = {
   name: "Gildor Inglorian",
   setupText: "Exchange with Frodo",
 

@@ -2,8 +2,8 @@ import type { Game } from "../game";
 import type { Seat } from "../seat";
 import type { ObjectiveStatus, Finality, Outcome } from "../types";
 import type {
-  CharacterObjective,
-  CharacterDefinition,
+  LegacyCharacterObjective,
+  LegacyCharacterDefinition,
   AnyCharacterObjective,
   AnyCharacterDefinition,
 } from "./types";
@@ -11,14 +11,14 @@ import type {
 // Type guard: check if objective uses legacy API
 function isLegacyObjective(
   obj: AnyCharacterObjective
-): obj is CharacterObjective {
+): obj is LegacyCharacterObjective {
   return "check" in obj;
 }
 
 // Type guard: check if character uses legacy API
 function isLegacyCharacter(
   char: AnyCharacterDefinition
-): char is CharacterDefinition {
+): char is LegacyCharacterDefinition {
   return "renderStatus" in char.display;
 }
 

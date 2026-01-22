@@ -1,8 +1,8 @@
 import type { Card } from "../types";
 import type { Seat } from "../seat";
-import type { CharacterDefinition } from "./types";
+import type { LegacyCharacterDefinition } from "./types";
 
-export const Elrond: CharacterDefinition = {
+export const Elrond: LegacyCharacterDefinition = {
   name: "Elrond",
   setupText: "Everyone simultaneously passes 1 card to the right",
 

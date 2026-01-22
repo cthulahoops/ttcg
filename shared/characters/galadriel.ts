@@ -1,8 +1,8 @@
 import type { Seat } from "../seat";
 import type { ObjectiveCard } from "../types";
-import type { CharacterDefinition } from "./types";
+import type { LegacyCharacterDefinition } from "./types";
 
-export const Galadriel: CharacterDefinition = {
+export const Galadriel: LegacyCharacterDefinition = {
   name: "Galadriel",
   setupText: "Exchange with either the lost card or Gandalf",
 
