@@ -690,7 +690,6 @@ button:hover {
     border-top: none;
 }
 
-/* Compact player header (desktop version hidden) */
 .player-header {
     display: flex;
     align-items: flex-start;
@@ -703,17 +702,17 @@ button:hover {
     font-size: var(--font-size-sm);
 }
 
-.compact-status {
+.status {
     font-size: var(--font-size-xs);
     color: #aed581;
 }
 
-.compact-tricks {
+.tricks {
     font-size: var(--font-size-xs);
     color: #aed581;
 }
 
-.compact-objective {
+.objective {
     font-size: var(--font-size-xs);
     color: #aed581;
 }
@@ -770,20 +769,11 @@ button:hover {
     gap: 6px;
   }
 
-
-  /* Tiny inline cards (lost card, objective cards) */
   .objective-cards {
     --card-width: 32px;
     --card-height: 48px;
   }
 
-
-  /* Make trick area full width when lost card is hidden */
-  .display-columns {
-    grid-template-columns: 1fr;
-  }
-
-  /* Compact player header (desktop version hidden) */
   .player-header {
     display: flex;
     align-items: flex-start;
@@ -795,12 +785,10 @@ button:hover {
     margin-bottom: 6px;
   }
 
-  /* Hide hand count on mobile (superfluous) */
   .hand-count {
     display: none;
   }
 
-  /* Trick header adjustments for inline lost card */
   .trick-header {
     flex-wrap: wrap;
     gap: 8px;
@@ -811,7 +799,6 @@ button:hover {
     padding: 1px 6px;
   }
 
-  /* Dialog area - stays inline, just smaller */
   .dialog-area {
     padding: 10px;
   }
