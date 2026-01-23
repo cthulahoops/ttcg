@@ -1,11 +1,11 @@
-import { CARDS_PER_SUIT, type Card } from "../types";
+import { CARDS_PER_SUIT, type Card, type ObjectiveStatus } from "../types";
 import type { Seat } from "../seat";
-import type { LegacyCharacterDefinition } from "./types";
+import type { CharacterDefinition } from "./types";
 
 const countMountainsWon = (seat: Seat) =>
   seat.getAllWonCards().filter((c: Card) => c.suit === "mountains").length;
 
-export const Gloin: LegacyCharacterDefinition = {
+export const Gloin: CharacterDefinition = {
   name: "Gloin",
   setupText: "Exchange with Bilbo or Gimli",
 
@@ -17,17 +17,15 @@ export const Gloin: LegacyCharacterDefinition = {
 
   objective: {
     text: "Win the most mountains cards",
-    check: (game, seat) => {
-      const myCounts = countMountainsWon(seat);
 
-      // Check if this seat has strictly more than all others
-      return game.seats.every((s: Seat) => {
+    getStatus: (game, seat): ObjectiveStatus => {
+      const myCount = countMountainsWon(seat);
+
+      // Check if this seat has strictly more than all others (met)
+      const met = game.seats.every((s: Seat) => {
         if (s.seatIndex === seat.seatIndex) return true;
-        return myCounts > countMountainsWon(s);
+        return myCount > countMountainsWon(s);
       });
-    },
-    isCompletable: (game, seat) => {
-      const myCounts = countMountainsWon(seat);
 
       const othersMaxCounts = Math.max(
         ...game.seats
@@ -41,47 +39,36 @@ export const Gloin: LegacyCharacterDefinition = {
       );
       const mountainsRemaining = CARDS_PER_SUIT.mountains - totalMountainsWon;
 
-      return myCounts + mountainsRemaining > othersMaxCounts;
-    },
-    isCompleted: (game, seat) => {
-      if (game.finished) {
-        return Gloin.objective.check(game, seat);
-      }
-      // Early completion: check if guaranteed to have the most mountains
-      const myCount = countMountainsWon(seat);
+      const completable = myCount + mountainsRemaining > othersMaxCounts;
 
-      const totalMountainsWon = game.seats.reduce(
-        (total: number, s: Seat) => total + countMountainsWon(s),
-        0
-      );
-      const mountainsRemaining = CARDS_PER_SUIT.mountains - totalMountainsWon;
-
+      // Check for early completion: guaranteed to have most mountains
       // Calculate the maximum mountains any other player could end up with
       const othersMax = Math.max(
         ...game.seats
           .filter((s: Seat) => s.seatIndex !== seat.seatIndex)
           .map((s: Seat) => countMountainsWon(s) + mountainsRemaining)
       );
-
       // Guaranteed most if our current count exceeds their max possible
-      // Use strict > because ties don't count as "most"
-      return myCount > othersMax;
+      const completed = game.finished ? met : myCount > othersMax;
+
+      if (completed && met) {
+        return { finality: "final", outcome: "success" };
+      } else if (!completable) {
+        return { finality: "final", outcome: "failure" };
+      } else {
+        return {
+          finality: "tentative",
+          outcome: met ? "success" : "failure",
+        };
+      }
+    },
+
+    getDetails: (_game, seat): string => {
+      return `Mountains: ${countMountainsWon(seat)}`;
     },
   },
 
   display: {
-    renderStatus: (game, seat) => {
-      const met = Gloin.objective.check(game, seat);
-      const completable = Gloin.objective.isCompletable(game, seat);
-      const completed = Gloin.objective.isCompleted(game, seat);
-
-      return {
-        met,
-        completable,
-        completed,
-        details: `Mountains: ${countMountainsWon(seat)}`,
-      };
-    },
     getObjectiveCards: (_game, seat) => {
       const cards = seat
         .getAllWonCards()
