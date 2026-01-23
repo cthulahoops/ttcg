@@ -1,8 +1,8 @@
-import type { Card } from "../types";
+import type { Card, ObjectiveStatus } from "../types";
 import type { Seat } from "../seat";
-import type { LegacyCharacterDefinition } from "./types";
+import type { CharacterDefinition } from "./types";
 
-export const Elrond: LegacyCharacterDefinition = {
+export const Elrond: CharacterDefinition = {
   name: "Elrond",
   setupText: "Everyone simultaneously passes 1 card to the right",
 
@@ -33,21 +33,16 @@ export const Elrond: LegacyCharacterDefinition = {
 
   objective: {
     text: "Every character must win a ring card",
-    check: (game, _seat) => {
-      return game.seats.every((s: Seat) => {
-        const ringCards = s
-          .getAllWonCards()
-          .filter((c: Card) => c.suit === "rings");
-        return ringCards.length >= 1;
-      });
-    },
-    isCompletable: (game, _seat) => {
+
+    getStatus: (game, _seat): ObjectiveStatus => {
       const seatsNeedingRing = game.seats.filter((s: Seat) => {
         const ringCards = s
           .getAllWonCards()
           .filter((c: Card) => c.suit === "rings");
         return ringCards.length === 0;
       }).length;
+
+      const met = seatsNeedingRing === 0;
 
       const totalRingCardsWon = game.seats.reduce(
         (total: number, s: Seat) =>
@@ -56,14 +51,18 @@ export const Elrond: LegacyCharacterDefinition = {
         0
       );
       const ringsRemaining = 5 - totalRingCardsWon;
+      const completable = ringsRemaining >= seatsNeedingRing;
 
-      return ringsRemaining >= seatsNeedingRing;
+      if (met) {
+        return { finality: "final", outcome: "success" };
+      } else if (!completable) {
+        return { finality: "final", outcome: "failure" };
+      } else {
+        return { finality: "tentative", outcome: "failure" };
+      }
     },
-    isCompleted: (game, seat) => Elrond.objective.check(game, seat),
-  },
 
-  display: {
-    renderStatus: (game, seat) => {
+    getDetails: (game, _seat): string => {
       const seatsWithRings = game.seats.filter((s: Seat) => {
         const ringCards = s
           .getAllWonCards()
@@ -71,16 +70,9 @@ export const Elrond: LegacyCharacterDefinition = {
         return ringCards.length >= 1;
       }).length;
 
-      const met = Elrond.objective.check(game, seat);
-      const completable = Elrond.objective.isCompletable(game, seat);
-      const completed = Elrond.objective.isCompleted(game, seat);
-
-      return {
-        met,
-        completable,
-        completed,
-        details: `Seats with rings: ${seatsWithRings}/${game.seats.length}`,
-      };
+      return `Seats with rings: ${seatsWithRings}/${game.seats.length}`;
     },
   },
+
+  display: {},
 };

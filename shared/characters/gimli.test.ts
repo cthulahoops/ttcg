@@ -37,37 +37,49 @@ function addWonCards(seat: Seat, cards: Card[]): void {
 }
 
 describe("Gimli", () => {
-  describe("objective.check", () => {
-    test("returns false when no threat card assigned", () => {
+  describe("objective.getStatus", () => {
+    test("returns { tentative, failure } when no threat card assigned", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
-      expect(Gimli.objective.check(game, seat)).toBe(false);
+      expect(Gimli.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns false when threat card assigned but not won", () => {
+    test("returns { tentative, failure } when threat card assigned but not won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       seat.threatCard = 5;
-      expect(Gimli.objective.check(game, seat)).toBe(false);
+      expect(Gimli.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns false when different mountains card won", () => {
+    test("returns { tentative, failure } when different mountains card won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       seat.threatCard = 5;
       addWonCards(seat, [{ suit: "mountains", value: 3 }]);
-      expect(Gimli.objective.check(game, seat)).toBe(false);
+      expect(Gimli.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns true when matching mountains card won", () => {
+    test("returns { final, success } when matching mountains card won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       seat.threatCard = 5;
       addWonCards(seat, [{ suit: "mountains", value: 5 }]);
-      expect(Gimli.objective.check(game, seat)).toBe(true);
+      expect(Gimli.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
-    test("returns true when matching mountains card is among other cards", () => {
+    test("returns { final, success } when matching mountains card is among other cards", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       seat.threatCard = 3;
@@ -76,7 +88,10 @@ describe("Gimli", () => {
         { suit: "mountains", value: 3 },
         { suit: "shadows", value: 7 },
       ]);
-      expect(Gimli.objective.check(game, seat)).toBe(true);
+      expect(Gimli.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
     test("ignores non-mountains cards with matching value", () => {
@@ -88,92 +103,34 @@ describe("Gimli", () => {
         { suit: "shadows", value: 5 },
         { suit: "hills", value: 5 },
       ]);
-      expect(Gimli.objective.check(game, seat)).toBe(false);
-    });
-  });
-
-  describe("objective.isCompletable", () => {
-    test("returns true when no threat card assigned", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      expect(Gimli.objective.isCompletable(game, seat)).toBe(true);
+      expect(Gimli.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns true when threat card not yet won by anyone", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 5;
-      expect(Gimli.objective.isCompletable(game, seat)).toBe(true);
-    });
-
-    test("returns true when Gimli has won the threat card", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 5;
-      addWonCards(seat, [{ suit: "mountains", value: 5 }]);
-      expect(Gimli.objective.isCompletable(game, seat)).toBe(true);
-    });
-
-    test("returns false when another player has won the threat card", () => {
+    test("returns { final, failure } when another player has won the threat card", () => {
       const game = createTestGame(4);
       const gimliSeat = game.seats[0]!;
       const otherSeat = game.seats[1]!;
       gimliSeat.threatCard = 5;
       addWonCards(otherSeat, [{ suit: "mountains", value: 5 }]);
-      expect(Gimli.objective.isCompletable(game, gimliSeat)).toBe(false);
+      expect(Gimli.objective.getStatus(game, gimliSeat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
 
-    test("returns true when another player won a different mountains card", () => {
+    test("returns { tentative, failure } when another player won a different mountains card", () => {
       const game = createTestGame(4);
       const gimliSeat = game.seats[0]!;
       const otherSeat = game.seats[1]!;
       gimliSeat.threatCard = 5;
       addWonCards(otherSeat, [{ suit: "mountains", value: 3 }]);
-      expect(Gimli.objective.isCompletable(game, gimliSeat)).toBe(true);
-    });
-  });
-
-  describe("objective.isCompleted", () => {
-    test("returns same result as check", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 5;
-      addWonCards(seat, [{ suit: "mountains", value: 5 }]);
-      expect(Gimli.objective.isCompleted(game, seat)).toBe(
-        Gimli.objective.check(game, seat)
-      );
-    });
-  });
-
-  describe("display.renderStatus", () => {
-    test("shows met=false when objective not met", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 5;
-      const status = Gimli.display.renderStatus(game, seat);
-      expect(status.met).toBe(false);
-      expect(status.completable).toBe(true);
-    });
-
-    test("shows met=true when objective is met", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 5;
-      addWonCards(seat, [{ suit: "mountains", value: 5 }]);
-      const status = Gimli.display.renderStatus(game, seat);
-      expect(status.met).toBe(true);
-      expect(status.completed).toBe(true);
-    });
-
-    test("shows completable=false when card won by another", () => {
-      const game = createTestGame(4);
-      const gimliSeat = game.seats[0]!;
-      const otherSeat = game.seats[1]!;
-      gimliSeat.threatCard = 5;
-      addWonCards(otherSeat, [{ suit: "mountains", value: 5 }]);
-      const status = Gimli.display.renderStatus(game, gimliSeat);
-      expect(status.met).toBe(false);
-      expect(status.completable).toBe(false);
+      expect(Gimli.objective.getStatus(game, gimliSeat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
   });
 

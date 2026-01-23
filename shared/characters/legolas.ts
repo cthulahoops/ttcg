@@ -1,7 +1,7 @@
-import type { ObjectiveCard } from "../types";
-import type { LegacyCharacterDefinition } from "./types";
+import type { ObjectiveCard, ObjectiveStatus } from "../types";
+import type { CharacterDefinition } from "./types";
 
-export const Legolas: LegacyCharacterDefinition = {
+export const Legolas: CharacterDefinition = {
   name: "Legolas",
   setupText: "Draw a Forests threat card, then exchange with Gimli or Aragorn",
 
@@ -16,24 +16,25 @@ export const Legolas: LegacyCharacterDefinition = {
 
   objective: {
     text: "Win the Forests card matching your threat card",
-    check: (game, seat) => {
-      if (!seat.threatCard) return false;
-      return game.hasCard(seat, "forests", seat.threatCard);
+
+    getStatus: (game, seat): ObjectiveStatus => {
+      if (!seat.threatCard) {
+        return { finality: "tentative", outcome: "failure" };
+      }
+      const hasCard = game.hasCard(seat, "forests", seat.threatCard);
+      const cardGone = game.cardGone(seat, "forests", seat.threatCard);
+
+      if (hasCard) {
+        return { finality: "final", outcome: "success" };
+      } else if (cardGone) {
+        return { finality: "final", outcome: "failure" };
+      } else {
+        return { finality: "tentative", outcome: "failure" };
+      }
     },
-    isCompletable: (game, seat) => {
-      if (!seat.threatCard) return true;
-      return !game.cardGone(seat, "forests", seat.threatCard);
-    },
-    isCompleted: (game, seat) => Legolas.objective.check(game, seat),
   },
 
   display: {
-    renderStatus: (game, seat) => {
-      const met = Legolas.objective.check(game, seat);
-      const completable = Legolas.objective.isCompletable(game, seat);
-      const completed = Legolas.objective.isCompleted(game, seat);
-      return { met, completable, completed };
-    },
     getObjectiveCards: (game, seat) => {
       const cards: ObjectiveCard[] = [];
       if (seat.threatCard !== null) {
