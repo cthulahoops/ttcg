@@ -6,8 +6,8 @@ import { Card } from "./Card";
 type PlayerSeatProps = {
   seat: SerializedSeat;
   isActive: boolean;
-  selectableCards?: CardType[] | null;
-  onSelectCard?: (card: CardType) => void;
+  selectableCards: CardType[];
+  onSelectCard: (card: CardType) => void;
 };
 
 export function PlayerSeat({
@@ -94,16 +94,15 @@ function AsideCard({
   selectableCards,
 }: {
   asideCard: CardType | "hidden";
-  selectableCards?: CardType[] | null;
-  onSelectCard?: (card: CardType) => void;
+  selectableCards: CardType[];
+  onSelectCard: (card: CardType) => void;
 }) {
   if (asideCard === "hidden") {
     return <Card card="hidden" />;
   }
-  const isSelectable =
-    selectableCards?.some(
-      (c) => c.suit === asideCard.suit && c.value === asideCard.value
-    ) ?? false;
+  const isSelectable = selectableCards.some(
+    (c) => c.suit === asideCard.suit && c.value === asideCard.value
+  );
 
   return (
     <Card
