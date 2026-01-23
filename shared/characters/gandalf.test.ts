@@ -37,44 +37,39 @@ function addWonCards(seat: Seat, cards: Card[]): void {
 }
 
 describe("Gandalf", () => {
-  describe("objective.check", () => {
-    test("returns false when no tricks won", () => {
+  describe("objective.getStatus", () => {
+    test("returns { tentative, failure } when no tricks won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
-      expect(Gandalf.objective.check(game, seat)).toBe(false);
+      expect(Gandalf.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns true when exactly 1 trick won", () => {
+    test("returns { final, success } when exactly 1 trick won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      expect(Gandalf.objective.check(game, seat)).toBe(true);
+      expect(Gandalf.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
-    test("returns true when multiple tricks won", () => {
+    test("returns { final, success } when multiple tricks won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [{ suit: "mountains", value: 1 }]);
       addWonCards(seat, [{ suit: "shadows", value: 2 }]);
       addWonCards(seat, [{ suit: "forests", value: 3 }]);
-      expect(Gandalf.objective.check(game, seat)).toBe(true);
-    });
-  });
-
-  describe("objective.isCompletable", () => {
-    test("always returns true (winning a trick is always possible)", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      expect(Gandalf.objective.isCompletable(game, seat)).toBe(true);
+      expect(Gandalf.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
-    test("returns true even when no tricks won yet", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      expect(Gandalf.objective.isCompletable(game, seat)).toBe(true);
-    });
-
-    test("returns true when other players have won all tricks so far", () => {
+    test("returns { tentative, failure } when other players have won all tricks so far", () => {
       const game = createTestGame(4);
       const gandalfSeat = game.seats[0]!;
       const otherSeat = game.seats[1]!;
@@ -82,45 +77,10 @@ describe("Gandalf", () => {
       addWonCards(otherSeat, [{ suit: "mountains", value: 1 }]);
       addWonCards(otherSeat, [{ suit: "shadows", value: 2 }]);
       addWonCards(otherSeat, [{ suit: "forests", value: 3 }]);
-      expect(Gandalf.objective.isCompletable(game, gandalfSeat)).toBe(true);
-    });
-  });
-
-  describe("objective.isCompleted", () => {
-    test("returns same result as check (delegates to check)", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      expect(Gandalf.objective.isCompleted(game, seat)).toBe(
-        Gandalf.objective.check(game, seat)
-      );
-    });
-
-    test("returns true when objective is met", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      expect(Gandalf.objective.isCompleted(game, seat)).toBe(true);
-    });
-  });
-
-  describe("display.renderStatus", () => {
-    test("shows met=false when no tricks won", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      const status = Gandalf.display.renderStatus(game, seat);
-      expect(status.met).toBe(false);
-      expect(status.completable).toBe(true);
-      expect(status.completed).toBe(false);
-    });
-
-    test("shows met=true and completed=true when trick won", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      const status = Gandalf.display.renderStatus(game, seat);
-      expect(status.met).toBe(true);
-      expect(status.completable).toBe(true);
-      expect(status.completed).toBe(true);
+      expect(Gandalf.objective.getStatus(game, gandalfSeat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
   });
 

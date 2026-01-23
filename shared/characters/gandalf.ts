@@ -1,7 +1,7 @@
-import type { ObjectiveCard } from "../types";
-import type { LegacyCharacterDefinition } from "./types";
+import type { ObjectiveCard, ObjectiveStatus } from "../types";
+import type { CharacterDefinition } from "./types";
 
-export const Gandalf: LegacyCharacterDefinition = {
+export const Gandalf: CharacterDefinition = {
   name: "Gandalf",
   setupText: "Take the lost card, then exchange with Frodo",
 
@@ -12,17 +12,16 @@ export const Gandalf: LegacyCharacterDefinition = {
 
   objective: {
     text: "Win at least one trick",
-    check: (_game, seat) => seat.getTrickCount() >= 1,
-    isCompletable: (_game, _seat) => true, // Always possible
-    isCompleted: (game, seat) => Gandalf.objective.check(game, seat),
+
+    getStatus: (_game, seat): ObjectiveStatus => {
+      const hasTrick = seat.getTrickCount() >= 1;
+      return hasTrick
+        ? { finality: "final", outcome: "success" }
+        : { finality: "tentative", outcome: "failure" };
+    },
   },
 
   display: {
-    renderStatus: (game, seat) => {
-      const met = Gandalf.objective.check(game, seat);
-      const completed = Gandalf.objective.isCompleted(game, seat);
-      return { met, completable: true, completed };
-    },
     getObjectiveCards: (_game, seat) => {
       const cards: ObjectiveCard[] = Array(seat.getTrickCount()).fill("trick");
       return { cards };

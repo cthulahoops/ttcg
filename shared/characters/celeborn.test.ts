@@ -37,14 +37,17 @@ function addWonCards(seat: Seat, cards: Card[]): void {
 }
 
 describe("Celeborn", () => {
-  describe("objective.check", () => {
-    test("returns false when no cards won", () => {
+  describe("objective.getStatus", () => {
+    test("returns { tentative, failure } when no cards won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
-      expect(Celeborn.objective.check(game, seat)).toBe(false);
+      expect(Celeborn.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns false when no rank has 3 cards", () => {
+    test("returns { tentative, failure } when no rank has 3 cards", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [
@@ -53,10 +56,13 @@ describe("Celeborn", () => {
         { suit: "forests", value: 2 },
         { suit: "hills", value: 2 },
       ]);
-      expect(Celeborn.objective.check(game, seat)).toBe(false);
+      expect(Celeborn.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns true when exactly 3 cards of same rank", () => {
+    test("returns { final, success } when exactly 3 cards of same rank", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [
@@ -64,10 +70,13 @@ describe("Celeborn", () => {
         { suit: "shadows", value: 5 },
         { suit: "forests", value: 5 },
       ]);
-      expect(Celeborn.objective.check(game, seat)).toBe(true);
+      expect(Celeborn.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
-    test("returns true when 4 cards of same rank", () => {
+    test("returns { final, success } when 4 cards of same rank", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [
@@ -76,10 +85,13 @@ describe("Celeborn", () => {
         { suit: "forests", value: 3 },
         { suit: "hills", value: 3 },
       ]);
-      expect(Celeborn.objective.check(game, seat)).toBe(true);
+      expect(Celeborn.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
-    test("returns true when one rank has 3+ even if others have fewer", () => {
+    test("returns { final, success } when one rank has 3+ even if others have fewer", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [
@@ -89,7 +101,10 @@ describe("Celeborn", () => {
         { suit: "hills", value: 7 },
         { suit: "mountains", value: 8 },
       ]);
-      expect(Celeborn.objective.check(game, seat)).toBe(true);
+      expect(Celeborn.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
     test("counts cards across multiple tricks", () => {
@@ -99,82 +114,29 @@ describe("Celeborn", () => {
       addWonCards(seat, [{ suit: "mountains", value: 4 }]);
       addWonCards(seat, [{ suit: "shadows", value: 4 }]);
       addWonCards(seat, [{ suit: "forests", value: 4 }]);
-      expect(Celeborn.objective.check(game, seat)).toBe(true);
+      expect(Celeborn.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
   });
 
-  describe("objective.isCompletable", () => {
-    test("always returns true", () => {
+  describe("objective.getDetails", () => {
+    test("returns undefined when no cards won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
-      expect(Celeborn.objective.isCompletable(game, seat)).toBe(true);
+      expect(Celeborn.objective.getDetails!(game, seat)).toBeUndefined();
     });
 
-    test("returns true even when no cards won", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      expect(Celeborn.objective.isCompletable(game, seat)).toBe(true);
-    });
-
-    test("returns true even when objective already met", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [
-        { suit: "mountains", value: 6 },
-        { suit: "shadows", value: 6 },
-        { suit: "forests", value: 6 },
-      ]);
-      expect(Celeborn.objective.isCompletable(game, seat)).toBe(true);
-    });
-  });
-
-  describe("objective.isCompleted", () => {
-    test("returns same result as check when objective not met", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      expect(Celeborn.objective.isCompleted(game, seat)).toBe(
-        Celeborn.objective.check(game, seat)
-      );
-    });
-
-    test("returns same result as check when objective met", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [
-        { suit: "mountains", value: 7 },
-        { suit: "shadows", value: 7 },
-        { suit: "forests", value: 7 },
-      ]);
-      expect(Celeborn.objective.isCompleted(game, seat)).toBe(
-        Celeborn.objective.check(game, seat)
-      );
-    });
-  });
-
-  describe("display.renderStatus", () => {
-    test("shows met=false when no rank has 3 cards", () => {
+    test("returns undefined when no rank has 2+ cards", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [
         { suit: "mountains", value: 1 },
-        { suit: "shadows", value: 1 },
+        { suit: "shadows", value: 2 },
+        { suit: "forests", value: 3 },
       ]);
-      const status = Celeborn.display.renderStatus(game, seat);
-      expect(status.met).toBe(false);
-      expect(status.completable).toBe(true);
-    });
-
-    test("shows met=true when objective is met", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [
-        { suit: "mountains", value: 8 },
-        { suit: "shadows", value: 8 },
-        { suit: "forests", value: 8 },
-      ]);
-      const status = Celeborn.display.renderStatus(game, seat);
-      expect(status.met).toBe(true);
-      expect(status.completed).toBe(true);
+      expect(Celeborn.objective.getDetails!(game, seat)).toBeUndefined();
     });
 
     test("shows details for ranks with 2+ cards", () => {
@@ -186,9 +148,9 @@ describe("Celeborn", () => {
         { suit: "forests", value: 5 },
         { suit: "hills", value: 5 },
       ]);
-      const status = Celeborn.display.renderStatus(game, seat);
-      expect(status.details).toContain("3:2");
-      expect(status.details).toContain("5:2");
+      const details = Celeborn.objective.getDetails!(game, seat);
+      expect(details).toContain("3:2");
+      expect(details).toContain("5:2");
     });
 
     test("shows details with 3+ count when objective met", () => {
@@ -199,27 +161,7 @@ describe("Celeborn", () => {
         { suit: "shadows", value: 4 },
         { suit: "forests", value: 4 },
       ]);
-      const status = Celeborn.display.renderStatus(game, seat);
-      expect(status.details).toBe("4:3");
-    });
-
-    test("shows undefined details when no rank has 2+ cards", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [
-        { suit: "mountains", value: 1 },
-        { suit: "shadows", value: 2 },
-        { suit: "forests", value: 3 },
-      ]);
-      const status = Celeborn.display.renderStatus(game, seat);
-      expect(status.details).toBeUndefined();
-    });
-
-    test("shows undefined details when no cards won", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      const status = Celeborn.display.renderStatus(game, seat);
-      expect(status.details).toBeUndefined();
+      expect(Celeborn.objective.getDetails!(game, seat)).toBe("4:3");
     });
   });
 
