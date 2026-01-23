@@ -37,151 +37,78 @@ function addWonCards(seat: Seat, cards: Card[]): void {
 }
 
 describe("Bill the Pony", () => {
-  describe("objective.check", () => {
-    test("returns false when no tricks won", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      expect(BillThePony.objective.check(game, seat)).toBe(false);
-    });
-
-    test("returns true when exactly 1 trick won", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      expect(BillThePony.objective.check(game, seat)).toBe(true);
-    });
-
-    test("returns false when 2 tricks won", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(seat, [{ suit: "shadows", value: 2 }]);
-      expect(BillThePony.objective.check(game, seat)).toBe(false);
-    });
-
-    test("returns false when more than 2 tricks won", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(seat, [{ suit: "shadows", value: 2 }]);
-      addWonCards(seat, [{ suit: "forests", value: 3 }]);
-      expect(BillThePony.objective.check(game, seat)).toBe(false);
-    });
-  });
-
-  describe("objective.isCompletable", () => {
-    test("returns true when no tricks won", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      expect(BillThePony.objective.isCompletable(game, seat)).toBe(true);
-    });
-
-    test("returns true when exactly 1 trick won", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      expect(BillThePony.objective.isCompletable(game, seat)).toBe(true);
-    });
-
-    test("returns false when 2 or more tricks won", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(seat, [{ suit: "shadows", value: 2 }]);
-      expect(BillThePony.objective.isCompletable(game, seat)).toBe(false);
-    });
-  });
-
-  describe("objective.isCompleted", () => {
-    test("returns false when game is not finished even if objective met", () => {
+  describe("objective.getStatus", () => {
+    test("returns { tentative, failure } when no tricks won (game not finished)", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       // Add cards to hands so game is not finished
       for (const s of game.seats) {
         s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
       }
-      addWonCards(seat, [{ suit: "shadows", value: 1 }]);
-      // Game is not finished since players have cards
-      expect(game.finished).toBe(false);
-      expect(BillThePony.objective.check(game, seat)).toBe(true);
-      expect(BillThePony.objective.isCompleted(game, seat)).toBe(false);
+      expect(BillThePony.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns true when game finished and objective met", () => {
+    test("returns { tentative, success } when exactly 1 trick won (game not finished)", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
+      }
+      addWonCards(seat, [{ suit: "mountains", value: 5 }]);
+      expect(BillThePony.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "success",
+      });
+    });
+
+    test("returns { final, success } when exactly 1 trick won (game finished)", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [{ suit: "mountains", value: 1 }]);
       // Game is finished since all hands are empty
       expect(game.finished).toBe(true);
-      expect(BillThePony.objective.isCompleted(game, seat)).toBe(true);
+      expect(BillThePony.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
-    test("returns false when game finished but objective not met (no tricks)", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      // No tricks won, game is finished (empty hands)
-      expect(game.finished).toBe(true);
-      expect(BillThePony.objective.isCompleted(game, seat)).toBe(false);
-    });
-
-    test("returns false when game finished but objective not met (too many tricks)", () => {
+    test("returns { final, failure } when 2 tricks won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [{ suit: "mountains", value: 1 }]);
       addWonCards(seat, [{ suit: "shadows", value: 2 }]);
-      // Game is finished since all hands are empty
-      expect(game.finished).toBe(true);
-      expect(BillThePony.objective.isCompleted(game, seat)).toBe(false);
-    });
-  });
-
-  describe("display.renderStatus", () => {
-    test("shows met=false and completable=true when no tricks", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      const status = BillThePony.display.renderStatus(game, seat);
-      expect(status.met).toBe(false);
-      expect(status.completable).toBe(true);
+      expect(BillThePony.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
 
-    test("shows met=true when 1 trick won", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      const status = BillThePony.display.renderStatus(game, seat);
-      expect(status.met).toBe(true);
-      expect(status.completable).toBe(true);
-    });
-
-    test("shows met=false and completable=false when 2 tricks won", () => {
+    test("returns { final, failure } when more than 2 tricks won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [{ suit: "mountains", value: 1 }]);
       addWonCards(seat, [{ suit: "shadows", value: 2 }]);
-      const status = BillThePony.display.renderStatus(game, seat);
-      expect(status.met).toBe(false);
-      expect(status.completable).toBe(false);
+      addWonCards(seat, [{ suit: "forests", value: 3 }]);
+      expect(BillThePony.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
 
-    test("shows completed=true when game finished and objective met", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      // Game is finished since all hands are empty
-      expect(game.finished).toBe(true);
-      const status = BillThePony.display.renderStatus(game, seat);
-      expect(status.met).toBe(true);
-      expect(status.completed).toBe(true);
-    });
-
-    test("shows completed=false when game finished but objective not met", () => {
+    test("returns { final, failure } when game finished but objective not met (no tricks)", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       // No tricks won, game is finished (empty hands)
       expect(game.finished).toBe(true);
-      const status = BillThePony.display.renderStatus(game, seat);
-      expect(status.met).toBe(false);
-      expect(status.completed).toBe(false);
+      expect(BillThePony.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
   });
 

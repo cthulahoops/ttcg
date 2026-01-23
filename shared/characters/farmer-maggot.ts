@@ -1,7 +1,7 @@
-import type { Suit, ObjectiveCard, Card } from "../types";
-import type { LegacyCharacterDefinition } from "./types";
+import type { Suit, ObjectiveCard, Card, ObjectiveStatus } from "../types";
+import type { CharacterDefinition } from "./types";
 
-export const FarmerMaggot: LegacyCharacterDefinition = {
+export const FarmerMaggot: CharacterDefinition = {
   name: "Farmer Maggot",
   setupText: "Draw a threat card, then exchange with Merry or Pippin",
 
@@ -14,20 +14,19 @@ export const FarmerMaggot: LegacyCharacterDefinition = {
 
   objective: {
     text: "Win at least two cards matching the threat card rank",
-    check: (_game, seat) => {
-      if (!seat.threatCard) return false;
-      const matchingCards = seat
-        .getAllWonCards()
-        .filter((c) => c.value === seat.threatCard);
-      return matchingCards.length >= 2;
-    },
-    isCompletable: (game, seat) => {
-      if (!seat.threatCard) return true;
+
+    getStatus: (game, seat): ObjectiveStatus => {
+      if (!seat.threatCard) {
+        return { finality: "tentative", outcome: "failure" };
+      }
 
       const matchingWon = seat
         .getAllWonCards()
         .filter((c) => c.value === seat.threatCard).length;
 
+      const met = matchingWon >= 2;
+
+      // Check completability: count how many matching cards are still available
       let matchingAvailable = 0;
       const suits: Suit[] = [
         "mountains",
@@ -46,31 +45,31 @@ export const FarmerMaggot: LegacyCharacterDefinition = {
         }
       }
 
-      return matchingWon + matchingAvailable >= 2;
-    },
-    isCompleted: (game, seat) => FarmerMaggot.objective.check(game, seat),
-  },
+      const completable = matchingWon + matchingAvailable >= 2;
 
-  display: {
-    renderStatus: (game, seat) => {
-      if (!seat.threatCard) {
-        return { met: false, completable: true, completed: false };
+      if (met) {
+        return { finality: "final", outcome: "success" };
       }
+
+      if (!completable) {
+        return { finality: "final", outcome: "failure" };
+      }
+
+      return { finality: "tentative", outcome: "failure" };
+    },
+
+    getDetails: (_game, seat): string | undefined => {
+      if (!seat.threatCard) return undefined;
 
       const matchingCards = seat
         .getAllWonCards()
         .filter((c) => c.value === seat.threatCard);
-      const met = FarmerMaggot.objective.check(game, seat);
-      const completable = FarmerMaggot.objective.isCompletable(game, seat);
-      const completed = FarmerMaggot.objective.isCompleted(game, seat);
 
-      return {
-        met,
-        completable,
-        completed,
-        details: `Threat: ${seat.threatCard}, Won: ${matchingCards.length}/2`,
-      };
+      return `Threat: ${seat.threatCard}, Won: ${matchingCards.length}/2`;
     },
+  },
+
+  display: {
     getObjectiveCards: (_game, seat) => {
       const cards: ObjectiveCard[] = [];
       if (seat.threatCard !== null) {

@@ -51,40 +51,63 @@ function finishGame(game: Game): void {
 }
 
 describe("GildorInglorian", () => {
-  describe("objective.check", () => {
-    test("returns false when game is not finished", () => {
+  describe("objective.getStatus", () => {
+    test("returns { tentative, failure } when game is not finished and no forests in hand", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
-      // Add a forests card as last played card
-      seat.playedCards.push({ suit: "forests", value: 5 });
-      // Make game not finished by giving all players cards
-      makeGameNotFinished(game);
-      expect(GildorInglorian.objective.check(game, seat)).toBe(false);
+      // Give all players non-forests cards
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
+      }
+      expect(GildorInglorian.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
 
-    test("returns false when no cards have been played", () => {
+    test("returns { tentative, failure } when game is not finished and has forests in hand", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      makeGameNotFinished(game);
+      seat.hand.addCard({ suit: "forests", value: 3 });
+      expect(GildorInglorian.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
+    });
+
+    test("returns { final, failure } when no cards have been played (game finished)", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       finishGame(game);
-      expect(GildorInglorian.objective.check(game, seat)).toBe(false);
+      expect(GildorInglorian.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
 
-    test("returns false when last played card is not forests", () => {
+    test("returns { final, failure } when last played card is not forests (game finished)", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       seat.playedCards.push({ suit: "forests", value: 3 });
       seat.playedCards.push({ suit: "mountains", value: 5 });
       finishGame(game);
-      expect(GildorInglorian.objective.check(game, seat)).toBe(false);
+      expect(GildorInglorian.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
 
-    test("returns true when last played card is forests and game is finished", () => {
+    test("returns { final, success } when last played card is forests (game finished)", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       seat.playedCards.push({ suit: "mountains", value: 3 });
       seat.playedCards.push({ suit: "forests", value: 5 });
       finishGame(game);
-      expect(GildorInglorian.objective.check(game, seat)).toBe(true);
+      expect(GildorInglorian.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
     test("only checks the last card regardless of other forests cards played", () => {
@@ -94,7 +117,10 @@ describe("GildorInglorian", () => {
       seat.playedCards.push({ suit: "forests", value: 2 });
       seat.playedCards.push({ suit: "hills", value: 3 });
       finishGame(game);
-      expect(GildorInglorian.objective.check(game, seat)).toBe(false);
+      expect(GildorInglorian.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
 
     test("works with various forests card values", () => {
@@ -102,48 +128,39 @@ describe("GildorInglorian", () => {
       const seat = game.seats[0]!;
       seat.playedCards.push({ suit: "forests", value: 8 });
       finishGame(game);
-      expect(GildorInglorian.objective.check(game, seat)).toBe(true);
-    });
-  });
-
-  describe("objective.isCompletable", () => {
-    test("returns check result when game is finished and objective met", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.playedCards.push({ suit: "forests", value: 5 });
-      finishGame(game);
-      expect(GildorInglorian.objective.isCompletable(game, seat)).toBe(true);
+      expect(GildorInglorian.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
-    test("returns false when game is finished and objective not met", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.playedCards.push({ suit: "mountains", value: 5 });
-      finishGame(game);
-      expect(GildorInglorian.objective.isCompletable(game, seat)).toBe(false);
-    });
-
-    test("returns true when player has forests cards in hand (game not finished)", () => {
+    test("returns { tentative, failure } when player has forests cards in hand (game not finished)", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       // Give all players cards so game is not finished
       makeGameNotFinished(game);
       // Now add forests card to seat 0
       seat.hand.addCard({ suit: "forests", value: 3 });
-      expect(GildorInglorian.objective.isCompletable(game, seat)).toBe(true);
+      expect(GildorInglorian.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns false when player has no forests cards in hand (game not finished)", () => {
+    test("returns { final, failure } when player has no forests cards in hand (game not finished)", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       // Give all players non-forests cards
       for (const s of game.seats) {
         s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
       }
-      expect(GildorInglorian.objective.isCompletable(game, seat)).toBe(false);
+      expect(GildorInglorian.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
 
-    test("returns true with only forests cards in hand (game not finished)", () => {
+    test("returns { tentative, failure } with only forests cards in hand (game not finished)", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       // Give other players cards
@@ -155,70 +172,10 @@ describe("GildorInglorian", () => {
       // Give seat 0 only forests cards
       seat.hand.addCard({ suit: "forests", value: 1 });
       seat.hand.addCard({ suit: "forests", value: 8 });
-      expect(GildorInglorian.objective.isCompletable(game, seat)).toBe(true);
-    });
-  });
-
-  describe("objective.isCompleted", () => {
-    test("returns false when game is not finished", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.playedCards.push({ suit: "forests", value: 5 });
-      makeGameNotFinished(game);
-      expect(GildorInglorian.objective.isCompleted(game, seat)).toBe(false);
-    });
-
-    test("returns false when game is finished but check fails", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.playedCards.push({ suit: "mountains", value: 5 });
-      finishGame(game);
-      expect(GildorInglorian.objective.isCompleted(game, seat)).toBe(false);
-    });
-
-    test("returns true when game is finished and check passes", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.playedCards.push({ suit: "forests", value: 5 });
-      finishGame(game);
-      expect(GildorInglorian.objective.isCompleted(game, seat)).toBe(true);
-    });
-  });
-
-  describe("display.renderStatus", () => {
-    test("returns correct status flags when objective not met (game not finished)", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      // Give all players non-forests cards so game is not finished
-      for (const s of game.seats) {
-        s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
-      }
-      const status = GildorInglorian.display.renderStatus(game, seat);
-      expect(status.met).toBe(false);
-      expect(status.completable).toBe(false);
-      expect(status.completed).toBe(false);
-    });
-
-    test("returns completable=true when player has forests in hand (game not finished)", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      makeGameNotFinished(game);
-      seat.hand.addCard({ suit: "forests", value: 3 });
-      const status = GildorInglorian.display.renderStatus(game, seat);
-      expect(status.met).toBe(false);
-      expect(status.completable).toBe(true);
-      expect(status.completed).toBe(false);
-    });
-
-    test("returns all true when objective is completed", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.playedCards.push({ suit: "forests", value: 5 });
-      finishGame(game);
-      const status = GildorInglorian.display.renderStatus(game, seat);
-      expect(status.met).toBe(true);
-      expect(status.completable).toBe(true);
-      expect(status.completed).toBe(true);
+      expect(GildorInglorian.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
   });
 

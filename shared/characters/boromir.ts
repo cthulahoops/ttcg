@@ -1,6 +1,7 @@
-import type { LegacyCharacterDefinition } from "./types";
+import type { ObjectiveStatus } from "../types";
+import type { CharacterDefinition } from "./types";
 
-export const Boromir: LegacyCharacterDefinition = {
+export const Boromir: CharacterDefinition = {
   name: "Boromir",
   setupText: "Exchange with anyone except Frodo",
 
@@ -10,29 +11,39 @@ export const Boromir: LegacyCharacterDefinition = {
 
   objective: {
     text: "Win the last trick; do NOT win the 1 of Rings",
-    check: (game, seat) => {
+
+    getStatus: (game, seat): ObjectiveStatus => {
       const wonLast = game.lastTrickWinner === seat.seatIndex;
       const hasOneRing = game.hasCard(seat, "rings", 1);
-      return wonLast && !hasOneRing;
-    },
-    isCompletable: (game, seat) => !game.hasCard(seat, "rings", 1),
-    isCompleted: (game, seat) =>
-      game.finished && Boromir.objective.check(game, seat),
-  },
+      const met = wonLast && !hasOneRing;
 
-  display: {
-    renderStatus: (game, seat) => {
+      // Cannot complete if already has the 1 of Rings
+      if (hasOneRing) {
+        return { finality: "final", outcome: "failure" };
+      }
+
+      if (game.finished) {
+        return {
+          finality: "final",
+          outcome: met ? "success" : "failure",
+        };
+      }
+
+      return {
+        finality: "tentative",
+        outcome: met ? "success" : "failure",
+      };
+    },
+
+    getDetails: (game, seat): string => {
       const wonLast = game.lastTrickWinner === seat.seatIndex;
       const hasOneRing = game.hasCard(seat, "rings", 1);
-      const met = Boromir.objective.check(game, seat);
-      const completable = Boromir.objective.isCompletable(game, seat);
-      const completed = Boromir.objective.isCompleted(game, seat);
 
-      const lastIcon = wonLast ? "✓" : "✗";
-      const oneRingIcon = hasOneRing ? "✗ (has 1-Ring)" : "✓";
-      const details = `Last: ${lastIcon}, 1-Ring: ${oneRingIcon}`;
-
-      return { met, completable, completed, details };
+      const lastIcon = wonLast ? "yes" : "no";
+      const oneRingIcon = hasOneRing ? "has 1-Ring" : "ok";
+      return `Last: ${lastIcon}, 1-Ring: ${oneRingIcon}`;
     },
   },
+
+  display: {},
 };

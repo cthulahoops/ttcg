@@ -1,13 +1,13 @@
-import type { Card, ObjectiveCard } from "../types";
+import type { Card, ObjectiveCard, ObjectiveStatus } from "../types";
 import type { Seat } from "../seat";
-import type { LegacyCharacterDefinition } from "./types";
+import type { CharacterDefinition } from "./types";
 
 const countMountainTricks = (seat: Seat) =>
   seat.tricksWon.filter((trick) =>
     trick.cards.some((c: Card) => c.suit === "mountains")
   ).length;
 
-export const Gwaihir: LegacyCharacterDefinition = {
+export const Gwaihir: CharacterDefinition = {
   name: "Gwaihir",
   setupText: "Exchange with Gandalf twice",
 
@@ -18,28 +18,31 @@ export const Gwaihir: LegacyCharacterDefinition = {
 
   objective: {
     text: "Win at least two tricks containing a mountain card",
-    check: (_game, seat) => countMountainTricks(seat) >= 2,
-    isCompletable: (_game, _seat) => {
-      // Hard to determine without knowing remaining mountains distribution
-      // Simplified: always completable
-      return true;
+
+    getStatus: (game, seat): ObjectiveStatus => {
+      const mountainTricks = countMountainTricks(seat);
+      const met = mountainTricks >= 2;
+
+      // Hard to determine completability without knowing remaining mountains distribution
+      // Simplified: always completable unless already met or game finished
+
+      if (met) {
+        return { finality: "final", outcome: "success" };
+      }
+
+      if (game.finished) {
+        return { finality: "final", outcome: "failure" };
+      }
+
+      return { finality: "tentative", outcome: "failure" };
     },
-    isCompleted: (game, seat) => Gwaihir.objective.check(game, seat),
+
+    getDetails: (_game, seat): string => {
+      return `Tricks with mountains: ${countMountainTricks(seat)}/2`;
+    },
   },
 
   display: {
-    renderStatus: (game, seat) => {
-      const met = Gwaihir.objective.check(game, seat);
-      const completable = Gwaihir.objective.isCompletable(game, seat);
-      const completed = Gwaihir.objective.isCompleted(game, seat);
-
-      return {
-        met,
-        completable,
-        completed,
-        details: `Tricks with mountains: ${countMountainTricks(seat)}/2`,
-      };
-    },
     getObjectiveCards: (_game, seat) => {
       // Show trick markers for tricks containing mountain cards
       const cards: ObjectiveCard[] = Array(countMountainTricks(seat)).fill(

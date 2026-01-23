@@ -37,34 +37,51 @@ function addWonCards(seat: Seat, cards: Card[]): void {
 }
 
 describe("Farmer Maggot", () => {
-  describe("objective.check", () => {
-    test("returns false when no threat card set", () => {
+  describe("objective.getStatus", () => {
+    test("returns { tentative, failure } when no threat card set", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       seat.threatCard = null;
-      expect(FarmerMaggot.objective.check(game, seat)).toBe(false);
+      expect(FarmerMaggot.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns false when no cards won matching threat card", () => {
+    test("returns { tentative, failure } when no cards won matching threat card", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
       seat.threatCard = 3;
       addWonCards(seat, [{ suit: "mountains", value: 5 }]);
-      expect(FarmerMaggot.objective.check(game, seat)).toBe(false);
+      expect(FarmerMaggot.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns false when only 1 card matches threat card", () => {
+    test("returns { tentative, failure } when only 1 card matches threat card", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
       seat.threatCard = 3;
       addWonCards(seat, [
         { suit: "mountains", value: 3 },
         { suit: "shadows", value: 5 },
       ]);
-      expect(FarmerMaggot.objective.check(game, seat)).toBe(false);
+      expect(FarmerMaggot.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns true when exactly 2 cards match threat card", () => {
+    test("returns { final, success } when exactly 2 cards match threat card", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       seat.threatCard = 3;
@@ -72,10 +89,13 @@ describe("Farmer Maggot", () => {
         { suit: "mountains", value: 3 },
         { suit: "shadows", value: 3 },
       ]);
-      expect(FarmerMaggot.objective.check(game, seat)).toBe(true);
+      expect(FarmerMaggot.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
-    test("returns true when more than 2 cards match threat card", () => {
+    test("returns { final, success } when more than 2 cards match threat card", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       seat.threatCard = 4;
@@ -84,7 +104,10 @@ describe("Farmer Maggot", () => {
         { suit: "shadows", value: 4 },
         { suit: "forests", value: 4 },
       ]);
-      expect(FarmerMaggot.objective.check(game, seat)).toBe(true);
+      expect(FarmerMaggot.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
     test("counts cards across multiple tricks", () => {
@@ -93,7 +116,10 @@ describe("Farmer Maggot", () => {
       seat.threatCard = 5;
       addWonCards(seat, [{ suit: "mountains", value: 5 }]);
       addWonCards(seat, [{ suit: "shadows", value: 5 }]);
-      expect(FarmerMaggot.objective.check(game, seat)).toBe(true);
+      expect(FarmerMaggot.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
     test("works with rings suit for low threat card values", () => {
@@ -104,41 +130,20 @@ describe("Farmer Maggot", () => {
         { suit: "rings", value: 3 },
         { suit: "mountains", value: 3 },
       ]);
-      expect(FarmerMaggot.objective.check(game, seat)).toBe(true);
-    });
-  });
-
-  describe("objective.isCompletable", () => {
-    test("returns true when no threat card set", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = null;
-      expect(FarmerMaggot.objective.isCompletable(game, seat)).toBe(true);
+      expect(FarmerMaggot.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
-    test("returns true when enough cards of threat rank are available", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 3;
-      // 4 normal suits + rings have value 3 available, so 5 total
-      expect(FarmerMaggot.objective.isCompletable(game, seat)).toBe(true);
-    });
-
-    test("returns true when already have 2 cards and need no more", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 3;
-      addWonCards(seat, [
-        { suit: "mountains", value: 3 },
-        { suit: "shadows", value: 3 },
-      ]);
-      expect(FarmerMaggot.objective.isCompletable(game, seat)).toBe(true);
-    });
-
-    test("returns false when others have won too many matching cards", () => {
+    test("returns { final, failure } when others have won too many matching cards", () => {
       const game = createTestGame(4);
       const maggotSeat = game.seats[0]!;
       const otherSeat = game.seats[1]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
       maggotSeat.threatCard = 3;
       // Other player wins 4 cards of value 3, only 1 remains (rings 3)
       addWonCards(otherSeat, [
@@ -148,15 +153,20 @@ describe("Farmer Maggot", () => {
         { suit: "hills", value: 3 },
       ]);
       // Maggot has 0 + only 1 available = 1, needs 2
-      expect(FarmerMaggot.objective.isCompletable(game, maggotSeat)).toBe(
-        false
-      );
+      expect(FarmerMaggot.objective.getStatus(game, maggotSeat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
 
-    test("returns true when player has 1 and 1 more available", () => {
+    test("returns { tentative, failure } when player has 1 and 1 more available", () => {
       const game = createTestGame(4);
       const maggotSeat = game.seats[0]!;
       const otherSeat = game.seats[1]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
       maggotSeat.threatCard = 3;
       // Maggot has 1
       addWonCards(maggotSeat, [{ suit: "mountains", value: 3 }]);
@@ -167,13 +177,20 @@ describe("Farmer Maggot", () => {
         { suit: "hills", value: 3 },
       ]);
       // Maggot has 1 + 1 available (rings 3) = 2
-      expect(FarmerMaggot.objective.isCompletable(game, maggotSeat)).toBe(true);
+      expect(FarmerMaggot.objective.getStatus(game, maggotSeat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
     test("accounts for rings only going up to 5", () => {
       const game = createTestGame(4);
       const maggotSeat = game.seats[0]!;
       const otherSeat = game.seats[1]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
       maggotSeat.threatCard = 7;
       // Only 4 cards exist with value 7 (mountains, shadows, forests, hills)
       // Other player wins 3 of them
@@ -183,62 +200,43 @@ describe("Farmer Maggot", () => {
         { suit: "forests", value: 7 },
       ]);
       // Maggot has 0 + 1 available = 1, needs 2
-      expect(FarmerMaggot.objective.isCompletable(game, maggotSeat)).toBe(
-        false
-      );
+      expect(FarmerMaggot.objective.getStatus(game, maggotSeat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
 
-    test("returns true for high threat card when cards available", () => {
+    test("returns { tentative, failure } for high threat card when cards available", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
       seat.threatCard = 8;
       // Only 4 cards of value 8 exist (no rings 8)
-      expect(FarmerMaggot.objective.isCompletable(game, seat)).toBe(true);
+      expect(FarmerMaggot.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
   });
 
-  describe("objective.isCompleted", () => {
-    test("returns same result as check (delegates)", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 3;
-      addWonCards(seat, [
-        { suit: "mountains", value: 3 },
-        { suit: "shadows", value: 3 },
-      ]);
-      expect(FarmerMaggot.objective.isCompleted(game, seat)).toBe(
-        FarmerMaggot.objective.check(game, seat)
-      );
-    });
-
-    test("returns false when check returns false", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 3;
-      addWonCards(seat, [{ suit: "mountains", value: 3 }]);
-      expect(FarmerMaggot.objective.isCompleted(game, seat)).toBe(false);
-    });
-  });
-
-  describe("display.renderStatus", () => {
-    test("shows simple status when no threat card", () => {
+  describe("objective.getDetails", () => {
+    test("returns undefined when no threat card", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       seat.threatCard = null;
-      const status = FarmerMaggot.display.renderStatus(game, seat);
-      expect(status.met).toBe(false);
-      expect(status.completable).toBe(true);
-      expect(status.completed).toBe(false);
+      const details = FarmerMaggot.objective.getDetails!(game, seat);
+      expect(details).toBeUndefined();
     });
 
     test("shows threat card and count when threat card set", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       seat.threatCard = 4;
-      const status = FarmerMaggot.display.renderStatus(game, seat);
-      expect(status.details).toBe("Threat: 4, Won: 0/2");
-      expect(status.met).toBe(false);
-      expect(status.completable).toBe(true);
+      const details = FarmerMaggot.objective.getDetails!(game, seat);
+      expect(details).toBe("Threat: 4, Won: 0/2");
     });
 
     test("shows correct count when cards won", () => {
@@ -246,11 +244,11 @@ describe("Farmer Maggot", () => {
       const seat = game.seats[0]!;
       seat.threatCard = 5;
       addWonCards(seat, [{ suit: "mountains", value: 5 }]);
-      const status = FarmerMaggot.display.renderStatus(game, seat);
-      expect(status.details).toBe("Threat: 5, Won: 1/2");
+      const details = FarmerMaggot.objective.getDetails!(game, seat);
+      expect(details).toBe("Threat: 5, Won: 1/2");
     });
 
-    test("shows met=true when objective met", () => {
+    test("shows correct count when objective met", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       seat.threatCard = 3;
@@ -258,25 +256,8 @@ describe("Farmer Maggot", () => {
         { suit: "mountains", value: 3 },
         { suit: "shadows", value: 3 },
       ]);
-      const status = FarmerMaggot.display.renderStatus(game, seat);
-      expect(status.met).toBe(true);
-      expect(status.completed).toBe(true);
-      expect(status.details).toBe("Threat: 3, Won: 2/2");
-    });
-
-    test("shows completable=false when not enough cards remain", () => {
-      const game = createTestGame(4);
-      const maggotSeat = game.seats[0]!;
-      const otherSeat = game.seats[1]!;
-      maggotSeat.threatCard = 3;
-      addWonCards(otherSeat, [
-        { suit: "mountains", value: 3 },
-        { suit: "shadows", value: 3 },
-        { suit: "forests", value: 3 },
-        { suit: "hills", value: 3 },
-      ]);
-      const status = FarmerMaggot.display.renderStatus(game, maggotSeat);
-      expect(status.completable).toBe(false);
+      const details = FarmerMaggot.objective.getDetails!(game, seat);
+      expect(details).toBe("Threat: 3, Won: 2/2");
     });
   });
 

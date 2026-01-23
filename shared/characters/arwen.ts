@@ -1,11 +1,11 @@
-import { CARDS_PER_SUIT, type Card } from "../types";
+import { CARDS_PER_SUIT, type Card, type ObjectiveStatus } from "../types";
 import type { Seat } from "../seat";
-import type { LegacyCharacterDefinition } from "./types";
+import type { CharacterDefinition } from "./types";
 
 const countForestsWon = (seat: Seat) =>
   seat.getAllWonCards().filter((c: Card) => c.suit === "forests").length;
 
-export const Arwen: LegacyCharacterDefinition = {
+export const Arwen: CharacterDefinition = {
   name: "Arwen",
   setupText: "Exchange with Elrond or Aragorn",
 
@@ -17,18 +17,17 @@ export const Arwen: LegacyCharacterDefinition = {
 
   objective: {
     text: "Win the most forests cards",
-    check: (game, seat) => {
-      const myCounts = countForestsWon(seat);
+
+    getStatus: (game, seat): ObjectiveStatus => {
+      const myCount = countForestsWon(seat);
 
       // Check if this seat has strictly more than all others
-      return game.seats.every((s: Seat) => {
+      const met = game.seats.every((s: Seat) => {
         if (s.seatIndex === seat.seatIndex) return true;
-        return myCounts > countForestsWon(s);
+        return myCount > countForestsWon(s);
       });
-    },
-    isCompletable: (game, seat) => {
-      const myCounts = countForestsWon(seat);
 
+      // Calculate completability
       const othersMaxCounts = Math.max(
         ...game.seats
           .filter((s: Seat) => s.seatIndex !== seat.seatIndex)
@@ -41,47 +40,36 @@ export const Arwen: LegacyCharacterDefinition = {
       );
       const forestsRemaining = CARDS_PER_SUIT.forests - totalForestsWon;
 
-      return myCounts + forestsRemaining > othersMaxCounts;
-    },
-    isCompleted: (game, seat) => {
-      if (game.finished) {
-        return Arwen.objective.check(game, seat);
-      }
-      // Early completion: check if guaranteed to have the most forests
-      const myCount = countForestsWon(seat);
+      const completable = myCount + forestsRemaining > othersMaxCounts;
 
-      const totalForestsWon = game.seats.reduce(
-        (total: number, s: Seat) => total + countForestsWon(s),
-        0
-      );
-      const forestsRemaining = CARDS_PER_SUIT.forests - totalForestsWon;
-
-      // Calculate the maximum forests any other player could end up with
+      // Check for early completion: guaranteed to have the most forests
       const othersMax = Math.max(
         ...game.seats
           .filter((s: Seat) => s.seatIndex !== seat.seatIndex)
           .map((s: Seat) => countForestsWon(s) + forestsRemaining)
       );
+      const earlyComplete = myCount > othersMax;
 
-      // Guaranteed most if our current count exceeds their max possible
-      // Use strict > because ties don't count as "most"
-      return myCount > othersMax;
+      if (earlyComplete || (game.finished && met)) {
+        return { finality: "final", outcome: "success" };
+      }
+
+      if (!completable || (game.finished && !met)) {
+        return { finality: "final", outcome: "failure" };
+      }
+
+      return {
+        finality: "tentative",
+        outcome: met ? "success" : "failure",
+      };
+    },
+
+    getDetails: (_game, seat): string => {
+      return `Forests: ${countForestsWon(seat)}`;
     },
   },
 
   display: {
-    renderStatus: (game, seat) => {
-      const met = Arwen.objective.check(game, seat);
-      const completable = Arwen.objective.isCompletable(game, seat);
-      const completed = Arwen.objective.isCompleted(game, seat);
-
-      return {
-        met,
-        completable,
-        completed,
-        details: `Forests: ${countForestsWon(seat)}`,
-      };
-    },
     getObjectiveCards: (_game, seat) => {
       const cards = seat
         .getAllWonCards()
