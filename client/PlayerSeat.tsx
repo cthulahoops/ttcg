@@ -31,21 +31,6 @@ export function PlayerSeat({
   // Show character name when assigned, otherwise player name
   const displayName = character ?? playerName ?? `Player ${seatIndex + 1}`;
 
-  // Destructure the object format: { finality, outcome }
-  const { finality, outcome } = objectiveStatus ?? {
-    finality: null,
-    outcome: null,
-  };
-
-  // Status icon based on objective status
-  const statusIcon = objectiveStatus
-    ? finality === "final" && outcome === "success"
-      ? "★" // final success → guaranteed
-      : outcome === "success"
-        ? "✓" // tentative success → currently met
-        : "✗" // failure → not met
-    : null;
-
   return (
     <section
       className={`player ${isActive ? "active" : ""}`}
@@ -53,12 +38,12 @@ export function PlayerSeat({
     >
       <div className="player-header">
         <div className="player-info">
-          <h3>
-            {displayName}
-            {statusIcon && <span className="compact-status">{statusIcon}</span>}
-            <span className="compact-tricks">T:{tricksWon.length}</span>
-          </h3>
-          <span className="compact-objective">{objective}</span>
+          <h3>{displayName}</h3>
+          <div>
+            <span className="font-xs secondary">{tricksWon.length}</span>{" "}
+            <StatusIcon objectiveStatus={objectiveStatus} />{" "}
+            <span className="font-xs accent italic">{objective}</span>
+          </div>
         </div>
         {objectiveCards && objectiveCards.cards.length > 0 && (
           <div className="objective-cards">
@@ -86,6 +71,25 @@ export function PlayerSeat({
       )}
     </section>
   );
+}
+
+function StatusIcon({
+  objectiveStatus,
+}: {
+  objectiveStatus?: { finality: string; outcome: string };
+}) {
+  if (!objectiveStatus) return null;
+
+  const { finality, outcome } = objectiveStatus;
+  const isFinalSuccess = finality === "final" && outcome === "success";
+  const icon = isFinalSuccess ? "★" : outcome === "success" ? "✓" : "✗";
+  const colorClass = isFinalSuccess
+    ? "completed"
+    : outcome === "success"
+      ? "success"
+      : "error";
+
+  return <span className={`font-xs ${colorClass}`}>{icon}</span>;
 }
 
 function AsideCard({

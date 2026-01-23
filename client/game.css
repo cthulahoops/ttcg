@@ -6,7 +6,51 @@
   --font-size-base: 16px;
   --font-size-sm: 14px;
   --font-size-xs: 12px;
+
+  /* Backgrounds */
+  --color-bg: #2d5016;
+  --color-bg-dark: #1a3009;
+  --color-bg-overlay: rgba(0, 0, 0, 0.3);
+
+  /* Borders */
+  --color-border: #4a7023;
+  --color-border-hover: #5a8030;
+
+  /* Text */
+  --color-text: #fff;
+  --color-text-secondary: #aed581;
+  --color-text-muted: #aaa;
+  --color-text-dark: #333;
+
+  /* Accent (gold) */
+  --color-accent: #ffd700;
+  --color-accent-hover: #ffed4e;
+  --color-accent-orange: #ff6f00;
+
+  /* Status */
+  --color-success: #4caf50;
+  --color-error: #f44336;
+
+  /* Disabled */
+  --color-disabled-bg: #666;
+  --color-disabled-text: #999;
+
+  /* Secondary button (red) */
+  --color-danger: #8b4a4a;
+  --color-danger-hover: #ab5a5a;
+
+  /* Spacing */
+  --space-lg: 20px;
+  --space-md: 15px;
+  --space-sm: 10px;
+  --space-xs: 5px;
 }
+
+/* Utility classes */
+.accent { color: var(--color-accent); }
+.secondary { color: var(--color-text-secondary); }
+.font-xs { font-size: var(--font-size-xs); }
+.italic { font-style: italic; }
 
 * {
   box-sizing: border-box;
@@ -15,13 +59,13 @@
 body {
   font-family: Arial, sans-serif;
   margin: 0;
-  background-color: #2d5016;
-  color: #fff;
+  background-color: var(--color-bg);
+  color: var(--color-text);
 }
 
 .container {
   display: grid;
-  gap: 20px;
+  gap: var(--space-lg);
   max-width: calc(min(1400px, 100% - 40px));
   margin: 0 auto;
 }
@@ -37,26 +81,26 @@ body {
   flex: 1;
   min-width: 0;
   display: grid;
-  gap: 10px;
+  gap: var(--space-sm);
 }
 
 .display-columns {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 10px;
+  gap: var(--space-sm);
 }
 
 h1 {
   text-align: center;
-  color: #ffd700;
+  color: var(--color-accent);
 }
 
 /* Base section styling - shared by all section-like areas */
 section {
-  background-color: #1a3009;
-  border-radius: 10px;
-  border: 2px solid #4a7023;
-  padding: 20px;
+  background-color: var(--color-bg-dark);
+  border-radius: var(--space-sm);
+  border: 2px solid var(--color-border);
+  padding: var(--space-lg);
 }
 
 h1 {
@@ -68,7 +112,7 @@ section h3 {
   font-size: var(--font-size-base);
   text-align: left;
   margin-top: 0;
-  color: #ffd700;
+  color: var(--color-accent);
 }
 
 /* Lost Card Section */
@@ -78,13 +122,13 @@ section h3 {
 
 .players {
   display: grid;
-  gap: 10px;
+  gap: var(--space-sm);
 }
 
 .hand:not(.pyramid-hand) {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: var(--space-xs);
 }
 
 /* Hidden cards overlap with each other using negative margin */
@@ -93,11 +137,17 @@ section h3 {
 }
 
 .card {
+  --suit-color: var(--color-text);
+  --suit-mix: white;
   width: var(--card-width);
   height: var(--card-height);
-  border: 2px solid #333;
+  border: 2px solid var(--color-text-dark);
   border-radius: 5px;
-  background-color: #fff;
+  background: linear-gradient(
+    135deg,
+    var(--suit-color) 0%,
+    color-mix(in srgb, var(--suit-color), var(--suit-mix) 15%) 100%
+  );
   color: #000;
   display: flex;
   flex-direction: column;
@@ -109,31 +159,32 @@ section h3 {
 }
 
 .card.mountains {
-  background: linear-gradient(135deg, #aabbcc 0%, #bbccdd 100%);
+  --suit-color: #aabbcc;
 }
 
 .card.shadows {
-  background: linear-gradient(135deg, #6c1c1c 0%, #7a3a3a 100%);
-  color: #fff;
+  --suit-color: #6c1c1c;
+  color: var(--color-text);
 }
 
 .card.forests {
-  background: linear-gradient(135deg, #2d5016 0%, #4a7023 100%);
-  color: #fff;
+  --suit-color: var(--color-bg);
+  color: var(--color-text);
 }
 
 .card.hills {
-  background: linear-gradient(135deg, #c4965c 0%, #a8824a 100%);
+  --suit-color: #c4965c;
+  --suit-mix: black;
 }
 
 .card.rings {
-  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
-  border-color: #ff6f00;
+  --suit-color: var(--color-accent);
+  border-color: var(--color-accent-orange);
 }
 
 .card.threat {
-  background: linear-gradient(135deg, #3a0000 0%, #5a0000 100%);
-  color: #fff;
+  --suit-color: #3a0000;
+  color: var(--color-text);
 }
 
 .suit {
@@ -148,50 +199,50 @@ section h3 {
 
 .controls {
   text-align: center;
-  margin: 20px 0;
+  margin: var(--space-lg) 0;
 }
 
 .controls label {
-  color: #ffd700;
+  color: var(--color-accent);
   font-weight: bold;
-  margin-right: 10px;
+  margin-right: var(--space-sm);
 }
 
 .controls select {
-  background-color: #1a3009;
-  color: #ffd700;
-  border: 2px solid #ffd700;
+  background-color: var(--color-bg-dark);
+  color: var(--color-accent);
+  border: 2px solid var(--color-accent);
   padding: 8px 12px;
   font-size: var(--font-size-base);
   font-weight: bold;
-  border-radius: 5px;
+  border-radius: var(--space-xs);
   cursor: pointer;
-  margin-right: 15px;
+  margin-right: var(--space-md);
 }
 
 .controls select:hover {
-  background-color: #2d5016;
+  background-color: var(--color-bg);
 }
 
 button {
-  background-color: #ffd700;
-  color: #1a3009;
+  background-color: var(--color-accent);
+  color: var(--color-bg-dark);
   border: none;
-  padding: 10px 20px;
+  padding: var(--space-sm) var(--space-lg);
   font-size: var(--font-size-base);
   font-weight: bold;
-  border-radius: 5px;
+  border-radius: var(--space-xs);
   cursor: pointer;
 }
 
 button:hover {
-  background-color: #ffed4e;
+  background-color: var(--color-accent-hover);
 }
 
 .trick-header {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: var(--space-md);
 }
 
 .trick-header h2 {
@@ -219,7 +270,7 @@ button:hover {
 .trick-cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, var(--card-width));
-  gap: 5px;
+  gap: var(--space-xs);
   min-height: var(--card-height);
 }
 
@@ -229,12 +280,12 @@ button:hover {
 
 .trick-card .player-label {
   font-size: var(--font-size-xs);
-  margin-bottom: 5px;
-  color: #aed581;
+  margin-bottom: var(--space-xs);
+  color: var(--color-text-secondary);
 }
 
 .trick-card.winner .card {
-  outline: 3px solid gold;
+  outline: 3px solid var(--color-accent);
   outline-offset: 2px;
 }
 
@@ -254,134 +305,111 @@ button:hover {
 }
 
 .card.hidden {
-  background: linear-gradient(135deg, #4a4a4a 0%, #2c2c2c 100%);
+  --suit-color: #4a2c6d;
+  --suit-mix: black;
   color: #888;
-}
-
-.hand-count {
-  color: #aed581;
-  font-size: var(--font-size-sm);
-  margin-bottom: 10px;
 }
 
 .game-status {
   text-align: center;
   font-size: var(--font-size-lg);
-  color: #ffd700;
-  margin: 20px 0;
+  color: var(--color-accent);
+  margin: var(--space-lg) 0;
   font-weight: bold;
 }
 
 .player.active {
-  border-color: #ffd700;
+  border-color: var(--color-accent);
   border-width: 3px;
 }
 
 .tricks-won {
   font-size: var(--font-size-sm);
-  color: #aed581;
-  margin-top: 5px;
+  color: var(--color-text-secondary);
+  margin-top: var(--space-xs);
 }
 
 .objective-status {
   font-size: var(--font-size-sm);
-  margin-top: 5px;
-  color: #aed581;
+  margin-top: var(--space-xs);
+  color: var(--color-text-secondary);
 }
 
 .card.trick {
-  background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
-  border: 2px solid #4a5568;
+  --suit-color: #2d3748;
+  --suit-mix: black;
+  border-color: #4a5568;
 }
 
-.aside-card {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 5px;
+.completed {
+  color: var(--color-accent);
 }
 
-.aside-label {
-  font-size: var(--font-size-xs);
-  color: #90caf9;
+.success {
+  color: var(--color-secondary);
 }
 
-.objective-status .completed {
-  color: #ffd700;
-}
-
-.objective-status .success {
-  color: #4caf50;
-}
-
-.objective-status .fail {
-  color: #f44336;
+.error {
+  color: var(--color-error);
 }
 
 .ring-cards,
 .rank-counts {
   font-size: var(--font-size-xs);
-  color: #aed581;
+  color: var(--color-text-secondary);
   margin-top: 3px;
 }
 
-.objective {
-  font-size: var(--font-size-xs);
-  color: #ffd700;
-  font-style: italic;
-  margin-top: 5px;
-  margin-bottom: 5px;
-}
 
 /* Unified Dialog Area - appears above trick area instead of covering interface */
 .dialog-area {
-  border: 3px solid #ffd700;
+  border: 3px solid var(--color-accent);
   text-align: center;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 .dialog-content h3 {
-  margin-bottom: 15px;
+  margin-bottom: var(--space-md);
 }
 
 .dialog-message {
-  color: #aed581;
-  margin: 15px 0;
+  color: var(--color-text-secondary);
+  margin: var(--space-md) 0;
   font-size: var(--font-size-base);
 }
 
 .dialog-buttons {
   display: flex;
-  gap: 10px;
+  gap: var(--space-sm);
   justify-content: center;
-  margin-top: 20px;
+  margin-top: var(--space-lg);
   flex-wrap: wrap;
 }
 
 .dialog-buttons button:disabled {
-  background-color: #666;
-  color: #999;
+  background-color: var(--color-disabled-bg);
+  color: var(--color-disabled-text);
   cursor: not-allowed;
 }
 
 .dialog-cards {
   display: flex;
-  gap: 10px;
+  gap: var(--space-sm);
   justify-content: center;
-  margin-top: 20px;
+  margin-top: var(--space-lg);
   flex-wrap: wrap;
 }
 
 .dialog-info {
-  margin-top: 15px;
-  color: #aed581;
+  margin-top: var(--space-md);
+  color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
 }
 
 .card.selectable {
   cursor: pointer;
   transition: transform 0.2s;
-  border-color: #ffd700;
+  border-color: var(--color-accent);
   border-width: 3px;
 }
 
@@ -391,18 +419,18 @@ button:hover {
 
 /* Game Log */
 .game-log {
-  padding: 15px;
+  padding: var(--space-md);
   height: calc(100vh - 40px);
   overflow-y: auto;
   position: sticky;
-  top: 20px;
+  top: var(--space-lg);
 }
 
 .game-log-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: var(--space-sm);
 }
 
 .game-log h2 {
@@ -411,21 +439,21 @@ button:hover {
 }
 
 .copy-log-button {
-  padding: 5px 10px;
+  padding: var(--space-xs) var(--space-sm);
   font-size: var(--font-size-xs);
-  background-color: #4a7023;
-  color: #fff;
+  background-color: var(--color-border);
+  color: var(--color-text);
 }
 
 .copy-log-button:hover {
-  background-color: #5a8030;
+  background-color: var(--color-border-hover);
 }
 
 .log-entry {
-  color: #aed581;
+  color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
   padding: 3px 0;
-  border-bottom: 1px solid #2d5016;
+  border-bottom: 1px solid var(--color-bg);
 }
 
 .log-entry:last-child {
@@ -433,14 +461,14 @@ button:hover {
 }
 
 .log-entry.important {
-  color: #ffd700;
+  color: var(--color-accent);
   font-weight: bold;
 }
 
 /* Pyramid display styles */
 .pyramid-hand {
   display: grid;
-  --grid-gap: 5px;
+  --grid-gap: var(--space-xs);
   grid-auto-columns: calc((var(--card-width) - var(--grid-gap)) / 2);
   grid-auto-rows: calc((var(--card-height) - var(--grid-gap)) / 2);
   gap: var(--grid-gap);
@@ -451,18 +479,13 @@ button:hover {
   height: auto;
 }
 
-.card.pyramid-face-down {
-  background: linear-gradient(135deg, #4a2c6d 0%, #6b4c9a 100%);
-  color: #ccc;
-}
-
 .card.pyramid-uncovered {
-  border-color: #ffd700;
+  border-color: var(--color-accent);
   border-width: 3px;
 }
 
 .card.pyramid-extra {
-  border-color: #ff6f00;
+  border-color: var(--color-accent-orange);
 }
 
 /* Lobby Screen Styles */
@@ -476,15 +499,15 @@ button:hover {
 }
 
 .lobby-screen h1 {
-  color: #ffd700;
+  color: var(--color-accent);
   margin-bottom: 40px;
   font-size: var(--font-size-title);
 }
 
 .lobby-menu,
 .room-lobby {
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 10px;
+  background: var(--color-bg-overlay);
+  border-radius: var(--space-sm);
   padding: 30px;
   max-width: 500px;
   width: 100%;
@@ -492,7 +515,7 @@ button:hover {
 
 .lobby-menu h2,
 .room-lobby h2 {
-  color: #ffd700;
+  color: var(--color-accent);
   text-align: center;
   margin-top: 0;
 }
@@ -500,27 +523,27 @@ button:hover {
 .lobby-form {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: var(--space-md);
 }
 
 .lobby-form input {
   padding: 12px;
   font-size: var(--font-size-base);
-  border: 2px solid #4a6b2a;
-  border-radius: 5px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--space-xs);
   background: rgba(255, 255, 255, 0.9);
-  color: #333;
+  color: var(--color-text-dark);
 }
 
 .lobby-buttons {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-sm);
 }
 
 .join-room-group {
   display: flex;
-  gap: 10px;
+  gap: var(--space-sm);
   flex-wrap: wrap;
 }
 
@@ -539,56 +562,56 @@ button:hover {
   padding: 12px 24px;
   font-size: var(--font-size-base);
   border: none;
-  border-radius: 5px;
+  border-radius: var(--space-xs);
   cursor: pointer;
   font-weight: bold;
   transition: background-color 0.2s;
 }
 
 .primary-btn {
-  background: #4a6b2a;
-  color: white;
+  background: var(--color-border);
+  color: var(--color-text);
 }
 
 .primary-btn:hover:not(:disabled) {
-  background: #5a8b3a;
+  background: var(--color-border-hover);
 }
 
 .primary-btn:disabled {
-  background: #666;
+  background: var(--color-disabled-bg);
   cursor: not-allowed;
   opacity: 0.5;
 }
 
 .secondary-btn {
-  background: #8b4a4a;
-  color: white;
+  background: var(--color-danger);
+  color: var(--color-text);
 }
 
 .secondary-btn:hover {
-  background: #ab5a5a;
+  background: var(--color-danger-hover);
 }
 
 .lobby-error {
-  color: #ff6b6b;
+  color: var(--color-error);
   text-align: center;
-  margin-top: 15px;
-  min-height: 20px;
+  margin-top: var(--space-md);
+  min-height: var(--space-lg);
 }
 
 .room-info {
   text-align: center;
-  margin: 20px 0;
-  color: #aaa;
+  margin: var(--space-lg) 0;
+  color: var(--color-text-muted);
 }
 
 .players-list {
-  margin: 20px 0;
+  margin: var(--space-lg) 0;
 }
 
 .players-list h3 {
-  color: #ffd700;
-  margin-bottom: 15px;
+  color: var(--color-accent);
+  margin-bottom: var(--space-md);
 }
 
 #playersList {
@@ -598,13 +621,13 @@ button:hover {
 }
 
 #playersList li {
-  padding: 10px;
-  margin: 5px 0;
+  padding: var(--space-sm);
+  margin: var(--space-xs) 0;
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 5px;
+  border-radius: var(--space-xs);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-sm);
 }
 
 #playersList li.disconnected {
@@ -624,7 +647,7 @@ button:hover {
 
 .character-list {
   display: flex;
-  gap: 15px;
+  gap: var(--space-md);
   flex-wrap: wrap;
 }
 
@@ -635,21 +658,21 @@ button:hover {
   background: rgba(0, 0, 0, 0.2);
   border-radius: 8px;
   padding: 12px;
-  border: 1px solid #4a7023;
+  border: 1px solid var(--color-border);
 }
 
 .character-name {
-  color: #ffd700;
+  color: var(--color-accent);
   font-weight: bold;
   font-size: var(--font-size-lg);
-  margin-bottom: 8px;
+  margin-bottom: var(--space-xs);
 }
 
 .character-objective,
 .character-setup {
   font-size: var(--font-size-sm);
-  color: #aed581;
-  margin-bottom: 5px;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-xs);
 }
 
 .character-objective strong,
@@ -659,85 +682,70 @@ button:hover {
 
 /* Single players container with dividers (instead of individual bordered sections) */
 .players {
-    background-color: #1a3009;
-    border-radius: 6px;
-    border: 2px solid #4a7023;
-    padding: 8px;
-    gap: 0;
+  background-color: var(--color-bg-dark);
+  border-radius: 6px;
+  border: 2px solid var(--color-border);
+  padding: 8px;
+  gap: 0;
 }
 
 .players .player {
-    background: none;
-    border: none;
-    border-radius: 0;
-    padding: 8px 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  padding: 8px 0;
 }
 
 .players .player + .player {
-    border-top: 1px solid #4a7023;
-    margin-top: 8px;
-    padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+  margin-top: 8px;
+  padding-top: 8px;
 }
 
 /* Active player highlight in mobile container */
 .players .player.active {
-    border-left: 3px solid #ffd700;
-    padding-left: 5px;
-    border-top: 1px solid #4a7023;
+  border-left: 3px solid var(--color-accent);
+  padding-left: 5px;
+  border-top: 1px solid var(--color-border);
 }
 
 .players .player.active:first-child {
-    border-top: none;
+  border-top: none;
 }
 
 .player-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    flex-wrap: wrap;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
 }
 
 .player-header h3 {
-    margin: 0;
-    font-size: var(--font-size-sm);
-}
-
-.status {
-    font-size: var(--font-size-xs);
-    color: #aed581;
-}
-
-.tricks {
-    font-size: var(--font-size-xs);
-    color: #aed581;
-}
-
-.objective {
-    font-size: var(--font-size-xs);
-    color: #aed581;
+  margin: 0;
+  font-size: var(--font-size-sm);
 }
 
 .player-header {
-    display: flex;
-    justify-content: space-between;
+  display: flex;
+  justify-content: space-between;
 }
 
 .objective-cards {
-    --card-width: 45px;
-    --card-height: 68px;
+  --card-width: 45px;
+  --card-height: 68px;
 }
 
 .objective-cards {
-    display: flex;
-    margin-left: auto;
+  display: flex;
+  margin-left: auto;
 }
 
 .objective-cards .card {
-    margin-left: var(--card-width / 2);
+  margin-left: var(--card-width / 2);
 }
 
 .objective-cards .card:first-child {
-    margin-left: 0;
+  margin-left: 0;
 }
 
 /* ===========================================
@@ -752,21 +760,13 @@ button:hover {
     --font-size-base: 14px;
     --font-size-sm: 12px;
     --font-size-xs: 10px;
-  }
-
-  /* Reduced section padding */
-  section {
-    padding: 8px;
-    border-radius: 6px;
+    --space-lg: 10px;
+    --space-md: 10px;
+    --space-sm: 6px;
   }
 
   .container {
-    gap: 8px;
     max-width: calc(100% - 16px);
-  }
-
-  .main-content {
-    gap: 6px;
   }
 
   .objective-cards {
@@ -774,54 +774,16 @@ button:hover {
     --card-height: 48px;
   }
 
-  .player-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .player-header-compact {
-    margin-bottom: 6px;
-  }
-
-  .hand-count {
-    display: none;
-  }
-
   .trick-header {
     flex-wrap: wrap;
-    gap: 8px;
     align-items: flex-start;
   }
 
   .rings-status {
-    padding: 1px 6px;
-  }
-
-  .dialog-area {
-    padding: 10px;
-  }
-
-  .dialog-content h3 {
-    margin-bottom: 10px;
-  }
-
-  .dialog-message {
-    margin: 10px 0;
-  }
-
-  .dialog-buttons {
-    gap: 6px;
-    margin-top: 10px;
+    padding: 1px var(--space-sm);
   }
 
   .dialog-buttons button {
-    padding: 6px 12px;
-  }
-
-  .dialog-cards {
-    gap: 6px;
-    margin-top: 10px;
+    padding: var(--space-sm) 12px;
   }
 }
