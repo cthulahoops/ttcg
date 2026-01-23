@@ -33,7 +33,10 @@ export function PlayerSeat({
   const displayName = character ?? playerName ?? `Player ${seatIndex + 1}`;
 
   // Destructure the object format: { finality, outcome }
-  const { finality, outcome } = objectiveStatus ?? { finality: null, outcome: null };
+  const { finality, outcome } = objectiveStatus ?? {
+    finality: null,
+    outcome: null,
+  };
 
   // Status icon based on objective status
   const statusIcon = objectiveStatus
