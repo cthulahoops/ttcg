@@ -1,6 +1,11 @@
 :root {
   --card-width: 60px;
   --card-height: 90px;
+  --font-size-title: 40px;
+  --font-size-lg: 18px;
+  --font-size-base: 16px;
+  --font-size-sm: 14px;
+  --font-size-xs: 12px;
 }
 
 * {
@@ -60,7 +65,7 @@ h1 {
 
 section h2,
 section h3 {
-  font-size: 1rem;
+  font-size: var(--font-size-base);
   text-align: left;
   margin-top: 0;
   color: #ffd700;
@@ -157,7 +162,7 @@ section h3 {
   color: #ffd700;
   border: 2px solid #ffd700;
   padding: 8px 12px;
-  font-size: 16px;
+  font-size: var(--font-size-base);
   font-weight: bold;
   border-radius: 5px;
   cursor: pointer;
@@ -173,7 +178,7 @@ button {
   color: #1a3009;
   border: none;
   padding: 10px 20px;
-  font-size: 16px;
+  font-size: var(--font-size-base);
   font-weight: bold;
   border-radius: 5px;
   cursor: pointer;
@@ -194,7 +199,7 @@ button:hover {
 }
 
 .rings-status {
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   padding: 2px 8px;
   border-radius: 4px;
 }
@@ -223,7 +228,7 @@ button:hover {
 }
 
 .trick-card .player-label {
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   margin-bottom: 5px;
   color: #aed581;
 }
@@ -255,13 +260,13 @@ button:hover {
 
 .hand-count {
   color: #aed581;
-  font-size: 14px;
+  font-size: var(--font-size-sm);
   margin-bottom: 10px;
 }
 
 .game-status {
   text-align: center;
-  font-size: 18px;
+  font-size: var(--font-size-lg);
   color: #ffd700;
   margin: 20px 0;
   font-weight: bold;
@@ -273,13 +278,13 @@ button:hover {
 }
 
 .tricks-won {
-  font-size: 14px;
+  font-size: var(--font-size-sm);
   color: #aed581;
   margin-top: 5px;
 }
 
 .objective-status {
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   margin-top: 5px;
   color: #aed581;
 }
@@ -297,7 +302,7 @@ button:hover {
 }
 
 .aside-label {
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   color: #90caf9;
 }
 
@@ -315,13 +320,13 @@ button:hover {
 
 .ring-cards,
 .rank-counts {
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   color: #aed581;
   margin-top: 3px;
 }
 
 .objective {
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   color: #ffd700;
   font-style: italic;
   margin-top: 5px;
@@ -342,7 +347,7 @@ button:hover {
 .dialog-message {
   color: #aed581;
   margin: 15px 0;
-  font-size: 16px;
+  font-size: var(--font-size-base);
 }
 
 .dialog-buttons {
@@ -370,7 +375,7 @@ button:hover {
 .dialog-info {
   margin-top: 15px;
   color: #aed581;
-  font-size: 14px;
+  font-size: var(--font-size-sm);
 }
 
 .card.selectable {
@@ -401,13 +406,13 @@ button:hover {
 }
 
 .game-log h2 {
-  font-size: 18px;
+  font-size: var(--font-size-lg);
   margin-bottom: 0;
 }
 
 .copy-log-button {
   padding: 5px 10px;
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   background-color: #4a7023;
   color: #fff;
 }
@@ -418,7 +423,7 @@ button:hover {
 
 .log-entry {
   color: #aed581;
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   padding: 3px 0;
   border-bottom: 1px solid #2d5016;
 }
@@ -473,7 +478,7 @@ button:hover {
 .lobby-screen h1 {
   color: #ffd700;
   margin-bottom: 40px;
-  font-size: 2.5em;
+  font-size: var(--font-size-title);
 }
 
 .lobby-menu,
@@ -500,7 +505,7 @@ button:hover {
 
 .lobby-form input {
   padding: 12px;
-  font-size: 16px;
+  font-size: var(--font-size-base);
   border: 2px solid #4a6b2a;
   border-radius: 5px;
   background: rgba(255, 255, 255, 0.9);
@@ -532,7 +537,7 @@ button:hover {
 .primary-btn,
 .secondary-btn {
   padding: 12px 24px;
-  font-size: 16px;
+  font-size: var(--font-size-base);
   border: none;
   border-radius: 5px;
   cursor: pointer;
@@ -608,7 +613,7 @@ button:hover {
 
 #playersList li::before {
   content: "👤";
-  font-size: 18px;
+  font-size: var(--font-size-lg);
 }
 
 #playersList li.disconnected::before {
@@ -636,13 +641,13 @@ button:hover {
 .character-name {
   color: #ffd700;
   font-weight: bold;
-  font-size: 1.1em;
+  font-size: var(--font-size-lg);
   margin-bottom: 8px;
 }
 
 .character-objective,
 .character-setup {
-  font-size: 0.85em;
+  font-size: var(--font-size-sm);
   color: #aed581;
   margin-bottom: 5px;
 }
@@ -695,21 +700,21 @@ button:hover {
 
 .player-header h3 {
     margin: 0;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
 }
 
 .compact-status {
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     color: #aed581;
 }
 
 .compact-tricks {
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     color: #aed581;
 }
 
 .compact-objective {
-    font-size: 11px;
+    font-size: var(--font-size-xs);
     color: #aed581;
 }
 
@@ -740,17 +745,14 @@ button:hover {
    MOBILE STYLES (max-width: 600px)
    =========================================== */
 @media (max-width: 600px) {
-  /* Smaller card sizes */
   :root {
     --card-width: 45px;
     --card-height: 68px;
-  }
-
-  .value {
-    font-size: 18px;
-  }
-  .suit {
-    font-size: 8px;
+    --font-size-title: 32px;
+    --font-size-lg: 16px;
+    --font-size-base: 14px;
+    --font-size-sm: 12px;
+    --font-size-xs: 10px;
   }
 
   /* Reduced section padding */
@@ -789,11 +791,6 @@ button:hover {
     flex-wrap: wrap;
   }
 
-  .player-header h3 {
-    margin: 0;
-    font-size: 14px;
-  }
-
   .player-header-compact {
     margin-bottom: 6px;
   }
@@ -810,12 +807,7 @@ button:hover {
     align-items: flex-start;
   }
 
-  .trick-header h2 {
-    font-size: 14px;
-  }
-
   .rings-status {
-    font-size: 10px;
     padding: 1px 6px;
   }
 
@@ -825,12 +817,10 @@ button:hover {
   }
 
   .dialog-content h3 {
-    font-size: 14px;
     margin-bottom: 10px;
   }
 
   .dialog-message {
-    font-size: 14px;
     margin: 10px 0;
   }
 
@@ -841,7 +831,6 @@ button:hover {
 
   .dialog-buttons button {
     padding: 6px 12px;
-    font-size: 14px;
   }
 
   .dialog-cards {
