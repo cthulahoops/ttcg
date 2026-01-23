@@ -1,7 +1,7 @@
 import type { ObjectiveCard } from "../types";
-import type { CharacterDefinition } from "./types";
+import type { LegacyCharacterDefinition } from "./types";
 
-export const Gimli: CharacterDefinition = {
+export const Gimli: LegacyCharacterDefinition = {
   name: "Gimli",
   setupText:
     "Draw a Mountains threat card, then exchange with Legolas or Aragorn",

@@ -1,5 +1,5 @@
 import type { Card, ObjectiveCard } from "../types";
-import type { CharacterDefinition } from "./types";
+import type { LegacyCharacterDefinition } from "./types";
 import type { Seat } from "../seat";
 import { sortHand } from "../utils";
 
@@ -8,7 +8,7 @@ const countHillsTricks = (seat: Seat) =>
     trick.cards.some((c: Card) => c.suit === "hills")
   ).length;
 
-export const Shadowfax: CharacterDefinition = {
+export const Shadowfax: LegacyCharacterDefinition = {
   name: "Shadowfax",
   setupText:
     "Set one card aside (may return it to hand at any point, must return if hand empty)",

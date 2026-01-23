@@ -1,7 +1,7 @@
 import type { ObjectiveCard, ObjectiveStatus } from "../types";
-import type { NewCharacterDefinition } from "./types";
+import type { CharacterDefinition } from "./types";
 
-export const Sam: NewCharacterDefinition = {
+export const Sam: CharacterDefinition = {
   name: "Sam",
   setupText:
     "Draw a Hills threat card, then exchange with Frodo, Merry, or Pippin",
@@ -20,17 +20,17 @@ export const Sam: NewCharacterDefinition = {
 
     getStatus: (game, seat): ObjectiveStatus => {
       if (!seat.threatCard) {
-        return ["tentative", "failure"];
+        return { finality: "tentative", outcome: "failure" };
       }
       const hasCard = game.hasCard(seat, "hills", seat.threatCard);
       const cardGone = game.cardGone(seat, "hills", seat.threatCard);
 
       if (hasCard) {
-        return ["final", "success"];
+        return { finality: "final", outcome: "success" };
       } else if (cardGone) {
-        return ["final", "failure"];
+        return { finality: "final", outcome: "failure" };
       } else {
-        return ["tentative", "failure"];
+        return { finality: "tentative", outcome: "failure" };
       }
     },
   },

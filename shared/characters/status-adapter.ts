@@ -2,8 +2,8 @@ import type { Game } from "../game";
 import type { Seat } from "../seat";
 import type { ObjectiveStatus, Finality, Outcome } from "../types";
 import type {
-  CharacterObjective,
-  CharacterDefinition,
+  LegacyCharacterObjective,
+  LegacyCharacterDefinition,
   AnyCharacterObjective,
   AnyCharacterDefinition,
 } from "./types";
@@ -11,29 +11,29 @@ import type {
 // Type guard: check if objective uses legacy API
 function isLegacyObjective(
   obj: AnyCharacterObjective
-): obj is CharacterObjective {
+): obj is LegacyCharacterObjective {
   return "check" in obj;
 }
 
 // Type guard: check if character uses legacy API
 function isLegacyCharacter(
   char: AnyCharacterDefinition
-): char is CharacterDefinition {
+): char is LegacyCharacterDefinition {
   return "renderStatus" in char.display;
 }
 
 /**
- * Convert legacy boolean trio to ObjectiveStatus tuple.
+ * Convert legacy boolean trio to ObjectiveStatus object.
  *
  * Two axes:
  *   Finality: "tentative" (can still change) vs "final" (locked in)
  *   Outcome: "failure" (not met) vs "success" (met)
  *
  * Mapping:
- *   [tentative, failure] → working toward it
- *   [tentative, success] → currently meeting it
- *   [final, failure]     → impossible
- *   [final, success]     → guaranteed
+ *   {tentative, failure} → working toward it
+ *   {tentative, success} → currently meeting it
+ *   {final, failure}     → impossible
+ *   {final, success}     → guaranteed
  */
 export function booleansToStatus(
   met: boolean,
@@ -42,7 +42,7 @@ export function booleansToStatus(
 ): ObjectiveStatus {
   const finality: Finality = completed || !completable ? "final" : "tentative";
   const outcome: Outcome = met ? "success" : "failure";
-  return [finality, outcome];
+  return { finality, outcome };
 }
 
 /**

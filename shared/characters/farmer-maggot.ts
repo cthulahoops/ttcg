@@ -1,7 +1,7 @@
 import type { Suit, ObjectiveCard, Card } from "../types";
-import type { CharacterDefinition } from "./types";
+import type { LegacyCharacterDefinition } from "./types";
 
-export const FarmerMaggot: CharacterDefinition = {
+export const FarmerMaggot: LegacyCharacterDefinition = {
   name: "Farmer Maggot",
   setupText: "Draw a threat card, then exchange with Merry or Pippin",
 

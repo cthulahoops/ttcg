@@ -38,45 +38,48 @@ function addWonCards(seat: Seat, cards: Card[]): void {
 
 describe("Sam", () => {
   describe("objective.getStatus", () => {
-    test("returns [tentative, failure] when no threat card assigned", () => {
+    test("returns { tentative, failure } when no threat card assigned", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
-      expect(Sam.objective.getStatus(game, seat)).toEqual([
-        "tentative",
-        "failure",
-      ]);
+      expect(Sam.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns [tentative, failure] when threat card assigned but not won", () => {
+    test("returns { tentative, failure } when threat card assigned but not won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       seat.threatCard = 5;
-      expect(Sam.objective.getStatus(game, seat)).toEqual([
-        "tentative",
-        "failure",
-      ]);
+      expect(Sam.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns [tentative, failure] when different hills card won", () => {
+    test("returns { tentative, failure } when different hills card won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       seat.threatCard = 5;
       addWonCards(seat, [{ suit: "hills", value: 3 }]);
-      expect(Sam.objective.getStatus(game, seat)).toEqual([
-        "tentative",
-        "failure",
-      ]);
+      expect(Sam.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns [final, success] when matching hills card won", () => {
+    test("returns { final, success } when matching hills card won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       seat.threatCard = 5;
       addWonCards(seat, [{ suit: "hills", value: 5 }]);
-      expect(Sam.objective.getStatus(game, seat)).toEqual(["final", "success"]);
+      expect(Sam.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
-    test("returns [final, success] when matching hills card is among other cards", () => {
+    test("returns { final, success } when matching hills card is among other cards", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       seat.threatCard = 3;
@@ -85,7 +88,10 @@ describe("Sam", () => {
         { suit: "hills", value: 3 },
         { suit: "shadows", value: 7 },
       ]);
-      expect(Sam.objective.getStatus(game, seat)).toEqual(["final", "success"]);
+      expect(Sam.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
     test("ignores non-hills cards with matching value", () => {
@@ -97,34 +103,34 @@ describe("Sam", () => {
         { suit: "shadows", value: 5 },
         { suit: "forests", value: 5 },
       ]);
-      expect(Sam.objective.getStatus(game, seat)).toEqual([
-        "tentative",
-        "failure",
-      ]);
+      expect(Sam.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns [final, failure] when another player has won the threat card", () => {
+    test("returns { final, failure } when another player has won the threat card", () => {
       const game = createTestGame(4);
       const samSeat = game.seats[0]!;
       const otherSeat = game.seats[1]!;
       samSeat.threatCard = 5;
       addWonCards(otherSeat, [{ suit: "hills", value: 5 }]);
-      expect(Sam.objective.getStatus(game, samSeat)).toEqual([
-        "final",
-        "failure",
-      ]);
+      expect(Sam.objective.getStatus(game, samSeat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
 
-    test("returns [tentative, failure] when another player won a different hills card", () => {
+    test("returns { tentative, failure } when another player won a different hills card", () => {
       const game = createTestGame(4);
       const samSeat = game.seats[0]!;
       const otherSeat = game.seats[1]!;
       samSeat.threatCard = 5;
       addWonCards(otherSeat, [{ suit: "hills", value: 3 }]);
-      expect(Sam.objective.getStatus(game, samSeat)).toEqual([
-        "tentative",
-        "failure",
-      ]);
+      expect(Sam.objective.getStatus(game, samSeat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
   });
 

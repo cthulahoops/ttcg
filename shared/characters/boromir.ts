@@ -1,6 +1,6 @@
-import type { CharacterDefinition } from "./types";
+import type { LegacyCharacterDefinition } from "./types";
 
-export const Boromir: CharacterDefinition = {
+export const Boromir: LegacyCharacterDefinition = {
   name: "Boromir",
   setupText: "Exchange with anyone except Frodo",
 

@@ -8,7 +8,10 @@ import type {
 } from "../types";
 import type { Game, GameSetupContext } from "../game";
 
-export interface CharacterObjective {
+// ===== Legacy API types for unmigrated characters =====
+// These are the old interfaces with boolean methods.
+
+export interface LegacyCharacterObjective {
   text?: string;
   getText?: (game: Game) => string;
 
@@ -22,9 +25,37 @@ export interface CharacterObjective {
   getDetails?: (game: Game, seat: Seat) => string | undefined;
 }
 
-export interface CharacterDisplay {
+export interface LegacyCharacterDisplay {
   renderStatus: (game: Game, seat: Seat) => CharacterStatus;
   getObjectiveCards?: (game: Game, seat: Seat) => ObjectiveCards;
+}
+
+export interface LegacyCharacterDefinition {
+  name: string;
+  setupText: string;
+  setup: (
+    game: Game,
+    seat: Seat,
+    setupContext: GameSetupContext
+  ) => Promise<void>;
+  objective: LegacyCharacterObjective;
+  display: LegacyCharacterDisplay;
+}
+
+// ===== New API types for migrated characters =====
+// These are the canonical interfaces going forward.
+
+export interface CharacterObjective {
+  text?: string;
+  getText?: (game: Game) => string;
+
+  getStatus: (game: Game, seat: Seat) => ObjectiveStatus;
+  getDetails?: (game: Game, seat: Seat) => string | undefined;
+}
+
+export interface CharacterDisplay {
+  getObjectiveCards?: (game: Game, seat: Seat) => ObjectiveCards;
+  // No renderStatus - migrated characters don't need it
 }
 
 export interface CharacterDefinition {
@@ -39,36 +70,10 @@ export interface CharacterDefinition {
   display: CharacterDisplay;
 }
 
-// ===== New API types for migrated characters =====
-// These will replace the above once all characters are migrated.
-
-export interface NewCharacterObjective {
-  text?: string;
-  getText?: (game: Game) => string;
-
-  getStatus: (game: Game, seat: Seat) => ObjectiveStatus;
-  getDetails?: (game: Game, seat: Seat) => string | undefined;
-}
-
-export interface NewCharacterDisplay {
-  getObjectiveCards?: (game: Game, seat: Seat) => ObjectiveCards;
-  // No renderStatus - migrated characters don't need it
-}
-
-export interface NewCharacterDefinition {
-  name: string;
-  setupText: string;
-  setup: (
-    game: Game,
-    seat: Seat,
-    setupContext: GameSetupContext
-  ) => Promise<void>;
-  objective: NewCharacterObjective;
-  display: NewCharacterDisplay;
-}
-
 // Union types for adapter/registry that accept both old and new
-export type AnyCharacterObjective = CharacterObjective | NewCharacterObjective;
+export type AnyCharacterObjective =
+  | LegacyCharacterObjective
+  | CharacterObjective;
 export type AnyCharacterDefinition =
-  | CharacterDefinition
-  | NewCharacterDefinition;
+  | LegacyCharacterDefinition
+  | CharacterDefinition;

@@ -2,12 +2,12 @@
 // Re-exports character definitions from individual files
 
 export type {
+  LegacyCharacterDefinition,
+  LegacyCharacterObjective,
+  LegacyCharacterDisplay,
   CharacterDefinition,
   CharacterObjective,
   CharacterDisplay,
-  NewCharacterDefinition,
-  NewCharacterObjective,
-  NewCharacterDisplay,
   AnyCharacterDefinition,
   AnyCharacterObjective,
 } from "./types";

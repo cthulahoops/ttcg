@@ -1,7 +1,7 @@
 import type { ObjectiveCard } from "../types";
-import type { CharacterDefinition } from "./types";
+import type { LegacyCharacterDefinition } from "./types";
 
-export const BillThePony: CharacterDefinition = {
+export const BillThePony: LegacyCharacterDefinition = {
   name: "Bill the Pony",
   setupText: "Exchange simultaneously with Sam and Frodo",
 

@@ -493,7 +493,7 @@ function getLegalMoves(gameState: Game, seat: Seat): Card[] {
 // ===== EXCHANGE HELPER FUNCTIONS =====
 
 function checkObjective(gameState: Game, seat: Seat): boolean {
-  const [, outcome] = getObjectiveStatus(
+  const { outcome } = getObjectiveStatus(
     seat.character!.objective,
     gameState,
     seat
@@ -502,7 +502,7 @@ function checkObjective(gameState: Game, seat: Seat): boolean {
 }
 
 function isObjectiveCompletable(gameState: Game, seat: Seat): boolean {
-  const [finality, outcome] = getObjectiveStatus(
+  const { finality, outcome } = getObjectiveStatus(
     seat.character!.objective,
     gameState,
     seat
@@ -512,7 +512,7 @@ function isObjectiveCompletable(gameState: Game, seat: Seat): boolean {
 }
 
 function isObjectiveCompleted(gameState: Game, seat: Seat): boolean {
-  const [finality, outcome] = getObjectiveStatus(
+  const { finality, outcome } = getObjectiveStatus(
     seat.character!.objective,
     gameState,
     seat

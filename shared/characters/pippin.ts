@@ -1,8 +1,8 @@
 import type { Seat } from "../seat";
 import type { ObjectiveCard } from "../types";
-import type { CharacterDefinition } from "./types";
+import type { LegacyCharacterDefinition } from "./types";
 
-export const Pippin: CharacterDefinition = {
+export const Pippin: LegacyCharacterDefinition = {
   name: "Pippin",
   setupText: "Exchange with Frodo, Merry, or Sam",
 

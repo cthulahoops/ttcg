@@ -1,7 +1,7 @@
 import type { ObjectiveCard } from "../types";
-import type { CharacterDefinition } from "./types";
+import type { LegacyCharacterDefinition } from "./types";
 
-export const Gandalf: CharacterDefinition = {
+export const Gandalf: LegacyCharacterDefinition = {
   name: "Gandalf",
   setupText: "Take the lost card, then exchange with Frodo",
 

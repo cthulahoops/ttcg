@@ -1,7 +1,7 @@
 import type { Card } from "../types";
-import type { CharacterDefinition } from "./types";
+import type { LegacyCharacterDefinition } from "./types";
 
-export const Celeborn: CharacterDefinition = {
+export const Celeborn: LegacyCharacterDefinition = {
   name: "Celeborn",
   setupText: "Exchange with any player",
 

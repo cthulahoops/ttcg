@@ -1,7 +1,7 @@
 import type { Card, ObjectiveCard } from "../types";
-import type { CharacterDefinition } from "./types";
+import type { LegacyCharacterDefinition } from "./types";
 
-export const Goldberry: CharacterDefinition = {
+export const Goldberry: LegacyCharacterDefinition = {
   name: "Goldberry",
   setupText: "Turn your hand face-up (visible to all players)",
 

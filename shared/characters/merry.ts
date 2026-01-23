@@ -1,7 +1,7 @@
 import type { ObjectiveCard } from "../types";
-import type { CharacterDefinition } from "./types";
+import type { LegacyCharacterDefinition } from "./types";
 
-export const Merry: CharacterDefinition = {
+export const Merry: LegacyCharacterDefinition = {
   name: "Merry",
   setupText: "Exchange with Frodo, Pippin, or Sam",
 
