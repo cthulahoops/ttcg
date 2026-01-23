@@ -57,7 +57,7 @@ export function GameScreen({
       )}
 
       <div className="display-columns">
-        <TrickArea game={game} lostCard={game.lostCard} />
+        <TrickArea game={game} />
         <LostCard lostCard={game.lostCard} />
       </div>
 
