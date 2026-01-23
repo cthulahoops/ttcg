@@ -37,27 +37,45 @@ function addWonCards(seat: Seat, cards: Card[]): void {
 }
 
 describe("Glorfindel", () => {
-  describe("objective.check", () => {
-    test("returns false when no shadows cards won", () => {
+  describe("objective.getStatus", () => {
+    test("returns { tentative, failure } when no shadows cards won (game not finished)", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
-      expect(Glorfindel.objective.check(game, seat)).toBe(false);
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
+      expect(Glorfindel.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns false when only some shadows cards won", () => {
+    test("returns { tentative, failure } when only some shadows cards won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
       addWonCards(seat, [
         { suit: "shadows", value: 1 },
         { suit: "shadows", value: 2 },
         { suit: "shadows", value: 3 },
       ]);
-      expect(Glorfindel.objective.check(game, seat)).toBe(false);
+      expect(Glorfindel.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns false when 7 shadows cards won", () => {
+    test("returns { tentative, failure } when 7 shadows cards won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
       addWonCards(seat, [
         { suit: "shadows", value: 1 },
         { suit: "shadows", value: 2 },
@@ -67,10 +85,13 @@ describe("Glorfindel", () => {
         { suit: "shadows", value: 6 },
         { suit: "shadows", value: 7 },
       ]);
-      expect(Glorfindel.objective.check(game, seat)).toBe(false);
+      expect(Glorfindel.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns true when all 8 shadows cards won", () => {
+    test("returns { final, success } when all 8 shadows cards won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [
@@ -83,12 +104,19 @@ describe("Glorfindel", () => {
         { suit: "shadows", value: 7 },
         { suit: "shadows", value: 8 },
       ]);
-      expect(Glorfindel.objective.check(game, seat)).toBe(true);
+      expect(Glorfindel.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
     test("ignores non-shadows cards when counting", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
       addWonCards(seat, [
         { suit: "mountains", value: 1 },
         { suit: "forests", value: 2 },
@@ -96,7 +124,10 @@ describe("Glorfindel", () => {
         { suit: "rings", value: 4 },
         { suit: "shadows", value: 1 },
       ]);
-      expect(Glorfindel.objective.check(game, seat)).toBe(false);
+      expect(Glorfindel.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
     test("counts shadows cards across multiple tricks", () => {
@@ -119,48 +150,73 @@ describe("Glorfindel", () => {
         { suit: "shadows", value: 7 },
         { suit: "shadows", value: 8 },
       ]);
-      expect(Glorfindel.objective.check(game, seat)).toBe(true);
-    });
-  });
-
-  describe("objective.isCompletable", () => {
-    test("returns true when no shadows cards have been won by anyone", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      expect(Glorfindel.objective.isCompletable(game, seat)).toBe(true);
+      expect(Glorfindel.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
-    test("returns true when Glorfindel has won some shadows cards", () => {
+    test("returns { tentative, failure } when no shadows cards have been won by anyone", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
+      expect(Glorfindel.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
+    });
+
+    test("returns { tentative, failure } when Glorfindel has won some shadows cards", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
       addWonCards(seat, [
         { suit: "shadows", value: 1 },
         { suit: "shadows", value: 2 },
       ]);
-      expect(Glorfindel.objective.isCompletable(game, seat)).toBe(true);
+      expect(Glorfindel.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns false when another player has won any shadows card", () => {
+    test("returns { final, failure } when another player has won any shadows card", () => {
       const game = createTestGame(4);
       const glorfindelSeat = game.seats[0]!;
       const otherSeat = game.seats[1]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
       addWonCards(otherSeat, [{ suit: "shadows", value: 1 }]);
-      expect(Glorfindel.objective.isCompletable(game, glorfindelSeat)).toBe(
-        false
-      );
+      expect(Glorfindel.objective.getStatus(game, glorfindelSeat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
 
-    test("returns false when another player wins the 8 of shadows", () => {
+    test("returns { final, failure } when another player wins the 8 of shadows", () => {
       const game = createTestGame(4);
       const glorfindelSeat = game.seats[0]!;
       const otherSeat = game.seats[1]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
       addWonCards(otherSeat, [{ suit: "shadows", value: 8 }]);
-      expect(Glorfindel.objective.isCompletable(game, glorfindelSeat)).toBe(
-        false
-      );
+      expect(Glorfindel.objective.getStatus(game, glorfindelSeat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
 
-    test("returns true when Glorfindel has won all shadows cards", () => {
+    test("returns { final, success } when Glorfindel has won all shadows cards", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [
@@ -173,60 +229,39 @@ describe("Glorfindel", () => {
         { suit: "shadows", value: 7 },
         { suit: "shadows", value: 8 },
       ]);
-      expect(Glorfindel.objective.isCompletable(game, seat)).toBe(true);
+      expect(Glorfindel.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
     test("ignores non-shadows cards won by others", () => {
       const game = createTestGame(4);
       const glorfindelSeat = game.seats[0]!;
       const otherSeat = game.seats[1]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
       addWonCards(otherSeat, [
         { suit: "mountains", value: 1 },
         { suit: "forests", value: 2 },
         { suit: "hills", value: 3 },
         { suit: "rings", value: 4 },
       ]);
-      expect(Glorfindel.objective.isCompletable(game, glorfindelSeat)).toBe(
-        true
-      );
+      expect(Glorfindel.objective.getStatus(game, glorfindelSeat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
   });
 
-  describe("objective.isCompleted", () => {
-    test("returns same result as check", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [
-        { suit: "shadows", value: 1 },
-        { suit: "shadows", value: 2 },
-        { suit: "shadows", value: 3 },
-        { suit: "shadows", value: 4 },
-        { suit: "shadows", value: 5 },
-        { suit: "shadows", value: 6 },
-        { suit: "shadows", value: 7 },
-        { suit: "shadows", value: 8 },
-      ]);
-      expect(Glorfindel.objective.isCompleted(game, seat)).toBe(
-        Glorfindel.objective.check(game, seat)
-      );
-    });
-
-    test("returns false when not all shadows won", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "shadows", value: 1 }]);
-      expect(Glorfindel.objective.isCompleted(game, seat)).toBe(false);
-    });
-  });
-
-  describe("display.renderStatus", () => {
+  describe("objective.getDetails", () => {
     test("shows 'Shadows: 0/8' when no shadows won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
-      const status = Glorfindel.display.renderStatus(game, seat);
-      expect(status.details).toBe("Shadows: 0/8");
-      expect(status.met).toBe(false);
-      expect(status.completable).toBe(true);
+      const details = Glorfindel.objective.getDetails!(game, seat);
+      expect(details).toBe("Shadows: 0/8");
     });
 
     test("shows correct count when some shadows won", () => {
@@ -237,12 +272,11 @@ describe("Glorfindel", () => {
         { suit: "shadows", value: 3 },
         { suit: "shadows", value: 5 },
       ]);
-      const status = Glorfindel.display.renderStatus(game, seat);
-      expect(status.details).toBe("Shadows: 3/8");
-      expect(status.met).toBe(false);
+      const details = Glorfindel.objective.getDetails!(game, seat);
+      expect(details).toBe("Shadows: 3/8");
     });
 
-    test("shows met=true and completed=true when all shadows won", () => {
+    test("shows 'Shadows: 8/8' when all shadows won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [
@@ -255,19 +289,8 @@ describe("Glorfindel", () => {
         { suit: "shadows", value: 7 },
         { suit: "shadows", value: 8 },
       ]);
-      const status = Glorfindel.display.renderStatus(game, seat);
-      expect(status.details).toBe("Shadows: 8/8");
-      expect(status.met).toBe(true);
-      expect(status.completed).toBe(true);
-    });
-
-    test("shows completable=false when other player won a shadows card", () => {
-      const game = createTestGame(4);
-      const glorfindelSeat = game.seats[0]!;
-      const otherSeat = game.seats[1]!;
-      addWonCards(otherSeat, [{ suit: "shadows", value: 4 }]);
-      const status = Glorfindel.display.renderStatus(game, glorfindelSeat);
-      expect(status.completable).toBe(false);
+      const details = Glorfindel.objective.getDetails!(game, seat);
+      expect(details).toBe("Shadows: 8/8");
     });
   });
 

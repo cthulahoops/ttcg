@@ -37,208 +37,86 @@ function addWonCards(seat: Seat, cards: Card[]): void {
 }
 
 describe("Aragorn", () => {
-  describe("objective.check", () => {
-    test("returns false when no threat card set", () => {
+  describe("objective.getStatus", () => {
+    test("returns { tentative, failure } when no threat card set", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
       seat.threatCard = null;
-      expect(Aragorn.objective.check(game, seat)).toBe(false);
+      expect(Aragorn.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns false when trick count does not match threat card", () => {
+    test("returns { tentative, success } when trick count equals threat card (game not finished)", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
-      seat.threatCard = 3;
-      // No tricks won, threat card is 3
-      expect(Aragorn.objective.check(game, seat)).toBe(false);
-    });
-
-    test("returns true when trick count equals threat card (1 trick, threat=1)", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 1;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      expect(Aragorn.objective.check(game, seat)).toBe(true);
-    });
-
-    test("returns true when trick count equals threat card (3 tricks, threat=3)", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 3;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
+      seat.threatCard = 2;
       addWonCards(seat, [{ suit: "mountains", value: 1 }]);
       addWonCards(seat, [{ suit: "shadows", value: 2 }]);
-      addWonCards(seat, [{ suit: "forests", value: 3 }]);
-      expect(Aragorn.objective.check(game, seat)).toBe(true);
+      expect(Aragorn.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "success",
+      });
     });
 
-    test("returns false when trick count exceeds threat card", () => {
+    test("returns { final, success } when game finished and trick count equals threat card", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      seat.threatCard = 2;
+      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
+      addWonCards(seat, [{ suit: "shadows", value: 2 }]);
+      expect(game.finished).toBe(true);
+      expect(Aragorn.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
+    });
+
+    test("returns { final, failure } when already over target", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       seat.threatCard = 2;
       addWonCards(seat, [{ suit: "mountains", value: 1 }]);
       addWonCards(seat, [{ suit: "shadows", value: 2 }]);
       addWonCards(seat, [{ suit: "forests", value: 3 }]);
-      expect(Aragorn.objective.check(game, seat)).toBe(false);
+      expect(Aragorn.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
 
-    test("returns false when trick count is below threat card", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 5;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(seat, [{ suit: "shadows", value: 2 }]);
-      expect(Aragorn.objective.check(game, seat)).toBe(false);
-    });
-  });
-
-  describe("objective.isCompletable", () => {
-    test("returns true when no threat card set", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = null;
-      expect(Aragorn.objective.isCompletable(game, seat)).toBe(true);
-    });
-
-    test("returns false when already over target", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 2;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(seat, [{ suit: "shadows", value: 2 }]);
-      addWonCards(seat, [{ suit: "forests", value: 3 }]);
-      expect(Aragorn.objective.isCompletable(game, seat)).toBe(false);
-    });
-
-    test("returns true when at target (still completable even if exactly there)", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 2;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(seat, [{ suit: "shadows", value: 2 }]);
-      expect(Aragorn.objective.isCompletable(game, seat)).toBe(true);
-    });
-
-    test("returns true when enough tricks remain to reach target", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 3;
-      // No tricks won, need 3 more, tricksRemaining = 9 (default)
-      expect(Aragorn.objective.isCompletable(game, seat)).toBe(true);
-    });
-
-    test("returns false when not enough tricks remain to reach target", () => {
+    test("returns { final, failure } when not enough tricks remain to reach target", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       seat.threatCard = 8;
       // No tricks won, need 8 more, but only 2 tricks remain
       game.currentTrickNumber = 7; // tricksRemaining = 9 - 7 = 2
-      expect(Aragorn.objective.isCompletable(game, seat)).toBe(false);
+      expect(Aragorn.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
 
-    test("returns true when exactly enough tricks remain", () => {
+    test("returns { final, failure } when game finished but below target", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       seat.threatCard = 5;
       addWonCards(seat, [{ suit: "mountains", value: 1 }]);
       addWonCards(seat, [{ suit: "shadows", value: 2 }]);
-      // 2 tricks won, need 3 more to reach 5
-      game.currentTrickNumber = 6; // tricksRemaining = 9 - 6 = 3
-      expect(Aragorn.objective.isCompletable(game, seat)).toBe(true);
-    });
-  });
-
-  describe("objective.isCompleted", () => {
-    test("returns false when game not finished even if check passes", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 2;
-      // Add cards to hands so game is not finished
-      for (const s of game.seats) {
-        s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
-      }
-      addWonCards(seat, [{ suit: "shadows", value: 1 }]);
-      addWonCards(seat, [{ suit: "forests", value: 2 }]);
-      // check passes but game not finished
-      expect(Aragorn.objective.check(game, seat)).toBe(true);
-      expect(game.finished).toBe(false);
-      expect(Aragorn.objective.isCompleted(game, seat)).toBe(false);
-    });
-
-    test("returns true when game finished and check passes", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 2;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(seat, [{ suit: "shadows", value: 2 }]);
-      // Game is finished since all hands are empty
       expect(game.finished).toBe(true);
-      expect(Aragorn.objective.isCompleted(game, seat)).toBe(true);
-    });
-
-    test("returns false when game finished but check fails", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 5;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(seat, [{ suit: "shadows", value: 2 }]);
-      // Game is finished since all hands are empty
-      expect(game.finished).toBe(true);
-      expect(Aragorn.objective.isCompleted(game, seat)).toBe(false);
-    });
-  });
-
-  describe("display.renderStatus", () => {
-    test("returns status with threat card display", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 3;
-      const status = Aragorn.display.renderStatus(game, seat);
-      expect(status.met).toBe(false);
-      expect(status.completable).toBe(true);
-      expect(status.completed).toBe(false);
-    });
-
-    test("shows met=true when at target (game not finished)", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 2;
-      // Add cards to hands so game is not finished
-      for (const s of game.seats) {
-        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
-      }
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(seat, [{ suit: "shadows", value: 2 }]);
-      expect(game.finished).toBe(false);
-      const status = Aragorn.display.renderStatus(game, seat);
-      expect(status.met).toBe(true);
-      expect(status.completable).toBe(true);
-      expect(status.completed).toBe(false);
-    });
-
-    test("shows completed=true when game finished and at target", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 2;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(seat, [{ suit: "shadows", value: 2 }]);
-      // Game is finished since all hands are empty
-      expect(game.finished).toBe(true);
-      const status = Aragorn.display.renderStatus(game, seat);
-      expect(status.met).toBe(true);
-      expect(status.completable).toBe(true);
-      expect(status.completed).toBe(true);
-    });
-
-    test("shows completable=false when over target", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      seat.threatCard = 1;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(seat, [{ suit: "shadows", value: 2 }]);
-      const status = Aragorn.display.renderStatus(game, seat);
-      expect(status.met).toBe(false);
-      expect(status.completable).toBe(false);
-      expect(status.completed).toBe(false);
+      expect(Aragorn.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
   });
 
