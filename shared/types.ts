@@ -56,13 +56,6 @@ export interface ChoiceCardOptions<T extends AnyCard = AnyCard> {
   info?: string;
 }
 
-export interface CharacterStatus {
-  met: boolean;
-  completable: boolean;
-  completed: boolean;
-  details?: string;
-}
-
 // ObjectiveStatus represents a character's objective state as a two-axis type:
 //   Finality: "tentative" (can still change) vs "final" (locked in)
 //   Outcome: "failure" (not met) vs "success" (met)
