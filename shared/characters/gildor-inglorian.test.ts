@@ -52,7 +52,7 @@ function finishGame(game: Game): void {
 
 describe("GildorInglorian", () => {
   describe("objective.getStatus", () => {
-    test("returns { tentative, failure } when game is not finished and no forests in hand", () => {
+    test("returns { final, failure } when game is not finished and no forests in hand", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       // Give all players non-forests cards
