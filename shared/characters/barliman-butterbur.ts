@@ -1,7 +1,7 @@
-import type { ObjectiveCard } from "../types";
-import type { LegacyCharacterDefinition } from "./types";
+import type { ObjectiveCard, ObjectiveStatus } from "../types";
+import type { CharacterDefinition } from "./types";
 
-export const BarlimanButterbur: LegacyCharacterDefinition = {
+export const BarlimanButterbur: CharacterDefinition = {
   name: "Barliman Butterbur",
   setupText: "Exchange with any player",
 
@@ -11,23 +11,26 @@ export const BarlimanButterbur: LegacyCharacterDefinition = {
 
   objective: {
     text: "Win at least one of the last three tricks",
-    check: (game, seat) => {
-      return seat.tricksWon.some((t) => t.number >= game.tricksToPlay - 3);
+
+    getStatus: (game, seat): ObjectiveStatus => {
+      const met = seat.tricksWon.some((t) => t.number >= game.tricksToPlay - 3);
+
+      // This is always completable until game ends
+      // (last 3 tricks will always be played)
+
+      if (met) {
+        return { finality: "final", outcome: "success" };
+      }
+
+      if (game.finished) {
+        return { finality: "final", outcome: "failure" };
+      }
+
+      return { finality: "tentative", outcome: "failure" };
     },
-    isCompletable: () => {
-      return true;
-    },
-    isCompleted: (game, seat) =>
-      game.finished && BarlimanButterbur.objective.check(game, seat),
   },
 
   display: {
-    renderStatus: (game, seat) => {
-      const met = BarlimanButterbur.objective.check(game, seat);
-      const completable = BarlimanButterbur.objective.isCompletable(game, seat);
-      const completed = BarlimanButterbur.objective.isCompleted(game, seat);
-      return { met, completable, completed };
-    },
     getObjectiveCards: (_game, seat) => {
       const cards: ObjectiveCard[] = Array(seat.getTrickCount()).fill("trick");
       return { cards };

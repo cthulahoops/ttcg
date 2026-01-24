@@ -37,16 +37,27 @@ function addWonCards(seat: Seat, cards: Card[]): void {
 }
 
 describe("Gwaihir", () => {
-  describe("objective.check", () => {
-    test("returns false when no tricks have been won", () => {
+  describe("objective.getStatus", () => {
+    test("returns { tentative, failure } when no tricks have been won (game not finished)", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
-      expect(Gwaihir.objective.check(game, seat)).toBe(false);
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
+      }
+      expect(Gwaihir.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns false when tricks won contain no mountains", () => {
+    test("returns { tentative, failure } when tricks won contain no mountains", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
+      }
       addWonCards(seat, [
         { suit: "forests", value: 3 },
         { suit: "shadows", value: 5 },
@@ -55,12 +66,19 @@ describe("Gwaihir", () => {
         { suit: "hills", value: 2 },
         { suit: "rings", value: 1 },
       ]);
-      expect(Gwaihir.objective.check(game, seat)).toBe(false);
+      expect(Gwaihir.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns false when only 1 trick contains mountains", () => {
+    test("returns { tentative, failure } when only 1 trick contains mountains", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
       addWonCards(seat, [
         { suit: "mountains", value: 3 },
         { suit: "shadows", value: 5 },
@@ -69,10 +87,13 @@ describe("Gwaihir", () => {
         { suit: "forests", value: 2 },
         { suit: "hills", value: 4 },
       ]);
-      expect(Gwaihir.objective.check(game, seat)).toBe(false);
+      expect(Gwaihir.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns true when exactly 2 tricks contain mountains", () => {
+    test("returns { final, success } when exactly 2 tricks contain mountains", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [
@@ -83,28 +104,41 @@ describe("Gwaihir", () => {
         { suit: "mountains", value: 7 },
         { suit: "hills", value: 4 },
       ]);
-      expect(Gwaihir.objective.check(game, seat)).toBe(true);
+      expect(Gwaihir.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
-    test("returns true when more than 2 tricks contain mountains", () => {
+    test("returns { final, success } when more than 2 tricks contain mountains", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [{ suit: "mountains", value: 1 }]);
       addWonCards(seat, [{ suit: "mountains", value: 2 }]);
       addWonCards(seat, [{ suit: "mountains", value: 3 }]);
-      expect(Gwaihir.objective.check(game, seat)).toBe(true);
+      expect(Gwaihir.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
     test("counts tricks with mountains, not mountain cards", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
       // One trick with 3 mountain cards still only counts as 1 trick
       addWonCards(seat, [
         { suit: "mountains", value: 1 },
         { suit: "mountains", value: 2 },
         { suit: "mountains", value: 3 },
       ]);
-      expect(Gwaihir.objective.check(game, seat)).toBe(false);
+      expect(Gwaihir.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
     test("counts tricks with mountains correctly when mixed with other suits", () => {
@@ -121,88 +155,47 @@ describe("Gwaihir", () => {
         { suit: "mountains", value: 6 },
         { suit: "mountains", value: 7 },
       ]);
-      expect(Gwaihir.objective.check(game, seat)).toBe(true);
+      expect(Gwaihir.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
+    });
+
+    test("returns { final, failure } when game finished but check fails", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
+      expect(game.finished).toBe(true);
+      expect(Gwaihir.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
   });
 
-  describe("objective.isCompletable", () => {
-    test("returns true when no tricks have been won", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      expect(Gwaihir.objective.isCompletable(game, seat)).toBe(true);
-    });
-
-    test("returns true when objective is already met", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(seat, [{ suit: "mountains", value: 2 }]);
-      expect(Gwaihir.objective.isCompletable(game, seat)).toBe(true);
-    });
-
-    test("returns true with only 1 mountain trick (still achievable)", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      expect(Gwaihir.objective.isCompletable(game, seat)).toBe(true);
-    });
-  });
-
-  describe("objective.isCompleted", () => {
-    test("delegates to check", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(seat, [{ suit: "mountains", value: 2 }]);
-      expect(Gwaihir.objective.isCompleted(game, seat)).toBe(
-        Gwaihir.objective.check(game, seat)
-      );
-    });
-
-    test("returns false when check returns false", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      expect(Gwaihir.objective.isCompleted(game, seat)).toBe(false);
-    });
-
-    test("returns true when check returns true", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(seat, [{ suit: "mountains", value: 2 }]);
-      expect(Gwaihir.objective.isCompleted(game, seat)).toBe(true);
-    });
-  });
-
-  describe("display.renderStatus", () => {
+  describe("objective.getDetails", () => {
     test("shows 0/2 when no mountain tricks won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
-      const status = Gwaihir.display.renderStatus(game, seat);
-      expect(status.details).toBe("Tricks with mountains: 0/2");
-      expect(status.met).toBe(false);
-      expect(status.completable).toBe(true);
+      const details = Gwaihir.objective.getDetails!(game, seat);
+      expect(details).toBe("Tricks with mountains: 0/2");
     });
 
     test("shows 1/2 when 1 mountain trick won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [{ suit: "mountains", value: 3 }]);
-      const status = Gwaihir.display.renderStatus(game, seat);
-      expect(status.details).toBe("Tricks with mountains: 1/2");
-      expect(status.met).toBe(false);
+      const details = Gwaihir.objective.getDetails!(game, seat);
+      expect(details).toBe("Tricks with mountains: 1/2");
     });
 
-    test("shows 2/2 and met=true when objective achieved", () => {
+    test("shows 2/2 when objective achieved", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [{ suit: "mountains", value: 1 }]);
       addWonCards(seat, [{ suit: "mountains", value: 2 }]);
-      const status = Gwaihir.display.renderStatus(game, seat);
-      expect(status.details).toBe("Tricks with mountains: 2/2");
-      expect(status.met).toBe(true);
-      expect(status.completed).toBe(true);
+      const details = Gwaihir.objective.getDetails!(game, seat);
+      expect(details).toBe("Tricks with mountains: 2/2");
     });
 
     test("shows count greater than 2 when exceeding target", () => {
@@ -211,9 +204,8 @@ describe("Gwaihir", () => {
       addWonCards(seat, [{ suit: "mountains", value: 1 }]);
       addWonCards(seat, [{ suit: "mountains", value: 2 }]);
       addWonCards(seat, [{ suit: "mountains", value: 3 }]);
-      const status = Gwaihir.display.renderStatus(game, seat);
-      expect(status.details).toBe("Tricks with mountains: 3/2");
-      expect(status.met).toBe(true);
+      const details = Gwaihir.objective.getDetails!(game, seat);
+      expect(details).toBe("Tricks with mountains: 3/2");
     });
   });
 

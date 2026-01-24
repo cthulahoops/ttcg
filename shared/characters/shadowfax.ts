@@ -1,5 +1,5 @@
-import type { Card, ObjectiveCard } from "../types";
-import type { LegacyCharacterDefinition } from "./types";
+import type { Card, ObjectiveCard, ObjectiveStatus } from "../types";
+import type { CharacterDefinition } from "./types";
 import type { Seat } from "../seat";
 import { sortHand } from "../utils";
 
@@ -8,7 +8,7 @@ const countHillsTricks = (seat: Seat) =>
     trick.cards.some((c: Card) => c.suit === "hills")
   ).length;
 
-export const Shadowfax: LegacyCharacterDefinition = {
+export const Shadowfax: CharacterDefinition = {
   name: "Shadowfax",
   setupText:
     "Set one card aside (may return it to hand at any point, must return if hand empty)",
@@ -34,28 +34,31 @@ export const Shadowfax: LegacyCharacterDefinition = {
 
   objective: {
     text: "Win at least two tricks containing a hills card",
-    check: (_game, seat) => countHillsTricks(seat) >= 2,
-    isCompletable: (_game, _seat) => {
-      // Hard to determine without knowing remaining hills distribution
-      // Simplified: always completable
-      return true;
+
+    getStatus: (game, seat): ObjectiveStatus => {
+      const hillsTricks = countHillsTricks(seat);
+      const met = hillsTricks >= 2;
+
+      // Hard to determine completability without knowing remaining hills distribution
+      // Simplified: always completable unless already met or game finished
+
+      if (met) {
+        return { finality: "final", outcome: "success" };
+      }
+
+      if (game.finished) {
+        return { finality: "final", outcome: "failure" };
+      }
+
+      return { finality: "tentative", outcome: "failure" };
     },
-    isCompleted: (game, seat) => Shadowfax.objective.check(game, seat),
+
+    getDetails: (_game, seat): string => {
+      return `Tricks with hills: ${countHillsTricks(seat)}/2`;
+    },
   },
 
   display: {
-    renderStatus: (game, seat) => {
-      const met = Shadowfax.objective.check(game, seat);
-      const completable = Shadowfax.objective.isCompletable(game, seat);
-      const completed = Shadowfax.objective.isCompleted(game, seat);
-
-      return {
-        met,
-        completable,
-        completed,
-        details: `Tricks with hills: ${countHillsTricks(seat)}/2`,
-      };
-    },
     getObjectiveCards: (_game, seat) => {
       // Show trick markers for tricks containing hills cards
       const cards: ObjectiveCard[] = Array(countHillsTricks(seat)).fill(

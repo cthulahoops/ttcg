@@ -1,7 +1,7 @@
-import type { Card, ObjectiveCard } from "../types";
-import type { LegacyCharacterDefinition } from "./types";
+import type { Card, ObjectiveCard, ObjectiveStatus } from "../types";
+import type { CharacterDefinition } from "./types";
 
-export const Goldberry: LegacyCharacterDefinition = {
+export const Goldberry: CharacterDefinition = {
   name: "Goldberry",
   setupText: "Turn your hand face-up (visible to all players)",
 
@@ -11,62 +11,73 @@ export const Goldberry: LegacyCharacterDefinition = {
 
   objective: {
     text: "Win exactly three tricks in a row and no other tricks",
-    check: (_game, seat) => {
+
+    getStatus: (game, seat): ObjectiveStatus => {
       const trickNumbers = seat.tricksWon
         .map((t: { number: number; cards: Card[] }) => t.number)
         .sort((a: number, b: number) => a - b);
 
-      if (trickNumbers.length !== 3) return false;
+      const trickCount = trickNumbers.length;
 
-      return (
+      // Check if objective is met
+      const met =
+        trickCount === 3 &&
         trickNumbers[1] === trickNumbers[0]! + 1 &&
-        trickNumbers[2] === trickNumbers[1]! + 1
-      );
-    },
-    isCompletable: (game, seat) => {
-      const trickCount = seat.getTrickCount();
+        trickNumbers[2] === trickNumbers[1]! + 1;
 
-      if (trickCount > 3) return false;
+      // Check if completable
+      let completable: boolean;
+      if (trickCount > 3) {
+        completable = false;
+      } else if (trickCount === 3) {
+        completable = met;
+      } else if (trickCount === 0) {
+        completable = game.tricksRemaining() >= 3;
+      } else {
+        // Check if existing tricks are consecutive
+        let isConsecutive = true;
+        for (let i = 1; i < trickNumbers.length; i++) {
+          if (trickNumbers[i]! !== trickNumbers[i - 1]! + 1) {
+            isConsecutive = false;
+            break;
+          }
+        }
 
-      if (trickCount === 3) {
-        return Goldberry.objective.check(game, seat);
-      }
-
-      if (trickCount === 0) {
-        return game.tricksRemaining() >= 3;
-      }
-
-      const trickNumbers = seat.tricksWon
-        .map((t: { number: number; cards: Card[] }) => t.number)
-        .sort((a: number, b: number) => a - b);
-
-      for (let i = 1; i < trickNumbers.length; i++) {
-        if (trickNumbers[i]! !== trickNumbers[i - 1]! + 1) {
-          return false;
+        if (!isConsecutive) {
+          completable = false;
+        } else {
+          const maxTrickWon = trickNumbers[trickNumbers.length - 1];
+          if (maxTrickWon === undefined) {
+            completable = false;
+          } else if (game.currentTrickNumber > maxTrickWon + 1) {
+            completable = false;
+          } else {
+            const tricksNeeded = 3 - trickCount;
+            completable = game.tricksRemaining() >= tricksNeeded;
+          }
         }
       }
 
-      const maxTrickWon = trickNumbers[trickNumbers.length - 1];
-      if (maxTrickWon === undefined) return false;
-
-      if (game.currentTrickNumber > maxTrickWon + 1) {
-        return false;
+      // Can only be completed when game is finished
+      if (game.finished) {
+        return {
+          finality: "final",
+          outcome: met ? "success" : "failure",
+        };
       }
 
-      const tricksNeeded = 3 - trickCount;
-      return game.tricksRemaining() >= tricksNeeded;
+      if (!completable) {
+        return { finality: "final", outcome: "failure" };
+      }
+
+      return {
+        finality: "tentative",
+        outcome: met ? "success" : "failure",
+      };
     },
-    isCompleted: (game, seat) =>
-      game.finished && Goldberry.objective.check(game, seat),
   },
 
   display: {
-    renderStatus: (game, seat) => {
-      const met = Goldberry.objective.check(game, seat);
-      const completable = Goldberry.objective.isCompletable(game, seat);
-      const completed = Goldberry.objective.isCompleted(game, seat);
-      return { met, completable, completed };
-    },
     getObjectiveCards: (_game, seat) => {
       const cards: ObjectiveCard[] = Array(seat.getTrickCount()).fill("trick");
       return { cards };

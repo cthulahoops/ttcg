@@ -2,14 +2,9 @@
 // Re-exports character definitions from individual files
 
 export type {
-  LegacyCharacterDefinition,
-  LegacyCharacterObjective,
-  LegacyCharacterDisplay,
   CharacterDefinition,
   CharacterObjective,
   CharacterDisplay,
-  AnyCharacterDefinition,
-  AnyCharacterObjective,
 } from "./types";
 
 import { Frodo } from "./frodo";
@@ -37,9 +32,9 @@ import { Gloin } from "./gloin";
 import { BilboBaggins } from "./bilbo-baggins";
 import { Gwaihir } from "./gwaihir";
 import { Shadowfax } from "./shadowfax";
-import type { AnyCharacterDefinition } from "./types";
+import type { CharacterDefinition } from "./types";
 
-export const characterRegistry = new Map<string, AnyCharacterDefinition>([
+export const characterRegistry = new Map<string, CharacterDefinition>([
   [Frodo.name, Frodo],
   [Gandalf.name, Gandalf],
   [Merry.name, Merry],

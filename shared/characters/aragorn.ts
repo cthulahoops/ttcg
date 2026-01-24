@@ -1,7 +1,7 @@
-import type { ObjectiveCard } from "../types";
-import type { LegacyCharacterDefinition } from "./types";
+import type { ObjectiveCard, ObjectiveStatus } from "../types";
+import type { CharacterDefinition } from "./types";
 
-export const Aragorn: LegacyCharacterDefinition = {
+export const Aragorn: CharacterDefinition = {
   name: "Aragorn",
   setupText: "Choose a threat card, then exchange with Gimli or Legolas",
 
@@ -14,31 +14,45 @@ export const Aragorn: LegacyCharacterDefinition = {
 
   objective: {
     text: "Win exactly the number of tricks shown on your threat card",
-    check: (_game, seat) => {
-      if (!seat.threatCard) return false;
-      return seat.getTrickCount() === seat.threatCard;
-    },
-    isCompletable: (game, seat) => {
-      if (!seat.threatCard) return true;
+
+    getStatus: (game, seat): ObjectiveStatus => {
+      if (!seat.threatCard) {
+        return { finality: "tentative", outcome: "failure" };
+      }
+
       const target = seat.threatCard;
       const current = seat.getTrickCount();
+      const met = current === target;
+
       // Impossible if already over target
-      if (current > target) return false;
+      if (current > target) {
+        return { finality: "final", outcome: "failure" };
+      }
+
       // Check if there are enough tricks remaining to reach target
       const tricksNeeded = target - current;
-      return game.tricksRemaining() >= tricksNeeded;
+      const completable = game.tricksRemaining() >= tricksNeeded;
+
+      // Can only be completed when game is finished
+      if (game.finished) {
+        return {
+          finality: "final",
+          outcome: met ? "success" : "failure",
+        };
+      }
+
+      if (!completable) {
+        return { finality: "final", outcome: "failure" };
+      }
+
+      return {
+        finality: "tentative",
+        outcome: met ? "success" : "failure",
+      };
     },
-    isCompleted: (game, seat) =>
-      game.finished && Aragorn.objective.check(game, seat),
   },
 
   display: {
-    renderStatus: (game, seat) => {
-      const met = Aragorn.objective.check(game, seat);
-      const completable = Aragorn.objective.isCompletable(game, seat);
-      const completed = Aragorn.objective.isCompleted(game, seat);
-      return { met, completable, completed };
-    },
     getObjectiveCards: (_game, seat) => {
       const cards: ObjectiveCard[] = [];
       if (seat.threatCard !== null) {

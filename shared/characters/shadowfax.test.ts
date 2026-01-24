@@ -37,16 +37,27 @@ function addWonCards(seat: Seat, cards: Card[]): void {
 }
 
 describe("Shadowfax", () => {
-  describe("objective.check", () => {
-    test("returns false when no tricks have been won", () => {
+  describe("objective.getStatus", () => {
+    test("returns { tentative, failure } when no tricks have been won (game not finished)", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
-      expect(Shadowfax.objective.check(game, seat)).toBe(false);
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
+      }
+      expect(Shadowfax.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns false when won tricks have no hills cards", () => {
+    test("returns { tentative, failure } when won tricks have no hills cards", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
+      }
       addWonCards(seat, [
         { suit: "forests", value: 3 },
         { suit: "mountains", value: 5 },
@@ -55,12 +66,19 @@ describe("Shadowfax", () => {
         { suit: "shadows", value: 2 },
         { suit: "rings", value: 1 },
       ]);
-      expect(Shadowfax.objective.check(game, seat)).toBe(false);
+      expect(Shadowfax.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns false when only 1 trick contains a hills card", () => {
+    test("returns { tentative, failure } when only 1 trick contains a hills card", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
       addWonCards(seat, [
         { suit: "hills", value: 4 },
         { suit: "forests", value: 2 },
@@ -69,10 +87,13 @@ describe("Shadowfax", () => {
         { suit: "shadows", value: 3 },
         { suit: "mountains", value: 6 },
       ]);
-      expect(Shadowfax.objective.check(game, seat)).toBe(false);
+      expect(Shadowfax.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns true when exactly 2 tricks contain hills cards", () => {
+    test("returns { final, success } when exactly 2 tricks contain hills cards", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [
@@ -83,134 +104,78 @@ describe("Shadowfax", () => {
         { suit: "hills", value: 7 },
         { suit: "mountains", value: 1 },
       ]);
-      expect(Shadowfax.objective.check(game, seat)).toBe(true);
+      expect(Shadowfax.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
-    test("returns true when more than 2 tricks contain hills cards", () => {
+    test("returns { final, success } when more than 2 tricks contain hills cards", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [{ suit: "hills", value: 1 }]);
       addWonCards(seat, [{ suit: "hills", value: 2 }]);
       addWonCards(seat, [{ suit: "hills", value: 3 }]);
-      expect(Shadowfax.objective.check(game, seat)).toBe(true);
+      expect(Shadowfax.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
     test("counts multiple hills in one trick as one trick with hills", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
       // One trick with 3 hills cards - only counts as 1 trick
       addWonCards(seat, [
         { suit: "hills", value: 1 },
         { suit: "hills", value: 2 },
         { suit: "hills", value: 3 },
       ]);
-      expect(Shadowfax.objective.check(game, seat)).toBe(false);
+      expect(Shadowfax.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
+    });
+
+    test("returns { final, failure } when game finished but objective not met", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      addWonCards(seat, [{ suit: "hills", value: 1 }]);
+      expect(game.finished).toBe(true);
+      expect(Shadowfax.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
   });
 
-  describe("objective.isCompletable", () => {
-    test("always returns true (simplified implementation)", () => {
+  describe("objective.getDetails", () => {
+    test("shows 0/2 when no hills tricks won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
-      expect(Shadowfax.objective.isCompletable(game, seat)).toBe(true);
+      const details = Shadowfax.objective.getDetails!(game, seat);
+      expect(details).toBe("Tricks with hills: 0/2");
     });
 
-    test("returns true even when no tricks won yet", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      expect(Shadowfax.objective.isCompletable(game, seat)).toBe(true);
-    });
-
-    test("returns true even with multiple non-hills tricks", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "forests", value: 1 }]);
-      addWonCards(seat, [{ suit: "mountains", value: 2 }]);
-      addWonCards(seat, [{ suit: "shadows", value: 3 }]);
-      expect(Shadowfax.objective.isCompletable(game, seat)).toBe(true);
-    });
-  });
-
-  describe("objective.isCompleted", () => {
-    test("returns false when objective not met", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "hills", value: 1 }]);
-      expect(Shadowfax.objective.isCompleted(game, seat)).toBe(false);
-    });
-
-    test("returns true when objective is met (delegates to check)", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "hills", value: 1 }]);
-      addWonCards(seat, [{ suit: "hills", value: 2 }]);
-      expect(Shadowfax.objective.isCompleted(game, seat)).toBe(true);
-    });
-  });
-
-  describe("display.renderStatus", () => {
-    test("shows met=false when less than 2 tricks with hills", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "hills", value: 1 }]);
-      const status = Shadowfax.display.renderStatus(game, seat);
-      expect(status.met).toBe(false);
-    });
-
-    test("shows met=true when 2+ tricks with hills", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "hills", value: 1 }]);
-      addWonCards(seat, [{ suit: "hills", value: 2 }]);
-      const status = Shadowfax.display.renderStatus(game, seat);
-      expect(status.met).toBe(true);
-    });
-
-    test("shows completable=true (always completable)", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      const status = Shadowfax.display.renderStatus(game, seat);
-      expect(status.completable).toBe(true);
-    });
-
-    test("shows completed=false when objective not met", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      const status = Shadowfax.display.renderStatus(game, seat);
-      expect(status.completed).toBe(false);
-    });
-
-    test("shows completed=true when objective met", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "hills", value: 1 }]);
-      addWonCards(seat, [{ suit: "hills", value: 2 }]);
-      const status = Shadowfax.display.renderStatus(game, seat);
-      expect(status.completed).toBe(true);
-    });
-
-    test("shows correct details with trick count", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      const status = Shadowfax.display.renderStatus(game, seat);
-      expect(status.details).toBe("Tricks with hills: 0/2");
-    });
-
-    test("shows correct details with 1 trick with hills", () => {
+    test("shows 1/2 when 1 hills trick won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [{ suit: "hills", value: 5 }]);
-      const status = Shadowfax.display.renderStatus(game, seat);
-      expect(status.details).toBe("Tricks with hills: 1/2");
+      const details = Shadowfax.objective.getDetails!(game, seat);
+      expect(details).toBe("Tricks with hills: 1/2");
     });
 
-    test("shows correct details with 2 tricks with hills", () => {
+    test("shows 2/2 when objective achieved", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [{ suit: "hills", value: 5 }]);
       addWonCards(seat, [{ suit: "hills", value: 6 }]);
-      const status = Shadowfax.display.renderStatus(game, seat);
-      expect(status.details).toBe("Tricks with hills: 2/2");
+      const details = Shadowfax.objective.getDetails!(game, seat);
+      expect(details).toBe("Tricks with hills: 2/2");
     });
   });
 

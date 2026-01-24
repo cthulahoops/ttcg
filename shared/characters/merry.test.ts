@@ -37,161 +37,108 @@ function addWonCards(seat: Seat, cards: Card[]): void {
 }
 
 describe("Merry", () => {
-  describe("objective.check", () => {
-    test("returns false when no tricks won", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      expect(Merry.objective.check(game, seat)).toBe(false);
-    });
-
-    test("returns true when exactly 1 trick won", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      expect(Merry.objective.check(game, seat)).toBe(true);
-    });
-
-    test("returns true when exactly 2 tricks won", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(seat, [{ suit: "shadows", value: 2 }]);
-      expect(Merry.objective.check(game, seat)).toBe(true);
-    });
-
-    test("returns false when 3 tricks won", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(seat, [{ suit: "shadows", value: 2 }]);
-      addWonCards(seat, [{ suit: "forests", value: 3 }]);
-      expect(Merry.objective.check(game, seat)).toBe(false);
-    });
-
-    test("returns false when more than 3 tricks won", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(seat, [{ suit: "shadows", value: 2 }]);
-      addWonCards(seat, [{ suit: "forests", value: 3 }]);
-      addWonCards(seat, [{ suit: "hills", value: 4 }]);
-      expect(Merry.objective.check(game, seat)).toBe(false);
-    });
-  });
-
-  describe("objective.isCompletable", () => {
-    test("returns true when no tricks won", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      expect(Merry.objective.isCompletable(game, seat)).toBe(true);
-    });
-
-    test("returns true when 1 trick won", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      expect(Merry.objective.isCompletable(game, seat)).toBe(true);
-    });
-
-    test("returns true when 2 tricks won", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(seat, [{ suit: "shadows", value: 2 }]);
-      expect(Merry.objective.isCompletable(game, seat)).toBe(true);
-    });
-
-    test("returns false when 3 or more tricks won", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(seat, [{ suit: "shadows", value: 2 }]);
-      addWonCards(seat, [{ suit: "forests", value: 3 }]);
-      expect(Merry.objective.isCompletable(game, seat)).toBe(false);
-    });
-  });
-
-  describe("objective.isCompleted", () => {
-    test("returns false when game is not finished even if objective met", () => {
+  describe("objective.getStatus", () => {
+    test("returns { tentative, failure } when no tricks won (game not finished)", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       // Add cards to hands so game is not finished
       for (const s of game.seats) {
         s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
       }
-      addWonCards(seat, [{ suit: "shadows", value: 1 }]);
-      // Game is not finished since players have cards
-      expect(game.finished).toBe(false);
-      expect(Merry.objective.check(game, seat)).toBe(true);
-      expect(Merry.objective.isCompleted(game, seat)).toBe(false);
+      expect(Merry.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns true when game finished and objective met", () => {
+    test("returns { tentative, success } when exactly 1 trick won (game not finished)", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      // Game is finished since all hands are empty
-      expect(game.finished).toBe(true);
-      expect(Merry.objective.isCompleted(game, seat)).toBe(true);
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
+      }
+      addWonCards(seat, [{ suit: "mountains", value: 5 }]);
+      expect(Merry.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "success",
+      });
     });
 
-    test("returns false when game finished but objective not met", () => {
+    test("returns { tentative, success } when exactly 2 tricks won (game not finished)", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
-      // No tricks won by Merry, game is finished (empty hands)
-      expect(game.finished).toBe(true);
-      expect(Merry.objective.isCompleted(game, seat)).toBe(false);
-    });
-  });
-
-  describe("display.renderStatus", () => {
-    test("shows met=false and completable=true when no tricks", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      const status = Merry.display.renderStatus(game, seat);
-      expect(status.met).toBe(false);
-      expect(status.completable).toBe(true);
-    });
-
-    test("shows met=true when 1 trick won", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      const status = Merry.display.renderStatus(game, seat);
-      expect(status.met).toBe(true);
-      expect(status.completable).toBe(true);
-    });
-
-    test("shows met=true when 2 tricks won", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
+      }
+      addWonCards(seat, [{ suit: "mountains", value: 5 }]);
       addWonCards(seat, [{ suit: "shadows", value: 2 }]);
-      const status = Merry.display.renderStatus(game, seat);
-      expect(status.met).toBe(true);
-      expect(status.completable).toBe(true);
+      expect(Merry.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "success",
+      });
     });
 
-    test("shows met=false and completable=false when 3 tricks won", () => {
+    test("returns { final, failure } when 3 tricks won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [{ suit: "mountains", value: 1 }]);
       addWonCards(seat, [{ suit: "shadows", value: 2 }]);
       addWonCards(seat, [{ suit: "forests", value: 3 }]);
-      const status = Merry.display.renderStatus(game, seat);
-      expect(status.met).toBe(false);
-      expect(status.completable).toBe(false);
+      expect(Merry.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
 
-    test("shows completed=true when game finished and objective met", () => {
+    test("returns { final, failure } when more than 3 tricks won", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
+      addWonCards(seat, [{ suit: "shadows", value: 2 }]);
+      addWonCards(seat, [{ suit: "forests", value: 3 }]);
+      addWonCards(seat, [{ suit: "hills", value: 4 }]);
+      expect(Merry.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
+    });
+
+    test("returns { final, success } when game finished and objective met (1 trick)", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [{ suit: "mountains", value: 1 }]);
       // Game is finished since all hands are empty
       expect(game.finished).toBe(true);
-      const status = Merry.display.renderStatus(game, seat);
-      expect(status.met).toBe(true);
-      expect(status.completed).toBe(true);
+      expect(Merry.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
+    });
+
+    test("returns { final, success } when game finished and objective met (2 tricks)", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
+      addWonCards(seat, [{ suit: "shadows", value: 2 }]);
+      // Game is finished since all hands are empty
+      expect(game.finished).toBe(true);
+      expect(Merry.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
+    });
+
+    test("returns { final, failure } when game finished and no tricks won", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      // No tricks won by Merry, game is finished (empty hands)
+      expect(game.finished).toBe(true);
+      expect(Merry.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
   });
 

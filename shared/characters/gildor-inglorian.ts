@@ -1,7 +1,7 @@
-import type { Card } from "../types";
-import type { LegacyCharacterDefinition } from "./types";
+import type { Card, ObjectiveStatus } from "../types";
+import type { CharacterDefinition } from "./types";
 
-export const GildorInglorian: LegacyCharacterDefinition = {
+export const GildorInglorian: CharacterDefinition = {
   name: "Gildor Inglorian",
   setupText: "Exchange with Frodo",
 
@@ -11,37 +11,32 @@ export const GildorInglorian: LegacyCharacterDefinition = {
 
   objective: {
     text: "Play a forests card in final trick",
-    check: (game, seat) => {
+
+    getStatus: (game, seat): ObjectiveStatus => {
       if (!game.finished) {
-        return false; // Final trick hasn't been played yet
+        // Still completable if player has forests cards in hand
+        const availableCards = seat.hand.getAvailableCards() ?? [];
+        const hasForestsInHand = availableCards.some(
+          (c: Card) => c.suit === "forests"
+        );
+
+        if (!hasForestsInHand) {
+          return { finality: "final", outcome: "failure" };
+        }
+
+        return { finality: "tentative", outcome: "failure" };
       }
 
-      // Find the last card played by this seat
+      // Game finished - check if last card played was forests
       const lastCardPlayed = seat.playedCards[seat.playedCards.length - 1];
-      if (!lastCardPlayed) return false;
+      const met = lastCardPlayed?.suit === "forests";
 
-      return lastCardPlayed.suit === "forests";
-    },
-    isCompletable: (game, seat) => {
-      if (game.finished) {
-        return GildorInglorian.objective.check(game, seat);
-      }
-
-      // Still completable if player has forests cards in hand
-      const availableCards = seat.hand.getAvailableCards() ?? [];
-      return availableCards.some((c: Card) => c.suit === "forests");
-    },
-    isCompleted: (game, seat) =>
-      game.finished && GildorInglorian.objective.check(game, seat),
-  },
-
-  display: {
-    renderStatus: (game, seat) => {
-      const met = GildorInglorian.objective.check(game, seat);
-      const completable = GildorInglorian.objective.isCompletable(game, seat);
-      const completed = GildorInglorian.objective.isCompleted(game, seat);
-
-      return { met, completable, completed };
+      return {
+        finality: "final",
+        outcome: met ? "success" : "failure",
+      };
     },
   },
+
+  display: {},
 };

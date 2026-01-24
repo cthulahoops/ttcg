@@ -37,54 +37,116 @@ function addWonCards(seat: Seat, cards: Card[]): void {
 }
 
 describe("Arwen", () => {
-  describe("objective.check", () => {
-    test("returns false when no forests won", () => {
+  describe("objective.getStatus", () => {
+    test("returns { tentative, failure } when no forests won (game not finished)", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
-      expect(Arwen.objective.check(game, seat)).toBe(false);
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
+      }
+      expect(Arwen.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns true when has more forests than all others (sole leader)", () => {
+    test("returns { tentative, success } when has more forests than all others (game not finished)", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
+      }
+      addWonCards(seat, [
+        { suit: "forests", value: 1 },
+        { suit: "forests", value: 2 },
+      ]);
+      expect(Arwen.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "success",
+      });
+    });
+
+    test("returns { final, success } when has more forests than all others (game finished)", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [
         { suit: "forests", value: 1 },
         { suit: "forests", value: 2 },
       ]);
-      expect(Arwen.objective.check(game, seat)).toBe(true);
+      expect(game.finished).toBe(true);
+      expect(Arwen.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
-    test("returns false when tied for most forests", () => {
+    test("returns { tentative, failure } when tied for most forests (game not finished)", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      const otherSeat = game.seats[1]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
+      }
+      addWonCards(seat, [{ suit: "forests", value: 1 }]);
+      addWonCards(otherSeat, [{ suit: "forests", value: 2 }]);
+      expect(Arwen.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
+    });
+
+    test("returns { final, failure } when tied for most forests (game finished)", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       const otherSeat = game.seats[1]!;
       addWonCards(seat, [{ suit: "forests", value: 1 }]);
       addWonCards(otherSeat, [{ suit: "forests", value: 2 }]);
-      expect(Arwen.objective.check(game, seat)).toBe(false);
+      expect(game.finished).toBe(true);
+      expect(Arwen.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
 
-    test("returns false when another player has more forests", () => {
+    test("returns { tentative, failure } when another player has more forests", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       const otherSeat = game.seats[1]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
+      }
       addWonCards(seat, [{ suit: "forests", value: 1 }]);
       addWonCards(otherSeat, [
         { suit: "forests", value: 2 },
         { suit: "forests", value: 3 },
       ]);
-      expect(Arwen.objective.check(game, seat)).toBe(false);
+      expect(Arwen.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
     test("ignores non-forests cards when counting", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
       addWonCards(seat, [
         { suit: "mountains", value: 1 },
         { suit: "shadows", value: 2 },
         { suit: "hills", value: 3 },
         { suit: "rings", value: 1 },
       ]);
-      expect(Arwen.objective.check(game, seat)).toBe(false);
+      expect(Arwen.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
     test("counts forests across multiple tricks", () => {
@@ -93,43 +155,20 @@ describe("Arwen", () => {
       addWonCards(seat, [{ suit: "forests", value: 1 }]);
       addWonCards(seat, [{ suit: "forests", value: 2 }]);
       addWonCards(seat, [{ suit: "forests", value: 3 }]);
-      expect(Arwen.objective.check(game, seat)).toBe(true);
-    });
-  });
-
-  describe("objective.isCompletable", () => {
-    test("returns true when no forests have been won", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      expect(Arwen.objective.isCompletable(game, seat)).toBe(true);
+      expect(Arwen.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
-    test("returns true when Arwen is currently winning", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [
-        { suit: "forests", value: 1 },
-        { suit: "forests", value: 2 },
-      ]);
-      expect(Arwen.objective.isCompletable(game, seat)).toBe(true);
-    });
-
-    test("returns true when Arwen can catch up with remaining forests", () => {
+    test("returns { final, failure } when others have too many forests to overtake", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       const otherSeat = game.seats[1]!;
-      // Other has 2, Arwen has 0, 6 forests remain - Arwen can still win
-      addWonCards(otherSeat, [
-        { suit: "forests", value: 1 },
-        { suit: "forests", value: 2 },
-      ]);
-      expect(Arwen.objective.isCompletable(game, seat)).toBe(true);
-    });
-
-    test("returns false when others have too many forests to overtake", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      const otherSeat = game.seats[1]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
+      }
       // Other has 5 forests, only 3 remain for Arwen - can't exceed 5
       addWonCards(otherSeat, [
         { suit: "forests", value: 1 },
@@ -138,10 +177,13 @@ describe("Arwen", () => {
         { suit: "forests", value: 4 },
         { suit: "forests", value: 5 },
       ]);
-      expect(Arwen.objective.isCompletable(game, seat)).toBe(false);
+      expect(Arwen.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
 
-    test("returns false when tied and no forests remain", () => {
+    test("returns { final, failure } when tied and no forests remain", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       const otherSeat = game.seats[1]!;
@@ -158,47 +200,13 @@ describe("Arwen", () => {
         { suit: "forests", value: 7 },
         { suit: "forests", value: 8 },
       ]);
-      expect(Arwen.objective.isCompletable(game, seat)).toBe(false);
+      expect(Arwen.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
 
-    test("accounts for Arwen's current forests when calculating", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      const otherSeat = game.seats[1]!;
-      // Arwen has 2, other has 3, 3 remain - Arwen can reach 5, exceeding 3
-      addWonCards(seat, [
-        { suit: "forests", value: 1 },
-        { suit: "forests", value: 2 },
-      ]);
-      addWonCards(otherSeat, [
-        { suit: "forests", value: 3 },
-        { suit: "forests", value: 4 },
-        { suit: "forests", value: 5 },
-      ]);
-      expect(Arwen.objective.isCompletable(game, seat)).toBe(true);
-    });
-  });
-
-  describe("objective.isCompleted", () => {
-    test("returns true when game finished and check passes", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [
-        { suit: "forests", value: 1 },
-        { suit: "forests", value: 2 },
-      ]);
-      expect(game.finished).toBe(true);
-      expect(Arwen.objective.isCompleted(game, seat)).toBe(true);
-    });
-
-    test("returns false when game finished but check fails", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      expect(game.finished).toBe(true);
-      expect(Arwen.objective.isCompleted(game, seat)).toBe(false);
-    });
-
-    test("returns true early when guaranteed to have most forests", () => {
+    test("returns { final, success } early when guaranteed to have most forests", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       // Add cards to hands so game is not finished
@@ -216,10 +224,13 @@ describe("Arwen", () => {
         { suit: "forests", value: 5 },
         { suit: "forests", value: 6 },
       ]);
-      expect(Arwen.objective.isCompleted(game, seat)).toBe(true);
+      expect(Arwen.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
-    test("returns false early when another player could catch up", () => {
+    test("returns { tentative, success } when leading but not guaranteed", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       const otherSeat = game.seats[1]!;
@@ -239,37 +250,13 @@ describe("Arwen", () => {
         { suit: "forests", value: 4 },
         { suit: "forests", value: 5 },
       ]);
-      expect(Arwen.objective.isCompleted(game, seat)).toBe(false);
+      expect(Arwen.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "success",
+      });
     });
 
-    test("returns false early when tied (ties don't count as most)", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      const otherSeat = game.seats[1]!;
-      // Add cards to hands so game is not finished
-      for (const s of game.seats) {
-        s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
-      }
-      expect(game.finished).toBe(false);
-      // Both have 4 forests, no forests remain - a tie is not "most"
-      addWonCards(seat, [
-        { suit: "forests", value: 1 },
-        { suit: "forests", value: 2 },
-        { suit: "forests", value: 3 },
-        { suit: "forests", value: 4 },
-      ]);
-      addWonCards(otherSeat, [
-        { suit: "forests", value: 5 },
-        { suit: "forests", value: 6 },
-        { suit: "forests", value: 7 },
-        { suit: "forests", value: 8 },
-      ]);
-      // No forests remain, but game not finished (has other cards in hand)
-      // Arwen has 4, other has 4 - tie, so not completed
-      expect(Arwen.objective.isCompleted(game, seat)).toBe(false);
-    });
-
-    test("returns true early with comfortable lead", () => {
+    test("returns { final, success } early with comfortable lead", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       const otherSeat = game.seats[1]!;
@@ -288,18 +275,19 @@ describe("Arwen", () => {
         { suit: "forests", value: 5 },
       ]);
       addWonCards(otherSeat, [{ suit: "forests", value: 6 }]);
-      expect(Arwen.objective.isCompleted(game, seat)).toBe(true);
+      expect(Arwen.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
   });
 
-  describe("display.renderStatus", () => {
+  describe("objective.getDetails", () => {
     test("shows 'Forests: 0' when no forests won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
-      const status = Arwen.display.renderStatus(game, seat);
-      expect(status.details).toBe("Forests: 0");
-      expect(status.met).toBe(false);
-      expect(status.completable).toBe(true);
+      const details = Arwen.objective.getDetails!(game, seat);
+      expect(details).toBe("Forests: 0");
     });
 
     test("shows forests count when forests won", () => {
@@ -310,55 +298,8 @@ describe("Arwen", () => {
         { suit: "forests", value: 2 },
         { suit: "forests", value: 3 },
       ]);
-      const status = Arwen.display.renderStatus(game, seat);
-      expect(status.details).toBe("Forests: 3");
-    });
-
-    test("shows met=true when has most forests", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [
-        { suit: "forests", value: 1 },
-        { suit: "forests", value: 2 },
-      ]);
-      const status = Arwen.display.renderStatus(game, seat);
-      expect(status.met).toBe(true);
-    });
-
-    test("shows met=false when tied for most", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      const otherSeat = game.seats[1]!;
-      addWonCards(seat, [{ suit: "forests", value: 1 }]);
-      addWonCards(otherSeat, [{ suit: "forests", value: 2 }]);
-      const status = Arwen.display.renderStatus(game, seat);
-      expect(status.met).toBe(false);
-    });
-
-    test("shows completable=false when cannot overtake leader", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      const otherSeat = game.seats[1]!;
-      addWonCards(otherSeat, [
-        { suit: "forests", value: 1 },
-        { suit: "forests", value: 2 },
-        { suit: "forests", value: 3 },
-        { suit: "forests", value: 4 },
-        { suit: "forests", value: 5 },
-      ]);
-      const status = Arwen.display.renderStatus(game, seat);
-      expect(status.completable).toBe(false);
-    });
-
-    test("shows completed=true when game finished and objective met", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [
-        { suit: "forests", value: 1 },
-        { suit: "forests", value: 2 },
-      ]);
-      const status = Arwen.display.renderStatus(game, seat);
-      expect(status.completed).toBe(true);
+      const details = Arwen.objective.getDetails!(game, seat);
+      expect(details).toBe("Forests: 3");
     });
   });
 

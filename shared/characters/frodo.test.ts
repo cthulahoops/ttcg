@@ -51,31 +51,40 @@ describe("Frodo", () => {
     });
   });
 
-  describe("objective.check", () => {
-    test("returns false when no rings won in 4-player game", () => {
+  describe("objective.getStatus", () => {
+    test("returns { tentative, failure } when no rings won in 4-player game", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
-      expect(Frodo.objective.check(game, seat)).toBe(false);
+      expect(Frodo.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns false when only 1 ring won in 4-player game", () => {
+    test("returns { tentative, failure } when only 1 ring won in 4-player game", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [{ suit: "rings", value: 1 }]);
-      expect(Frodo.objective.check(game, seat)).toBe(false);
+      expect(Frodo.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns true when 2 rings won in 4-player game", () => {
+    test("returns { final, success } when 2 rings won in 4-player game", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [
         { suit: "rings", value: 1 },
         { suit: "rings", value: 2 },
       ]);
-      expect(Frodo.objective.check(game, seat)).toBe(true);
+      expect(Frodo.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
-    test("returns true when more than 2 rings won in 4-player game", () => {
+    test("returns { final, success } when more than 2 rings won in 4-player game", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [
@@ -83,10 +92,13 @@ describe("Frodo", () => {
         { suit: "rings", value: 2 },
         { suit: "rings", value: 3 },
       ]);
-      expect(Frodo.objective.check(game, seat)).toBe(true);
+      expect(Frodo.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
-    test("returns false when only 3 rings won in 3-player game", () => {
+    test("returns { tentative, failure } when only 3 rings won in 3-player game", () => {
       const game = createTestGame(3);
       const seat = game.seats[0]!;
       addWonCards(seat, [
@@ -94,10 +106,13 @@ describe("Frodo", () => {
         { suit: "rings", value: 2 },
         { suit: "rings", value: 3 },
       ]);
-      expect(Frodo.objective.check(game, seat)).toBe(false);
+      expect(Frodo.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns true when 4 rings won in 3-player game", () => {
+    test("returns { final, success } when 4 rings won in 3-player game", () => {
       const game = createTestGame(3);
       const seat = game.seats[0]!;
       addWonCards(seat, [
@@ -106,38 +121,13 @@ describe("Frodo", () => {
         { suit: "rings", value: 3 },
         { suit: "rings", value: 4 },
       ]);
-      expect(Frodo.objective.check(game, seat)).toBe(true);
+      expect(Frodo.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
-    test("ignores non-ring cards when counting", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [
-        { suit: "mountains", value: 1 },
-        { suit: "shadows", value: 2 },
-        { suit: "forests", value: 3 },
-        { suit: "hills", value: 4 },
-        { suit: "rings", value: 1 },
-      ]);
-      expect(Frodo.objective.check(game, seat)).toBe(false);
-    });
-  });
-
-  describe("objective.isCompletable", () => {
-    test("returns true when no rings have been won by anyone", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      expect(Frodo.objective.isCompletable(game, seat)).toBe(true);
-    });
-
-    test("returns true when Frodo has won some rings", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [{ suit: "rings", value: 1 }]);
-      expect(Frodo.objective.isCompletable(game, seat)).toBe(true);
-    });
-
-    test("returns false when others have won too many rings in 4-player game", () => {
+    test("returns { final, failure } when others have won too many rings in 4-player game", () => {
       const game = createTestGame(4);
       const frodoSeat = game.seats[0]!;
       const otherSeat = game.seats[1]!;
@@ -148,10 +138,13 @@ describe("Frodo", () => {
         { suit: "rings", value: 3 },
         { suit: "rings", value: 4 },
       ]);
-      expect(Frodo.objective.isCompletable(game, frodoSeat)).toBe(false);
+      expect(Frodo.objective.getStatus(game, frodoSeat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
 
-    test("returns true when Frodo can still reach 2 rings in 4-player game", () => {
+    test("returns { tentative, failure } when Frodo can still reach 2 rings in 4-player game", () => {
       const game = createTestGame(4);
       const frodoSeat = game.seats[0]!;
       const otherSeat = game.seats[1]!;
@@ -161,59 +154,18 @@ describe("Frodo", () => {
         { suit: "rings", value: 2 },
         { suit: "rings", value: 3 },
       ]);
-      expect(Frodo.objective.isCompletable(game, frodoSeat)).toBe(true);
-    });
-
-    test("returns false when others have won too many rings in 3-player game", () => {
-      const game = createTestGame(3);
-      const frodoSeat = game.seats[0]!;
-      const otherSeat = game.seats[1]!;
-      // Other player wins 2 rings, only 3 remain for Frodo (needs 4)
-      addWonCards(otherSeat, [
-        { suit: "rings", value: 1 },
-        { suit: "rings", value: 2 },
-      ]);
-      expect(Frodo.objective.isCompletable(game, frodoSeat)).toBe(false);
-    });
-
-    test("accounts for rings won by Frodo when checking completability", () => {
-      const game = createTestGame(4);
-      const frodoSeat = game.seats[0]!;
-      const otherSeat = game.seats[1]!;
-      // Frodo has 1 ring, other has 3 rings, 1 remains
-      addWonCards(frodoSeat, [{ suit: "rings", value: 1 }]);
-      addWonCards(otherSeat, [
-        { suit: "rings", value: 2 },
-        { suit: "rings", value: 3 },
-        { suit: "rings", value: 4 },
-      ]);
-      // Frodo has 1 + 1 remaining = 2, so it's completable
-      expect(Frodo.objective.isCompletable(game, frodoSeat)).toBe(true);
+      expect(Frodo.objective.getStatus(game, frodoSeat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
   });
 
-  describe("objective.isCompleted", () => {
-    test("returns same result as check", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [
-        { suit: "rings", value: 1 },
-        { suit: "rings", value: 2 },
-      ]);
-      expect(Frodo.objective.isCompleted(game, seat)).toBe(
-        Frodo.objective.check(game, seat)
-      );
-    });
-  });
-
-  describe("display.renderStatus", () => {
+  describe("objective.getDetails", () => {
     test("shows 'Rings: none' when no rings won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
-      const status = Frodo.display.renderStatus(game, seat);
-      expect(status.details).toBe("Rings: none");
-      expect(status.met).toBe(false);
-      expect(status.completable).toBe(true);
+      expect(Frodo.objective.getDetails!(game, seat)).toBe("Rings: none");
     });
 
     test("shows ring values sorted when rings won", () => {
@@ -223,34 +175,7 @@ describe("Frodo", () => {
         { suit: "rings", value: 3 },
         { suit: "rings", value: 1 },
       ]);
-      const status = Frodo.display.renderStatus(game, seat);
-      expect(status.details).toBe("Rings: 1, 3");
-    });
-
-    test("shows met=true when objective is met", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      addWonCards(seat, [
-        { suit: "rings", value: 1 },
-        { suit: "rings", value: 2 },
-      ]);
-      const status = Frodo.display.renderStatus(game, seat);
-      expect(status.met).toBe(true);
-      expect(status.completed).toBe(true);
-    });
-
-    test("shows completable=false when objective is impossible", () => {
-      const game = createTestGame(4);
-      const frodoSeat = game.seats[0]!;
-      const otherSeat = game.seats[1]!;
-      addWonCards(otherSeat, [
-        { suit: "rings", value: 1 },
-        { suit: "rings", value: 2 },
-        { suit: "rings", value: 3 },
-        { suit: "rings", value: 4 },
-      ]);
-      const status = Frodo.display.renderStatus(game, frodoSeat);
-      expect(status.completable).toBe(false);
+      expect(Frodo.objective.getDetails!(game, seat)).toBe("Rings: 1, 3");
     });
   });
 

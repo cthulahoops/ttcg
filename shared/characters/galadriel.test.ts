@@ -37,35 +37,71 @@ function addWonCards(seat: Seat, cards: Card[]): void {
 }
 
 describe("Galadriel", () => {
-  describe("objective.check", () => {
-    test("returns false when all players have 0 tricks (tied for min and max)", () => {
+  describe("objective.getStatus", () => {
+    test("returns { final, failure } when all players have 0 tricks (tied for min and max)", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       // All players have 0 tricks - Galadriel is both min and max
-      expect(Galadriel.objective.check(game, seat)).toBe(false);
+      // Game is finished (no cards in hands)
+      expect(game.finished).toBe(true);
+      expect(Galadriel.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
 
-    test("returns false when alone with fewest tricks", () => {
+    test("returns { tentative, failure } when alone with fewest tricks (game not finished)", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
       // Give other players tricks, Galadriel has none - she has the fewest
       addWonCards(game.seats[1]!, [{ suit: "mountains", value: 2 }]);
       addWonCards(game.seats[2]!, [{ suit: "shadows", value: 3 }]);
       addWonCards(game.seats[3]!, [{ suit: "forests", value: 4 }]);
-      expect(Galadriel.objective.check(game, seat)).toBe(false);
+      expect(Galadriel.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns false when alone with most tricks", () => {
+    test("returns { final, failure } when alone with most tricks (game finished)", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       // Give Galadriel more tricks than everyone else
       addWonCards(seat, [{ suit: "mountains", value: 1 }]);
       addWonCards(seat, [{ suit: "shadows", value: 2 }]);
       addWonCards(game.seats[1]!, [{ suit: "forests", value: 3 }]);
-      expect(Galadriel.objective.check(game, seat)).toBe(false);
+      expect(game.finished).toBe(true);
+      expect(Galadriel.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
 
-    test("returns true when in the middle (not min, not max)", () => {
+    test("returns { tentative, success } when in the middle (not min, not max, game not finished)", () => {
+      const game = createTestGame(4);
+      const seat = game.seats[0]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "rings", value: s.seatIndex + 1 });
+      }
+      // Galadriel: 1 trick, others: 0, 2, 2 tricks
+      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
+      addWonCards(game.seats[2]!, [{ suit: "shadows", value: 2 }]);
+      addWonCards(game.seats[2]!, [{ suit: "forests", value: 3 }]);
+      addWonCards(game.seats[3]!, [{ suit: "hills", value: 4 }]);
+      addWonCards(game.seats[3]!, [{ suit: "rings", value: 5 }]);
+      // Min=0 (seat 1), Max=2 (seats 2,3), Galadriel=1
+      expect(Galadriel.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "success",
+      });
+    });
+
+    test("returns { final, success } when in the middle (game finished)", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       // Galadriel: 1 trick, others: 0, 2, 2 tricks
@@ -75,22 +111,37 @@ describe("Galadriel", () => {
       addWonCards(game.seats[3]!, [{ suit: "hills", value: 4 }]);
       addWonCards(game.seats[3]!, [{ suit: "rings", value: 1 }]);
       // Min=0 (seat 1), Max=2 (seats 2,3), Galadriel=1
-      expect(Galadriel.objective.check(game, seat)).toBe(true);
+      expect(game.finished).toBe(true);
+      expect(Galadriel.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
-    test("returns false when tied for min (even if others have more)", () => {
+    test("returns { tentative, failure } when tied for min (even if others have more)", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
       // Galadriel: 0 tricks, seat 1: 0 tricks, seats 2,3: 1 trick each
       addWonCards(game.seats[2]!, [{ suit: "mountains", value: 1 }]);
       addWonCards(game.seats[3]!, [{ suit: "shadows", value: 2 }]);
       // Min=0 (seats 0,1), Max=1 (seats 2,3), Galadriel=0 (=min)
-      expect(Galadriel.objective.check(game, seat)).toBe(false);
+      expect(Galadriel.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns false when tied for max (even if others have fewer)", () => {
+    test("returns { tentative, failure } when tied for max (even if others have fewer)", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
       // Galadriel: 2 tricks, seat 1: 2 tricks, seats 2,3: 1 trick each
       addWonCards(seat, [{ suit: "mountains", value: 1 }]);
       addWonCards(seat, [{ suit: "shadows", value: 2 }]);
@@ -99,12 +150,19 @@ describe("Galadriel", () => {
       addWonCards(game.seats[2]!, [{ suit: "rings", value: 1 }]);
       addWonCards(game.seats[3]!, [{ suit: "mountains", value: 5 }]);
       // Min=1 (seats 2,3), Max=2 (seats 0,1), Galadriel=2 (=max)
-      expect(Galadriel.objective.check(game, seat)).toBe(false);
+      expect(Galadriel.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns true when strictly between min and max in 3-player game", () => {
+    test("returns { tentative, success } when strictly between min and max in 3-player game", () => {
       const game = createTestGame(3);
       const seat = game.seats[0]!;
+      // Add cards to hands so game is not finished
+      for (const s of game.seats) {
+        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
+      }
       // Galadriel: 2 tricks, seat 1: 1 trick, seat 2: 3 tricks
       addWonCards(seat, [{ suit: "mountains", value: 1 }]);
       addWonCards(seat, [{ suit: "shadows", value: 2 }]);
@@ -113,66 +171,25 @@ describe("Galadriel", () => {
       addWonCards(game.seats[2]!, [{ suit: "rings", value: 1 }]);
       addWonCards(game.seats[2]!, [{ suit: "mountains", value: 5 }]);
       // Min=1, Max=3, Galadriel=2
-      expect(Galadriel.objective.check(game, seat)).toBe(true);
-    });
-  });
-
-  describe("objective.isCompletable", () => {
-    test("returns true at start of game", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      expect(Galadriel.objective.isCompletable(game, seat)).toBe(true);
+      expect(Galadriel.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "success",
+      });
     });
 
-    test("returns true when middle position is achievable", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      // Galadriel has 1 trick, one other has 0, two others have 2
-      // Galadriel can stay at 1 while someone at 0 stays, someone at 2 stays
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(game.seats[2]!, [{ suit: "shadows", value: 2 }]);
-      addWonCards(game.seats[2]!, [{ suit: "forests", value: 3 }]);
-      addWonCards(game.seats[3]!, [{ suit: "hills", value: 4 }]);
-      addWonCards(game.seats[3]!, [{ suit: "rings", value: 1 }]);
-      expect(Galadriel.objective.isCompletable(game, seat)).toBe(true);
-    });
-
-    test("returns false when not enough tricks remain to create spread", () => {
+    test("returns { final, failure } when not enough tricks remain to create spread", () => {
       const game = createTestGame(4);
       game.currentTrickNumber = 8; // Only 1 trick remaining (9-8=1)
       const seat = game.seats[0]!;
       // Everyone has 0 tricks, but only 1 trick left - impossible to have someone below
       // Galadriel and someone above
-      expect(Galadriel.objective.isCompletable(game, seat)).toBe(false);
+      expect(Galadriel.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
 
-    test("returns true when already in middle position", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      // Galadriel: 1, others: 0, 2, 2 - already in middle
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(game.seats[2]!, [{ suit: "shadows", value: 2 }]);
-      addWonCards(game.seats[2]!, [{ suit: "forests", value: 3 }]);
-      addWonCards(game.seats[3]!, [{ suit: "hills", value: 4 }]);
-      addWonCards(game.seats[3]!, [{ suit: "rings", value: 1 }]);
-      expect(Galadriel.objective.isCompletable(game, seat)).toBe(true);
-    });
-
-    test("returns false when current min equals max with no tricks remaining", () => {
-      const game = createTestGame(4);
-      game.currentTrickNumber = 9; // 0 tricks remaining
-      const seat = game.seats[0]!;
-      // Everyone has 1 trick - Galadriel is both min and max
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(game.seats[1]!, [{ suit: "shadows", value: 2 }]);
-      addWonCards(game.seats[2]!, [{ suit: "forests", value: 3 }]);
-      addWonCards(game.seats[3]!, [{ suit: "hills", value: 4 }]);
-      expect(Galadriel.objective.isCompletable(game, seat)).toBe(false);
-    });
-  });
-
-  describe("objective.isCompleted", () => {
-    test("returns true early when guaranteed in middle position", () => {
+    test("returns { final, success } early when guaranteed in middle position", () => {
       const game2 = createTestGame(4);
       game2.currentTrickNumber = 7; // 2 tricks remaining
       const seat2 = game2.seats[0]!;
@@ -204,10 +221,13 @@ describe("Galadriel", () => {
       // Galadriel is guaranteed to be in the middle:
       // - Players below her (0 tricks each) can get at most 2 more = 2 tricks < 3
       // - Galadriel can get at most 3 + 2 = 5 tricks < 6 (the minimum above)
-      expect(Galadriel.objective.isCompleted(game2, seat2)).toBe(true);
+      expect(Galadriel.objective.getStatus(game2, seat2)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
     });
 
-    test("returns false early when could still become fewest", () => {
+    test("returns { tentative, success } early when could still become fewest", () => {
       const game = createTestGame(4);
       game.currentTrickNumber = 6; // 3 tricks remaining
       const seat = game.seats[0]!;
@@ -230,11 +250,14 @@ describe("Galadriel", () => {
 
       expect(game.finished).toBe(false);
       expect(seat.getTrickCount()).toBe(2);
-      // Seat 1 at 0 can reach 3, which is > 2, so Galadriel could become fewest
-      expect(Galadriel.objective.isCompleted(game, seat)).toBe(false);
+      // Galadriel is currently in the middle (0 < 2 < 5), but position not guaranteed
+      expect(Galadriel.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "success",
+      });
     });
 
-    test("returns false early when could still become most", () => {
+    test("returns { tentative, success } early when could still become most", () => {
       const game = createTestGame(4);
       game.currentTrickNumber = 6; // 3 tricks remaining
       const seat = game.seats[0]!;
@@ -257,11 +280,14 @@ describe("Galadriel", () => {
 
       expect(game.finished).toBe(false);
       expect(seat.getTrickCount()).toBe(3);
-      // Galadriel at 3 can reach 6, which is > 4 (min above), could become most
-      expect(Galadriel.objective.isCompleted(game, seat)).toBe(false);
+      // Galadriel is currently in the middle (0 < 3 < 4), but position not guaranteed
+      expect(Galadriel.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "success",
+      });
     });
 
-    test("returns false early when no one is above (could become most)", () => {
+    test("returns { tentative, failure } early when no one is above (could become most)", () => {
       const game = createTestGame(4);
       game.currentTrickNumber = 7; // 2 tricks remaining
       const seat = game.seats[0]!;
@@ -281,10 +307,13 @@ describe("Galadriel", () => {
 
       expect(game.finished).toBe(false);
       // Galadriel is tied for max, no one strictly above her, can't guarantee not-most
-      expect(Galadriel.objective.isCompleted(game, seat)).toBe(false);
+      expect(Galadriel.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns false early when no one is below (could become fewest)", () => {
+    test("returns { tentative, failure } early when no one is below (could become fewest)", () => {
       const game = createTestGame(4);
       game.currentTrickNumber = 7; // 2 tricks remaining
       const seat = game.seats[0]!;
@@ -309,10 +338,13 @@ describe("Galadriel", () => {
 
       expect(game.finished).toBe(false);
       // Galadriel is tied for min, no one strictly below her, can't guarantee not-fewest
-      expect(Galadriel.objective.isCompleted(game, seat)).toBe(false);
+      expect(Galadriel.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
     });
 
-    test("returns false when game is not finished and not guaranteed", () => {
+    test("returns { tentative, success } when game is not finished and in middle but not guaranteed", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       // Add cards to hands so game is not finished
@@ -326,25 +358,14 @@ describe("Galadriel", () => {
       addWonCards(game.seats[3]!, [{ suit: "hills", value: 8 }]);
       addWonCards(game.seats[3]!, [{ suit: "rings", value: 2 }]);
       expect(game.finished).toBe(false);
-      expect(Galadriel.objective.check(game, seat)).toBe(true);
       // With many tricks remaining, positions can still change
-      expect(Galadriel.objective.isCompleted(game, seat)).toBe(false);
+      expect(Galadriel.objective.getStatus(game, seat)).toEqual({
+        finality: "tentative",
+        outcome: "success",
+      });
     });
 
-    test("returns true when game finished and in middle position", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      // Galadriel: 1, others: 0, 2, 2
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(game.seats[2]!, [{ suit: "shadows", value: 2 }]);
-      addWonCards(game.seats[2]!, [{ suit: "forests", value: 3 }]);
-      addWonCards(game.seats[3]!, [{ suit: "hills", value: 4 }]);
-      addWonCards(game.seats[3]!, [{ suit: "rings", value: 1 }]);
-      expect(game.finished).toBe(true);
-      expect(Galadriel.objective.isCompleted(game, seat)).toBe(true);
-    });
-
-    test("returns false when game finished but at min", () => {
+    test("returns { final, failure } when game finished but at min", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       // Galadriel: 0 tricks, others have more
@@ -352,10 +373,13 @@ describe("Galadriel", () => {
       addWonCards(game.seats[2]!, [{ suit: "shadows", value: 2 }]);
       addWonCards(game.seats[3]!, [{ suit: "forests", value: 3 }]);
       expect(game.finished).toBe(true);
-      expect(Galadriel.objective.isCompleted(game, seat)).toBe(false);
+      expect(Galadriel.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
 
-    test("returns false when game finished but at max", () => {
+    test("returns { final, failure } when game finished but at max", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       // Galadriel: 2 tricks, others have fewer
@@ -363,59 +387,10 @@ describe("Galadriel", () => {
       addWonCards(seat, [{ suit: "shadows", value: 2 }]);
       addWonCards(game.seats[1]!, [{ suit: "forests", value: 3 }]);
       expect(game.finished).toBe(true);
-      expect(Galadriel.objective.isCompleted(game, seat)).toBe(false);
-    });
-  });
-
-  describe("display.renderStatus", () => {
-    test("shows met=false when at min", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      // Galadriel has 0, others have 1, 1, 1
-      addWonCards(game.seats[1]!, [{ suit: "mountains", value: 1 }]);
-      addWonCards(game.seats[2]!, [{ suit: "shadows", value: 2 }]);
-      addWonCards(game.seats[3]!, [{ suit: "forests", value: 3 }]);
-      const status = Galadriel.display.renderStatus(game, seat);
-      expect(status.met).toBe(false);
-      expect(status.completable).toBe(true);
-    });
-
-    test("shows met=true when in middle", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      // Galadriel: 1, others: 0, 2, 2
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(game.seats[2]!, [{ suit: "shadows", value: 2 }]);
-      addWonCards(game.seats[2]!, [{ suit: "forests", value: 3 }]);
-      addWonCards(game.seats[3]!, [{ suit: "hills", value: 4 }]);
-      addWonCards(game.seats[3]!, [{ suit: "rings", value: 1 }]);
-      const status = Galadriel.display.renderStatus(game, seat);
-      expect(status.met).toBe(true);
-    });
-
-    test("shows completable=false when impossible to reach middle", () => {
-      const game = createTestGame(4);
-      game.currentTrickNumber = 8; // Only 1 trick remaining
-      const seat = game.seats[0]!;
-      // Everyone at 0, can't create spread with only 1 trick
-      const status = Galadriel.display.renderStatus(game, seat);
-      expect(status.met).toBe(false);
-      expect(status.completable).toBe(false);
-    });
-
-    test("shows completed=true when game finished and in middle", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      // Galadriel: 1, others: 0, 2, 2
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(game.seats[2]!, [{ suit: "shadows", value: 2 }]);
-      addWonCards(game.seats[2]!, [{ suit: "forests", value: 3 }]);
-      addWonCards(game.seats[3]!, [{ suit: "hills", value: 4 }]);
-      addWonCards(game.seats[3]!, [{ suit: "rings", value: 1 }]);
-      expect(game.finished).toBe(true);
-      const status = Galadriel.display.renderStatus(game, seat);
-      expect(status.met).toBe(true);
-      expect(status.completed).toBe(true);
+      expect(Galadriel.objective.getStatus(game, seat)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
     });
   });
 

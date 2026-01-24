@@ -1,7 +1,7 @@
-import { CARDS_PER_SUIT, type Card } from "../types";
-import type { LegacyCharacterDefinition } from "./types";
+import { CARDS_PER_SUIT, type Card, type ObjectiveStatus } from "../types";
+import type { CharacterDefinition } from "./types";
 
-export const Glorfindel: LegacyCharacterDefinition = {
+export const Glorfindel: CharacterDefinition = {
   name: "Glorfindel",
   setupText: "Take the lost card",
 
@@ -11,39 +11,40 @@ export const Glorfindel: LegacyCharacterDefinition = {
 
   objective: {
     text: "Win every Shadows card",
-    check: (_game, seat) => {
+
+    getStatus: (game, seat): ObjectiveStatus => {
       const shadowsCards = seat
         .getAllWonCards()
         .filter((c: Card) => c.suit === "shadows");
-      return shadowsCards.length === CARDS_PER_SUIT.shadows;
-    },
-    isCompletable: (game, seat) => {
+      const met = shadowsCards.length === CARDS_PER_SUIT.shadows;
+
+      // Check completability: if any shadows card was won by someone else
+      let completable = true;
       for (let value = 1; value <= CARDS_PER_SUIT.shadows; value++) {
         if (game.cardGone(seat, "shadows", value)) {
-          return false;
+          completable = false;
+          break;
         }
       }
-      return true;
+
+      if (met) {
+        return { finality: "final", outcome: "success" };
+      } else if (!completable) {
+        return { finality: "final", outcome: "failure" };
+      } else {
+        return { finality: "tentative", outcome: "failure" };
+      }
     },
-    isCompleted: (game, seat) => Glorfindel.objective.check(game, seat),
+
+    getDetails: (_game, seat): string => {
+      const shadowsCards = seat
+        .getAllWonCards()
+        .filter((c: Card) => c.suit === "shadows");
+      return `Shadows: ${shadowsCards.length}/${CARDS_PER_SUIT.shadows}`;
+    },
   },
 
   display: {
-    renderStatus: (game, seat) => {
-      const shadowsCards = seat
-        .getAllWonCards()
-        .filter((c: Card) => c.suit === "shadows");
-      const met = Glorfindel.objective.check(game, seat);
-      const completable = Glorfindel.objective.isCompletable(game, seat);
-      const completed = Glorfindel.objective.isCompleted(game, seat);
-
-      return {
-        met,
-        completable,
-        completed,
-        details: `Shadows: ${shadowsCards.length}/${CARDS_PER_SUIT.shadows}`,
-      };
-    },
     getObjectiveCards: (_game, seat) => {
       const cards = seat
         .getAllWonCards()

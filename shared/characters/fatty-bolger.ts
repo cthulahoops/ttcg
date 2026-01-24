@@ -1,7 +1,7 @@
-import type { ObjectiveCard } from "../types";
-import type { LegacyCharacterDefinition } from "./types";
+import type { ObjectiveCard, ObjectiveStatus } from "../types";
+import type { CharacterDefinition } from "./types";
 
-export const FattyBolger: LegacyCharacterDefinition = {
+export const FattyBolger: CharacterDefinition = {
   name: "Fatty Bolger",
   setupText: "Give a card to every other character (don't take any back)",
 
@@ -26,19 +26,31 @@ export const FattyBolger: LegacyCharacterDefinition = {
 
   objective: {
     text: "Win exactly one trick",
-    check: (_game, seat) => seat.getTrickCount() === 1,
-    isCompletable: (_game, seat) => seat.getTrickCount() <= 1,
-    isCompleted: (game, seat) =>
-      game.finished && FattyBolger.objective.check(game, seat),
+
+    getStatus: (game, seat): ObjectiveStatus => {
+      const trickCount = seat.getTrickCount();
+      const met = trickCount === 1;
+
+      // Cannot complete if already have more than 1 trick
+      if (trickCount > 1) {
+        return { finality: "final", outcome: "failure" };
+      }
+
+      if (game.finished) {
+        return {
+          finality: "final",
+          outcome: met ? "success" : "failure",
+        };
+      }
+
+      return {
+        finality: "tentative",
+        outcome: met ? "success" : "failure",
+      };
+    },
   },
 
   display: {
-    renderStatus: (game, seat) => {
-      const met = FattyBolger.objective.check(game, seat);
-      const completable = FattyBolger.objective.isCompletable(game, seat);
-      const completed = FattyBolger.objective.isCompleted(game, seat);
-      return { met, completable, completed };
-    },
     getObjectiveCards: (_game, seat) => {
       const cards: ObjectiveCard[] = Array(seat.getTrickCount()).fill("trick");
       return { cards };

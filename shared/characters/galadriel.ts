@@ -1,8 +1,8 @@
 import type { Seat } from "../seat";
-import type { ObjectiveCard } from "../types";
-import type { LegacyCharacterDefinition } from "./types";
+import type { ObjectiveCard, ObjectiveStatus } from "../types";
+import type { CharacterDefinition } from "./types";
 
-export const Galadriel: LegacyCharacterDefinition = {
+export const Galadriel: CharacterDefinition = {
   name: "Galadriel",
   setupText: "Exchange with either the lost card or Gandalf",
 
@@ -44,19 +44,15 @@ export const Galadriel: LegacyCharacterDefinition = {
 
   objective: {
     text: "Win neither the fewest nor the most tricks",
-    check: (game, seat) => {
-      const allCounts = game.seats.map((s: Seat) => s.getTrickCount());
-      const minCount = Math.min(...allCounts);
-      const maxCount = Math.max(...allCounts);
-      const myCount = seat.getTrickCount();
-      return myCount !== minCount && myCount !== maxCount;
-    },
-    isCompletable: (game, seat) => {
-      const allCounts = game.seats.map((s: Seat) => s.getTrickCount());
-      const minCount = Math.min(...allCounts);
-      const maxCount = Math.max(...allCounts);
-      const myCount = seat.getTrickCount();
 
+    getStatus: (game, seat): ObjectiveStatus => {
+      const allCounts = game.seats.map((s: Seat) => s.getTrickCount());
+      const minCount = Math.min(...allCounts);
+      const maxCount = Math.max(...allCounts);
+      const myCount = seat.getTrickCount();
+      const met = myCount !== minCount && myCount !== maxCount;
+
+      // Check completability
       // Optimistic assumption: currentMin stays finalMin
       // Galadriel needs to be at least currentMin + 1
       const targetGaladriel = Math.max(minCount + 1, myCount);
@@ -67,19 +63,11 @@ export const Galadriel: LegacyCharacterDefinition = {
       // Calculate tricks needed to reach this state
       const tricksNeededForGaladriel = targetGaladriel - myCount;
       const tricksNeededForMax = targetMax - maxCount;
+      const completable =
+        tricksNeededForGaladriel + tricksNeededForMax <= game.tricksRemaining();
 
-      return (
-        tricksNeededForGaladriel + tricksNeededForMax <= game.tricksRemaining()
-      );
-    },
-    isCompleted: (game, seat) => {
-      if (game.finished) {
-        return Galadriel.objective.check(game, seat);
-      }
-      // Early completion: check if guaranteed to be neither fewest nor most
-      const myCount = seat.getTrickCount();
+      // Check for early completion
       const tricksRemaining = game.tricksRemaining();
-
       const otherCounts = game.seats
         .filter((s: Seat) => s.seatIndex !== seat.seatIndex)
         .map((s: Seat) => s.getTrickCount());
@@ -88,32 +76,42 @@ export const Galadriel: LegacyCharacterDefinition = {
       const playersBelow = otherCounts.filter((c) => c < myCount);
       const playersAbove = otherCounts.filter((c) => c > myCount);
 
-      // Must have at least one player below AND one player above
-      if (playersBelow.length === 0 || playersAbove.length === 0) {
-        return false;
+      let earlyComplete = false;
+      if (playersBelow.length > 0 && playersAbove.length > 0) {
+        // Guaranteed not fewest: even the highest player below can't catch up
+        const maxBelow = Math.max(...playersBelow);
+        const guaranteedNotFewest = maxBelow + tricksRemaining < myCount;
+
+        // Guaranteed not most: even if Galadriel wins all remaining, can't exceed min above
+        const minAbove = Math.min(...playersAbove);
+        const guaranteedNotMost = myCount + tricksRemaining < minAbove;
+
+        earlyComplete = guaranteedNotFewest && guaranteedNotMost;
       }
 
-      // Guaranteed not fewest: even the highest player below can't catch up
-      // maxBelow + tricksRemaining < myCount (strict because ties = fewest)
-      const maxBelow = Math.max(...playersBelow);
-      const guaranteedNotFewest = maxBelow + tricksRemaining < myCount;
+      if (game.finished) {
+        return {
+          finality: "final",
+          outcome: met ? "success" : "failure",
+        };
+      }
 
-      // Guaranteed not most: even if Galadriel wins all remaining, can't exceed min above
-      // myCount + tricksRemaining < minAbove (strict because ties = most)
-      const minAbove = Math.min(...playersAbove);
-      const guaranteedNotMost = myCount + tricksRemaining < minAbove;
+      if (earlyComplete && met) {
+        return { finality: "final", outcome: "success" };
+      }
 
-      return guaranteedNotFewest && guaranteedNotMost;
+      if (!completable) {
+        return { finality: "final", outcome: "failure" };
+      }
+
+      return {
+        finality: "tentative",
+        outcome: met ? "success" : "failure",
+      };
     },
   },
 
   display: {
-    renderStatus: (game, seat) => {
-      const met = Galadriel.objective.check(game, seat);
-      const completable = Galadriel.objective.isCompletable(game, seat);
-      const completed = Galadriel.objective.isCompleted(game, seat);
-      return { met, completable, completed };
-    },
     getObjectiveCards: (_game, seat) => {
       const cards: ObjectiveCard[] = Array(seat.getTrickCount()).fill("trick");
       return { cards };

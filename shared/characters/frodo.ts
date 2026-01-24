@@ -1,7 +1,7 @@
-import type { Card } from "../types";
+import type { Card, ObjectiveStatus } from "../types";
 import type { Seat } from "../seat";
 import type { Game } from "../game";
-import type { LegacyCharacterDefinition } from "./types";
+import type { CharacterDefinition } from "./types";
 
 /**
  * Calculate how many rings Frodo needs to win.
@@ -27,7 +27,7 @@ function getRingsNeeded(game: Game): number {
   return game.numCharacters === 3 || isSoloMode ? 4 : 2;
 }
 
-export const Frodo: LegacyCharacterDefinition = {
+export const Frodo: CharacterDefinition = {
   name: "Frodo",
   setupText: "No setup action",
 
@@ -39,18 +39,15 @@ export const Frodo: LegacyCharacterDefinition = {
       const neededText = needed === 4 ? "four" : "two";
       return `Win at least ${neededText} ring cards`;
     },
-    check: (game, seat) => {
-      const ringsNeeded = getRingsNeeded(game);
-      const ringCards = seat
-        .getAllWonCards()
-        .filter((c: Card) => c.suit === "rings");
-      return ringCards.length >= ringsNeeded;
-    },
-    isCompletable: (game, seat) => {
+
+    getStatus: (game, seat): ObjectiveStatus => {
       const ringsNeeded = getRingsNeeded(game);
       const myRings = seat
         .getAllWonCards()
         .filter((c: Card) => c.suit === "rings").length;
+
+      const met = myRings >= ringsNeeded;
+
       const othersRings = game.seats.reduce((total: number, s: Seat) => {
         if (s.seatIndex !== seat.seatIndex) {
           return (
@@ -61,34 +58,34 @@ export const Frodo: LegacyCharacterDefinition = {
         return total;
       }, 0);
       const ringsRemaining = 5 - myRings - othersRings;
-      return myRings + ringsRemaining >= ringsNeeded;
-    },
-    isCompleted: (game, seat) => Frodo.objective.check(game, seat),
-  },
+      const completable = myRings + ringsRemaining >= ringsNeeded;
 
-  display: {
-    renderStatus: (game, seat) => {
+      if (met) {
+        return { finality: "final", outcome: "success" };
+      } else if (!completable) {
+        return { finality: "final", outcome: "failure" };
+      } else {
+        return { finality: "tentative", outcome: "failure" };
+      }
+    },
+
+    getDetails: (_game, seat): string => {
       const ringCards = seat
         .getAllWonCards()
         .filter((c: Card) => c.suit === "rings");
-      const ringsNeeded = getRingsNeeded(game);
-      const met = ringCards.length >= ringsNeeded;
-      const completable = Frodo.objective.isCompletable(game, seat);
-      const completed = Frodo.objective.isCompleted(game, seat);
 
-      let details: string;
       if (ringCards.length > 0) {
         const ringList = ringCards
           .map((c) => c.value)
           .sort((a: number, b: number) => a - b)
           .join(", ");
-        details = `Rings: ${ringList}`;
-      } else {
-        details = "Rings: none";
+        return `Rings: ${ringList}`;
       }
-
-      return { met, completable, completed, details };
+      return "Rings: none";
     },
+  },
+
+  display: {
     getObjectiveCards: (_game, seat) => {
       const ringCards = seat
         .getAllWonCards()

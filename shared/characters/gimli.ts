@@ -1,7 +1,7 @@
-import type { ObjectiveCard } from "../types";
-import type { LegacyCharacterDefinition } from "./types";
+import type { ObjectiveCard, ObjectiveStatus } from "../types";
+import type { CharacterDefinition } from "./types";
 
-export const Gimli: LegacyCharacterDefinition = {
+export const Gimli: CharacterDefinition = {
   name: "Gimli",
   setupText:
     "Draw a Mountains threat card, then exchange with Legolas or Aragorn",
@@ -17,24 +17,25 @@ export const Gimli: LegacyCharacterDefinition = {
 
   objective: {
     text: "Win the Mountains card matching your threat card",
-    check: (game, seat) => {
-      if (!seat.threatCard) return false;
-      return game.hasCard(seat, "mountains", seat.threatCard);
+
+    getStatus: (game, seat): ObjectiveStatus => {
+      if (!seat.threatCard) {
+        return { finality: "tentative", outcome: "failure" };
+      }
+      const hasCard = game.hasCard(seat, "mountains", seat.threatCard);
+      const cardGone = game.cardGone(seat, "mountains", seat.threatCard);
+
+      if (hasCard) {
+        return { finality: "final", outcome: "success" };
+      } else if (cardGone) {
+        return { finality: "final", outcome: "failure" };
+      } else {
+        return { finality: "tentative", outcome: "failure" };
+      }
     },
-    isCompletable: (game, seat) => {
-      if (!seat.threatCard) return true;
-      return !game.cardGone(seat, "mountains", seat.threatCard);
-    },
-    isCompleted: (game, seat) => Gimli.objective.check(game, seat),
   },
 
   display: {
-    renderStatus: (game, seat) => {
-      const met = Gimli.objective.check(game, seat);
-      const completable = Gimli.objective.isCompletable(game, seat);
-      const completed = Gimli.objective.isCompleted(game, seat);
-      return { met, completable, completed };
-    },
     getObjectiveCards: (game, seat) => {
       const cards: ObjectiveCard[] = [];
       if (seat.threatCard !== null) {
