@@ -1,11 +1,31 @@
-import type { Card, ObjectiveCard, ObjectiveStatus } from "../types";
+import {
+  CARDS_PER_SUIT,
+  type Card,
+  type ObjectiveCard,
+  type ObjectiveStatus,
+} from "../types";
 import type { Seat } from "../seat";
+import type { Game } from "../game";
 import type { CharacterDefinition } from "./types";
 
 const countMountainTricks = (seat: Seat) =>
   seat.tricksWon.filter((trick) =>
     trick.cards.some((c: Card) => c.suit === "mountains")
   ).length;
+
+const countMountainsInPlay = (game: Game) => {
+  const mountainsWon = game.seats.reduce(
+    (count, s) =>
+      count +
+      s.tricksWon.reduce(
+        (tc, trick) =>
+          tc + trick.cards.filter((c: Card) => c.suit === "mountains").length,
+        0
+      ),
+    0
+  );
+  return CARDS_PER_SUIT.mountains - mountainsWon;
+};
 
 export const Gwaihir: CharacterDefinition = {
   name: "Gwaihir",
@@ -23,14 +43,13 @@ export const Gwaihir: CharacterDefinition = {
       const mountainTricks = countMountainTricks(seat);
       const met = mountainTricks >= 2;
 
-      // Hard to determine completability without knowing remaining mountains distribution
-      // Simplified: always completable unless already met or game finished
-
       if (met) {
         return { finality: "final", outcome: "success" };
       }
 
-      if (game.finished) {
+      const completable = mountainTricks + countMountainsInPlay(game) >= 2;
+
+      if (!completable || game.finished) {
         return { finality: "final", outcome: "failure" };
       }
 
