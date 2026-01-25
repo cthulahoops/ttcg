@@ -76,7 +76,7 @@ export function GameScreen({
               seat={seat}
               isActive={isActive}
               selectableCards={selectableCards}
-              onSelectCard={selectableCards ? handleSelectCard : () => {}}
+              onSelectCard={handleSelectCard}
             />
           );
         })}

@@ -91,8 +91,7 @@ body {
 }
 
 h1 {
-  text-align: center;
-  color: var(--color-accent);
+  display: none;
 }
 
 /* Base section styling - shared by all section-like areas */
@@ -101,10 +100,6 @@ section {
   border-radius: var(--space-sm);
   border: 2px solid var(--color-border);
   padding: var(--space-lg);
-}
-
-h1 {
-  display: none;
 }
 
 section h2,
@@ -680,7 +675,8 @@ button:hover {
   color: #ccc;
 }
 
-/* Single players container with dividers (instead of individual bordered sections) */
+/* Single players container with dividers (instead of individual bordered sections)
+   Overrides base .players grid gap with divider-based spacing */
 .players {
   background-color: var(--color-bg-dark);
   border-radius: 6px;
@@ -718,6 +714,7 @@ button:hover {
   align-items: flex-start;
   gap: var(--space-xs);
   flex-wrap: wrap;
+  justify-content: space-between;
 }
 
 .player-header h3 {
@@ -725,17 +722,9 @@ button:hover {
   font-size: var(--font-size-sm);
 }
 
-.player-header {
-  display: flex;
-  justify-content: space-between;
-}
-
 .objective-cards {
   --card-width: 45px;
   --card-height: 68px;
-}
-
-.objective-cards {
   display: flex;
   margin-left: auto;
 }

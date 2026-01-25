@@ -112,9 +112,7 @@ function AsideCard({
     <Card
       card={asideCard}
       clickable={isSelectable}
-      onClick={
-        isSelectable && onSelectCard ? () => onSelectCard(asideCard) : undefined
-      }
+      onClick={isSelectable ? () => onSelectCard(asideCard) : undefined}
     />
   );
 }
