@@ -27,7 +27,7 @@ export function Hand({ hand, selectableCards, onSelectCard }: HandProps) {
   switch (hand.type) {
     case "player":
       return (
-        <div className="hand">
+        <div className="hand row-hand">
           {hand.cards.map((card, idx) => {
             const selectable = isCardSelectable(card, selectableCards);
             return (
@@ -48,7 +48,7 @@ export function Hand({ hand, selectableCards, onSelectCard }: HandProps) {
 
     case "solitaire":
       return (
-        <div className="hand solitaire-hand">
+        <div className="hand row-hand">
           {hand.cards.map((card, idx) => {
             const selectable = isCardSelectable(card, selectableCards);
             return (

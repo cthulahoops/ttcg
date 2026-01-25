@@ -128,15 +128,31 @@ section h3 {
   gap: var(--space-sm);
 }
 
-.hand:not(.pyramid-hand) {
-  display: flex;
-  flex-wrap: wrap;
+.row-hand {
+  --card-span: 3; /* visible cards span this many columns, hidden span 1 */
+  display: grid;
+  /* Column width: (card-width - (span-1)*gap) / span */
+  grid-template-columns: repeat(
+    auto-fit,
+    calc(
+      (var(--card-width) - (var(--card-span) - 1) * var(--space-xs)) /
+        var(--card-span)
+    )
+  );
   gap: var(--space-xs);
+  /* Padding for last card's overflow + gap */
+  padding-right: calc(
+    var(--card-width) * (var(--card-span) - 1) / var(--card-span) +
+      var(--space-xs)
+  );
 }
 
-/* Hidden cards overlap with each other using negative margin */
-.hand:not(.pyramid-hand) > .card.hidden + .card.hidden {
-  margin-left: calc(-2 * var(--card-width) / 3 - 5px);
+.row-hand > .card {
+  grid-column: span var(--card-span);
+}
+
+.row-hand > .card.hidden {
+  grid-column: span 1;
 }
 
 .card {
