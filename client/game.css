@@ -346,7 +346,7 @@ button:hover {
 }
 
 .success {
-  color: var(--color-secondary);
+  color: var(--color-success);
 }
 
 .error {
@@ -741,7 +741,7 @@ button:hover {
 }
 
 .objective-cards .card {
-  margin-left: var(--card-width / 2);
+  margin-left: calc(var(--card-width) / 2);
 }
 
 .objective-cards .card:first-child {
