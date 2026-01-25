@@ -1,2 +1,11 @@
-bun run format
-git add -u
+set -e
+
+staged=$(git diff --cached --name-only)
+if [ -n "$staged" ]; then
+  if ! git diff --quiet -- $staged; then
+    echo "Error: Staged files have unstaged changes. Stage or stash them first."
+    exit 1
+  fi
+fi
+
+bun run format:check
