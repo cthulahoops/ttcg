@@ -47,10 +47,18 @@
 }
 
 /* Utility classes */
-.accent { color: var(--color-accent); }
-.secondary { color: var(--color-text-secondary); }
-.font-xs { font-size: var(--font-size-xs); }
-.italic { font-style: italic; }
+.accent {
+  color: var(--color-accent);
+}
+.secondary {
+  color: var(--color-text-secondary);
+}
+.font-xs {
+  font-size: var(--font-size-xs);
+}
+.italic {
+  font-style: italic;
+}
 
 * {
   box-sizing: border-box;
@@ -354,7 +362,6 @@ button:hover {
   color: var(--color-text-secondary);
   margin-top: 3px;
 }
-
 
 /* Unified Dialog Area - appears above trick area instead of covering interface */
 .dialog-area {
