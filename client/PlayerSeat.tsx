@@ -6,8 +6,8 @@ import { Card } from "./Card";
 type PlayerSeatProps = {
   seat: SerializedSeat;
   isActive: boolean;
-  selectableCards?: CardType[] | null;
-  onSelectCard?: (card: CardType) => void;
+  selectableCards: CardType[];
+  onSelectCard: (card: CardType) => void;
 };
 
 export function PlayerSeat({
@@ -23,7 +23,6 @@ export function PlayerSeat({
     objective,
     tricksWon,
     objectiveStatus,
-    statusDetails,
     hand,
     asideCard,
     objectiveCards,
@@ -32,108 +31,36 @@ export function PlayerSeat({
   // Show character name when assigned, otherwise player name
   const displayName = character ?? playerName ?? `Player ${seatIndex + 1}`;
 
-  // Destructure the object format: { finality, outcome }
-  const { finality, outcome } = objectiveStatus ?? {
-    finality: null,
-    outcome: null,
-  };
-
-  // Status icon based on objective status
-  const statusIcon = objectiveStatus
-    ? finality === "final" && outcome === "success"
-      ? "★" // final success → guaranteed
-      : outcome === "success"
-        ? "✓" // tentative success → currently met
-        : "✗" // failure → not met
-    : null;
-
-  const isImpossible = finality === "final" && outcome === "failure";
-
   return (
     <section
       className={`player ${isActive ? "active" : ""}`}
       data-player={seatIndex + 1}
     >
-      {/* Compact header for mobile */}
-      <div className="player-header-compact">
-        <h3>{displayName}</h3>
-        {statusIcon && <span className="compact-status">{statusIcon}</span>}
-        <span className="compact-tricks">T:{tricksWon.length}</span>
-        <span className="compact-objective">{objective}</span>
+      <div className="player-header">
+        <div className="player-info">
+          <h3>{displayName}</h3>
+          <div>
+            <span className="font-xs secondary">{tricksWon.length}</span>{" "}
+            <StatusIcon objectiveStatus={objectiveStatus} />{" "}
+            <span className="font-xs accent italic">{objective}</span>
+          </div>
+        </div>
         {objectiveCards && objectiveCards.cards.length > 0 && (
-          <div className="objective-cards-inline">
-            {objectiveCards.cards.slice(0, 3).map((card, i) => (
+          <div className="objective-cards">
+            {objectiveCards.cards.map((card, i) => (
               <Card key={i} card={card} />
             ))}
-            {objectiveCards.cards.length > 3 && (
-              <span className="objective-cards-overflow">
-                +{objectiveCards.cards.length - 3}
-              </span>
-            )}
           </div>
         )}
       </div>
 
-      {/* Full header for desktop */}
-      <div className="player-header-full">
-        <h3>{displayName}</h3>
-
-        <div className="objective">{objective && `Goal: ${objective}`}</div>
-
-        <div className="tricks-won">Tricks: {tricksWon.length}</div>
-
-        <div className="objective-status">
-          {objectiveStatus && (
-            <>
-              {finality === "final" && outcome === "success" ? (
-                <span className="completed">★</span>
-              ) : outcome === "success" ? (
-                <span className="success">✓</span>
-              ) : isImpossible ? (
-                <span className="fail">✗ (impossible)</span>
-              ) : (
-                <span className="fail">✗</span>
-              )}
-              {statusDetails && ` ${statusDetails}`}
-            </>
-          )}
-        </div>
-
-        <div className="objective-cards-area">
-          {objectiveCards?.cards.map((card, i) => (
-            <Card key={i} card={card} />
-          ))}
-        </div>
-
-        {asideCard && (
-          <div className="aside-card">
-            <span className="aside-label">
-              {asideCard === "hidden" ? "Has card aside" : "Aside:"}
-            </span>
-            {(() => {
-              if (asideCard === "hidden") {
-                return <Card card="hidden" />;
-              }
-              const isSelectable =
-                selectableCards?.some(
-                  (c) =>
-                    c.suit === asideCard.suit && c.value === asideCard.value
-                ) ?? false;
-              return (
-                <Card
-                  card={asideCard}
-                  clickable={isSelectable}
-                  onClick={
-                    isSelectable && onSelectCard
-                      ? () => onSelectCard(asideCard)
-                      : undefined
-                  }
-                />
-              );
-            })()}
-          </div>
-        )}
-      </div>
+      {asideCard && (
+        <AsideCard
+          asideCard={asideCard}
+          onSelectCard={onSelectCard}
+          selectableCards={selectableCards}
+        />
+      )}
 
       {hand && (
         <Hand
@@ -143,5 +70,49 @@ export function PlayerSeat({
         />
       )}
     </section>
+  );
+}
+
+function StatusIcon({
+  objectiveStatus,
+}: {
+  objectiveStatus?: { finality: string; outcome: string };
+}) {
+  if (!objectiveStatus) return null;
+
+  const { finality, outcome } = objectiveStatus;
+  const isFinalSuccess = finality === "final" && outcome === "success";
+  const icon = isFinalSuccess ? "★" : outcome === "success" ? "✓" : "✗";
+  const colorClass = isFinalSuccess
+    ? "completed"
+    : outcome === "success"
+      ? "success"
+      : "error";
+
+  return <span className={`font-xs ${colorClass}`}>{icon}</span>;
+}
+
+function AsideCard({
+  asideCard,
+  onSelectCard,
+  selectableCards,
+}: {
+  asideCard: CardType | "hidden";
+  selectableCards: CardType[];
+  onSelectCard: (card: CardType) => void;
+}) {
+  if (asideCard === "hidden") {
+    return <Card card="hidden" />;
+  }
+  const isSelectable = selectableCards.some(
+    (c) => c.suit === asideCard.suit && c.value === asideCard.value
+  );
+
+  return (
+    <Card
+      card={asideCard}
+      clickable={isSelectable}
+      onClick={isSelectable ? () => onSelectCard(asideCard) : undefined}
+    />
   );
 }

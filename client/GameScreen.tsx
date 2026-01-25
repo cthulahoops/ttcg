@@ -57,7 +57,7 @@ export function GameScreen({
       )}
 
       <div className="display-columns">
-        <TrickArea game={game} lostCard={game.lostCard} />
+        <TrickArea game={game} />
         <LostCard lostCard={game.lostCard} />
       </div>
 
@@ -68,7 +68,7 @@ export function GameScreen({
           const selectableCards =
             isActive && selectableCardsFromDecision
               ? selectableCardsFromDecision
-              : null;
+              : [];
 
           return (
             <PlayerSeat
@@ -76,7 +76,7 @@ export function GameScreen({
               seat={seat}
               isActive={isActive}
               selectableCards={selectableCards}
-              onSelectCard={selectableCards ? handleSelectCard : undefined}
+              onSelectCard={handleSelectCard}
             />
           );
         })}

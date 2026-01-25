@@ -1,13 +1,11 @@
 import { Card } from "./Card";
 import type { SerializedGame, SerializedTrickPlay } from "@shared/serialized";
-import type { Card as CardType } from "@shared/types";
 
 type TrickAreaProps = {
   game: SerializedGame;
-  lostCard?: CardType | null;
 };
 
-export function TrickArea({ game, lostCard }: TrickAreaProps) {
+export function TrickArea({ game }: TrickAreaProps) {
   // Show current trick if in progress, otherwise show last completed trick
   const currentTrickInProgress = game.currentTrick.length > 0;
   const lastCompletedTrick =
@@ -33,12 +31,6 @@ export function TrickArea({ game, lostCard }: TrickAreaProps) {
         >
           Rings: {game.ringsBroken ? "Broken" : "Sealed"}
         </span>
-        {/* Inline lost card for mobile (hidden on desktop via CSS) */}
-        {lostCard && (
-          <div className="lost-card-inline">
-            <Card card={lostCard} />
-          </div>
-        )}
       </div>
 
       <div className="trick-cards">
