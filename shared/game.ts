@@ -2,7 +2,7 @@ import { shuffleDeck, sortHand, delay } from "./utils";
 import { Seat } from "./seat";
 import { ProxyController } from "./controllers";
 import { characterRegistry } from "./characters/registry";
-import { getObjectiveStatus } from "./characters/status-adapter";
+import { riderRegistry, allRiderNames } from "./riders/registry";
 import type { Card, Suit, ThreatCard, ChoiceButton } from "./types";
 
 // ===== INTERFACES =====
@@ -48,6 +48,7 @@ export class Game {
   lastTrickWinner: number | null;
   threatDeck: number[];
   tricksToPlay: number;
+  drawnRider: string | null; // Rider name during assignment phase
   onStateChange?: (game: Game) => void;
   onLog?: (
     line: string,
@@ -77,6 +78,7 @@ export class Game {
     this.lastTrickWinner = null;
     this.threatDeck = [1, 2, 3, 4, 5, 6, 7];
     this.tricksToPlay = numCharacters === 3 ? 12 : 9;
+    this.drawnRider = null;
 
     this.threatDeck = shuffleDeck(
       this.threatDeck.map((v) => ({ value: v }))
@@ -493,30 +495,16 @@ function getLegalMoves(gameState: Game, seat: Seat): Card[] {
 // ===== EXCHANGE HELPER FUNCTIONS =====
 
 function checkObjective(gameState: Game, seat: Seat): boolean {
-  const { outcome } = getObjectiveStatus(
-    seat.character!.objective,
-    gameState,
-    seat
-  );
-  return outcome === "success";
+  return seat.getObjectiveStatus(gameState).outcome === "success";
 }
 
 function isObjectiveCompletable(gameState: Game, seat: Seat): boolean {
-  const { finality, outcome } = getObjectiveStatus(
-    seat.character!.objective,
-    gameState,
-    seat
-  );
-  // Completable unless it's final failure
+  const { finality, outcome } = seat.getObjectiveStatus(gameState);
   return !(finality === "final" && outcome === "failure");
 }
 
 function isObjectiveCompleted(gameState: Game, seat: Seat): boolean {
-  const { finality, outcome } = getObjectiveStatus(
-    seat.character!.objective,
-    gameState,
-    seat
-  );
+  const { finality, outcome } = seat.getObjectiveStatus(gameState);
   return finality === "final" && outcome === "success";
 }
 
@@ -828,6 +816,20 @@ async function runSetupPhase(gameState: Game): Promise<void> {
 async function runCharacterAssignment(gameState: Game): Promise<void> {
   gameState.log("=== CHARACTER ASSIGNMENT ===", true);
 
+  // Draw a random rider before character selection
+  const shuffledRiders = shuffleDeck(
+    allRiderNames.map((name) => ({ name }))
+  ).map((r) => r.name);
+  gameState.drawnRider = shuffledRiders[0] ?? null;
+  if (gameState.drawnRider) {
+    const rider = riderRegistry.get(gameState.drawnRider);
+    gameState.log(`Rider drawn: ${gameState.drawnRider}`, true);
+    if (rider?.objective.text) {
+      gameState.log(`  "${rider.objective.text}"`);
+    }
+  }
+  gameState.notifyStateChange();
+
   const startPlayer = gameState.leadPlayer; // Player with 1 of Rings
   const frodoSeat = gameState.seats[startPlayer];
   if (!frodoSeat) {
@@ -916,6 +918,48 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
   gameState.notifyStateChange();
 }
 
+async function runRiderAssignment(gameState: Game): Promise<void> {
+  if (!gameState.drawnRider) {
+    return;
+  }
+
+  gameState.log("=== RIDER ASSIGNMENT ===", true);
+
+  const frodoSeat = gameState.seats[gameState.leadPlayer];
+  if (!frodoSeat) {
+    throw new Error("Frodo seat not found for rider assignment");
+  }
+
+  const buttons: ChoiceButton<number>[] = gameState.seats.map((seat) => ({
+    label: seat.character!.name,
+    value: seat.seatIndex,
+  }));
+
+  const rider = riderRegistry.get(gameState.drawnRider);
+  const riderText = rider?.objective.text ?? "";
+
+  const targetIndex = await frodoSeat.controller.chooseButton({
+    title: "Assign Rider",
+    message: `Assign "${gameState.drawnRider}" (${riderText}) to a character:`,
+    buttons,
+  });
+
+  const targetSeat = gameState.seats[targetIndex];
+  if (!targetSeat) {
+    throw new Error(`Invalid target seat index: ${targetIndex}`);
+  }
+
+  targetSeat.rider = rider ?? null;
+
+  gameState.log(
+    `${frodoSeat.getDisplayName()} assigns ${gameState.drawnRider} to ${targetSeat.getDisplayName()}`,
+    true
+  );
+
+  gameState.drawnRider = null;
+  gameState.notifyStateChange();
+}
+
 export async function runGame(gameState: Game): Promise<void> {
   gameState.notifyStateChange();
 
@@ -925,6 +969,7 @@ export async function runGame(gameState: Game): Promise<void> {
   gameState.log(`Lost card: ${lostCard.value} of ${lostCard.suit}`);
 
   await runCharacterAssignment(gameState);
+  await runRiderAssignment(gameState);
   await runSetupPhase(gameState);
   await runTrickTakingPhase(gameState);
 

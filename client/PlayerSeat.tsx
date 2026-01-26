@@ -26,6 +26,10 @@ export function PlayerSeat({
     hand,
     asideCard,
     objectiveCards,
+    rider,
+    riderObjective,
+    riderStatus,
+    riderObjectiveCards,
   } = seat;
 
   // Show character name when assigned, otherwise player name
@@ -44,10 +48,23 @@ export function PlayerSeat({
             <StatusIcon objectiveStatus={objectiveStatus} />{" "}
             <span className="font-xs accent italic">{objective}</span>
           </div>
+          {rider && riderObjective && (
+            <div className="rider-objective">
+              <StatusIcon objectiveStatus={riderStatus} />{" "}
+              <span className="font-xs italic">{riderObjective}</span>
+            </div>
+          )}
         </div>
         {objectiveCards && objectiveCards.cards.length > 0 && (
           <div className="objective-cards">
             {objectiveCards.cards.map((card, i) => (
+              <Card key={i} card={card} />
+            ))}
+          </div>
+        )}
+        {riderObjectiveCards && riderObjectiveCards.cards.length > 0 && (
+          <div className="objective-cards">
+            {riderObjectiveCards.cards.map((card, i) => (
               <Card key={i} card={card} />
             ))}
           </div>

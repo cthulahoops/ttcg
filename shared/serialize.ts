@@ -7,6 +7,7 @@ import type { Game, TrickPlay, CompletedTrick } from "./game";
 import type { Seat } from "./seat";
 import type { Card } from "./types";
 import { characterRegistry } from "./characters/registry";
+import { riderRegistry } from "./riders/registry";
 import {
   getObjectiveStatus,
   getObjectiveDetails,
@@ -50,6 +51,17 @@ function serializeSeat(
     seat
   );
 
+  // Rider fields
+  const riderObjective =
+    seat.rider?.objective.text ?? seat.rider?.objective.getText?.(game) ?? null;
+  const riderStatus = seat.rider
+    ? seat.rider.objective.getStatus(game, seat)
+    : undefined;
+  const riderObjectiveCards = seat.rider?.display.getObjectiveCards?.(
+    game,
+    seat
+  );
+
   return {
     seatIndex: seat.seatIndex,
     playerName: seat.controller.playerName,
@@ -67,6 +79,10 @@ function serializeSeat(
     hand: seat.hand ? seat.hand.serializeForViewer(isOwnSeat) : null,
     asideCard,
     objectiveCards,
+    rider: seat.rider?.name ?? null,
+    riderObjective,
+    riderStatus,
+    riderObjectiveCards,
   };
 }
 
@@ -134,5 +150,14 @@ export function serializeGameForSeat(
     lostCard: game.lostCard,
     lastTrickWinner: game.lastTrickWinner,
     tricksToPlay: game.tricksToPlay,
+    drawnRider: game.drawnRider
+      ? {
+          name: game.drawnRider,
+          objective:
+            riderRegistry.get(game.drawnRider)?.objective.text ??
+            riderRegistry.get(game.drawnRider)?.objective.getText?.(game) ??
+            "",
+        }
+      : null,
   };
 }

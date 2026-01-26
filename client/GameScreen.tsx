@@ -49,6 +49,13 @@ export function GameScreen({
 
       <AvailableCharacters characters={game.availableCharacters} />
 
+      {game.drawnRider && (
+        <div className="drawn-rider">
+          <h3>Rider: {game.drawnRider.name}</h3>
+          <p>{game.drawnRider.objective}</p>
+        </div>
+      )}
+
       {showDialog && (
         <DecisionDialog
           decision={pendingDecision.decision}
