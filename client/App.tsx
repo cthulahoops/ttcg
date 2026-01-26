@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { LobbyScreen } from "./LobbyScreen";
 import { GameScreen } from "./GameScreen";
 import { GameLog } from "./GameLog";
@@ -14,13 +14,19 @@ export function App() {
   const playerId = usePlayerId();
   const { playerName, setPlayerName } = usePlayerName();
 
+  // Track current room without triggering effect re-runs
+  const currentRoomRef = useRef(state.roomCode);
+  useEffect(() => {
+    currentRoomRef.current = state.roomCode;
+  }, [state.roomCode]);
+
   useEffect(() => {
     if (!connected) return;
     if (!roomCode) return;
     if (!playerName) return;
 
     // Leave existing room if we're joining a different one
-    if (state.roomCode && state.roomCode !== roomCode) {
+    if (currentRoomRef.current && currentRoomRef.current !== roomCode) {
       sendMessage({ type: "leave_room" });
     }
 
@@ -30,7 +36,7 @@ export function App() {
       roomCode,
       playerId,
     });
-  }, [connected, roomCode, playerName]);
+  }, [connected, roomCode, playerName, playerId, sendMessage]);
 
   const handleLeaveRoom = () => {
     sendMessage({ type: "leave_room" });

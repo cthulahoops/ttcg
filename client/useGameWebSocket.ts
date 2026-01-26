@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { clientReducer } from "./reducer";
 import { ClientState } from "./types";
 import type { ClientMessage, ServerMessage } from "@shared/protocol";
@@ -76,7 +76,7 @@ export function useGameWebSocket() {
     };
   }, []);
 
-  function sendMessage(message: ClientMessage) {
+  const sendMessage = useCallback((message: ClientMessage) => {
     const ws = wsRef.current;
     console.log("Send ", message);
 
@@ -85,7 +85,7 @@ export function useGameWebSocket() {
     } else {
       console.warn("WebSocket not open");
     }
-  }
+  }, []);
 
   function respondToDecision(requestId: string, response: unknown) {
     dispatch({ type: "decision_cleared" });
