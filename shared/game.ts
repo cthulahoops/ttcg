@@ -2,7 +2,8 @@ import { shuffleDeck, sortHand, delay } from "./utils";
 import { Seat } from "./seat";
 import { ProxyController } from "./controllers";
 import { characterRegistry } from "./characters/registry";
-import { riderRegistry, allRiderNames } from "./riders/registry";
+import { allRiders } from "./riders/registry";
+import type { RiderDefinition } from "./riders/registry";
 import type { Card, Suit, ThreatCard, ChoiceButton } from "./types";
 
 // ===== INTERFACES =====
@@ -48,7 +49,7 @@ export class Game {
   lastTrickWinner: number | null;
   threatDeck: number[];
   tricksToPlay: number;
-  drawnRider: string | null; // Rider name during assignment phase
+  drawnRider: RiderDefinition | null; // Rider during assignment phase
   onStateChange?: (game: Game) => void;
   onLog?: (
     line: string,
@@ -817,15 +818,12 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
   gameState.log("=== CHARACTER ASSIGNMENT ===", true);
 
   // Draw a random rider before character selection
-  const shuffledRiders = shuffleDeck(
-    allRiderNames.map((name) => ({ name }))
-  ).map((r) => r.name);
+  const shuffledRiders = shuffleDeck([...allRiders]);
   gameState.drawnRider = shuffledRiders[0] ?? null;
   if (gameState.drawnRider) {
-    const rider = riderRegistry.get(gameState.drawnRider);
-    gameState.log(`Rider drawn: ${gameState.drawnRider}`, true);
-    if (rider?.objective.text) {
-      gameState.log(`  "${rider.objective.text}"`);
+    gameState.log(`Rider drawn: ${gameState.drawnRider.name}`, true);
+    if (gameState.drawnRider.objective.text) {
+      gameState.log(`  "${gameState.drawnRider.objective.text}"`);
     }
   }
   gameState.notifyStateChange();
@@ -935,12 +933,12 @@ async function runRiderAssignment(gameState: Game): Promise<void> {
     value: seat.seatIndex,
   }));
 
-  const rider = riderRegistry.get(gameState.drawnRider);
+  const rider = gameState.drawnRider;
   const riderText = rider?.objective.text ?? "";
 
   const targetIndex = await frodoSeat.controller.chooseButton({
     title: "Assign Rider",
-    message: `Assign "${gameState.drawnRider}" (${riderText}) to a character:`,
+    message: `Assign "${rider?.name}" (${riderText}) to a character:`,
     buttons,
   });
 
@@ -949,10 +947,10 @@ async function runRiderAssignment(gameState: Game): Promise<void> {
     throw new Error(`Invalid target seat index: ${targetIndex}`);
   }
 
-  targetSeat.rider = rider ?? null;
+  targetSeat.rider = rider;
 
   gameState.log(
-    `${frodoSeat.getDisplayName()} assigns ${gameState.drawnRider} to ${targetSeat.getDisplayName()}`,
+    `${frodoSeat.getDisplayName()} assigns ${rider?.name} to ${targetSeat.getDisplayName()}`,
     true
   );
 
