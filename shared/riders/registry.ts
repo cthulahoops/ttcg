@@ -7,10 +7,4 @@ import { Terror } from "./terror";
 
 export type { RiderDefinition } from "./types";
 
-export const riderRegistry = new Map<string, RiderDefinition>([
-  [MorgulKnife.name, MorgulKnife],
-  [BlackBreath.name, BlackBreath],
-  [Terror.name, Terror],
-]);
-
-export const allRiderNames = Array.from(riderRegistry.keys());
+export const allRiders: RiderDefinition[] = [MorgulKnife, BlackBreath, Terror];

@@ -7,7 +7,6 @@ import type { Game, TrickPlay, CompletedTrick } from "./game";
 import type { Seat } from "./seat";
 import type { Card } from "./types";
 import { characterRegistry } from "./characters/registry";
-import { riderRegistry } from "./riders/registry";
 import {
   getObjectiveStatus,
   getObjectiveDetails,
@@ -152,10 +151,10 @@ export function serializeGameForSeat(
     tricksToPlay: game.tricksToPlay,
     drawnRider: game.drawnRider
       ? {
-          name: game.drawnRider,
+          name: game.drawnRider.name,
           objective:
-            riderRegistry.get(game.drawnRider)?.objective.text ??
-            riderRegistry.get(game.drawnRider)?.objective.getText?.(game) ??
+            game.drawnRider.objective.text ??
+            game.drawnRider.objective.getText?.(game) ??
             "",
         }
       : null,
