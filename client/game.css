@@ -1,11 +1,12 @@
 :root {
-  --card-width: 60px;
-  --card-height: 90px;
-  --font-size-title: 40px;
-  --font-size-lg: 18px;
-  --font-size-base: 16px;
-  --font-size-sm: 14px;
-  --font-size-xs: 12px;
+  --card-width: 3.75rem;
+  --card-height: 5.625rem;
+
+  --font-size-title: 2.5;
+  --font-size-lg: 1.125rem;
+  --font-size-base: 1rem;
+  --font-size-sm: 0.875rem;
+  --font-size-xs: 0.75rem;
 
   /* Backgrounds */
   --color-bg: #2d5016;
@@ -39,10 +40,10 @@
   --color-danger-hover: #ab5a5a;
 
   /* Spacing */
-  --space-lg: 20px;
-  --space-md: 15px;
-  --space-sm: 10px;
-  --space-xs: 5px;
+  --space-lg: 2rem;
+  --space-md: 1rem;
+  --space-sm: 0.5rem;
+  --space-xs: 0.25rem;
 }
 
 /* Utility classes */
@@ -106,7 +107,7 @@ section {
   background-color: var(--color-bg-dark);
   border-radius: var(--space-sm);
   border: 2px solid var(--color-border);
-  padding: var(--space-lg);
+  padding: var(--space-md);
 }
 
 section h2,
@@ -562,13 +563,13 @@ button:hover {
   background: none;
   border: none;
   border-radius: 0;
-  padding: 8px 0;
+  padding: var(--space-sm) 0;
 }
 
 .players .player + .player {
   border-top: 1px solid var(--color-border);
-  margin-top: 8px;
-  padding-top: 8px;
+  margin-top: var(--space-sm);
+  padding-top: var(--space-sm);
 }
 
 /* Active player highlight in mobile container */
@@ -596,8 +597,8 @@ button:hover {
 }
 
 .objective-cards {
-  --card-width: 45px;
-  --card-height: 68px;
+  --card-width: 2.875rem;
+  --card-height: 4.3125rem;
   display: flex;
   margin-left: auto;
 }
@@ -615,25 +616,18 @@ button:hover {
    =========================================== */
 @media (max-width: 600px) {
   :root {
-    --card-width: 45px;
-    --card-height: 68px;
-    --font-size-title: 32px;
-    --font-size-lg: 16px;
-    --font-size-base: 14px;
-    --font-size-sm: 12px;
-    --font-size-xs: 10px;
-    --space-lg: 10px;
-    --space-md: 10px;
-    --space-sm: 6px;
+    font-size: 14px;
+    --card-width: 3.2rem;
+    --card-height: 4.8rem;
   }
 
   .container {
-    max-width: calc(100% - 16px);
+    max-width: calc(100% - 1rem);
   }
 
   .objective-cards {
-    --card-width: 32px;
-    --card-height: 48px;
+    --card-width: 2.4rem;
+    --card-height: 3.6rem;
   }
 
   .trick-header {
