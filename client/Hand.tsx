@@ -136,7 +136,7 @@ function PyramidHand({
 
         const selectable = isCardSelectable(card, selectableCards);
         return (
-          <div key={`extra-${idx}`} className="pyramid-extra" style={style}>
+          <div key={`extra-${idx}`} style={style}>
             <Card
               card={card}
               clickable={selectable}

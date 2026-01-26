@@ -25,7 +25,6 @@
   /* Accent (gold) */
   --color-accent: #ffd700;
   --color-accent-hover: #ffed4e;
-  --color-accent-orange: #ff6f00;
 
   /* Status */
   --color-success: #4caf50;
@@ -157,17 +156,17 @@ section h3 {
 
 .card {
   --suit-color: var(--color-text);
-  --suit-mix: white;
+  --suit-mix: black;
   width: var(--card-width);
   height: var(--card-height);
-  border: 2px solid var(--color-text-dark);
+  border: 2px solid color-mix(in srgb, var(--suit-color), var(--suit-mix) 30%);
   border-radius: 5px;
   background: linear-gradient(
     135deg,
     var(--suit-color) 0%,
     color-mix(in srgb, var(--suit-color), var(--suit-mix) 15%) 100%
   );
-  color: #000;
+  color: black;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -183,27 +182,32 @@ section h3 {
 
 .card.shadows {
   --suit-color: #6c1c1c;
-  color: var(--color-text);
+  color: white;
 }
 
 .card.forests {
   --suit-color: var(--color-bg);
-  color: var(--color-text);
+  color: white;
 }
 
 .card.hills {
   --suit-color: #c4965c;
-  --suit-mix: black;
 }
 
 .card.rings {
   --suit-color: var(--color-accent);
-  border-color: var(--color-accent-orange);
+  border-color: #ff6f00;
 }
 
 .card.threat {
   --suit-color: #3a0000;
-  color: var(--color-text);
+  color: white;
+}
+
+.card.hidden {
+  --suit-color: #4a2c6d;
+  color: #b5b5b5;
+  --suit-mix: #b5b5b5;
 }
 
 .suit {
@@ -321,12 +325,6 @@ button:hover {
 
 .card.disabled {
   cursor: not-allowed;
-}
-
-.card.hidden {
-  --suit-color: #4a2c6d;
-  --suit-mix: black;
-  color: #888;
 }
 
 .game-status {
@@ -500,10 +498,6 @@ button:hover {
 .card.pyramid-uncovered {
   border-color: var(--color-accent);
   border-width: 3px;
-}
-
-.card.pyramid-extra {
-  border-color: var(--color-accent-orange);
 }
 
 /* Lobby Screen Styles */
