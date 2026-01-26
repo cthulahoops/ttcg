@@ -1,5 +1,5 @@
 import type { SerializedSeat } from "@shared/serialized";
-import type { Card as CardType } from "@shared/types";
+import type { Card as CardType, ObjectiveCard } from "@shared/types";
 import { Hand } from "./Hand";
 import { Card } from "./Card";
 
@@ -56,18 +56,10 @@ export function PlayerSeat({
           )}
         </div>
         {objectiveCards && objectiveCards.cards.length > 0 && (
-          <div className="objective-cards">
-            {objectiveCards.cards.map((card, i) => (
-              <Card key={i} card={card} />
-            ))}
-          </div>
+          <ObjectiveCardsBlock cards={objectiveCards.cards} />
         )}
         {riderObjectiveCards && riderObjectiveCards.cards.length > 0 && (
-          <div className="objective-cards">
-            {riderObjectiveCards.cards.map((card, i) => (
-              <Card key={i} card={card} />
-            ))}
-          </div>
+          <ObjectiveCardsBlock cards={riderObjectiveCards.cards} />
         )}
       </div>
 
@@ -87,6 +79,16 @@ export function PlayerSeat({
         />
       )}
     </section>
+  );
+}
+
+function ObjectiveCardsBlock({ cards }: { cards: ObjectiveCard[] }) {
+  return (
+    <div className="objective-cards">
+      {cards.map((card, i) => (
+        <Card key={i} card={card} />
+      ))}
+    </div>
   );
 }
 
