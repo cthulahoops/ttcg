@@ -87,33 +87,38 @@ type PyramidHandProps = {
   onSelectCard?: (card: CardType) => void;
 };
 
+const PYRAMID_ROWS = [
+  { start: 0, count: 3 },
+  { start: 3, count: 4 },
+  { start: 7, count: 5 },
+];
+
+function pyramidGridPosition(
+  rowIdx: number,
+  colIdx: number
+): React.CSSProperties {
+  return {
+    gridRow: `${rowIdx + 1} / span 2`,
+    gridColumn: `${2 * colIdx + (3 - rowIdx)} / span 2`,
+  };
+}
+
 function PyramidHand({
   hand,
   selectableCards,
   onSelectCard,
 }: PyramidHandProps) {
-  const rows = [
-    { start: 0, count: 3 },
-    { start: 3, count: 4 },
-    { start: 7, count: 5 },
-  ];
-
   return (
     <div className="hand pyramid-hand">
-      {rows.map((row, rowIdx) =>
+      {PYRAMID_ROWS.map((row, rowIdx) =>
         Array.from({ length: row.count }).map((_, colIdx) => {
           const cardIdx = row.start + colIdx;
           const card = hand.positions[cardIdx];
           if (!card) return null;
 
-          const style: React.CSSProperties = {
-            gridRow: `${rowIdx + 1} / span 2`,
-            gridColumn: `${2 * colIdx + (3 - rowIdx)} / span 2`,
-          };
-
           const selectable = isCardSelectable(card, selectableCards);
           return (
-            <div key={cardIdx} style={style}>
+            <div key={cardIdx} style={pyramidGridPosition(rowIdx, colIdx)}>
               <Card
                 card={card}
                 clickable={selectable}
@@ -129,14 +134,9 @@ function PyramidHand({
       )}
 
       {hand.extraCards.map((card, idx) => {
-        const style: React.CSSProperties = {
-          gridRow: "3 / span 2",
-          gridColumn: `${2 * (idx + 5) + 1} / span 2`,
-        };
-
         const selectable = isCardSelectable(card, selectableCards);
         return (
-          <div key={`extra-${idx}`} style={style}>
+          <div key={`extra-${idx}`} style={pyramidGridPosition(2, idx + 5)}>
             <Card
               card={card}
               clickable={selectable}
