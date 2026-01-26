@@ -47,6 +47,8 @@ export function GameScreen({
     <div className="main-content" id="gameScreen">
       <GameStatus game={game} />
 
+      <AvailableCharacters characters={game.availableCharacters} />
+
       {showDialog && (
         <DecisionDialog
           decision={pendingDecision.decision}
@@ -81,8 +83,6 @@ export function GameScreen({
           );
         })}
       </div>
-
-      <AvailableCharacters characters={game.availableCharacters} />
     </div>
   );
 }
