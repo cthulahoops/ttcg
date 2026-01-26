@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { sortHand, shuffleDeck } from "./utils";
-import type { Card } from "./types";
+import { sortHand, shuffleDeck, bothAchieved } from "./utils";
+import type { Card, ObjectiveStatus } from "./types";
 
 describe("sortHand", () => {
   test("sorts cards by suit order (mountains < shadows < forests < hills < rings)", () => {
@@ -114,5 +114,50 @@ describe("shuffleDeck", () => {
     expect(shuffled).toContainEqual({ suit: "mountains", value: 1 });
     expect(shuffled).toContainEqual({ suit: "shadows", value: 2 });
     expect(shuffled).toContainEqual({ suit: "forests", value: 3 });
+  });
+});
+
+describe("bothAchieved", () => {
+  const TF: ObjectiveStatus = { finality: "tentative", outcome: "failure" };
+  const TS: ObjectiveStatus = { finality: "tentative", outcome: "success" };
+  const FF: ObjectiveStatus = { finality: "final", outcome: "failure" };
+  const FS: ObjectiveStatus = { finality: "final", outcome: "success" };
+
+  test("both tentative failure → tentative failure", () => {
+    expect(bothAchieved(TF, TF)).toEqual(TF);
+  });
+
+  test("tentative failure + tentative success → tentative failure", () => {
+    expect(bothAchieved(TF, TS)).toEqual(TF);
+    expect(bothAchieved(TS, TF)).toEqual(TF);
+  });
+
+  test("both tentative success → tentative success", () => {
+    expect(bothAchieved(TS, TS)).toEqual(TS);
+  });
+
+  test("final failure + anything → final failure", () => {
+    expect(bothAchieved(FF, TF)).toEqual(FF);
+    expect(bothAchieved(FF, TS)).toEqual(FF);
+    expect(bothAchieved(FF, FF)).toEqual(FF);
+    expect(bothAchieved(FF, FS)).toEqual(FF);
+    // Commutative
+    expect(bothAchieved(TF, FF)).toEqual(FF);
+    expect(bothAchieved(TS, FF)).toEqual(FF);
+    expect(bothAchieved(FS, FF)).toEqual(FF);
+  });
+
+  test("final success + tentative failure → tentative failure", () => {
+    expect(bothAchieved(FS, TF)).toEqual(TF);
+    expect(bothAchieved(TF, FS)).toEqual(TF);
+  });
+
+  test("final success + tentative success → tentative success", () => {
+    expect(bothAchieved(FS, TS)).toEqual(TS);
+    expect(bothAchieved(TS, FS)).toEqual(TS);
+  });
+
+  test("both final success → final success", () => {
+    expect(bothAchieved(FS, FS)).toEqual(FS);
   });
 });

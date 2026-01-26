@@ -2,7 +2,6 @@ import { shuffleDeck, sortHand, delay } from "./utils";
 import { Seat } from "./seat";
 import { ProxyController } from "./controllers";
 import { characterRegistry } from "./characters/registry";
-import { getObjectiveStatus } from "./characters/status-adapter";
 import { riderRegistry, allRiderNames } from "./riders/registry";
 import type { Card, Suit, ThreatCard, ChoiceButton } from "./types";
 
@@ -496,46 +495,16 @@ function getLegalMoves(gameState: Game, seat: Seat): Card[] {
 // ===== EXCHANGE HELPER FUNCTIONS =====
 
 function checkObjective(gameState: Game, seat: Seat): boolean {
-  const charMet =
-    getObjectiveStatus(seat.character!.objective, gameState, seat).outcome ===
-    "success";
-
-  // Check rider objective if assigned
-  const riderMet =
-    !seat.rider ||
-    seat.rider.objective.getStatus(gameState, seat).outcome === "success";
-
-  return charMet && riderMet;
+  return seat.getObjectiveStatus(gameState).outcome === "success";
 }
 
 function isObjectiveCompletable(gameState: Game, seat: Seat): boolean {
-  // Check character objective
-  const charStatus = getObjectiveStatus(
-    seat.character!.objective,
-    gameState,
-    seat
-  );
-  if (charStatus.finality === "final" && charStatus.outcome === "failure") {
-    return false;
-  }
-
-  // Check rider objective if assigned
-  if (seat.rider) {
-    const riderStatus = seat.rider.objective.getStatus(gameState, seat);
-    if (riderStatus.finality === "final" && riderStatus.outcome === "failure") {
-      return false;
-    }
-  }
-
-  return true;
+  const { finality, outcome } = seat.getObjectiveStatus(gameState);
+  return !(finality === "final" && outcome === "failure");
 }
 
 function isObjectiveCompleted(gameState: Game, seat: Seat): boolean {
-  const { finality, outcome } = getObjectiveStatus(
-    seat.character!.objective,
-    gameState,
-    seat
-  );
+  const { finality, outcome } = seat.getObjectiveStatus(gameState);
   return finality === "final" && outcome === "success";
 }
 

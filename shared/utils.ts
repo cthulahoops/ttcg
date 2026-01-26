@@ -1,7 +1,34 @@
 // ===== PURE UTILITY FUNCTIONS =====
 // (No DOM dependencies - safe for both server and client)
 
-import type { Card, Suit } from "./types";
+import type { Card, ObjectiveStatus, Suit } from "./types";
+
+/**
+ * Combines two objective statuses where both must be achieved.
+ * - Outcome: success only if both are success
+ * - Finality: final if either is {final, failure} OR both are final
+ */
+export function bothAchieved(
+  s1: ObjectiveStatus,
+  s2: ObjectiveStatus
+): ObjectiveStatus {
+  const isFinalFailure = (s: ObjectiveStatus) =>
+    s.finality === "final" && s.outcome === "failure";
+
+  const outcome: ObjectiveStatus["outcome"] =
+    s1.outcome === "success" && s2.outcome === "success"
+      ? "success"
+      : "failure";
+
+  const finality: ObjectiveStatus["finality"] =
+    isFinalFailure(s1) ||
+    isFinalFailure(s2) ||
+    (s1.finality === "final" && s2.finality === "final")
+      ? "final"
+      : "tentative";
+
+  return { finality, outcome };
+}
 
 export function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));

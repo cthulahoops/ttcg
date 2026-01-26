@@ -1,10 +1,12 @@
 // ===== SEAT CLASS =====
 // Represents a player position/seat in the game
 
+import type { Game } from "./game";
 import type { Hand } from "./hands";
-import type { Card, Trick, Controller } from "./types";
+import type { Card, ObjectiveStatus, Trick, Controller } from "./types";
 import type { CharacterDefinition } from "./characters/types";
 import type { RiderDefinition } from "./riders/types";
+import { bothAchieved } from "./utils";
 
 export class Seat {
   seatIndex: number;
@@ -69,5 +71,14 @@ export class Seat {
 
   getAllWonCards(): Card[] {
     return this.tricksWon.flatMap((trick) => trick.cards);
+  }
+
+  getObjectiveStatus(game: Game): ObjectiveStatus {
+    const characterStatus = this.character!.objective.getStatus(game, this);
+    const riderStatus = this.rider?.objective.getStatus(game, this);
+
+    return riderStatus
+      ? bothAchieved(characterStatus, riderStatus)
+      : characterStatus;
   }
 }
