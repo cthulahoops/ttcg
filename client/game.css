@@ -569,6 +569,51 @@ button:hover {
   color: #ccc;
 }
 
+/* Drawn Rider Section */
+
+.drawn-rider {
+  background-color: var(--color-bg-dark);
+  border: 1px solid var(--color-border);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+  text-align: center;
+}
+
+.drawn-rider h3 {
+  color: var(--color-accent);
+  margin: 0 0 var(--space-xs);
+  font-size: var(--font-size-lg);
+}
+
+.drawn-rider p {
+  color: var(--color-text-secondary);
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-style: italic;
+}
+
+/* Rider Objective on Player Seat */
+
+.rider-objective {
+  margin-top: var(--space-xs);
+  color: var(--color-text-secondary);
+}
+
+.rider-objective-cards {
+  --card-width: 2.875rem;
+  --card-height: 4.3125rem;
+  display: flex;
+  margin-left: auto;
+}
+
+.rider-objective-cards .card {
+  margin-left: calc(var(--card-width) / 2);
+}
+
+.rider-objective-cards .card:first-child {
+  margin-left: 0;
+}
+
 /* Single players container with dividers (instead of individual bordered sections)
    Overrides base .players grid gap with divider-based spacing */
 .players {
