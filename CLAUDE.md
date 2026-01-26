@@ -3,14 +3,20 @@
 ## Overview
 This is a Lord of the Rings-themed trick-taking card game implemented as a single-page web application. The game supports 1-4 players with unique character abilities and win conditions.
 
+## Key Commands
+
+Check your work with: `bun run check`
+Format the code with: `bun run format`
+
+Don't build (CI) or start a dev server unless asked to do so.
+
 ## Project Structure
 
 ### Client (client/)
-- **index.html** - Main HTML structure and layout
-- **game.css** - All styling and visual design
-- **display.ts** - Display/rendering functions for UI
-- **controllers.ts** - Client-side controller extensions
-- **utils.ts** - Client-side utility functions
+
+- **client/App.tsx** - React appliation entry point.
+React application with main entry-point at client/App.tsx.
+Core styling in client/game.css
 
 ### Server (server/)
 - **server.ts** - Bun WebSocket server, handles connections and message routing
@@ -218,31 +224,5 @@ game.onStateChange → seat.controller.sendGameState(game, seat)
 - Active player highlighting
 - Objective progress tracking with live updates
 - Modal dialogs for character selection, trump choice, and setup actions
-
-## Development Notes
-
-### Commands
-- **Type checking**: Use `bun run check` (NOT `bun run build`) to verify TypeScript types without building
-
-### AI Behavior
-- Plays random legal moves (no strategy)
-- Always uses 1 of Rings as trump when played
-- Random character selection
-- Random card exchanges during setup (50% chance for Gandalf to take lost card)
-
-### Known Constraints
-- No save/load functionality
-- AI has no strategic play logic
-
-## Testing Considerations
-- Ensure 1 of Rings is never the lost card
-- Verify Frodo cannot exchange 1 of Rings
-- Test Gandalf's optional lost card choice
-- Confirm game ends when all tricks have been played (check `game.tricksToPlay`)
-- Validate each character's objective checking logic
-- **1-player mode**: Verify 1 of Rings is always in initially revealed cards
-- **1-player mode**: Confirm each seat reveals exactly 1 card per trick
-- **Pyramid mode**: Ensure cards only reveal after trick completion, not immediately when played
-- **Fatty Bolger**: Verify one extra trick is played and players with empty hands pass correctly
 
 ALWAYS: Correct any errors in CLAUDE.md.
