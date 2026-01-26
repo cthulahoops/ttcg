@@ -71,6 +71,10 @@ export interface SerializedSeat {
   hand: SerializedHand | null;
   asideCard: Card | "hidden" | null; // Shadowfax aside card (hidden to other players)
   objectiveCards?: ObjectiveCards;
+  rider: string | null;
+  riderObjective: string | null;
+  riderStatus?: ObjectiveStatus;
+  riderObjectiveCards?: ObjectiveCards;
 }
 
 /**
@@ -94,4 +98,5 @@ export interface SerializedGame {
   lostCard: Card | null;
   lastTrickWinner: number | null;
   tricksToPlay: number;
+  drawnRider: { name: string; objective: string } | null;
 }
