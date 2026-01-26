@@ -596,7 +596,7 @@ button:hover {
 
 .rider-objective {
   margin-top: var(--space-xs);
-  color: var(--color-text-secondary);
+  color: var(--color-error);
 }
 
 .rider-objective-cards {
