@@ -1,4 +1,5 @@
 // client/components/Hand.tsx
+import "./hand.css";
 import type {
   SerializedPlayerHand,
   SerializedSolitaireHand,

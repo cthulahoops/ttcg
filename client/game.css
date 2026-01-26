@@ -127,99 +127,6 @@ section h3 {
   gap: var(--space-sm);
 }
 
-.row-hand {
-  --card-span: 3; /* visible cards span this many columns, hidden span 1 */
-  display: grid;
-  /* Column width: (card-width - (span-1)*gap) / span */
-  grid-template-columns: repeat(
-    auto-fit,
-    calc(
-      (var(--card-width) - (var(--card-span) - 1) * var(--space-xs)) /
-        var(--card-span)
-    )
-  );
-  gap: var(--space-xs);
-  /* Padding for last card's overflow + gap */
-  padding-right: calc(
-    var(--card-width) * (var(--card-span) - 1) / var(--card-span) +
-      var(--space-xs)
-  );
-}
-
-.row-hand > .card {
-  grid-column: span var(--card-span);
-}
-
-.row-hand > .card.hidden {
-  grid-column: span 1;
-}
-
-.card {
-  --suit-color: var(--color-text);
-  --suit-mix: black;
-  width: var(--card-width);
-  height: var(--card-height);
-  border: 2px solid color-mix(in srgb, var(--suit-color), var(--suit-mix) 30%);
-  border-radius: 5px;
-  background: linear-gradient(
-    135deg,
-    var(--suit-color) 0%,
-    color-mix(in srgb, var(--suit-color), var(--suit-mix) 15%) 100%
-  );
-  color: black;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  padding: 5px;
-  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
-}
-
-.card.mountains {
-  --suit-color: #aabbcc;
-}
-
-.card.shadows {
-  --suit-color: #6c1c1c;
-  color: white;
-}
-
-.card.forests {
-  --suit-color: var(--color-bg);
-  color: white;
-}
-
-.card.hills {
-  --suit-color: #c4965c;
-}
-
-.card.rings {
-  --suit-color: var(--color-accent);
-  border-color: #ff6f00;
-}
-
-.card.threat {
-  --suit-color: #3a0000;
-  color: white;
-}
-
-.card.hidden {
-  --suit-color: #4a2c6d;
-  color: #b5b5b5;
-  --suit-mix: #b5b5b5;
-}
-
-.suit {
-  font-size: calc(var(--card-width) / 7);
-  text-transform: uppercase;
-  margin-top: 3px;
-}
-
-.value {
-  font-size: calc(var(--card-width) / 2.5);
-}
-
 .controls {
   text-align: center;
   margin: var(--space-lg) 0;
@@ -312,21 +219,6 @@ button:hover {
   outline-offset: 2px;
 }
 
-.card.clickable {
-  cursor: pointer;
-  transition: transform 0.2s;
-  outline: 2px solid #ababcc;
-  border-color: #333399;
-}
-
-.card.clickable:hover {
-  transform: translateY(-5px);
-}
-
-.card.disabled {
-  cursor: not-allowed;
-}
-
 .game-status {
   text-align: center;
   font-size: var(--font-size-lg);
@@ -350,12 +242,6 @@ button:hover {
   font-size: var(--font-size-sm);
   margin-top: var(--space-xs);
   color: var(--color-text-secondary);
-}
-
-.card.trick {
-  --suit-color: #2d3748;
-  --suit-mix: black;
-  border-color: #4a5568;
 }
 
 .completed {
@@ -422,17 +308,6 @@ button:hover {
   font-size: var(--font-size-sm);
 }
 
-.card.selectable {
-  cursor: pointer;
-  transition: transform 0.2s;
-  border-color: var(--color-accent);
-  border-width: 3px;
-}
-
-.card.selectable:hover {
-  transform: translateY(-10px);
-}
-
 /* Game Log */
 .game-log {
   padding: var(--space-md);
@@ -479,25 +354,6 @@ button:hover {
 .log-entry.important {
   color: var(--color-accent);
   font-weight: bold;
-}
-
-/* Pyramid display styles */
-.pyramid-hand {
-  display: grid;
-  --grid-gap: var(--space-xs);
-  grid-auto-columns: calc((var(--card-width) - var(--grid-gap)) / 2);
-  grid-auto-rows: calc((var(--card-height) - var(--grid-gap)) / 2);
-  gap: var(--grid-gap);
-}
-
-.pyramid-hand > .card {
-  width: auto;
-  height: auto;
-}
-
-.card.pyramid-uncovered {
-  border-color: var(--color-accent);
-  border-width: 3px;
 }
 
 /* Lobby Screen Styles */
