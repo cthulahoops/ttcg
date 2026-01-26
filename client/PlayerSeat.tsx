@@ -63,7 +63,7 @@ export function PlayerSeat({
           </div>
         )}
         {riderObjectiveCards && riderObjectiveCards.cards.length > 0 && (
-          <div className="rider-objective-cards">
+          <div className="objective-cards">
             {riderObjectiveCards.cards.map((card, i) => (
               <Card key={i} card={card} />
             ))}

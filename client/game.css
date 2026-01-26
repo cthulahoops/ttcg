@@ -599,21 +599,6 @@ button:hover {
   color: var(--color-error);
 }
 
-.rider-objective-cards {
-  --card-width: 2.875rem;
-  --card-height: 4.3125rem;
-  display: flex;
-  margin-left: auto;
-}
-
-.rider-objective-cards .card {
-  margin-left: calc(var(--card-width) / 2);
-}
-
-.rider-objective-cards .card:first-child {
-  margin-left: 0;
-}
-
 /* Single players container with dividers (instead of individual bordered sections)
    Overrides base .players grid gap with divider-based spacing */
 .players {
