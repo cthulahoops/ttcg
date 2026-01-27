@@ -2,7 +2,7 @@ import type { ObjectiveStatus } from "../types";
 import type { Game } from "../game";
 import type { Seat } from "../seat";
 import type { RiderDefinition } from "./types";
-import { hasLeadWithSuit } from "./helpers";
+import { allSuitCardsPlayed, hasLeadWithSuit } from "./helpers";
 
 export const MorgulKnife: RiderDefinition = {
   name: "Morgul-Knife",
@@ -15,7 +15,7 @@ export const MorgulKnife: RiderDefinition = {
         return { finality: "final", outcome: "failure" };
       }
 
-      if (game.finished) {
+      if (game.finished || allSuitCardsPlayed(game, "rings")) {
         return { finality: "final", outcome: "success" };
       }
 

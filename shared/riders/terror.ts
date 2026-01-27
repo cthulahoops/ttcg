@@ -2,7 +2,7 @@ import type { ObjectiveStatus } from "../types";
 import type { Game } from "../game";
 import type { Seat } from "../seat";
 import type { RiderDefinition } from "./types";
-import { hasLeadWithSuit } from "./helpers";
+import { allSuitCardsPlayed, hasLeadWithSuit } from "./helpers";
 
 export const Terror: RiderDefinition = {
   name: "Terror",
@@ -15,7 +15,7 @@ export const Terror: RiderDefinition = {
         return { finality: "final", outcome: "failure" };
       }
 
-      if (game.finished) {
+      if (game.finished || allSuitCardsPlayed(game, "hills")) {
         return { finality: "final", outcome: "success" };
       }
 

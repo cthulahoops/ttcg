@@ -1,6 +1,6 @@
 import type { Game } from "../game";
 import type { Seat } from "../seat";
-import type { Suit } from "../types";
+import { CARDS_PER_SUIT, type Card, type Suit } from "../types";
 
 export function hasLeadWithSuit(game: Game, seat: Seat, suit: Suit): boolean {
   // Check completed tricks
@@ -28,4 +28,13 @@ export function hasLeadWithSuit(game: Game, seat: Seat, suit: Suit): boolean {
   }
 
   return false;
+}
+
+export function allSuitCardsPlayed(game: Game, suit: Suit): boolean {
+  let totalWon = 0;
+  for (const s of game.seats) {
+    totalWon += s.getAllWonCards().filter((c: Card) => c.suit === suit).length;
+  }
+  const lostCardCount = game.lostCard?.suit === suit ? 1 : 0;
+  return totalWon + lostCardCount === CARDS_PER_SUIT[suit];
 }
