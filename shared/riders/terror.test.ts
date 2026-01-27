@@ -4,7 +4,7 @@ import { Game } from "../game";
 import { Seat } from "../seat";
 import { PlayerHand } from "../hands";
 import { Controller } from "../controllers";
-import type { Card, Suit } from "../types";
+import type { Card } from "../types";
 
 // Test helper: create a minimal controller for testing
 class TestController extends Controller {
@@ -45,15 +45,16 @@ function addCompletedTrickWithLead(
   leadCard: Card,
   otherCards: Card[]
 ): void {
-  const plays = [{ playerIndex: leadSeatIndex, card: leadCard, isTrump: false }];
+  const plays = [
+    { playerIndex: leadSeatIndex, card: leadCard, isTrump: false },
+  ];
   for (let i = 0; i < otherCards.length; i++) {
     const playerIndex = (leadSeatIndex + 1 + i) % game.seats.length;
     plays.push({ playerIndex, card: otherCards[i]!, isTrump: false });
   }
   game.completedTricks.push({
-    number: game.completedTricks.length,
-    leadSuit: leadCard.suit as Suit,
     plays,
+    winner: leadSeatIndex, // Doesn't matter for these tests
   });
 }
 
