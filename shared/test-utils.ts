@@ -79,11 +79,23 @@ interface WonCardsSpec {
   cards: Card[];
 }
 
+interface WonTrickSpec {
+  seatIndex: number;
+  cards: Card[];
+}
+
+interface WonTricksSpec {
+  seatIndex: number;
+  count: number;
+}
+
 export class GameStateBuilder {
   private numPlayers: 3 | 4;
   private lostCard: Card | null = null;
   private characterAssignments: Map<number, string> = new Map();
   private wonCardsSpecs: WonCardsSpec[] = [];
+  private wonTrickSpecs: WonTrickSpec[] = [];
+  private wonTricksSpecs: WonTricksSpec[] = [];
   private shouldFinishGame = false;
 
   constructor(numPlayers: 3 | 4) {
@@ -114,12 +126,39 @@ export class GameStateBuilder {
    * Specify cards that a seat has won.
    * Only specify the cards relevant to your test - the builder handles the rest.
    * Cards are lazily evaluated at build() time.
+   * Note: Each card creates a separate trick. Use seatWonTrick() if you need
+   * multiple specific cards in a single trick.
    */
   seatWonCards(seatIndex: number, cards: Card[]): this {
     if (seatIndex < 0 || seatIndex >= this.numPlayers) {
       throw new Error(`Invalid seat index: ${seatIndex}`);
     }
     this.wonCardsSpecs.push({ seatIndex, cards });
+    return this;
+  }
+
+  /**
+   * Specify a single trick with specific cards that a seat has won.
+   * Use this when you need multiple specific cards in one trick (e.g., testing
+   * that multiple hills cards in one trick count as one trick, not multiple).
+   */
+  seatWonTrick(seatIndex: number, cards: Card[]): this {
+    if (seatIndex < 0 || seatIndex >= this.numPlayers) {
+      throw new Error(`Invalid seat index: ${seatIndex}`);
+    }
+    this.wonTrickSpecs.push({ seatIndex, cards });
+    return this;
+  }
+
+  /**
+   * Specify how many tricks a seat has won (auto-filled with available cards).
+   * Use this when you only care about trick counts, not specific cards.
+   */
+  seatWonTricks(seatIndex: number, count: number): this {
+    if (seatIndex < 0 || seatIndex >= this.numPlayers) {
+      throw new Error(`Invalid seat index: ${seatIndex}`);
+    }
+    this.wonTricksSpecs.push({ seatIndex, count });
     return this;
   }
 
@@ -171,7 +210,13 @@ export class GameStateBuilder {
     // Step 7: Group won cards into valid tricks and assign to seats
     this.assignWonCardsTricks(game, seats, remainingDeck);
 
-    // Step 8: Distribute remaining cards to hands or more tricks
+    // Step 7b: Assign single tricks with specific cards (from seatWonTrick)
+    this.assignWonTrickSpecs(game, seats, remainingDeck);
+
+    // Step 8: Assign auto-filled tricks (from seatWonTricks)
+    this.assignAutoFilledTricks(game, seats, remainingDeck);
+
+    // Step 9: Distribute remaining cards to hands or more tricks
     if (this.shouldFinishGame) {
       this.distributeRemainingToTricks(game, seats, remainingDeck);
     } else {
@@ -227,6 +272,7 @@ export class GameStateBuilder {
     const seenCards = new Set<string>();
     seenCards.add(cardKey(lostCard)); // Lost card is "used"
 
+    // Check wonCardsSpecs
     for (const spec of this.wonCardsSpecs) {
       for (const card of spec.cards) {
         // Validate card exists
@@ -235,6 +281,23 @@ export class GameStateBuilder {
         }
 
         // Check for duplicates
+        const key = cardKey(card);
+        if (seenCards.has(key)) {
+          throw new Error(
+            `Duplicate card specified: ${card.suit}-${card.value}`
+          );
+        }
+        seenCards.add(key);
+      }
+    }
+
+    // Check wonTrickSpecs (single tricks with multiple specific cards)
+    for (const spec of this.wonTrickSpecs) {
+      for (const card of spec.cards) {
+        if (!isValidCard(card)) {
+          throw new Error(`Invalid card specified: ${card.suit}-${card.value}`);
+        }
+
         const key = cardKey(card);
         if (seenCards.has(key)) {
           throw new Error(
@@ -313,6 +376,63 @@ export class GameStateBuilder {
 
     // Update game's trick counter
     game.currentTrickNumber = trickNumber;
+  }
+
+  private assignWonTrickSpecs(
+    game: Game,
+    seats: Seat[],
+    remainingDeck: Card[]
+  ): void {
+    for (const spec of this.wonTrickSpecs) {
+      const seat = seats[spec.seatIndex]!;
+      const trickCards: Card[] = [...spec.cards];
+
+      // Fill the rest of the trick with cards from remaining deck
+      while (trickCards.length < this.numPlayers && remainingDeck.length > 0) {
+        trickCards.push(remainingDeck.shift()!);
+      }
+
+      if (trickCards.length > 0) {
+        seat.addTrick(game.currentTrickNumber, trickCards);
+        game.currentTrickNumber++;
+      }
+    }
+  }
+
+  private assignAutoFilledTricks(
+    game: Game,
+    seats: Seat[],
+    remainingDeck: Card[]
+  ): void {
+    // Warn if there aren't enough cards for requested tricks
+    const totalRequestedTricks = this.wonTricksSpecs.reduce(
+      (sum, spec) => sum + spec.count,
+      0
+    );
+    const cardsNeeded = totalRequestedTricks * this.numPlayers;
+    if (cardsNeeded > remainingDeck.length && totalRequestedTricks > 0) {
+      console.warn(
+        `GameStateBuilder: seatWonTricks requested ${totalRequestedTricks} tricks (${cardsNeeded} cards) but only ${remainingDeck.length} cards remain. Some tricks will be incomplete or skipped.`
+      );
+    }
+
+    for (const spec of this.wonTricksSpecs) {
+      const seat = seats[spec.seatIndex]!;
+
+      for (let i = 0; i < spec.count; i++) {
+        const trickCards: Card[] = [];
+
+        // Fill the trick with cards from remaining deck
+        for (let j = 0; j < this.numPlayers && remainingDeck.length > 0; j++) {
+          trickCards.push(remainingDeck.shift()!);
+        }
+
+        if (trickCards.length > 0) {
+          seat.addTrick(game.currentTrickNumber, trickCards);
+          game.currentTrickNumber++;
+        }
+      }
+    }
   }
 
   private distributeRemainingToTricks(

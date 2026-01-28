@@ -76,25 +76,12 @@ describe("Merry", () => {
     });
 
     test("returns { final, success } when game finished and objective met (1 trick)", () => {
-      // Merry wins 1 trick, other seats win the remaining 8 tricks
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Merry")
-        .seatWonCards(0, [{ suit: "mountains", value: 2 }])
-        // Distribute remaining tricks to other seats (3 each to seats 1,2 and 2 to seat 3)
-        .seatWonCards(1, [
-          { suit: "mountains", value: 3 },
-          { suit: "mountains", value: 4 },
-          { suit: "mountains", value: 5 },
-        ])
-        .seatWonCards(2, [
-          { suit: "shadows", value: 3 },
-          { suit: "shadows", value: 4 },
-          { suit: "shadows", value: 5 },
-        ])
-        .seatWonCards(3, [
-          { suit: "forests", value: 1 },
-          { suit: "forests", value: 2 },
-        ])
+        .seatWonTricks(0, 1)
+        .seatWonTricks(1, 3)
+        .seatWonTricks(2, 3)
+        .seatWonTricks(3, 2)
         .finishGame()
         .build();
 
@@ -107,27 +94,12 @@ describe("Merry", () => {
     });
 
     test("returns { final, success } when game finished and objective met (2 tricks)", () => {
-      // Merry wins 2 tricks, other seats win the remaining 7 tricks
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Merry")
-        .seatWonCards(0, [
-          { suit: "mountains", value: 2 },
-          { suit: "shadows", value: 2 },
-        ])
-        // Distribute remaining tricks to other seats
-        .seatWonCards(1, [
-          { suit: "mountains", value: 3 },
-          { suit: "mountains", value: 4 },
-          { suit: "mountains", value: 5 },
-        ])
-        .seatWonCards(2, [
-          { suit: "shadows", value: 3 },
-          { suit: "shadows", value: 4 },
-        ])
-        .seatWonCards(3, [
-          { suit: "forests", value: 1 },
-          { suit: "forests", value: 2 },
-        ])
+        .seatWonTricks(0, 2)
+        .seatWonTricks(1, 3)
+        .seatWonTricks(2, 2)
+        .seatWonTricks(3, 2)
         .finishGame()
         .build();
 
@@ -140,25 +112,11 @@ describe("Merry", () => {
     });
 
     test("returns { final, failure } when game finished and no tricks won", () => {
-      // Merry wins 0 tricks, other seats win all 9 tricks
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Merry")
-        // Distribute all tricks to other seats
-        .seatWonCards(1, [
-          { suit: "mountains", value: 2 },
-          { suit: "mountains", value: 3 },
-          { suit: "mountains", value: 4 },
-        ])
-        .seatWonCards(2, [
-          { suit: "shadows", value: 2 },
-          { suit: "shadows", value: 3 },
-          { suit: "shadows", value: 4 },
-        ])
-        .seatWonCards(3, [
-          { suit: "forests", value: 1 },
-          { suit: "forests", value: 2 },
-          { suit: "forests", value: 3 },
-        ])
+        .seatWonTricks(1, 3)
+        .seatWonTricks(2, 3)
+        .seatWonTricks(3, 3)
         .finishGame()
         .build();
 
