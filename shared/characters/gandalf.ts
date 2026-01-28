@@ -1,5 +1,6 @@
 import type { ObjectiveCard, ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
+import { tricksWinnable, achieveAtLeast } from "shared/objectives";
 
 export const Gandalf: CharacterDefinition = {
   name: "Gandalf",
@@ -13,11 +14,9 @@ export const Gandalf: CharacterDefinition = {
   objective: {
     text: "Win at least one trick",
 
-    getStatus: (_game, seat): ObjectiveStatus => {
-      const hasTrick = seat.getTrickCount() >= 1;
-      return hasTrick
-        ? { finality: "final", outcome: "success" }
-        : { finality: "tentative", outcome: "failure" };
+    getStatus: (game, seat): ObjectiveStatus => {
+      const tricks = tricksWinnable(game, seat);
+      return achieveAtLeast(tricks, 1);
     },
   },
 
