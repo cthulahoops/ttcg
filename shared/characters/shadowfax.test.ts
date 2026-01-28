@@ -145,6 +145,7 @@ describe("Shadowfax", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [{ suit: "hills", value: 1 }]);
+      game.currentTrickNumber = 9;
       expect(game.finished).toBe(true);
       expect(Shadowfax.objective.getStatus(game, seat)).toEqual({
         finality: "final",
