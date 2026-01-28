@@ -1,5 +1,6 @@
 import type { ObjectiveCard, ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
+import { tricksWinnable, achieveRange } from "shared/objectives";
 
 export const Merry: CharacterDefinition = {
   name: "Merry",
@@ -15,28 +16,8 @@ export const Merry: CharacterDefinition = {
     text: "Win exactly one or two tricks",
 
     getStatus: (game, seat): ObjectiveStatus => {
-      const count = seat.getTrickCount();
-      const met = count === 1 || count === 2;
-      const completable = count < 3;
-
-      // If game is finished, status is final
-      if (game.finished) {
-        return {
-          finality: "final",
-          outcome: met ? "success" : "failure",
-        };
-      }
-
-      // If not completable (3+ tricks), it's final failure
-      if (!completable) {
-        return { finality: "final", outcome: "failure" };
-      }
-
-      // Game ongoing, still completable
-      return {
-        finality: "tentative",
-        outcome: met ? "success" : "failure",
-      };
+      const tricks = tricksWinnable(game, seat);
+      return achieveRange(tricks, { min: 1, max: 2 });
     },
   },
 

@@ -74,6 +74,7 @@ describe("Aragorn", () => {
       seat.threatCard = 2;
       addWonCards(seat, [{ suit: "mountains", value: 1 }]);
       addWonCards(seat, [{ suit: "shadows", value: 2 }]);
+      game.currentTrickNumber = 9;
       expect(game.finished).toBe(true);
       expect(Aragorn.objective.getStatus(game, seat)).toEqual({
         finality: "final",
@@ -112,6 +113,7 @@ describe("Aragorn", () => {
       seat.threatCard = 5;
       addWonCards(seat, [{ suit: "mountains", value: 1 }]);
       addWonCards(seat, [{ suit: "shadows", value: 2 }]);
+      game.currentTrickNumber = 9; // tricksRemaining = 9 - 9 = 0
       expect(game.finished).toBe(true);
       expect(Aragorn.objective.getStatus(game, seat)).toEqual({
         finality: "final",
