@@ -32,7 +32,7 @@ describe("Glorfindel", () => {
       });
     });
 
-    test("returns { tentative, failure } when 7 shadows cards won", () => {
+    test("returns { final, failure } when 7 shadows cards won but 8th is gone", () => {
       // Place the 8th shadows card with another seat to ensure it's not in Glorfindel's tricks
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Glorfindel")

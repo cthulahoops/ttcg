@@ -90,7 +90,13 @@ describe("Tom Bombadil", () => {
         ])
         .build();
 
-      // Tom won 3 forests, will have some forests in hand from distribution
+      // Explicitly set hand to contain a forests card
+      const availableCards = seats[0]!.hand.getAvailableCards();
+      for (const card of availableCards) {
+        seats[0]!.hand.removeCard(card);
+      }
+      seats[0]!.hand.addCard({ suit: "forests", value: 8 });
+
       expect(game.finished).toBe(false);
       expect(TomBombadil.objective.getStatus(game, seats[0]!)).toEqual({
         finality: "tentative",
@@ -131,6 +137,13 @@ describe("Tom Bombadil", () => {
         ])
         .build();
 
+      // Explicitly set hand to contain a hills card
+      const availableCards = seats[0]!.hand.getAvailableCards();
+      for (const card of availableCards) {
+        seats[0]!.hand.removeCard(card);
+      }
+      seats[0]!.hand.addCard({ suit: "hills", value: 8 });
+
       expect(game.finished).toBe(false);
       expect(TomBombadil.objective.getStatus(game, seats[0]!)).toEqual({
         finality: "tentative",
@@ -148,7 +161,13 @@ describe("Tom Bombadil", () => {
         ])
         .build();
 
-      // Remaining forests will be distributed to hands, so Tom will have some
+      // Explicitly set hand to contain a forests card
+      const availableCards = seats[0]!.hand.getAvailableCards();
+      for (const card of availableCards) {
+        seats[0]!.hand.removeCard(card);
+      }
+      seats[0]!.hand.addCard({ suit: "forests", value: 8 });
+
       expect(TomBombadil.objective.getStatus(game, seats[0]!)).toEqual({
         finality: "tentative",
         outcome: "success",
@@ -162,6 +181,13 @@ describe("Tom Bombadil", () => {
         .seatWonCards(0, [{ suit: "shadows", value: 2 }])
         .seatWonCards(0, [{ suit: "shadows", value: 3 }])
         .build();
+
+      // Explicitly set hand to contain a shadows card
+      const availableCards = seats[0]!.hand.getAvailableCards();
+      for (const card of availableCards) {
+        seats[0]!.hand.removeCard(card);
+      }
+      seats[0]!.hand.addCard({ suit: "shadows", value: 8 });
 
       expect(TomBombadil.objective.getStatus(game, seats[0]!)).toEqual({
         finality: "tentative",

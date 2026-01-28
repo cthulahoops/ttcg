@@ -1,6 +1,15 @@
 import { describe, expect, test } from "bun:test";
 import { GildorInglorian } from "./gildor-inglorian";
 import { GameStateBuilder } from "../test-utils";
+import type { Seat } from "../seat";
+
+/** Clear all cards from a seat's hand */
+function clearHand(seat: Seat): void {
+  const cards = seat.hand.getAvailableCards() ?? [];
+  for (const card of cards) {
+    seat.hand.removeCard(card);
+  }
+}
 
 describe("GildorInglorian", () => {
   describe("objective.getStatus", () => {
@@ -8,10 +17,7 @@ describe("GildorInglorian", () => {
       const { game, seats } = new GameStateBuilder(4).build();
       const seat = seats[0]!;
       // Clear hand and add only non-forests cards
-      const cards = seat.hand.getAvailableCards() ?? [];
-      for (const card of cards) {
-        seat.hand.removeCard(card);
-      }
+      clearHand(seat);
       for (const s of seats) {
         s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
       }
@@ -100,10 +106,7 @@ describe("GildorInglorian", () => {
       const seat = seats[0]!;
       // Clear hand and give all players non-forests cards
       for (const s of seats) {
-        const cards = s.hand.getAvailableCards() ?? [];
-        for (const card of cards) {
-          s.hand.removeCard(card);
-        }
+        clearHand(s);
         s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
       }
       expect(GildorInglorian.objective.getStatus(game, seat)).toEqual({
@@ -117,10 +120,7 @@ describe("GildorInglorian", () => {
       const seat = seats[0]!;
       // Clear all hands
       for (const s of seats) {
-        const cards = s.hand.getAvailableCards() ?? [];
-        for (const card of cards) {
-          s.hand.removeCard(card);
-        }
+        clearHand(s);
       }
       // Give other players cards
       for (const s of seats) {

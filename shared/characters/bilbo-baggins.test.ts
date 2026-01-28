@@ -16,9 +16,13 @@ describe("Bilbo Baggins", () => {
     });
 
     test("returns { tentative, failure } when only 2 tricks won", () => {
+      // Use explicit non-ring cards to ensure 1-Ring doesn't accidentally end up in Bilbo's tricks
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Bilbo Baggins")
-        .seatWonTricks(0, 2)
+        .seatWonCards(0, [
+          { suit: "forests", value: 1 },
+          { suit: "forests", value: 2 },
+        ])
         .build();
 
       expect(BilboBaggins.objective.getStatus(game, seats[0]!)).toEqual({
@@ -28,9 +32,14 @@ describe("Bilbo Baggins", () => {
     });
 
     test("returns { tentative, success } when exactly 3 tricks won without 1 of Rings (1-ring still in play)", () => {
+      // Use explicit non-ring cards to ensure 1-Ring doesn't accidentally end up in Bilbo's tricks
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Bilbo Baggins")
-        .seatWonTricks(0, 3)
+        .seatWonCards(0, [
+          { suit: "forests", value: 1 },
+          { suit: "forests", value: 2 },
+          { suit: "forests", value: 3 },
+        ])
         .build();
 
       expect(BilboBaggins.objective.getStatus(game, seats[0]!)).toEqual({
