@@ -1,12 +1,12 @@
-import type { Card, ObjectiveCard, ObjectiveStatus } from "../types";
+import type { ObjectiveCard, ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
 import type { Seat } from "../seat";
+import type { Game } from "../game";
 import { sortHand } from "../utils";
+import { achieveAtLeast, tricksWinnable } from "../objectives";
 
-const countHillsTricks = (seat: Seat) =>
-  seat.tricksWon.filter((trick) =>
-    trick.cards.some((c: Card) => c.suit === "hills")
-  ).length;
+const hillsTricks = (game: Game, seat: Seat) =>
+  tricksWinnable(game, seat, (card) => card.suit === "hills");
 
 export const Shadowfax: CharacterDefinition = {
   name: "Shadowfax",
@@ -36,34 +36,20 @@ export const Shadowfax: CharacterDefinition = {
     text: "Win at least two tricks containing a hills card",
 
     getStatus: (game, seat): ObjectiveStatus => {
-      const hillsTricks = countHillsTricks(seat);
-      const met = hillsTricks >= 2;
-
-      // Hard to determine completability without knowing remaining hills distribution
-      // Simplified: always completable unless already met or game finished
-
-      if (met) {
-        return { finality: "final", outcome: "success" };
-      }
-
-      if (game.finished) {
-        return { finality: "final", outcome: "failure" };
-      }
-
-      return { finality: "tentative", outcome: "failure" };
+      return achieveAtLeast(hillsTricks(game, seat), 2);
     },
 
-    getDetails: (_game, seat): string => {
-      return `Tricks with hills: ${countHillsTricks(seat)}/2`;
+    getDetails: (game, seat): string => {
+      return `Tricks with hills: ${hillsTricks(game, seat).current}/2`;
     },
   },
 
   display: {
-    getObjectiveCards: (_game, seat) => {
+    getObjectiveCards: (game, seat) => {
       // Show trick markers for tricks containing hills cards
-      const cards: ObjectiveCard[] = Array(countHillsTricks(seat)).fill(
-        "trick"
-      );
+      const cards: ObjectiveCard[] = Array(
+        hillsTricks(game, seat).current
+      ).fill("trick");
       return { cards };
     },
   },

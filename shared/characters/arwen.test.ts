@@ -75,6 +75,7 @@ describe("Arwen", () => {
         { suit: "forests", value: 1 },
         { suit: "forests", value: 2 },
       ]);
+      game.currentTrickNumber = 9;
       expect(game.finished).toBe(true);
       expect(Arwen.objective.getStatus(game, seat)).toEqual({
         finality: "final",
@@ -104,6 +105,7 @@ describe("Arwen", () => {
       const otherSeat = game.seats[1]!;
       addWonCards(seat, [{ suit: "forests", value: 1 }]);
       addWonCards(otherSeat, [{ suit: "forests", value: 2 }]);
+      game.currentTrickNumber = 9;
       expect(game.finished).toBe(true);
       expect(Arwen.objective.getStatus(game, seat)).toEqual({
         finality: "final",
@@ -155,6 +157,7 @@ describe("Arwen", () => {
       addWonCards(seat, [{ suit: "forests", value: 1 }]);
       addWonCards(seat, [{ suit: "forests", value: 2 }]);
       addWonCards(seat, [{ suit: "forests", value: 3 }]);
+      game.currentTrickNumber = 9;
       expect(Arwen.objective.getStatus(game, seat)).toEqual({
         finality: "final",
         outcome: "success",

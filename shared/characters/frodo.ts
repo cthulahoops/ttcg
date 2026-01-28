@@ -2,6 +2,7 @@ import type { Card, ObjectiveStatus } from "../types";
 import type { Seat } from "../seat";
 import type { Game } from "../game";
 import type { CharacterDefinition } from "./types";
+import { achieveAtLeast, cardsWinnable } from "../objectives";
 
 /**
  * Calculate how many rings Frodo needs to win.
@@ -42,31 +43,8 @@ export const Frodo: CharacterDefinition = {
 
     getStatus: (game, seat): ObjectiveStatus => {
       const ringsNeeded = getRingsNeeded(game);
-      const myRings = seat
-        .getAllWonCards()
-        .filter((c: Card) => c.suit === "rings").length;
-
-      const met = myRings >= ringsNeeded;
-
-      const othersRings = game.seats.reduce((total: number, s: Seat) => {
-        if (s.seatIndex !== seat.seatIndex) {
-          return (
-            total +
-            s.getAllWonCards().filter((c: Card) => c.suit === "rings").length
-          );
-        }
-        return total;
-      }, 0);
-      const ringsRemaining = 5 - myRings - othersRings;
-      const completable = myRings + ringsRemaining >= ringsNeeded;
-
-      if (met) {
-        return { finality: "final", outcome: "success" };
-      } else if (!completable) {
-        return { finality: "final", outcome: "failure" };
-      } else {
-        return { finality: "tentative", outcome: "failure" };
-      }
+      const rings = cardsWinnable(game, seat, (c) => c.suit === "rings");
+      return achieveAtLeast(rings, ringsNeeded);
     },
 
     getDetails: (_game, seat): string => {

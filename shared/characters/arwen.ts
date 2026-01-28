@@ -1,9 +1,19 @@
-import { CARDS_PER_SUIT, type Card, type ObjectiveStatus } from "../types";
-import type { Seat } from "../seat";
+import { type Card, type ObjectiveStatus } from "../types";
+import type { Seat } from "shared/seat";
+import type { Game } from "shared/game";
 import type { CharacterDefinition } from "./types";
+import {
+  cardsWinnable,
+  achieveEvery,
+  achieveMoreThan,
+  type ObjectivePossibilities,
+} from "shared/objectives";
 
 const countForestsWon = (seat: Seat) =>
   seat.getAllWonCards().filter((c: Card) => c.suit === "forests").length;
+
+const forestCardsWinnable = (game: Game, seat: Seat) =>
+  cardsWinnable(game, seat, (c: Card) => c.suit === "forests");
 
 export const Arwen: CharacterDefinition = {
   name: "Arwen",
@@ -19,49 +29,17 @@ export const Arwen: CharacterDefinition = {
     text: "Win the most forests cards",
 
     getStatus: (game, seat): ObjectiveStatus => {
-      const myCount = countForestsWon(seat);
+      const myForests = forestCardsWinnable(game, seat);
 
-      // Check if this seat has strictly more than all others
-      const met = game.seats.every((s: Seat) => {
-        if (s.seatIndex === seat.seatIndex) return true;
-        return myCount > countForestsWon(s);
-      });
+      const othersForests = game.seats
+        .filter((s: Seat) => seat.seatIndex != s.seatIndex)
+        .map((seat) => forestCardsWinnable(game, seat));
 
-      // Calculate completability
-      const othersMaxCounts = Math.max(
-        ...game.seats
-          .filter((s: Seat) => s.seatIndex !== seat.seatIndex)
-          .map((s: Seat) => countForestsWon(s))
+      return achieveEvery(
+        othersForests.map((other: ObjectivePossibilities) =>
+          achieveMoreThan(myForests, other)
+        )
       );
-
-      const totalForestsWon = game.seats.reduce(
-        (total: number, s: Seat) => total + countForestsWon(s),
-        0
-      );
-      const forestsRemaining = CARDS_PER_SUIT.forests - totalForestsWon;
-
-      const completable = myCount + forestsRemaining > othersMaxCounts;
-
-      // Check for early completion: guaranteed to have the most forests
-      const othersMax = Math.max(
-        ...game.seats
-          .filter((s: Seat) => s.seatIndex !== seat.seatIndex)
-          .map((s: Seat) => countForestsWon(s) + forestsRemaining)
-      );
-      const earlyComplete = myCount > othersMax;
-
-      if (earlyComplete || (game.finished && met)) {
-        return { finality: "final", outcome: "success" };
-      }
-
-      if (!completable || (game.finished && !met)) {
-        return { finality: "final", outcome: "failure" };
-      }
-
-      return {
-        finality: "tentative",
-        outcome: met ? "success" : "failure",
-      };
     },
 
     getDetails: (_game, seat): string => {

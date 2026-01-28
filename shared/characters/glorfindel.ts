@@ -1,5 +1,6 @@
 import { CARDS_PER_SUIT, type Card, type ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
+import { achieveAtLeast, cardsWinnable } from "../objectives";
 
 export const Glorfindel: CharacterDefinition = {
   name: "Glorfindel",
@@ -13,27 +14,8 @@ export const Glorfindel: CharacterDefinition = {
     text: "Win every Shadows card",
 
     getStatus: (game, seat): ObjectiveStatus => {
-      const shadowsCards = seat
-        .getAllWonCards()
-        .filter((c: Card) => c.suit === "shadows");
-      const met = shadowsCards.length === CARDS_PER_SUIT.shadows;
-
-      // Check completability: if any shadows card was won by someone else
-      let completable = true;
-      for (let value = 1; value <= CARDS_PER_SUIT.shadows; value++) {
-        if (game.cardGone(seat, "shadows", value)) {
-          completable = false;
-          break;
-        }
-      }
-
-      if (met) {
-        return { finality: "final", outcome: "success" };
-      } else if (!completable) {
-        return { finality: "final", outcome: "failure" };
-      } else {
-        return { finality: "tentative", outcome: "failure" };
-      }
+      const shadows = cardsWinnable(game, seat, (c) => c.suit === "shadows");
+      return achieveAtLeast(shadows, CARDS_PER_SUIT.shadows);
     },
 
     getDetails: (_game, seat): string => {

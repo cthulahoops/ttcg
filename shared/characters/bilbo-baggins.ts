@@ -1,5 +1,12 @@
 import type { ObjectiveCard, ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
+import {
+  tricksWinnable,
+  achieveAtLeast,
+  achieveCard,
+  doNot,
+} from "shared/objectives";
+import { achieveBoth } from "shared/objectives";
 
 export const BilboBaggins: CharacterDefinition = {
   name: "Bilbo Baggins",
@@ -14,30 +21,10 @@ export const BilboBaggins: CharacterDefinition = {
     text: "Win 3 or more tricks; do NOT win the 1 of Rings",
 
     getStatus: (game, seat): ObjectiveStatus => {
-      const trickCount = seat.getTrickCount();
-      const hasOneRing = game.hasCard(seat, "rings", 1);
-      const met = trickCount >= 3 && !hasOneRing;
-
-      // Impossible if already has 1 of Rings
-      if (hasOneRing) {
-        return { finality: "final", outcome: "failure" };
-      }
-
-      // Impossible if not enough tricks remaining to reach 3
-      const maxPossible = trickCount + game.tricksRemaining();
-      if (maxPossible < 3) {
-        return { finality: "final", outcome: "failure" };
-      }
-
-      // Can be completed early if objective is met AND 1 of Rings is already won by someone else
-      if (met && (game.finished || game.cardGone(seat, "rings", 1))) {
-        return { finality: "final", outcome: "success" };
-      }
-
-      return {
-        finality: "tentative",
-        outcome: met ? "success" : "failure",
-      };
+      return achieveBoth(
+        achieveAtLeast(tricksWinnable(game, seat), 3),
+        doNot(achieveCard(game, seat, { suit: "rings", value: 1 }))
+      );
     },
 
     getDetails: (game, seat): string => {

@@ -6,7 +6,7 @@ import type { Hand } from "./hands";
 import type { Card, ObjectiveStatus, Trick, Controller } from "./types";
 import type { CharacterDefinition } from "./characters/types";
 import type { RiderDefinition } from "./riders/types";
-import { bothAchieved } from "./utils";
+import { achieveBoth } from "./objectives";
 
 export class Seat {
   seatIndex: number;
@@ -78,7 +78,7 @@ export class Seat {
     const riderStatus = this.rider?.objective.getStatus(game, this);
 
     return riderStatus
-      ? bothAchieved(characterStatus, riderStatus)
+      ? achieveBoth(characterStatus, riderStatus)
       : characterStatus;
   }
 }
