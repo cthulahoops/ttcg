@@ -5,6 +5,81 @@ import {
   type Suit,
 } from "../types";
 import type { CharacterDefinition } from "./types";
+import type { Game } from "../game";
+import type { Seat } from "../seat";
+import { achieveAtLeast, type ObjectivePossibilities } from "../objectives";
+
+/**
+ * Calculate suit-winning possibilities for Tom Bombadil's objective.
+ * Unlike the standard cardsWinnable, this doesn't limit by tricks remaining
+ * because Tom's objective is about cards left in hand at game end.
+ * We want to know if it's theoretically possible, not just within current tricks.
+ */
+function suitCardsWinnable(
+  game: Game,
+  seat: Seat,
+  suit: Suit
+): ObjectivePossibilities {
+  // Count cards of this suit won by Tom
+  const current = seat
+    .getAllWonCards()
+    .filter((c: Card) => c.suit === suit).length;
+
+  // Count cards of this suit won by others
+  let wonByOthers = 0;
+  for (const otherSeat of game.seats) {
+    if (otherSeat.seatIndex !== seat.seatIndex) {
+      wonByOthers += otherSeat
+        .getAllWonCards()
+        .filter((c: Card) => c.suit === suit).length;
+    }
+  }
+
+  // Account for lost card
+  const lostCardOfSuit = game.lostCard?.suit === suit ? 1 : 0;
+
+  // Remaining cards that could still be won
+  const remaining =
+    CARDS_PER_SUIT[suit] - current - wonByOthers - lostCardOfSuit;
+
+  return { current, max: current + remaining };
+}
+
+/**
+ * Calculate the best suit possibility for Tom Bombadil's objective.
+ * Returns the ObjectivePossibilities for the suit currently in hand
+ * that has the best chance of reaching 3 won cards.
+ */
+function bestSuitInHandWinnable(
+  game: Game,
+  seat: Seat
+): ObjectivePossibilities {
+  const cardsInHand = seat.hand.getAvailableCards();
+
+  if (cardsInHand.length === 0) {
+    return { current: 0, max: 0 };
+  }
+
+  const suitsInHand = new Set(cardsInHand.map((c) => c.suit));
+
+  let bestPossibilities: ObjectivePossibilities = { current: 0, max: 0 };
+
+  for (const suit of suitsInHand) {
+    const suitPossibilities = suitCardsWinnable(game, seat, suit);
+
+    // Pick the suit with the best max (most potential to win 3)
+    // If tied on max, prefer higher current count
+    if (
+      suitPossibilities.max > bestPossibilities.max ||
+      (suitPossibilities.max === bestPossibilities.max &&
+        suitPossibilities.current > bestPossibilities.current)
+    ) {
+      bestPossibilities = suitPossibilities;
+    }
+  }
+
+  return bestPossibilities;
+}
 
 export const TomBombadil: CharacterDefinition = {
   name: "Tom Bombadil",
@@ -19,91 +94,16 @@ export const TomBombadil: CharacterDefinition = {
     text: "Win 3 or more cards matching the suit of a card left in hand at the end of round",
 
     getStatus: (game, seat): ObjectiveStatus => {
-      const cardsInHand = seat.hand.getAvailableCards();
+      const possibilities = bestSuitInHandWinnable(game, seat);
+      const status = achieveAtLeast(possibilities, 3);
 
-      // Count how many cards of each suit Tom has won
-      const wonBySuit: Record<Suit, number> = {
-        mountains: 0,
-        shadows: 0,
-        forests: 0,
-        hills: 0,
-        rings: 0,
-      };
-
-      seat.getAllWonCards().forEach((card: Card) => {
-        wonBySuit[card.suit] = (wonBySuit[card.suit] || 0) + 1;
-      });
-
-      // Check if met
-      let met = false;
-      if (cardsInHand.length > 0) {
-        for (const card of cardsInHand) {
-          if (wonBySuit[card.suit] >= 3) {
-            met = true;
-            break;
-          }
-        }
+      // Tom's objective can only be finalized at game end for success,
+      // because the card in hand might still be played
+      if (!game.finished && status.outcome === "success") {
+        return { finality: "tentative", outcome: "success" };
       }
 
-      // Check completability
-      let completable: boolean;
-      if (game.finished) {
-        completable = met;
-      } else if (cardsInHand.length === 0) {
-        completable = false;
-      } else {
-        // Count total won cards by all players for each suit
-        const totalWonBySuit: Record<Suit, number> = {
-          mountains: 0,
-          shadows: 0,
-          forests: 0,
-          hills: 0,
-          rings: 0,
-        };
-
-        for (const s of game.seats) {
-          s.getAllWonCards().forEach((card: Card) => {
-            totalWonBySuit[card.suit] = (totalWonBySuit[card.suit] || 0) + 1;
-          });
-        }
-
-        // Check if any suit in hand can still reach 3 won cards
-        completable = false;
-        const suitsInHand = new Set(cardsInHand.map((c) => c.suit));
-        for (const suit of suitsInHand) {
-          const alreadyWon = wonBySuit[suit];
-          const needed = 3 - alreadyWon;
-          if (needed <= 0) {
-            completable = true;
-            break;
-          }
-          // Account for the lost card which is permanently unavailable
-          const lostCardOfSuit = game.lostCard?.suit === suit ? 1 : 0;
-          const remainingInPlay =
-            CARDS_PER_SUIT[suit] - totalWonBySuit[suit] - lostCardOfSuit;
-          if (remainingInPlay >= needed) {
-            completable = true;
-            break;
-          }
-        }
-      }
-
-      // Can only be completed when game is finished
-      if (game.finished) {
-        return {
-          finality: "final",
-          outcome: met ? "success" : "failure",
-        };
-      }
-
-      if (!completable) {
-        return { finality: "final", outcome: "failure" };
-      }
-
-      return {
-        finality: "tentative",
-        outcome: met ? "success" : "failure",
-      };
+      return status;
     },
 
     getDetails: (_game, seat): string | undefined => {
