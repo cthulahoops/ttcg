@@ -1,5 +1,6 @@
 import type { ObjectiveCard, ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
+import { achieveExactly, tricksWinnable } from "../objectives";
 
 export const BillThePony: CharacterDefinition = {
   name: "Bill the Pony",
@@ -34,25 +35,7 @@ export const BillThePony: CharacterDefinition = {
     text: "Win exactly one trick",
 
     getStatus: (game, seat): ObjectiveStatus => {
-      const trickCount = seat.getTrickCount();
-      const met = trickCount === 1;
-
-      // Cannot complete if already have more than 1 trick
-      if (trickCount > 1) {
-        return { finality: "final", outcome: "failure" };
-      }
-
-      if (game.finished) {
-        return {
-          finality: "final",
-          outcome: met ? "success" : "failure",
-        };
-      }
-
-      return {
-        finality: "tentative",
-        outcome: met ? "success" : "failure",
-      };
+      return achieveExactly(tricksWinnable(game, seat), 1);
     },
   },
 
