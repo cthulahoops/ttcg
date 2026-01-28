@@ -1,5 +1,6 @@
 import type { ObjectiveCard, ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
+import { achieveCard } from "../objectives";
 
 export const Gimli: CharacterDefinition = {
   name: "Gimli",
@@ -22,16 +23,7 @@ export const Gimli: CharacterDefinition = {
       if (!seat.threatCard) {
         return { finality: "tentative", outcome: "failure" };
       }
-      const hasCard = game.hasCard(seat, "mountains", seat.threatCard);
-      const cardGone = game.cardGone(seat, "mountains", seat.threatCard);
-
-      if (hasCard) {
-        return { finality: "final", outcome: "success" };
-      } else if (cardGone) {
-        return { finality: "final", outcome: "failure" };
-      } else {
-        return { finality: "tentative", outcome: "failure" };
-      }
+      return achieveCard(game, seat, "mountains", seat.threatCard);
     },
   },
 
