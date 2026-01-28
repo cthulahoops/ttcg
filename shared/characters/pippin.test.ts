@@ -1,187 +1,139 @@
 import { describe, expect, test } from "bun:test";
 import { Pippin } from "./pippin";
-import { Game } from "../game";
-import { Seat } from "../seat";
-import { PlayerHand } from "../hands";
-import { Controller } from "../controllers";
-import type { Card } from "../types";
-
-// Test helper: create a minimal controller for testing
-class TestController extends Controller {
-  async chooseButton<T>(): Promise<T> {
-    throw new Error("Not implemented in test");
-  }
-  async chooseCard<T>(): Promise<T> {
-    throw new Error("Not implemented in test");
-  }
-  async selectCard(): Promise<Card> {
-    throw new Error("Not implemented in test");
-  }
-}
-
-// Test helper: create a game with the specified number of characters
-function createTestGame(numCharacters: number): Game {
-  const seats: Seat[] = [];
-  for (let i = 0; i < numCharacters; i++) {
-    const controller = new TestController();
-    const hand = new PlayerHand();
-    seats.push(new Seat(i, controller, hand, false));
-  }
-  const lostCard: Card = { suit: "mountains", value: 1 };
-  return new Game(numCharacters, numCharacters, seats, lostCard, 0);
-}
-
-// Test helper: add won cards to a seat (simulates winning a trick)
-function addWonCards(seat: Seat, cards: Card[]): void {
-  seat.addTrick(seat.tricksWon.length, cards);
-}
+import { GameStateBuilder } from "../test-utils";
 
 describe("Pippin", () => {
   describe("objective.getStatus", () => {
     test("returns { tentative, success } when tied for fewest with 0 tricks (game not finished)", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      // Add cards to hands so game is not finished
-      for (const s of game.seats) {
-        s.hand.addCard({ suit: "mountains", value: s.seatIndex + 1 });
-      }
+      const { game, seats } = new GameStateBuilder(4)
+        .setCharacter(0, "Pippin")
+        .build();
+
       // All players have 0 tricks - Pippin is tied for fewest
-      expect(Pippin.objective.getStatus(game, seat)).toEqual({
+      expect(Pippin.objective.getStatus(game, seats[0]!)).toEqual({
         finality: "tentative",
         outcome: "success",
       });
     });
 
     test("returns { tentative, success } when alone with fewest tricks", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      // Add cards to hands so game is not finished
-      for (const s of game.seats) {
-        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
-      }
-      // Give other players tricks, Pippin has none
-      addWonCards(game.seats[1]!, [{ suit: "mountains", value: 2 }]);
-      addWonCards(game.seats[2]!, [{ suit: "shadows", value: 3 }]);
-      addWonCards(game.seats[3]!, [{ suit: "forests", value: 4 }]);
-      expect(Pippin.objective.getStatus(game, seat)).toEqual({
+      const { game, seats } = new GameStateBuilder(4)
+        .setCharacter(0, "Pippin")
+        .seatWonTricks(1, 1)
+        .seatWonTricks(2, 1)
+        .seatWonTricks(3, 1)
+        .build();
+
+      // Pippin has 0 tricks, others have 1 each
+      expect(Pippin.objective.getStatus(game, seats[0]!)).toEqual({
         finality: "tentative",
         outcome: "success",
       });
     });
 
     test("returns { tentative, failure } when not tied for fewest", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      // Add cards to hands so game is not finished
-      for (const s of game.seats) {
-        s.hand.addCard({ suit: "forests", value: s.seatIndex + 1 });
-      }
+      const { game, seats } = new GameStateBuilder(4)
+        .setCharacter(0, "Pippin")
+        .seatWonTricks(0, 2)
+        .seatWonTricks(1, 1)
+        .build();
+
       // Pippin has 2 tricks, seat 1 has 1 trick
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(seat, [{ suit: "shadows", value: 2 }]);
-      addWonCards(game.seats[1]!, [{ suit: "forests", value: 3 }]);
-      expect(Pippin.objective.getStatus(game, seat)).toEqual({
+      expect(Pippin.objective.getStatus(game, seats[0]!)).toEqual({
         finality: "tentative",
         outcome: "failure",
       });
     });
 
     test("returns { final, failure } when gap exceeds remaining tricks", () => {
-      const game = createTestGame(4);
+      const { game, seats } = new GameStateBuilder(4)
+        .setCharacter(0, "Pippin")
+        .seatWonTricks(0, 2)
+        .build();
+
       // Simulate most tricks have been played
       game.currentTrickNumber = 8; // Only 1 trick remaining (9-8=1)
-      const seat = game.seats[0]!;
       // Pippin has 2 tricks, everyone else has 0
       // Gap is (2-0) * 3 = 6, but only 1 trick remaining
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(seat, [{ suit: "shadows", value: 2 }]);
-      expect(Pippin.objective.getStatus(game, seat)).toEqual({
+      expect(Pippin.objective.getStatus(game, seats[0]!)).toEqual({
         finality: "final",
         outcome: "failure",
       });
     });
 
     test("returns { final, success } when game finished and tied for fewest", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      // All have same number of tricks, game finished
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(game.seats[1]!, [{ suit: "shadows", value: 2 }]);
-      addWonCards(game.seats[2]!, [{ suit: "forests", value: 3 }]);
-      addWonCards(game.seats[3]!, [{ suit: "hills", value: 4 }]);
+      const { game, seats } = new GameStateBuilder(4)
+        .setCharacter(0, "Pippin")
+        .seatWonTricks(0, 2)
+        .seatWonTricks(1, 2)
+        .seatWonTricks(2, 2)
+        .seatWonTricks(3, 3)
+        .finishGame()
+        .build();
+
+      // All have same number of tricks (except seat 3), game finished
       expect(game.finished).toBe(true);
-      expect(Pippin.objective.getStatus(game, seat)).toEqual({
+      expect(Pippin.objective.getStatus(game, seats[0]!)).toEqual({
         finality: "final",
         outcome: "success",
       });
     });
 
     test("returns { final, failure } when game finished but not tied for fewest", () => {
-      const game = createTestGame(4);
-      const seat = game.seats[0]!;
-      // Pippin has 2 tricks, others have 1
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(seat, [{ suit: "shadows", value: 2 }]);
-      addWonCards(game.seats[1]!, [{ suit: "forests", value: 3 }]);
-      addWonCards(game.seats[2]!, [{ suit: "hills", value: 4 }]);
-      addWonCards(game.seats[3]!, [{ suit: "rings", value: 1 }]);
+      const { game, seats } = new GameStateBuilder(4)
+        .setCharacter(0, "Pippin")
+        .seatWonTricks(0, 3)
+        .seatWonTricks(1, 2)
+        .seatWonTricks(2, 2)
+        .seatWonTricks(3, 2)
+        .finishGame()
+        .build();
+
+      // Pippin has 3 tricks, others have 2 each
       expect(game.finished).toBe(true);
-      expect(Pippin.objective.getStatus(game, seat)).toEqual({
+      expect(Pippin.objective.getStatus(game, seats[0]!)).toEqual({
         finality: "final",
         outcome: "failure",
       });
     });
 
     test("returns { final, success } early when guaranteed fewest (myMax <= othersMin)", () => {
-      const game = createTestGame(4);
+      const { game, seats } = new GameStateBuilder(4)
+        .setCharacter(0, "Pippin")
+        .seatWonTricks(1, 2)
+        .seatWonTricks(2, 2)
+        .seatWonTricks(3, 2)
+        .build();
+
       game.currentTrickNumber = 7; // 2 tricks remaining (9-7=2)
-      const seat = game.seats[0]!;
-      // Pippin has 0 tricks, others have 3 tricks each
+      // Pippin has 0 tricks, others have 2 tricks each
       // myMax = 0 + 2 = 2
-      // othersMin = 3
-      // 2 <= 3, so guaranteed fewest
-      addWonCards(game.seats[1]!, [{ suit: "mountains", value: 1 }]);
-      addWonCards(game.seats[1]!, [{ suit: "mountains", value: 2 }]);
-      addWonCards(game.seats[1]!, [{ suit: "mountains", value: 3 }]);
-      addWonCards(game.seats[2]!, [{ suit: "shadows", value: 1 }]);
-      addWonCards(game.seats[2]!, [{ suit: "shadows", value: 2 }]);
-      addWonCards(game.seats[2]!, [{ suit: "shadows", value: 3 }]);
-      addWonCards(game.seats[3]!, [{ suit: "forests", value: 1 }]);
-      addWonCards(game.seats[3]!, [{ suit: "forests", value: 2 }]);
-      addWonCards(game.seats[3]!, [{ suit: "forests", value: 3 }]);
-      // Add cards to hands so game is not finished
-      for (const s of game.seats) {
-        s.hand.addCard({ suit: "hills", value: s.seatIndex + 1 });
-      }
+      // othersMin = 2
+      // 2 <= 2, so guaranteed fewest (tied)
       expect(game.finished).toBe(false);
-      expect(Pippin.objective.getStatus(game, seat)).toEqual({
+      expect(Pippin.objective.getStatus(game, seats[0]!)).toEqual({
         finality: "final",
         outcome: "success",
       });
     });
 
     test("returns { tentative, success } when currently tied for fewest but not guaranteed (myMax > othersMin)", () => {
-      const game = createTestGame(4);
+      const { game, seats } = new GameStateBuilder(4)
+        .setCharacter(0, "Pippin")
+        .seatWonTricks(0, 1)
+        .seatWonTricks(1, 2)
+        .seatWonTricks(2, 2)
+        .seatWonTricks(3, 2)
+        .build();
+
       game.currentTrickNumber = 6; // 3 tricks remaining (9-6=3)
-      const seat = game.seats[0]!;
       // Pippin has 1 trick, others have 2 tricks each
       // Pippin is currently tied for fewest (1 is min)
       // myMax = 1 + 3 = 4
       // othersMin = 2
       // 4 > 2, so not guaranteed fewest, but currently met
-      addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      addWonCards(game.seats[1]!, [{ suit: "shadows", value: 1 }]);
-      addWonCards(game.seats[1]!, [{ suit: "shadows", value: 2 }]);
-      addWonCards(game.seats[2]!, [{ suit: "forests", value: 1 }]);
-      addWonCards(game.seats[2]!, [{ suit: "forests", value: 2 }]);
-      addWonCards(game.seats[3]!, [{ suit: "hills", value: 1 }]);
-      addWonCards(game.seats[3]!, [{ suit: "hills", value: 2 }]);
-      // Add cards to hands so game is not finished
-      for (const s of game.seats) {
-        s.hand.addCard({ suit: "rings", value: s.seatIndex + 1 });
-      }
       expect(game.finished).toBe(false);
-      expect(Pippin.objective.getStatus(game, seat)).toEqual({
+      expect(Pippin.objective.getStatus(game, seats[0]!)).toEqual({
         finality: "tentative",
         outcome: "success",
       });
