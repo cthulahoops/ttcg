@@ -163,9 +163,9 @@ describe("Gwaihir", () => {
 
     test("returns { final, failure } when game finished but check fails", () => {
       const game = createTestGame(4);
+      game.currentTrickNumber = game.tricksToPlay; // Mark game as finished
       const seat = game.seats[0]!;
       addWonCards(seat, [{ suit: "mountains", value: 1 }]);
-      expect(game.finished).toBe(true);
       expect(Gwaihir.objective.getStatus(game, seat)).toEqual({
         finality: "final",
         outcome: "failure",

@@ -84,11 +84,12 @@ describe("Bilbo Baggins", () => {
 
     test("returns { final, success } when 3+ tricks won and game finished", () => {
       const game = createTestGame(4);
+      game.currentTrickNumber = game.tricksToPlay; // Mark game as finished
       const seat = game.seats[0]!;
       addWonCards(seat, [{ suit: "mountains", value: 1 }]);
       addWonCards(seat, [{ suit: "forests", value: 2 }]);
       addWonCards(seat, [{ suit: "hills", value: 3 }]);
-      expect(game.finished).toBe(true);
+      addWonCards(game.seats[1]!, [{ suit: "rings", value: 1 }]);
       expect(BilboBaggins.objective.getStatus(game, seat)).toEqual({
         finality: "final",
         outcome: "success",

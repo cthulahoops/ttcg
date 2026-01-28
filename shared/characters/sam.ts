@@ -23,7 +23,7 @@ export const Sam: CharacterDefinition = {
       if (!seat.threatCard) {
         return { finality: "tentative", outcome: "failure" };
       }
-      return achieveCard(game, seat, "hills", seat.threatCard);
+      return achieveCard(game, seat, { suit: "hills", value: seat.threatCard });
     },
   },
 

@@ -1,4 +1,4 @@
-import type { Card, ObjectiveStatus, Suit } from "shared/types";
+import type { Card, ObjectiveStatus } from "shared/types";
 import { CARDS_PER_SUIT, SUITS } from "shared/types";
 import type { Seat } from "shared/seat";
 import type { Game } from "shared/game";
@@ -30,11 +30,43 @@ export function achieveBoth(
   return { finality, outcome };
 }
 
-export function tricksWinnable(game: Game, seat: Seat) {
-  const current = seat.getTrickCount();
+export function tricksWinnable(
+  game: Game,
+  seat: Seat,
+  cardPredicate?: (card: Card) => boolean
+): ObjectivePossibilities {
+  if (!cardPredicate) {
+    const current = seat.getTrickCount();
+    return {
+      current,
+      max: current + game.tricksRemaining(),
+    };
+  }
+
+  // Count tricks where at least one card matches the predicate
+  const current = seat.tricksWon.filter((trick) =>
+    trick.cards.some(cardPredicate)
+  ).length;
+
+  // Count matching cards still in play (not won by anyone)
+  let matchingCardsInPlay = 0;
+  for (const suit of SUITS) {
+    for (let value = 1; value <= CARDS_PER_SUIT[suit]; value++) {
+      const card: Card = { suit, value };
+      if (cardPredicate(card)) {
+        if (
+          !game.hasCard(seat, suit, value) &&
+          !game.cardGone(seat, suit, value)
+        ) {
+          matchingCardsInPlay++;
+        }
+      }
+    }
+  }
+
   return {
-    current: current,
-    max: current + game.tricksRemaining(),
+    current,
+    max: current + Math.min(matchingCardsInPlay, game.tricksRemaining()),
   };
 }
 
@@ -44,7 +76,7 @@ export function cardsWinnable(
   isTarget: (card: Card) => boolean
 ): ObjectivePossibilities {
   let current = 0;
-  let max = 0;
+  let remaining = 0;
 
   for (const suit of SUITS) {
     for (let value = 1; value <= CARDS_PER_SUIT[suit]; value++) {
@@ -52,37 +84,37 @@ export function cardsWinnable(
       if (isTarget(card)) {
         if (game.hasCard(seat, suit, value)) {
           current++;
-          max++;
         } else if (!game.cardGone(seat, suit, value)) {
-          max++;
+          remaining++;
         }
       }
     }
   }
 
-  return { current, max };
+  return {
+    current,
+    max: current + Math.min(game.tricksRemaining(), remaining),
+  };
 }
 
 export function winCard(
   game: Game,
   seat: Seat,
-  suit: Suit,
-  value: number
+  neededCard: Card
 ): ObjectivePossibilities {
   return cardsWinnable(
     game,
     seat,
-    (card) => card.suit === suit && card.value === value
+    (card) => card.suit === neededCard.suit && card.value === neededCard.value
   );
 }
 
 export function achieveCard(
   game: Game,
   seat: Seat,
-  suit: Suit,
-  value: number
+  card: Card
 ): ObjectiveStatus {
-  return achieveAtLeast(winCard(game, seat, suit, value), 1);
+  return achieveAtLeast(winCard(game, seat, card), 1);
 }
 
 type ObjectivePossibilities = {

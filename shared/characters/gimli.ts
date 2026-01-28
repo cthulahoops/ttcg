@@ -23,7 +23,10 @@ export const Gimli: CharacterDefinition = {
       if (!seat.threatCard) {
         return { finality: "tentative", outcome: "failure" };
       }
-      return achieveCard(game, seat, "mountains", seat.threatCard);
+      return achieveCard(game, seat, {
+        suit: "mountains",
+        value: seat.threatCard,
+      });
     },
   },
 

@@ -23,7 +23,7 @@ export const BilboBaggins: CharacterDefinition = {
     getStatus: (game, seat): ObjectiveStatus => {
       return achieveBoth(
         achieveAtLeast(tricksWinnable(game, seat), 3),
-        doNot(achieveCard(game, seat, "rings", 1))
+        doNot(achieveCard(game, seat, { suit: "rings", value: 1 }))
       );
     },
 

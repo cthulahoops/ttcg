@@ -22,7 +22,10 @@ export const Legolas: CharacterDefinition = {
       if (!seat.threatCard) {
         return { finality: "tentative", outcome: "failure" };
       }
-      return achieveCard(game, seat, "forests", seat.threatCard);
+      return achieveCard(game, seat, {
+        suit: "forests",
+        value: seat.threatCard,
+      });
     },
   },
 
