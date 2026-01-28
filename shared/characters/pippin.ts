@@ -1,6 +1,11 @@
 import type { Seat } from "../seat";
 import type { ObjectiveCard, ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
+import {
+  tricksWinnable,
+  achieveAtLeast,
+  achieveEvery,
+} from "shared/objectives";
 
 export const Pippin: CharacterDefinition = {
   name: "Pippin",
@@ -16,50 +21,16 @@ export const Pippin: CharacterDefinition = {
     text: "Win the fewest (or joint fewest) tricks",
 
     getStatus: (game, seat): ObjectiveStatus => {
-      const allCounts = game.seats.map((s: Seat) => s.getTrickCount());
-      const minCount = Math.min(...allCounts);
-      const myCount = seat.getTrickCount();
-      const met = myCount === minCount;
+      const myTricks = tricksWinnable(game, seat);
 
-      // Calculate total gap: how many more tricks does Pippin have than players with fewer?
-      let totalGap = 0;
-      for (const otherTricks of allCounts) {
-        if (otherTricks < myCount) {
-          totalGap += myCount - otherTricks;
-        }
-      }
-      const tricksRemaining = game.tricksRemaining();
-      const completable = totalGap <= tricksRemaining;
-
-      // If game is finished, status is final
-      if (game.finished) {
-        return {
-          finality: "final",
-          outcome: met ? "success" : "failure",
-        };
-      }
-
-      // If not completable, it's final failure
-      if (!completable) {
-        return { finality: "final", outcome: "failure" };
-      }
-
-      // Check for early/guaranteed completion
-      const myMax = myCount + tricksRemaining;
-      const otherCounts = game.seats
+      // Pippin needs each other player to have at least as many tricks as him
+      const othersTricks = game.seats
         .filter((s: Seat) => s.seatIndex !== seat.seatIndex)
-        .map((s: Seat) => s.getTrickCount());
-      const othersMin = Math.min(...otherCounts);
-      // Guaranteed fewest if even winning all remaining tricks keeps us at or below current minimum
-      if (myMax <= othersMin) {
-        return { finality: "final", outcome: "success" };
-      }
+        .map((s: Seat) => tricksWinnable(game, s));
 
-      // Game ongoing, still completable, not guaranteed
-      return {
-        finality: "tentative",
-        outcome: met ? "success" : "failure",
-      };
+      return achieveEvery(
+        othersTricks.map((other) => achieveAtLeast(other, myTricks))
+      );
     },
   },
 

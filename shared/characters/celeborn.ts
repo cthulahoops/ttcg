@@ -1,5 +1,47 @@
 import type { Card, ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
+import type { Game } from "../game";
+import type { Seat } from "../seat";
+import { CARDS_PER_SUIT, SUITS } from "../types";
+import { achieveAtLeast, type ObjectivePossibilities } from "../objectives";
+
+/**
+ * Returns the best achievable count of cards of any single rank.
+ * For each rank, counts cards already won and cards still winnable,
+ * then returns the possibilities for the most promising rank.
+ */
+function sameRankCardsWinnable(game: Game, seat: Seat): ObjectivePossibilities {
+  const rankPossibilities: ObjectivePossibilities[] = [];
+
+  // Check each possible rank (1-8)
+  for (let rank = 1; rank <= 8; rank++) {
+    let current = 0;
+    let remaining = 0;
+
+    for (const suit of SUITS) {
+      // Skip if this suit doesn't have this rank
+      if (rank > CARDS_PER_SUIT[suit]) continue;
+
+      if (game.hasCard(seat, suit, rank)) {
+        current++;
+      } else if (!game.cardGone(seat, suit, rank)) {
+        remaining++;
+      }
+    }
+
+    rankPossibilities.push({
+      current,
+      max: current + Math.min(game.tricksRemaining(), remaining),
+    });
+  }
+
+  // Find the best rank (highest max, then highest current)
+  return rankPossibilities.reduce((best, curr) => {
+    if (curr.max > best.max) return curr;
+    if (curr.max === best.max && curr.current > best.current) return curr;
+    return best;
+  });
+}
 
 export const Celeborn: CharacterDefinition = {
   name: "Celeborn",
@@ -12,17 +54,8 @@ export const Celeborn: CharacterDefinition = {
   objective: {
     text: "Win at least three cards of the same rank",
 
-    getStatus: (_game, seat): ObjectiveStatus => {
-      const rankCounts: Record<number, number> = {};
-      seat.getAllWonCards().forEach((card: Card) => {
-        rankCounts[card.value] = (rankCounts[card.value] || 0) + 1;
-      });
-      const met = Object.values(rankCounts).some((count) => count >= 3);
-
-      // Once met, it's final success. Otherwise tentative (hard to determine early failure)
-      return met
-        ? { finality: "final", outcome: "success" }
-        : { finality: "tentative", outcome: "failure" };
+    getStatus: (game, seat): ObjectiveStatus => {
+      return achieveAtLeast(sameRankCardsWinnable(game, seat), 3);
     },
 
     getDetails: (_game, seat): string | undefined => {
