@@ -1,5 +1,6 @@
 import type { ObjectiveCard, ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
+import { tricksWinnable, achieveExactly } from "shared/objectives";
 
 export const Aragorn: CharacterDefinition = {
   name: "Aragorn",
@@ -20,35 +21,8 @@ export const Aragorn: CharacterDefinition = {
         return { finality: "tentative", outcome: "failure" };
       }
 
-      const target = seat.threatCard;
-      const current = seat.getTrickCount();
-      const met = current === target;
-
-      // Impossible if already over target
-      if (current > target) {
-        return { finality: "final", outcome: "failure" };
-      }
-
-      // Check if there are enough tricks remaining to reach target
-      const tricksNeeded = target - current;
-      const completable = game.tricksRemaining() >= tricksNeeded;
-
-      // Can only be completed when game is finished
-      if (game.finished) {
-        return {
-          finality: "final",
-          outcome: met ? "success" : "failure",
-        };
-      }
-
-      if (!completable) {
-        return { finality: "final", outcome: "failure" };
-      }
-
-      return {
-        finality: "tentative",
-        outcome: met ? "success" : "failure",
-      };
+      const tricks = tricksWinnable(game, seat);
+      return achieveExactly(tricks, seat.threatCard);
     },
   },
 

@@ -33,6 +33,13 @@ export function achieveAtLeast(
   };
 }
 
+export function achieveExactly(
+  possibilities: ObjectivePossibilities,
+  target: number
+) {
+  return achieveRange(possibilities, { min: target, max: target });
+}
+
 export function achieveRange(
   possibilities: ObjectivePossibilities,
   range: { min: number; max: number }
