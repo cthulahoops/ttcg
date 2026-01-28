@@ -28,7 +28,8 @@ function createTestGame(numCharacters: number): Game {
     seats.push(new Seat(i, controller, hand, false));
   }
   const lostCard: Card = { suit: "mountains", value: 1 };
-  return new Game(numCharacters, numCharacters, seats, lostCard, 0);
+  const game = new Game(numCharacters, numCharacters, seats, lostCard, 0);
+  return game;
 }
 
 // Test helper: add won cards to a seat (simulates winning a trick)
@@ -109,6 +110,7 @@ describe("Merry", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
       addWonCards(seat, [{ suit: "mountains", value: 1 }]);
+      game.currentTrickNumber = 9;
       // Game is finished since all hands are empty
       expect(game.finished).toBe(true);
       expect(Merry.objective.getStatus(game, seat)).toEqual({
@@ -122,6 +124,7 @@ describe("Merry", () => {
       const seat = game.seats[0]!;
       addWonCards(seat, [{ suit: "mountains", value: 1 }]);
       addWonCards(seat, [{ suit: "shadows", value: 2 }]);
+      game.currentTrickNumber = 9;
       // Game is finished since all hands are empty
       expect(game.finished).toBe(true);
       expect(Merry.objective.getStatus(game, seat)).toEqual({
@@ -133,6 +136,7 @@ describe("Merry", () => {
     test("returns { final, failure } when game finished and no tricks won", () => {
       const game = createTestGame(4);
       const seat = game.seats[0]!;
+      game.currentTrickNumber = 9;
       // No tricks won by Merry, game is finished (empty hands)
       expect(game.finished).toBe(true);
       expect(Merry.objective.getStatus(game, seat)).toEqual({
