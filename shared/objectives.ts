@@ -28,7 +28,7 @@ export function achieveAtLeast(
     };
   }
   return {
-    finality: possibilities.max > target ? "tentative" : "final",
+    finality: possibilities.max >= target ? "tentative" : "final",
     outcome: "failure",
   };
 }
