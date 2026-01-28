@@ -98,7 +98,7 @@ export function achieveRange(
   );
 }
 
-function doNot(objective: ObjectiveStatus): ObjectiveStatus {
+export function doNot(objective: ObjectiveStatus): ObjectiveStatus {
   return {
     finality: objective.finality,
     outcome: objective.outcome == "failure" ? "success" : "failure",
