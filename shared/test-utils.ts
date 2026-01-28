@@ -79,11 +79,17 @@ interface WonCardsSpec {
   cards: Card[];
 }
 
+interface WonTricksSpec {
+  seatIndex: number;
+  count: number;
+}
+
 export class GameStateBuilder {
   private numPlayers: 3 | 4;
   private lostCard: Card | null = null;
   private characterAssignments: Map<number, string> = new Map();
   private wonCardsSpecs: WonCardsSpec[] = [];
+  private wonTricksSpecs: WonTricksSpec[] = [];
   private shouldFinishGame = false;
 
   constructor(numPlayers: 3 | 4) {
@@ -120,6 +126,18 @@ export class GameStateBuilder {
       throw new Error(`Invalid seat index: ${seatIndex}`);
     }
     this.wonCardsSpecs.push({ seatIndex, cards });
+    return this;
+  }
+
+  /**
+   * Specify how many tricks a seat has won (auto-filled with available cards).
+   * Use this when you only care about trick counts, not specific cards.
+   */
+  seatWonTricks(seatIndex: number, count: number): this {
+    if (seatIndex < 0 || seatIndex >= this.numPlayers) {
+      throw new Error(`Invalid seat index: ${seatIndex}`);
+    }
+    this.wonTricksSpecs.push({ seatIndex, count });
     return this;
   }
 
@@ -171,7 +189,10 @@ export class GameStateBuilder {
     // Step 7: Group won cards into valid tricks and assign to seats
     this.assignWonCardsTricks(game, seats, remainingDeck);
 
-    // Step 8: Distribute remaining cards to hands or more tricks
+    // Step 8: Assign auto-filled tricks (from seatWonTricks)
+    this.assignAutoFilledTricks(game, seats, remainingDeck);
+
+    // Step 9: Distribute remaining cards to hands or more tricks
     if (this.shouldFinishGame) {
       this.distributeRemainingToTricks(game, seats, remainingDeck);
     } else {
@@ -313,6 +334,30 @@ export class GameStateBuilder {
 
     // Update game's trick counter
     game.currentTrickNumber = trickNumber;
+  }
+
+  private assignAutoFilledTricks(
+    game: Game,
+    seats: Seat[],
+    remainingDeck: Card[]
+  ): void {
+    for (const spec of this.wonTricksSpecs) {
+      const seat = seats[spec.seatIndex]!;
+
+      for (let i = 0; i < spec.count; i++) {
+        const trickCards: Card[] = [];
+
+        // Fill the trick with cards from remaining deck
+        for (let j = 0; j < this.numPlayers && remainingDeck.length > 0; j++) {
+          trickCards.push(remainingDeck.shift()!);
+        }
+
+        if (trickCards.length > 0) {
+          seat.addTrick(game.currentTrickNumber, trickCards);
+          game.currentTrickNumber++;
+        }
+      }
+    }
   }
 
   private distributeRemainingToTricks(
