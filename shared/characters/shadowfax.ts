@@ -3,10 +3,10 @@ import type { CharacterDefinition } from "./types";
 import type { Seat } from "../seat";
 import type { Game } from "../game";
 import { sortHand } from "../utils";
-import { achieveAtLeast, tricksWinnable } from "../objectives";
+import { achieveAtLeast, tricksWithCardsWinnable } from "../objectives";
 
 const hillsTricks = (game: Game, seat: Seat) =>
-  tricksWinnable(game, seat, (card) => card.suit === "hills");
+  tricksWithCardsWinnable(game, seat, (card) => card.suit === "hills");
 
 export const Shadowfax: CharacterDefinition = {
   name: "Shadowfax",

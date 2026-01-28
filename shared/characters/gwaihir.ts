@@ -2,10 +2,10 @@ import type { ObjectiveCard, ObjectiveStatus } from "../types";
 import type { Seat } from "../seat";
 import type { Game } from "../game";
 import type { CharacterDefinition } from "./types";
-import { achieveAtLeast, tricksWinnable } from "../objectives";
+import { achieveAtLeast, tricksWithCardsWinnable } from "../objectives";
 
 const mountainTricks = (game: Game, seat: Seat) =>
-  tricksWinnable(game, seat, (card) => card.suit === "mountains");
+  tricksWithCardsWinnable(game, seat, (card) => card.suit === "mountains");
 
 export const Gwaihir: CharacterDefinition = {
   name: "Gwaihir",

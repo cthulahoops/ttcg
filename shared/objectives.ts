@@ -33,9 +33,9 @@ export function achieveBoth(
 export function tricksWinnable(
   game: Game,
   seat: Seat,
-  cardPredicate?: (card: Card) => boolean
+  trickPredicate?: (trick: { number: number }) => boolean
 ): ObjectivePossibilities {
-  if (!cardPredicate) {
+  if (!trickPredicate) {
     const current = seat.getTrickCount();
     return {
       current,
@@ -43,6 +43,38 @@ export function tricksWinnable(
     };
   }
 
+  // Count tricks matching the predicate that we've won
+  const current = seat.tricksWon.filter(trickPredicate).length;
+
+  if (game.finished) {
+    return { current, max: current };
+  }
+
+  // Count matching tricks still to be played
+  const totalMatching = Array.from(
+    { length: game.tricksToPlay },
+    (_, i) => i
+  ).filter((n) => trickPredicate({ number: n })).length;
+
+  const alreadyPlayed = game.tricksToPlay - game.tricksRemaining();
+  const matchingPlayed = Array.from(
+    { length: alreadyPlayed },
+    (_, i) => i
+  ).filter((n) => trickPredicate({ number: n })).length;
+
+  const matchingRemaining = totalMatching - matchingPlayed;
+
+  return {
+    current,
+    max: current + matchingRemaining,
+  };
+}
+
+export function tricksWithCardsWinnable(
+  game: Game,
+  seat: Seat,
+  cardPredicate: (card: Card) => boolean
+): ObjectivePossibilities {
   // Count tricks where at least one card matches the predicate
   const current = seat.tricksWon.filter((trick) =>
     trick.cards.some(cardPredicate)
@@ -123,18 +155,35 @@ export type ObjectivePossibilities = {
 };
 
 export function achieveAtLeast(
-  possibilities: ObjectivePossibilities,
-  target: number
+  me: ObjectivePossibilities,
+  them: ObjectivePossibilities | number
 ): ObjectiveStatus {
-  if (possibilities.current >= target) {
+  if (typeof them === "number") {
+    const target = them;
+    if (me.current >= target) {
+      return { finality: "final", outcome: "success" };
+    }
     return {
-      finality: "final",
-      outcome: "success",
+      finality: me.max >= target ? "tentative" : "final",
+      outcome: "failure",
     };
   }
+
+  // Comparing two possibilities: success if me >= them
+  // Final success: I'm at least tied and they can't get ahead
+  if (me.current >= them.max) {
+    return { finality: "final", outcome: "success" };
+  }
+
+  // Final failure: Even at my best I can't match their current
+  if (me.max < them.current) {
+    return { finality: "final", outcome: "failure" };
+  }
+
+  // Tentative: outcome based on current standings
   return {
-    finality: possibilities.max >= target ? "tentative" : "final",
-    outcome: "failure",
+    finality: "tentative",
+    outcome: me.current >= them.current ? "success" : "failure",
   };
 }
 
@@ -180,21 +229,11 @@ export function achieveEvery(statuses: ObjectiveStatus[]): ObjectiveStatus {
  */
 export function achieveMoreThan(
   me: ObjectivePossibilities,
-  them: ObjectivePossibilities
+  them: ObjectivePossibilities | number
 ): ObjectiveStatus {
-  // Final success: I'm ahead and they can never catch up
-  if (me.current > them.max) {
-    return { finality: "final", outcome: "success" };
+  if (typeof them === "number") {
+    return achieveAtLeast(me, them + 1);
   }
-
-  // Final failure: Even at my best I can't beat their current
-  if (me.max <= them.current) {
-    return { finality: "final", outcome: "failure" };
-  }
-
-  // Tentative: outcome based on current standings
-  return {
-    finality: "tentative",
-    outcome: me.current > them.current ? "success" : "failure",
-  };
+  // me > them ≡ ¬(them >= me)
+  return doNot(achieveAtLeast(them, me));
 }
