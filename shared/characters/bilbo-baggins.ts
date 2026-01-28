@@ -6,7 +6,7 @@ import {
   achieveCard,
   doNot,
 } from "shared/objectives";
-import { bothAchieved } from "shared/utils";
+import { achieveBoth } from "shared/objectives";
 
 export const BilboBaggins: CharacterDefinition = {
   name: "Bilbo Baggins",
@@ -21,7 +21,7 @@ export const BilboBaggins: CharacterDefinition = {
     text: "Win 3 or more tricks; do NOT win the 1 of Rings",
 
     getStatus: (game, seat): ObjectiveStatus => {
-      return bothAchieved(
+      return achieveBoth(
         achieveAtLeast(tricksWinnable(game, seat), 3),
         doNot(achieveCard(game, seat, "rings", 1))
       );

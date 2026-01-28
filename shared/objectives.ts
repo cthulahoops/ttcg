@@ -3,7 +3,32 @@ import { CARDS_PER_SUIT, SUITS } from "shared/types";
 import type { Seat } from "shared/seat";
 import type { Game } from "shared/game";
 
-import { bothAchieved as achieveBoth } from "shared/utils";
+/**
+ * Combines two objective statuses where both must be achieved.
+ * - Outcome: success only if both are success
+ * - Finality: final if either is {final, failure} OR both are final
+ */
+export function achieveBoth(
+  s1: ObjectiveStatus,
+  s2: ObjectiveStatus
+): ObjectiveStatus {
+  const isFinalFailure = (s: ObjectiveStatus) =>
+    s.finality === "final" && s.outcome === "failure";
+
+  const outcome: ObjectiveStatus["outcome"] =
+    s1.outcome === "success" && s2.outcome === "success"
+      ? "success"
+      : "failure";
+
+  const finality: ObjectiveStatus["finality"] =
+    isFinalFailure(s1) ||
+    isFinalFailure(s2) ||
+    (s1.finality === "final" && s2.finality === "final")
+      ? "final"
+      : "tentative";
+
+  return { finality, outcome };
+}
 
 export function tricksWinnable(game: Game, seat: Seat) {
   const current = seat.getTrickCount();
