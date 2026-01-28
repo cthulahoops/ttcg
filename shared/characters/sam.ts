@@ -1,5 +1,6 @@
 import type { ObjectiveCard, ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
+import { achieveCard } from "../objectives";
 
 export const Sam: CharacterDefinition = {
   name: "Sam",
@@ -22,16 +23,7 @@ export const Sam: CharacterDefinition = {
       if (!seat.threatCard) {
         return { finality: "tentative", outcome: "failure" };
       }
-      const hasCard = game.hasCard(seat, "hills", seat.threatCard);
-      const cardGone = game.cardGone(seat, "hills", seat.threatCard);
-
-      if (hasCard) {
-        return { finality: "final", outcome: "success" };
-      } else if (cardGone) {
-        return { finality: "final", outcome: "failure" };
-      } else {
-        return { finality: "tentative", outcome: "failure" };
-      }
+      return achieveCard(game, seat, "hills", seat.threatCard);
     },
   },
 
