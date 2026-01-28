@@ -1,5 +1,7 @@
-import type { Suit, ObjectiveCard, Card, ObjectiveStatus } from "../types";
+import type { ObjectiveCard, Card, ObjectiveStatus } from "../types";
+import { CARDS_PER_SUIT } from "../types";
 import type { CharacterDefinition } from "./types";
+import { cardsWinnable, achieveAtLeast } from "../objectives";
 
 export const FarmerMaggot: CharacterDefinition = {
   name: "Farmer Maggot",
@@ -20,42 +22,11 @@ export const FarmerMaggot: CharacterDefinition = {
         return { finality: "tentative", outcome: "failure" };
       }
 
-      const matchingWon = seat
-        .getAllWonCards()
-        .filter((c) => c.value === seat.threatCard).length;
+      const threatValue = seat.threatCard;
+      const matchesThreat = (card: Card) =>
+        card.value === threatValue && threatValue <= CARDS_PER_SUIT[card.suit];
 
-      const met = matchingWon >= 2;
-
-      // Check completability: count how many matching cards are still available
-      let matchingAvailable = 0;
-      const suits: Suit[] = [
-        "mountains",
-        "shadows",
-        "forests",
-        "hills",
-        "rings",
-      ];
-
-      for (const suit of suits) {
-        const maxValue = suit === "rings" ? 5 : 8;
-        if (seat.threatCard <= maxValue) {
-          if (!game.cardGone(seat, suit, seat.threatCard)) {
-            matchingAvailable++;
-          }
-        }
-      }
-
-      const completable = matchingWon + matchingAvailable >= 2;
-
-      if (met) {
-        return { finality: "final", outcome: "success" };
-      }
-
-      if (!completable) {
-        return { finality: "final", outcome: "failure" };
-      }
-
-      return { finality: "tentative", outcome: "failure" };
+      return achieveAtLeast(cardsWinnable(game, seat, matchesThreat), 2);
     },
 
     getDetails: (_game, seat): string | undefined => {

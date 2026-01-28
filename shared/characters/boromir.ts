@@ -1,5 +1,30 @@
 import type { ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
+import type { Game } from "../game";
+import type { Seat } from "../seat";
+import {
+  achieveAtLeast,
+  achieveBoth,
+  cardsWinnable,
+  doNot,
+  type ObjectivePossibilities,
+} from "../objectives";
+
+/**
+ * Returns possibilities for winning the final trick of the game.
+ * current: 1 if this seat won the most recent trick (which could be the last), 0 otherwise
+ * max: 1 if the final trick can still be won, current otherwise
+ */
+function lastTrickWinnable(game: Game, seat: Seat): ObjectivePossibilities {
+  const current = game.lastTrickWinner === seat.seatIndex ? 1 : 0;
+
+  if (game.finished) {
+    return { current, max: current };
+  }
+
+  // The last trick hasn't been played yet, so max is 1
+  return { current, max: 1 };
+}
 
 export const Boromir: CharacterDefinition = {
   name: "Boromir",
@@ -13,26 +38,18 @@ export const Boromir: CharacterDefinition = {
     text: "Win the last trick; do NOT win the 1 of Rings",
 
     getStatus: (game, seat): ObjectiveStatus => {
-      const wonLast = game.lastTrickWinner === seat.seatIndex;
-      const hasOneRing = game.hasCard(seat, "rings", 1);
-      const met = wonLast && !hasOneRing;
+      // Win the last trick
+      const winLastTrick = achieveAtLeast(lastTrickWinnable(game, seat), 1);
 
-      // Cannot complete if already has the 1 of Rings
-      if (hasOneRing) {
-        return { finality: "final", outcome: "failure" };
-      }
+      // Do NOT win the 1 of Rings
+      const oneRing = cardsWinnable(
+        game,
+        seat,
+        (card) => card.suit === "rings" && card.value === 1
+      );
+      const avoidOneRing = doNot(achieveAtLeast(oneRing, 1));
 
-      if (game.finished) {
-        return {
-          finality: "final",
-          outcome: met ? "success" : "failure",
-        };
-      }
-
-      return {
-        finality: "tentative",
-        outcome: met ? "success" : "failure",
-      };
+      return achieveBoth(winLastTrick, avoidOneRing);
     },
 
     getDetails: (game, seat): string => {
