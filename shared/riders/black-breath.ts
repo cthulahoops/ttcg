@@ -1,10 +1,23 @@
-import type { ObjectiveCard, ObjectiveStatus } from "../types";
+import type { ObjectiveCard, ObjectiveStatus, Suit } from "../types";
 import type { Game } from "../game";
 import type { Seat } from "../seat";
 import type { RiderDefinition } from "./types";
 
+const SUITS_WITH_EIGHTS: Suit[] = ["mountains", "shadows", "forests", "hills"];
+
 function getWonEights(seat: Seat): ObjectiveCard[] {
   return seat.getAllWonCards().filter((card) => card.value === 8);
+}
+
+function isEightGone(game: Game, seat: Seat, suit: Suit): boolean {
+  return (
+    game.cardGone(seat, suit, 8) ||
+    (game.lostCard?.suit === suit && game.lostCard?.value === 8)
+  );
+}
+
+function allEightsGone(game: Game, seat: Seat): boolean {
+  return SUITS_WITH_EIGHTS.every((suit) => isEightGone(game, seat, suit));
 }
 
 export const BlackBreath: RiderDefinition = {
@@ -18,7 +31,7 @@ export const BlackBreath: RiderDefinition = {
         return { finality: "final", outcome: "failure" };
       }
 
-      if (game.finished) {
+      if (game.finished || allEightsGone(game, seat)) {
         return { finality: "final", outcome: "success" };
       }
 
