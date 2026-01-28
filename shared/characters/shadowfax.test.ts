@@ -74,33 +74,17 @@ describe("Shadowfax", () => {
     });
 
     test("counts multiple hills in one trick as one trick with hills", () => {
-      // Use seatWonTricks to add a single trick, then manually add hills cards to it
-      // Actually, we need a different approach - seatWonCards creates one trick per card
-      // Let's use the builder and then verify with a specific setup
-
-      // The builder creates one trick per specified card, so to test "multiple hills in one trick"
-      // we need to ensure cards end up in the same trick. But GameStateBuilder creates
-      // separate tricks for each seatWonCards card.
-
-      // Looking at the original test, it manually called addWonCards with multiple cards in one array.
-      // With GameStateBuilder, each card in seatWonCards creates its own trick.
-
-      // For this test, we need only 1 trick with hills, and 0 other tricks with hills.
-      // Since the builder creates separate tricks, we'll need to verify the behavior differently.
-      // Actually, looking at the Shadowfax objective, it counts tricks that CONTAIN hills.
-      // If we call seatWonCards with 3 hills cards, we get 3 tricks, each containing hills = 3 tricks.
-      // That would be { final, success }.
-
-      // The original test had 1 trick with 3 hills cards = 1 trick with hills = tentative failure.
-      // We can't replicate this exactly with GameStateBuilder since it creates one trick per card.
-
-      // Let's test the same logic differently: 1 trick with 1 hills card = still tentative failure
+      // Use seatWonTrick to create a single trick with multiple hills cards
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Shadowfax")
-        .seatWonCards(0, [{ suit: "hills", value: 1 }])
+        .seatWonTrick(0, [
+          { suit: "hills", value: 1 },
+          { suit: "hills", value: 2 },
+          { suit: "hills", value: 3 },
+        ])
         .build();
 
-      // With 1 trick containing hills, should still be tentative failure (need 2)
+      // Multiple hills in one trick = 1 trick with hills = tentative failure (need 2)
       expect(Shadowfax.objective.getStatus(game, seats[0]!)).toEqual({
         finality: "tentative",
         outcome: "failure",
