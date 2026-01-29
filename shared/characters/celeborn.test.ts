@@ -16,25 +16,22 @@ describe("Celeborn", () => {
     });
 
     test("returns { final, failure } when game is finished and no rank has 3 cards", () => {
-      // Seat 0 wins exactly 4 cards (2 of rank 1, 2 of rank 2), no rank has 3+
-      // Give all 8 remaining cards of ranks 1-2 to seat 1, and absorb rest with seatWonTricks
+      // Seat 0 wins exactly 4 cards (2 of rank 2, 2 of rank 3), no rank has 3+
+      // Give remaining 4 cards of ranks 2-3 to seat 1, finishGame distributes rest
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Celeborn")
-        .seatWonCards(0, [
-          { suit: "mountains", value: 1 },
-          { suit: "shadows", value: 1 },
-          { suit: "forests", value: 2 },
-          { suit: "hills", value: 2 },
-        ])
-        .seatWonCards(1, [
-          { suit: "forests", value: 1 },
-          { suit: "hills", value: 1 },
+        .seatWonTrick(0, [
           { suit: "mountains", value: 2 },
           { suit: "shadows", value: 2 },
+          { suit: "forests", value: 3 },
+          { suit: "hills", value: 3 },
         ])
-        // Absorb remaining cards (28 cards / 4 per trick = 7 tricks)
-        .seatWonTricks(2, 4)
-        .seatWonTricks(3, 3)
+        .seatWonTrick(1, [
+          { suit: "forests", value: 2 },
+          { suit: "hills", value: 2 },
+          { suit: "mountains", value: 3 },
+          { suit: "shadows", value: 3 },
+        ])
         .finishGame()
         .build();
 
@@ -183,25 +180,14 @@ describe("Celeborn", () => {
 
     test("shows details for ranks with 2+ cards", () => {
       // Seat 0 wins exactly 2 of rank 3 and 2 of rank 5
-      // Give remaining 3s and 5s to other seats
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Celeborn")
-        .seatWonCards(0, [
+        .seatWonTrick(0, [
           { suit: "mountains", value: 3 },
           { suit: "shadows", value: 3 },
           { suit: "forests", value: 5 },
           { suit: "hills", value: 5 },
         ])
-        .seatWonCards(1, [
-          { suit: "forests", value: 3 },
-          { suit: "hills", value: 3 },
-          { suit: "mountains", value: 5 },
-          { suit: "shadows", value: 5 },
-        ])
-        // Absorb remaining cards
-        .seatWonTricks(2, 4)
-        .seatWonTricks(3, 3)
-        .finishGame()
         .build();
 
       const details = Celeborn.objective.getDetails!(game, seats[0]!);

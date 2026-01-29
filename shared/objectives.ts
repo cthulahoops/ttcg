@@ -102,6 +102,50 @@ export function tricksWithCardsWinnable(
   };
 }
 
+export function leadsWinnable(
+  game: Game,
+  seat: Seat,
+  cardPredicate: (card: Card) => boolean
+): ObjectivePossibilities {
+  // Count tricks where this seat led with a matching card
+  let current = 0;
+
+  for (const trick of game.completedTricks) {
+    const lead = trick.plays[0];
+    if (lead?.playerIndex === seat.seatIndex && cardPredicate(lead.card)) {
+      current++;
+    }
+  }
+
+  // Check current trick too
+  if (game.currentTrick.length > 0) {
+    const lead = game.currentTrick[0];
+    if (lead?.playerIndex === seat.seatIndex && cardPredicate(lead.card)) {
+      current++;
+    }
+  }
+
+  if (game.finished) {
+    return { current, max: current };
+  }
+
+  // max: need both tricks remaining AND matching cards still available
+  let matchingCardsInPlay = 0;
+  for (const suit of SUITS) {
+    for (let value = 1; value <= CARDS_PER_SUIT[suit]; value++) {
+      const card = { suit, value };
+      if (cardPredicate(card) && game.cardAvailable(suit, value)) {
+        matchingCardsInPlay++;
+      }
+    }
+  }
+
+  return {
+    current,
+    max: current + Math.min(game.tricksRemaining(), matchingCardsInPlay),
+  };
+}
+
 export function cardsWinnable(
   game: Game,
   seat: Seat,
