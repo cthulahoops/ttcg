@@ -429,15 +429,15 @@ export class GameStateBuilder {
     seats: Seat[],
     remainingDeck: Card[]
   ): void {
-    // Warn if there aren't enough cards for requested tricks
+    // Error if there aren't enough cards for requested tricks
     const totalRequestedTricks = this.wonTricksSpecs.reduce(
       (sum, spec) => sum + spec.count,
       0
     );
     const cardsNeeded = totalRequestedTricks * this.numPlayers;
     if (cardsNeeded > remainingDeck.length && totalRequestedTricks > 0) {
-      console.warn(
-        `GameStateBuilder: seatWonTricks requested ${totalRequestedTricks} tricks (${cardsNeeded} cards) but only ${remainingDeck.length} cards remain. Some tricks will be incomplete or skipped.`
+      throw new Error(
+        `GameStateBuilder: seatWonTricks requested ${totalRequestedTricks} tricks (${cardsNeeded} cards) but only ${remainingDeck.length} cards remain`
       );
     }
 
