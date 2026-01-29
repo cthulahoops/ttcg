@@ -1,7 +1,7 @@
 import { shuffleDeck, sortHand, delay } from "./utils";
 import { Seat } from "./seat";
 import { ProxyController } from "./controllers";
-import { allCharacters } from "./characters/registry";
+import { allCharacters, characterRegistry } from "./characters/registry";
 import type { CharacterDefinition } from "./characters/registry";
 import { allRiders } from "./riders/registry";
 import type { RiderDefinition } from "./riders/registry";
@@ -921,22 +921,27 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
     gameState.currentPlayer = playerIndex;
     gameState.notifyStateChange();
 
-    const buttons: ChoiceButton<CharacterDefinition>[] =
-      gameState.availableCharacters.map((char) => ({
+    const buttons: ChoiceButton<string>[] = gameState.availableCharacters.map(
+      (char) => ({
         label: char.name,
-        value: char,
-      }));
+        value: char.name,
+      })
+    );
 
-    const character = await seat.controller.chooseButton({
+    const selectedName = await seat.controller.chooseButton({
       title: `${seat.getDisplayName()} - Choose Your Character`,
       message: "Select a character to play as",
       buttons,
     });
 
+    const character = characterRegistry.get(selectedName);
+    if (!character) {
+      throw new Error(`Unknown character: ${selectedName}`);
+    }
     gameState.log(`${seat.getDisplayName()} chose ${character.name}`);
     seat.character = character;
     gameState.availableCharacters = gameState.availableCharacters.filter(
-      (c) => c !== character
+      (c) => c.name !== selectedName
     );
 
     gameState.notifyStateChange();

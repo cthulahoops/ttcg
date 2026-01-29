@@ -2,6 +2,7 @@ import { delay } from "./utils";
 import type {
   Card,
   AnyCard,
+  Serializable,
   ChoiceButtonOptions,
   ChoiceCardOptions,
 } from "./types";
@@ -11,7 +12,9 @@ import type { Seat } from "./seat";
 export abstract class Controller {
   playerName: string | null = null;
 
-  async chooseButton<T>(_options: ChoiceButtonOptions<T>): Promise<T> {
+  async chooseButton<T extends Serializable>(
+    _options: ChoiceButtonOptions<T>
+  ): Promise<T> {
     throw new Error("Abstract");
   }
 
@@ -37,7 +40,9 @@ export class AIController extends Controller {
     this.delay = delay;
   }
 
-  async chooseButton<T>({ buttons }: ChoiceButtonOptions<T>): Promise<T> {
+  async chooseButton<T extends Serializable>({
+    buttons,
+  }: ChoiceButtonOptions<T>): Promise<T> {
     await delay(this.delay);
     return randomChoice(buttons).value;
   }
@@ -62,7 +67,9 @@ export class ProxyController extends Controller {
     this.realController = controller;
   }
 
-  chooseButton<T>(options: ChoiceButtonOptions<T>): Promise<T> {
+  chooseButton<T extends Serializable>(
+    options: ChoiceButtonOptions<T>
+  ): Promise<T> {
     if (!this.realController) {
       throw new Error("Controller must be assigned!");
     }

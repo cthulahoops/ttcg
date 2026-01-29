@@ -4,6 +4,7 @@ import type { SerializedGame } from "./serialized";
 import type {
   Card,
   AnyCard,
+  Serializable,
   ChoiceButtonOptions,
   ChoiceCardOptions,
 } from "./types";
@@ -49,7 +50,7 @@ export type ServerMessage =
 export type DecisionRequest =
   | {
       type: "choose_button";
-      options: ChoiceButtonOptions<string | number | boolean>;
+      options: ChoiceButtonOptions<Serializable>;
     }
   | { type: "choose_card"; options: ChoiceCardOptions<AnyCard> }
   | { type: "select_card"; availableCards: Card[] };

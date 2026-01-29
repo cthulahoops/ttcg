@@ -34,7 +34,10 @@ export interface Trick {
 
 export { Controller, AIController };
 
-export interface ChoiceButton<T> {
+// Types that survive JSON serialization (no functions, symbols, undefined, etc.)
+export type Serializable = string | number | boolean | null;
+
+export interface ChoiceButton<T extends Serializable> {
   label: string;
   value: T;
   onClick?: () => void;
@@ -42,7 +45,7 @@ export interface ChoiceButton<T> {
   grid?: boolean;
 }
 
-export interface ChoiceButtonOptions<T> {
+export interface ChoiceButtonOptions<T extends Serializable> {
   title: string;
   message: string;
   buttons: ChoiceButton<T>[];

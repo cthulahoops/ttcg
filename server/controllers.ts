@@ -2,6 +2,7 @@ import { Controller } from "../shared/controllers";
 import type {
   Card,
   AnyCard,
+  Serializable,
   ChoiceButtonOptions,
   ChoiceCardOptions,
 } from "../shared/types";
@@ -102,11 +103,12 @@ export class NetworkController extends Controller {
     return promise;
   }
 
-  async chooseButton<T>(options: ChoiceButtonOptions<T>): Promise<T> {
-    // Type assertion: button values are always string | number | boolean in practice
+  async chooseButton<T extends Serializable>(
+    options: ChoiceButtonOptions<T>
+  ): Promise<T> {
     return this.sendRequest<T>({
       type: "choose_button",
-      options: options as ChoiceButtonOptions<string | number | boolean>,
+      options,
     });
   }
 

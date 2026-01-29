@@ -3,6 +3,7 @@ import { createCardElement } from "./utils";
 import type {
   Card,
   AnyCard,
+  Serializable,
   ChoiceButtonOptions,
   ChoiceCardOptions,
 } from "@shared/types";
@@ -15,7 +16,7 @@ export class HumanController extends Controller {
     this._cardSelectionResolver = null;
   }
 
-  async chooseButton<T>({
+  async chooseButton<T extends Serializable>({
     title,
     message,
     buttons,
