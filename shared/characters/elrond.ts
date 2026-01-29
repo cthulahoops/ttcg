@@ -11,22 +11,29 @@ import { achieveAtLeast, type ObjectivePossibilities } from "../objectives";
  */
 function seatsWithRingsWinnable(game: Game): ObjectivePossibilities {
   let seatsWithRings = 0;
-  let seatsNeedingRing = 0;
-  let totalRingsWon = 0;
+  let ringsRemaining = 0;
 
+  // Check each seat for ring ownership using game.hasCard
   for (const seat of game.seats) {
-    const ringCount = seat
-      .getAllWonCards()
-      .filter((c: Card) => c.suit === "rings").length;
-    if (ringCount > 0) {
+    let seatHasRing = false;
+    for (let value = 1; value <= 5; value++) {
+      if (game.hasCard(seat, "rings", value)) {
+        seatHasRing = true;
+      }
+    }
+    if (seatHasRing) {
       seatsWithRings++;
-      totalRingsWon += ringCount;
-    } else {
-      seatsNeedingRing++;
     }
   }
 
-  const ringsRemaining = 5 - totalRingsWon;
+  // Count rings still available (not won by anyone and not the lost card)
+  for (let value = 1; value <= 5; value++) {
+    if (game.cardAvailable("rings", value)) {
+      ringsRemaining++;
+    }
+  }
+
+  const seatsNeedingRing = game.seats.length - seatsWithRings;
 
   return {
     current: seatsWithRings,
@@ -73,10 +80,10 @@ export const Elrond: CharacterDefinition = {
 
     getDetails: (game, _seat): string => {
       const seatsWithRings = game.seats.filter((s: Seat) => {
-        const ringCards = s
-          .getAllWonCards()
-          .filter((c: Card) => c.suit === "rings");
-        return ringCards.length >= 1;
+        for (let value = 1; value <= 5; value++) {
+          if (game.hasCard(s, "rings", value)) return true;
+        }
+        return false;
       }).length;
 
       return `Seats with rings: ${seatsWithRings}/${game.seats.length}`;

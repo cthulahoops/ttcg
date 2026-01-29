@@ -409,6 +409,16 @@ export class Game {
   }
 
   cardGone(seat: Seat, suit: Suit, value: number): boolean {
+    // Check if card is the lost card
+    if (
+      this.lostCard &&
+      this.lostCard.suit === suit &&
+      this.lostCard.value === value
+    ) {
+      return true;
+    }
+
+    // Check if another seat won the card
     for (const otherSeat of this.seats) {
       if (otherSeat.seatIndex !== seat.seatIndex) {
         if (this.hasCard(otherSeat, suit, value)) {
@@ -417,6 +427,26 @@ export class Game {
       }
     }
     return false;
+  }
+
+  /** Returns true if the card is still in play (not won by anyone and not the lost card) */
+  cardAvailable(suit: Suit, value: number): boolean {
+    // Check if card is the lost card
+    if (
+      this.lostCard &&
+      this.lostCard.suit === suit &&
+      this.lostCard.value === value
+    ) {
+      return false;
+    }
+
+    // Check if any seat won the card
+    for (const seat of this.seats) {
+      if (this.hasCard(seat, suit, value)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   tricksRemaining(): number {

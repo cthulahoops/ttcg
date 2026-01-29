@@ -106,6 +106,39 @@ describe("Elrond", () => {
         outcome: "failure",
       });
     });
+
+    test("returns { final, failure } when a ring is the lost card and not enough rings remain", () => {
+      // With ring-2 as lost card, only 4 rings available for 4 seats
+      // If one seat wins 2 rings, only 2 remain for 3 seats needing them
+      const { game, seats } = new GameStateBuilder(4)
+        .setCharacter(0, "Elrond")
+        .withLostCard({ suit: "rings", value: 2 })
+        .seatWonCards(0, [
+          { suit: "rings", value: 1 },
+          { suit: "rings", value: 3 },
+        ])
+        .build();
+
+      // 4 rings total (one lost), 2 won by seat 0, 2 remaining for 3 seats
+      expect(Elrond.objective.getStatus(game, seats[0]!)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
+    });
+
+    test("returns { tentative, failure } when ring is lost card but enough rings remain", () => {
+      // With ring-5 as lost card, 4 rings available for 4 seats
+      // No rings won yet, so 4 rings for 4 seats is still achievable
+      const { game, seats } = new GameStateBuilder(4)
+        .setCharacter(0, "Elrond")
+        .withLostCard({ suit: "rings", value: 5 })
+        .build();
+
+      expect(Elrond.objective.getStatus(game, seats[0]!)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
+    });
   });
 
   describe("objective.getDetails", () => {
