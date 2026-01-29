@@ -42,24 +42,106 @@ describe("Gwaihir", () => {
       });
     });
 
-    test("returns { tentative, failure } when only 1 trick contains mountains", () => {
-      // Give most mountains to other seats so only 1 trick has mountains
+    test("returns { tentative, failure } when only 1 trick contains mountains but more available", () => {
+      // Use seatWonTrick with full 4-card tricks to avoid auto-fill
+      // Gwaihir has 1 mountain trick, mountains 5,6,7 go to hands
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Gwaihir")
-        .seatWonCards(1, [
+        // Seat 1 wins 3 mountains (in one trick with other cards)
+        .seatWonTrick(1, [
           { suit: "mountains", value: 2 },
-          { suit: "mountains", value: 3 },
-          { suit: "mountains", value: 4 },
-          { suit: "mountains", value: 5 },
-          { suit: "mountains", value: 6 },
-          { suit: "mountains", value: 7 },
+          { suit: "shadows", value: 1 },
+          { suit: "forests", value: 1 },
+          { suit: "hills", value: 1 },
         ])
-        .seatWonCards(0, [{ suit: "mountains", value: 8 }])
-        .seatWonCards(0, [{ suit: "forests", value: 1 }])
+        .seatWonTrick(1, [
+          { suit: "mountains", value: 3 },
+          { suit: "shadows", value: 2 },
+          { suit: "forests", value: 2 },
+          { suit: "hills", value: 2 },
+        ])
+        .seatWonTrick(1, [
+          { suit: "mountains", value: 4 },
+          { suit: "shadows", value: 3 },
+          { suit: "forests", value: 3 },
+          { suit: "hills", value: 3 },
+        ])
+        // Gwaihir wins 1 mountain trick
+        .seatWonTrick(0, [
+          { suit: "mountains", value: 8 },
+          { suit: "shadows", value: 4 },
+          { suit: "forests", value: 4 },
+          { suit: "hills", value: 4 },
+        ])
+        // Mountains 5, 6, 7 remain in hands (lost card is mountains-1)
         .build();
 
       expect(Gwaihir.objective.getStatus(game, seats[0]!)).toEqual({
         finality: "tentative",
+        outcome: "failure",
+      });
+    });
+
+    test("returns { final, failure } when only 1 trick contains mountains and none available", () => {
+      // Use seatWonTrick with full 4-card tricks to control exactly which cards are won
+      const { game, seats } = new GameStateBuilder(4)
+        .setCharacter(0, "Gwaihir")
+        // Seat 1 wins 6 mountains (each in separate tricks)
+        .seatWonTrick(1, [
+          { suit: "mountains", value: 2 },
+          { suit: "shadows", value: 1 },
+          { suit: "forests", value: 1 },
+          { suit: "hills", value: 1 },
+        ])
+        .seatWonTrick(1, [
+          { suit: "mountains", value: 3 },
+          { suit: "shadows", value: 2 },
+          { suit: "forests", value: 2 },
+          { suit: "hills", value: 2 },
+        ])
+        .seatWonTrick(1, [
+          { suit: "mountains", value: 4 },
+          { suit: "shadows", value: 3 },
+          { suit: "forests", value: 3 },
+          { suit: "hills", value: 3 },
+        ])
+        .seatWonTrick(1, [
+          { suit: "mountains", value: 5 },
+          { suit: "shadows", value: 4 },
+          { suit: "forests", value: 4 },
+          { suit: "hills", value: 4 },
+        ])
+        .seatWonTrick(1, [
+          { suit: "mountains", value: 6 },
+          { suit: "shadows", value: 5 },
+          { suit: "forests", value: 5 },
+          { suit: "hills", value: 5 },
+        ])
+        .seatWonTrick(1, [
+          { suit: "mountains", value: 7 },
+          { suit: "shadows", value: 6 },
+          { suit: "forests", value: 6 },
+          { suit: "hills", value: 6 },
+        ])
+        // Gwaihir wins 1 mountain trick
+        .seatWonTrick(0, [
+          { suit: "mountains", value: 8 },
+          { suit: "shadows", value: 7 },
+          { suit: "forests", value: 7 },
+          { suit: "hills", value: 7 },
+        ])
+        // Gwaihir wins another trick (no mountains)
+        .seatWonTrick(0, [
+          { suit: "shadows", value: 8 },
+          { suit: "forests", value: 8 },
+          { suit: "hills", value: 8 },
+          { suit: "rings", value: 1 },
+        ])
+        .build();
+
+      // All mountains are accounted for (7 won + 1 lost), Gwaihir can't get another mountain trick
+      expect(Gwaihir.objective.getStatus(game, seats[0]!)).toEqual({
+        finality: "final",
         outcome: "failure",
       });
     });

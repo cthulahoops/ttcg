@@ -60,29 +60,103 @@ describe("Gloin", () => {
       });
     });
 
-    test("returns { tentative, failure } when tied for most mountains", () => {
-      // Assign all mountains so remaining cards don't include mountains
-      // Gloin has 2, seat 1 has 2 - tied
+    test("returns { tentative, failure } when tied for most mountains but mountains remain", () => {
+      // Use seatWonTrick with full 4-card tricks to avoid auto-fill
+      // Gloin has 2 mountains, seat 1 has 2 mountains, mountains 6,7,8 go to hands
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Gloin")
-        .seatWonCards(0, [
+        // Gloin wins 2 mountains in separate tricks (with non-mountain fillers)
+        .seatWonTrick(0, [
           { suit: "mountains", value: 2 },
+          { suit: "shadows", value: 1 },
+          { suit: "forests", value: 1 },
+          { suit: "hills", value: 1 },
+        ])
+        .seatWonTrick(0, [
           { suit: "mountains", value: 3 },
+          { suit: "shadows", value: 2 },
+          { suit: "forests", value: 2 },
+          { suit: "hills", value: 2 },
         ])
-        .seatWonCards(1, [
+        // Seat 1 wins 2 mountains in separate tricks (with non-mountain fillers)
+        .seatWonTrick(1, [
           { suit: "mountains", value: 4 },
+          { suit: "shadows", value: 3 },
+          { suit: "forests", value: 3 },
+          { suit: "hills", value: 3 },
+        ])
+        .seatWonTrick(1, [
           { suit: "mountains", value: 5 },
+          { suit: "shadows", value: 4 },
+          { suit: "forests", value: 4 },
+          { suit: "hills", value: 4 },
         ])
-        .seatWonCards(2, [
-          { suit: "mountains", value: 6 },
-          { suit: "mountains", value: 7 },
-        ])
-        .seatWonCards(3, [{ suit: "mountains", value: 8 }])
+        // Mountains 6, 7, 8 remain in hands (lost card is mountains-1)
         .build();
 
       expect(game.finished).toBe(false);
+      // Gloin is tied but could still win mountains 6, 7, 8 from hands
       expect(Gloin.objective.getStatus(game, seats[0]!)).toEqual({
         finality: "tentative",
+        outcome: "failure",
+      });
+    });
+
+    test("returns { final, failure } when tied and no mountains remain", () => {
+      // Use seatWonTrick with full 4-card tricks to control exactly which cards are won
+      const { game, seats } = new GameStateBuilder(4)
+        .setCharacter(0, "Gloin")
+        // Gloin wins 2 mountains
+        .seatWonTrick(0, [
+          { suit: "mountains", value: 2 },
+          { suit: "shadows", value: 1 },
+          { suit: "forests", value: 1 },
+          { suit: "hills", value: 1 },
+        ])
+        .seatWonTrick(0, [
+          { suit: "mountains", value: 3 },
+          { suit: "shadows", value: 2 },
+          { suit: "forests", value: 2 },
+          { suit: "hills", value: 2 },
+        ])
+        // Seat 1 wins 2 mountains
+        .seatWonTrick(1, [
+          { suit: "mountains", value: 4 },
+          { suit: "shadows", value: 3 },
+          { suit: "forests", value: 3 },
+          { suit: "hills", value: 3 },
+        ])
+        .seatWonTrick(1, [
+          { suit: "mountains", value: 5 },
+          { suit: "shadows", value: 4 },
+          { suit: "forests", value: 4 },
+          { suit: "hills", value: 4 },
+        ])
+        // Seat 2 wins remaining mountains (6, 7, 8)
+        .seatWonTrick(2, [
+          { suit: "mountains", value: 6 },
+          { suit: "shadows", value: 5 },
+          { suit: "forests", value: 5 },
+          { suit: "hills", value: 5 },
+        ])
+        .seatWonTrick(2, [
+          { suit: "mountains", value: 7 },
+          { suit: "shadows", value: 6 },
+          { suit: "forests", value: 6 },
+          { suit: "hills", value: 6 },
+        ])
+        .seatWonTrick(2, [
+          { suit: "mountains", value: 8 },
+          { suit: "shadows", value: 7 },
+          { suit: "forests", value: 7 },
+          { suit: "hills", value: 7 },
+        ])
+        .build();
+
+      expect(game.finished).toBe(false);
+      // All mountains are accounted for (7 won + 1 lost), Gloin is tied and can't improve
+      expect(Gloin.objective.getStatus(game, seats[0]!)).toEqual({
+        finality: "final",
         outcome: "failure",
       });
     });
@@ -136,36 +210,110 @@ describe("Gloin", () => {
     });
 
     test("returns { tentative, success } when currently has most but another player could catch up", () => {
-      // Gloin has 3 mountains, seat 1 has 2
-      // Assign all mountains to control distribution
-      // 3 mountains remain for possible play - seat 1 could get all 3 and tie/exceed Gloin
+      // Use seatWonTrick with full 4-card tricks to avoid auto-fill
+      // Gloin has 3 mountains, seat 1 has 2, mountains 7,8 go to hands
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Gloin")
-        .seatWonCards(0, [
+        // Gloin wins 3 mountains
+        .seatWonTrick(0, [
           { suit: "mountains", value: 2 },
+          { suit: "shadows", value: 1 },
+          { suit: "forests", value: 1 },
+          { suit: "hills", value: 1 },
+        ])
+        .seatWonTrick(0, [
           { suit: "mountains", value: 3 },
+          { suit: "shadows", value: 2 },
+          { suit: "forests", value: 2 },
+          { suit: "hills", value: 2 },
+        ])
+        .seatWonTrick(0, [
           { suit: "mountains", value: 4 },
+          { suit: "shadows", value: 3 },
+          { suit: "forests", value: 3 },
+          { suit: "hills", value: 3 },
         ])
-        .seatWonCards(1, [
+        // Seat 1 wins 2 mountains
+        .seatWonTrick(1, [
           { suit: "mountains", value: 5 },
-          { suit: "mountains", value: 6 },
+          { suit: "shadows", value: 4 },
+          { suit: "forests", value: 4 },
+          { suit: "hills", value: 4 },
         ])
-        // Leave mountains 7, 8 unassigned to remain in remaining deck
-        // But they'll end up as auto-fill... so we need a different approach
-        // Let's put all in tricks but leave cards in hands so game isn't finished
-        .seatWonCards(2, [{ suit: "mountains", value: 7 }])
-        .seatWonCards(3, [{ suit: "mountains", value: 8 }])
+        .seatWonTrick(1, [
+          { suit: "mountains", value: 6 },
+          { suit: "shadows", value: 5 },
+          { suit: "forests", value: 5 },
+          { suit: "hills", value: 5 },
+        ])
+        // Mountains 7, 8 remain in hands (lost card is mountains-1)
         .build();
 
       expect(game.finished).toBe(false);
-      // Gloin has 3, seat 1 has 2, seat 2 has 1, seat 3 has 1
-      // mountains-1 is lost card, so 0 mountains remain
-      // But the objective calculation uses CARDS_PER_SUIT.mountains - totalMountainsWon
-      // = 8 - 7 = 1 mountain "remaining" (even though it's the lost card)
-      // Seat 1 could get 1 more and have 3, tying Gloin
-      // Since there's still 1 "remaining", this is tentative
+      // Gloin has 3, seat 1 has 2, mountains 7 and 8 are in hands
+      // Seat 1 could win both remaining mountains and tie Gloin at 4
       expect(Gloin.objective.getStatus(game, seats[0]!)).toEqual({
         finality: "tentative",
+        outcome: "success",
+      });
+    });
+
+    test("returns { final, success } when has most and no mountains remain", () => {
+      // Use seatWonTrick with full 4-card tricks to control exactly which cards are won
+      const { game, seats } = new GameStateBuilder(4)
+        .setCharacter(0, "Gloin")
+        // Gloin wins 3 mountains
+        .seatWonTrick(0, [
+          { suit: "mountains", value: 2 },
+          { suit: "shadows", value: 1 },
+          { suit: "forests", value: 1 },
+          { suit: "hills", value: 1 },
+        ])
+        .seatWonTrick(0, [
+          { suit: "mountains", value: 3 },
+          { suit: "shadows", value: 2 },
+          { suit: "forests", value: 2 },
+          { suit: "hills", value: 2 },
+        ])
+        .seatWonTrick(0, [
+          { suit: "mountains", value: 4 },
+          { suit: "shadows", value: 3 },
+          { suit: "forests", value: 3 },
+          { suit: "hills", value: 3 },
+        ])
+        // Seat 1 wins 2 mountains
+        .seatWonTrick(1, [
+          { suit: "mountains", value: 5 },
+          { suit: "shadows", value: 4 },
+          { suit: "forests", value: 4 },
+          { suit: "hills", value: 4 },
+        ])
+        .seatWonTrick(1, [
+          { suit: "mountains", value: 6 },
+          { suit: "shadows", value: 5 },
+          { suit: "forests", value: 5 },
+          { suit: "hills", value: 5 },
+        ])
+        // Seat 2 wins remaining mountains (7, 8)
+        .seatWonTrick(2, [
+          { suit: "mountains", value: 7 },
+          { suit: "shadows", value: 6 },
+          { suit: "forests", value: 6 },
+          { suit: "hills", value: 6 },
+        ])
+        .seatWonTrick(2, [
+          { suit: "mountains", value: 8 },
+          { suit: "shadows", value: 7 },
+          { suit: "forests", value: 7 },
+          { suit: "hills", value: 7 },
+        ])
+        .build();
+
+      expect(game.finished).toBe(false);
+      // All mountains are won - Gloin has 3, nearest competitor has 2
+      // No mountains remain, so Gloin is guaranteed to have the most
+      expect(Gloin.objective.getStatus(game, seats[0]!)).toEqual({
+        finality: "final",
         outcome: "success",
       });
     });
