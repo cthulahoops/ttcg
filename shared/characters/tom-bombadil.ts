@@ -12,35 +12,23 @@ import { achieveAtLeast, type ObjectivePossibilities } from "../objectives";
 /**
  * Calculate suit-winning possibilities for Tom Bombadil's objective.
  * Unlike the standard cardsWinnable, this doesn't limit by tricks remaining
- * because Tom's objective is about cards left in hand at game end.
- * We want to know if it's theoretically possible, not just within current tricks.
+ * because multiple cards of the same suit can be won in a single trick.
  */
 function suitCardsWinnable(
   game: Game,
   seat: Seat,
   suit: Suit
 ): ObjectivePossibilities {
-  // Count cards of this suit won by Tom
-  const current = seat
-    .getAllWonCards()
-    .filter((c: Card) => c.suit === suit).length;
+  let current = 0;
+  let remaining = 0;
 
-  // Count cards of this suit won by others
-  let wonByOthers = 0;
-  for (const otherSeat of game.seats) {
-    if (otherSeat.seatIndex !== seat.seatIndex) {
-      wonByOthers += otherSeat
-        .getAllWonCards()
-        .filter((c: Card) => c.suit === suit).length;
+  for (let value = 1; value <= CARDS_PER_SUIT[suit]; value++) {
+    if (game.hasCard(seat, suit, value)) {
+      current++;
+    } else if (game.cardAvailable(suit, value)) {
+      remaining++;
     }
   }
-
-  // Account for lost card
-  const lostCardOfSuit = game.lostCard?.suit === suit ? 1 : 0;
-
-  // Remaining cards that could still be won
-  const remaining =
-    CARDS_PER_SUIT[suit] - current - wonByOthers - lostCardOfSuit;
 
   return { current, max: current + remaining };
 }
