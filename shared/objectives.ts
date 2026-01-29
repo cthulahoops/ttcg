@@ -224,6 +224,34 @@ export function achieveEvery(statuses: ObjectiveStatus[]): ObjectiveStatus {
 }
 
 /**
+ * Combines multiple objective statuses where any can be achieved.
+ * - Outcome: success if any is success
+ * - Finality: final if any is {final, success} OR all are final
+ */
+export function achieveSome(statuses: ObjectiveStatus[]): ObjectiveStatus {
+  if (statuses.length === 0) {
+    return { finality: "final", outcome: "failure" };
+  }
+
+  const isFinalSuccess = (s: ObjectiveStatus) =>
+    s.finality === "final" && s.outcome === "success";
+
+  const outcome: ObjectiveStatus["outcome"] = statuses.some(
+    (s) => s.outcome === "success"
+  )
+    ? "success"
+    : "failure";
+
+  const finality: ObjectiveStatus["finality"] =
+    statuses.some(isFinalSuccess) ||
+    statuses.every((s) => s.finality === "final")
+      ? "final"
+      : "tentative";
+
+  return { finality, outcome };
+}
+
+/**
  * Returns success if the first possibilities are strictly greater than the second.
  * Used for "win the most" type objectives.
  */

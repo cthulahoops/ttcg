@@ -1,47 +1,7 @@
 import type { Card, ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
-import type { Game } from "../game";
-import type { Seat } from "../seat";
 import { CARDS_PER_SUIT, SUITS } from "../types";
-import { achieveAtLeast, type ObjectivePossibilities } from "../objectives";
-
-/**
- * Returns the best achievable count of cards of any single rank.
- * For each rank, counts cards already won and cards still winnable,
- * then returns the possibilities for the most promising rank.
- */
-function sameRankCardsWinnable(game: Game, seat: Seat): ObjectivePossibilities {
-  const rankPossibilities: ObjectivePossibilities[] = [];
-
-  // Check each possible rank (1-8)
-  for (let rank = 1; rank <= 8; rank++) {
-    let current = 0;
-    let remaining = 0;
-
-    for (const suit of SUITS) {
-      // Skip if this suit doesn't have this rank
-      if (rank > CARDS_PER_SUIT[suit]) continue;
-
-      if (game.hasCard(seat, suit, rank)) {
-        current++;
-      } else if (!game.cardGone(seat, suit, rank)) {
-        remaining++;
-      }
-    }
-
-    rankPossibilities.push({
-      current,
-      max: current + Math.min(game.tricksRemaining(), remaining),
-    });
-  }
-
-  // Find the best rank (highest max, then highest current)
-  return rankPossibilities.reduce((best, curr) => {
-    if (curr.max > best.max) return curr;
-    if (curr.max === best.max && curr.current > best.current) return curr;
-    return best;
-  });
-}
+import { achieveAtLeast, achieveSome } from "../objectives";
 
 export const Celeborn: CharacterDefinition = {
   name: "Celeborn",
@@ -55,7 +15,28 @@ export const Celeborn: CharacterDefinition = {
     text: "Win at least three cards of the same rank",
 
     getStatus: (game, seat): ObjectiveStatus => {
-      return achieveAtLeast(sameRankCardsWinnable(game, seat), 3);
+      // Check each rank (1-8) - succeed if ANY rank has 3+ cards
+      const rankStatuses = Array.from({ length: 8 }, (_, i) => {
+        const rank = i + 1;
+        let current = 0;
+        let remaining = 0;
+
+        for (const suit of SUITS) {
+          if (rank > CARDS_PER_SUIT[suit]) continue;
+
+          if (game.hasCard(seat, suit, rank)) {
+            current++;
+          } else if (!game.finished && !game.cardGone(seat, suit, rank)) {
+            // Only count as remaining if game isn't finished and card isn't gone
+            remaining++;
+          }
+        }
+
+        // No tricksRemaining cap - one trick can capture multiple same-rank cards
+        return achieveAtLeast({ current, max: current + remaining }, 3);
+      });
+
+      return achieveSome(rankStatuses);
     },
 
     getDetails: (_game, seat): string | undefined => {
