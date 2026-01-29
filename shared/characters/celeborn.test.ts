@@ -16,7 +16,8 @@ describe("Celeborn", () => {
     });
 
     test("returns { final, failure } when game is finished and no rank has 3 cards", () => {
-      // Seat 0 wins exactly 4 cards (2 of rank 2, 2 of rank 3), no rank has 3+
+      // Seat 0 wins exactly 4 cards (2 of rank 1, 2 of rank 2), no rank has 3+
+      // Give all 8 remaining cards of ranks 1-2 to seat 1, finishGame distributes rest
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Celeborn")
         .seatWonTrick(0, [
@@ -24,6 +25,12 @@ describe("Celeborn", () => {
           { suit: "shadows", value: 2 },
           { suit: "forests", value: 3 },
           { suit: "hills", value: 3 },
+        ])
+        .seatWonTrick(1, [
+          { suit: "forests", value: 2 },
+          { suit: "hills", value: 2 },
+          { suit: "mountains", value: 3 },
+          { suit: "shadows", value: 3 },
         ])
         .finishGame()
         .build();

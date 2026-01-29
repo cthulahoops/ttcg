@@ -110,6 +110,27 @@ describe("Morgul-Knife", () => {
         outcome: "success",
       });
     });
+
+    test("final success when ring is lost card and rest are gone", () => {
+      // rings-2 is lost, other 4 ring cards won by other seats
+      const { game, seats } = new GameStateBuilder(4)
+        .withLostCard({ suit: "rings", value: 2 })
+        .seatWonCards(1, [
+          { suit: "rings", value: 1 },
+          { suit: "rings", value: 3 },
+        ])
+        .seatWonCards(2, [
+          { suit: "rings", value: 4 },
+          { suit: "rings", value: 5 },
+        ])
+        .build();
+
+      // Seat 0 can't possibly lead with rings anymore
+      expect(MorgulKnife.objective.getStatus(game, seats[0]!)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
+    });
   });
 
   describe("metadata", () => {
