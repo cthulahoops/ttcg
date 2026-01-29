@@ -5,22 +5,10 @@ import type { CharacterDefinition } from "./types";
 import {
   tricksWinnable,
   achieveMoreThan,
-  achieveEvery,
+  achieveSome,
   achieveBoth,
-  doNot,
   type ObjectivePossibilities,
 } from "../objectives";
-
-/**
- * Returns success if at least one of the provided statuses is a success.
- * Uses De Morgan's law: any(success) = NOT(all(failure))
- */
-function achieveAny(statuses: ObjectiveStatus[]): ObjectiveStatus {
-  if (statuses.length === 0) {
-    return { finality: "final", outcome: "failure" };
-  }
-  return doNot(achieveEvery(statuses.map(doNot)));
-}
 
 /**
  * Checks if a middle position (neither fewest nor most) is achievable.
@@ -132,14 +120,14 @@ export const Galadriel: CharacterDefinition = {
         .map((s: Seat) => tricksWinnable(game, s));
 
       // Not fewest: at least one other player has strictly fewer tricks
-      const notFewest = achieveAny(
+      const notFewest = achieveSome(
         othersTricks.map((other: ObjectivePossibilities) =>
           achieveMoreThan(myTricks, other)
         )
       );
 
       // Not most: at least one other player has strictly more tricks
-      const notMost = achieveAny(
+      const notMost = achieveSome(
         othersTricks.map((other: ObjectivePossibilities) =>
           achieveMoreThan(other, myTricks)
         )
