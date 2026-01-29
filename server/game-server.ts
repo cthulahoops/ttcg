@@ -9,10 +9,10 @@ import { Seat } from "@shared/seat";
 
 import { SolitaireHand, PlayerHand, PyramidHand, Hand } from "@shared/hands";
 
-import { allCharacterNames } from "@shared/characters/registry";
+import { allCharacters } from "@shared/characters/registry";
 
 // All possible characters in the game (except Frodo who is automatically assigned)
-const allCharacters = allCharacterNames.filter((name) => name !== "Frodo");
+const nonFrodoCharacters = allCharacters.filter((c) => c.name !== "Frodo");
 
 export function newGame(controllers: Controller[]): Game {
   const playerCount = controllers.length;
@@ -59,12 +59,13 @@ export function newGame(controllers: Controller[]): Game {
   }
 
   // Frodo + 1 spare per seat, so numCharacters non-Frodo characters + Frodo = numCharacters + 1 total
-  const availableCharacters = shuffleDeck(allCharacters).slice(
+  const frodo = allCharacters.find((c) => c.name === "Frodo")!;
+  const availableCharacters = shuffleDeck(nonFrodoCharacters).slice(
     0,
     numCharacters
   );
-  availableCharacters.push("Frodo");
-  availableCharacters.sort();
+  availableCharacters.push(frodo);
+  availableCharacters.sort((a, b) => a.name.localeCompare(b.name));
 
   const gameState = new Game(
     playerCount,

@@ -1,7 +1,8 @@
 import { shuffleDeck, sortHand, delay } from "./utils";
 import { Seat } from "./seat";
 import { ProxyController } from "./controllers";
-import { characterRegistry } from "./characters/registry";
+import { allCharacters } from "./characters/registry";
+import type { CharacterDefinition } from "./characters/registry";
 import { allRiders } from "./riders/registry";
 import type { RiderDefinition } from "./riders/registry";
 import type { Card, Suit, ThreatCard, ChoiceButton } from "./types";
@@ -44,7 +45,7 @@ export class Game {
   currentTrickNumber: number;
   leadSuit: Suit | null;
   ringsBroken: boolean;
-  availableCharacters: string[];
+  availableCharacters: CharacterDefinition[];
   lostCard: Card | null;
   lastTrickWinner: number | null;
   threatDeck: number[];
@@ -864,13 +865,14 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
     throw new Error(`Invalid start player seat index: ${startPlayer}`);
   }
 
+  const frodoCharacter = allCharacters.find((c) => c.name === "Frodo")!;
   gameState.log(
     `${frodoSeat.getDisplayName()} gets Frodo (has 1 of Rings)`,
     true
   );
-  frodoSeat.character = characterRegistry.get("Frodo")!;
+  frodoSeat.character = frodoCharacter;
   gameState.availableCharacters = gameState.availableCharacters.filter(
-    (c) => c !== "Frodo"
+    (c) => c !== frodoCharacter
   );
   gameState.notifyStateChange();
 
@@ -919,12 +921,11 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
     gameState.currentPlayer = playerIndex;
     gameState.notifyStateChange();
 
-    const buttons: ChoiceButton<string>[] = gameState.availableCharacters.map(
-      (char) => ({
-        label: char,
+    const buttons: ChoiceButton<CharacterDefinition>[] =
+      gameState.availableCharacters.map((char) => ({
+        label: char.name,
         value: char,
-      })
-    );
+      }));
 
     const character = await seat.controller.chooseButton({
       title: `${seat.getDisplayName()} - Choose Your Character`,
@@ -932,8 +933,8 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
       buttons,
     });
 
-    gameState.log(`${seat.getDisplayName()} chose ${character}`);
-    seat.character = characterRegistry.get(character)!;
+    gameState.log(`${seat.getDisplayName()} chose ${character.name}`);
+    seat.character = character;
     gameState.availableCharacters = gameState.availableCharacters.filter(
       (c) => c !== character
     );

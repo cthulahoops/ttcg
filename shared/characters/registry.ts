@@ -34,32 +34,36 @@ import { Gwaihir } from "./gwaihir";
 import { Shadowfax } from "./shadowfax";
 import type { CharacterDefinition } from "./types";
 
-export const characterRegistry = new Map<string, CharacterDefinition>([
-  [Frodo.name, Frodo],
-  [Gandalf.name, Gandalf],
-  [Merry.name, Merry],
-  [Celeborn.name, Celeborn],
-  [Pippin.name, Pippin],
-  [Boromir.name, Boromir],
-  [Sam.name, Sam],
-  [Gimli.name, Gimli],
-  [Legolas.name, Legolas],
-  [Aragorn.name, Aragorn],
-  [Goldberry.name, Goldberry],
-  [Glorfindel.name, Glorfindel],
-  [Galadriel.name, Galadriel],
-  [GildorInglorian.name, GildorInglorian],
-  [FarmerMaggot.name, FarmerMaggot],
-  [FattyBolger.name, FattyBolger],
-  [TomBombadil.name, TomBombadil],
-  [BarlimanButterbur.name, BarlimanButterbur],
-  [BillThePony.name, BillThePony],
-  [Elrond.name, Elrond],
-  [Arwen.name, Arwen],
-  [Gloin.name, Gloin],
-  [BilboBaggins.name, BilboBaggins],
-  [Gwaihir.name, Gwaihir],
-  [Shadowfax.name, Shadowfax],
-]);
+export const allCharacters: CharacterDefinition[] = [
+  Frodo,
+  Gandalf,
+  Merry,
+  Celeborn,
+  Pippin,
+  Boromir,
+  Sam,
+  Gimli,
+  Legolas,
+  Aragorn,
+  Goldberry,
+  Glorfindel,
+  Galadriel,
+  GildorInglorian,
+  FarmerMaggot,
+  FattyBolger,
+  TomBombadil,
+  BarlimanButterbur,
+  BillThePony,
+  Elrond,
+  Arwen,
+  Gloin,
+  BilboBaggins,
+  Gwaihir,
+  Shadowfax,
+];
 
-export const allCharacterNames = Array.from(characterRegistry.keys());
+export const characterRegistry = new Map<string, CharacterDefinition>(
+  allCharacters.map((c) => [c.name, c])
+);
+
+export const allCharacterNames = allCharacters.map((c) => c.name);
