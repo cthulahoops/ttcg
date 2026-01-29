@@ -5,8 +5,11 @@ This is a Lord of the Rings-themed trick-taking card game implemented as a singl
 
 ## Key Commands
 
+Install dependencies: `bun install`
 Check your work with: `bun run check`
 Format the code with: `bun run format`
+
+Run `bun install` before running checks if dependencies are missing.
 
 Don't build (CI) or start a dev server unless asked to do so.
 

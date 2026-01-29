@@ -9,10 +9,12 @@ import { Seat } from "@shared/seat";
 
 import { SolitaireHand, PlayerHand, PyramidHand, Hand } from "@shared/hands";
 
-import { allCharacterNames } from "@shared/characters/registry";
-
-// All possible characters in the game (except Frodo who is automatically assigned)
-const allCharacters = allCharacterNames.filter((name) => name !== "Frodo");
+import {
+  allCharacters,
+  fellowshipCharacters,
+  extraCharacters,
+} from "@shared/characters/registry";
+import type { CharacterDefinition } from "@shared/characters/registry";
 
 export function newGame(controllers: Controller[]): Game {
   const playerCount = controllers.length;
@@ -58,13 +60,26 @@ export function newGame(controllers: Controller[]): Game {
     seats.push(seat);
   }
 
-  // Frodo + 1 spare per seat, so numCharacters non-Frodo characters + Frodo = numCharacters + 1 total
-  const availableCharacters = shuffleDeck(allCharacters).slice(
-    0,
-    numCharacters
-  );
-  availableCharacters.push("Frodo");
-  availableCharacters.sort();
+  // Draw characters alternating between fellowship and extras
+  // 3-seat: Frodo + 2 Fellowship + 1 Extra
+  // 4-seat: Frodo + 2 Fellowship + 2 Extra
+  const frodo = allCharacters.find((c) => c.name === "Frodo")!;
+  const shuffledFellowship = shuffleDeck([...fellowshipCharacters]);
+  const shuffledExtras = shuffleDeck([...extraCharacters]);
+
+  const availableCharacters: CharacterDefinition[] = [frodo];
+  for (let i = 0; i < numCharacters; i++) {
+    if (i % 2 === 0) {
+      // Fellowship on even indices (0, 2, ...)
+      const char = shuffledFellowship.shift();
+      if (char) availableCharacters.push(char);
+    } else {
+      // Extras on odd indices (1, 3, ...)
+      const char = shuffledExtras.shift();
+      if (char) availableCharacters.push(char);
+    }
+  }
+  availableCharacters.sort((a, b) => a.name.localeCompare(b.name));
 
   const gameState = new Game(
     playerCount,

@@ -34,32 +34,51 @@ import { Gwaihir } from "./gwaihir";
 import { Shadowfax } from "./shadowfax";
 import type { CharacterDefinition } from "./types";
 
-export const characterRegistry = new Map<string, CharacterDefinition>([
-  [Frodo.name, Frodo],
-  [Gandalf.name, Gandalf],
-  [Merry.name, Merry],
-  [Celeborn.name, Celeborn],
-  [Pippin.name, Pippin],
-  [Boromir.name, Boromir],
-  [Sam.name, Sam],
-  [Gimli.name, Gimli],
-  [Legolas.name, Legolas],
-  [Aragorn.name, Aragorn],
-  [Goldberry.name, Goldberry],
-  [Glorfindel.name, Glorfindel],
-  [Galadriel.name, Galadriel],
-  [GildorInglorian.name, GildorInglorian],
-  [FarmerMaggot.name, FarmerMaggot],
-  [FattyBolger.name, FattyBolger],
-  [TomBombadil.name, TomBombadil],
-  [BarlimanButterbur.name, BarlimanButterbur],
-  [BillThePony.name, BillThePony],
-  [Elrond.name, Elrond],
-  [Arwen.name, Arwen],
-  [Gloin.name, Gloin],
-  [BilboBaggins.name, BilboBaggins],
-  [Gwaihir.name, Gwaihir],
-  [Shadowfax.name, Shadowfax],
-]);
+// Character pools
+// Special characters have unique assignment rules
+export const specialCharacters: CharacterDefinition[] = [Frodo, Gandalf];
 
-export const allCharacterNames = Array.from(characterRegistry.keys());
+// Fellowship members (Gandalf included here for standard mode)
+export const fellowshipCharacters: CharacterDefinition[] = [
+  Gandalf,
+  Merry,
+  Pippin,
+  Sam,
+  Aragorn,
+  Boromir,
+  Legolas,
+  Gimli,
+];
+
+// Extra characters from Middle-earth
+export const extraCharacters: CharacterDefinition[] = [
+  Celeborn,
+  Goldberry,
+  Glorfindel,
+  Galadriel,
+  GildorInglorian,
+  FarmerMaggot,
+  FattyBolger,
+  TomBombadil,
+  BarlimanButterbur,
+  BillThePony,
+  Elrond,
+  Arwen,
+  Gloin,
+  BilboBaggins,
+  Gwaihir,
+  Shadowfax,
+];
+
+export const allCharacters: CharacterDefinition[] = [
+  Frodo,
+  ...fellowshipCharacters.filter((c) => c !== Gandalf),
+  Gandalf,
+  ...extraCharacters,
+];
+
+export const characterRegistry = new Map<string, CharacterDefinition>(
+  allCharacters.map((c) => [c.name, c])
+);
+
+export const allCharacterNames = allCharacters.map((c) => c.name);
