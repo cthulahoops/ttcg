@@ -89,6 +89,27 @@ describe("Morgul-Knife", () => {
         outcome: "failure",
       });
     });
+
+    test("final success when all ring cards are gone", () => {
+      // All 5 ring cards won by other seats, game still in progress
+      const { game, seats } = new GameStateBuilder(4)
+        .seatWonCards(1, [
+          { suit: "rings", value: 1 },
+          { suit: "rings", value: 2 },
+          { suit: "rings", value: 3 },
+        ])
+        .seatWonCards(2, [
+          { suit: "rings", value: 4 },
+          { suit: "rings", value: 5 },
+        ])
+        .build();
+
+      // Seat 0 can't possibly lead with rings anymore
+      expect(MorgulKnife.objective.getStatus(game, seats[0]!)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
+    });
   });
 
   describe("metadata", () => {

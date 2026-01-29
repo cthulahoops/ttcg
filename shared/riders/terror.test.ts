@@ -89,6 +89,30 @@ describe("Terror", () => {
         outcome: "failure",
       });
     });
+
+    test("final success when all hills cards are gone", () => {
+      // All 8 hills cards won by other seats, game still in progress
+      const { game, seats } = new GameStateBuilder(4)
+        .seatWonCards(1, [
+          { suit: "hills", value: 1 },
+          { suit: "hills", value: 2 },
+          { suit: "hills", value: 3 },
+          { suit: "hills", value: 4 },
+        ])
+        .seatWonCards(2, [
+          { suit: "hills", value: 5 },
+          { suit: "hills", value: 6 },
+          { suit: "hills", value: 7 },
+          { suit: "hills", value: 8 },
+        ])
+        .build();
+
+      // Seat 0 can't possibly lead with hills anymore
+      expect(Terror.objective.getStatus(game, seats[0]!)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
+    });
   });
 
   describe("metadata", () => {
