@@ -20,23 +20,25 @@ import {
  * This accounts for the constraint that remaining tricks are shared among all players.
  */
 function middlePositionCompletable(game: Game, seat: Seat): boolean {
-  const allCounts = game.seats.map((s: Seat) => s.getTrickCount());
-  const minCount = Math.min(...allCounts);
-  const maxCount = Math.max(...allCounts);
   const myCount = seat.getTrickCount();
+  const otherCounts = game.seats
+    .filter((s: Seat) => s.seatIndex !== seat.seatIndex)
+    .map((s: Seat) => s.getTrickCount());
+  const otherMin = Math.min(...otherCounts);
+  const otherMax = Math.max(...otherCounts);
   const tricksRemaining = game.tricksRemaining();
 
-  // Galadriel needs to be above the minimum and below the maximum.
-  // Optimistically: assume current min stays as min (or gets lower).
-  // Galadriel needs at least minCount + 1 tricks.
-  // Someone needs to be above Galadriel, so at least targetGaladriel + 1.
-  const targetGaladriel = Math.max(minCount + 1, myCount);
-  const targetMax = Math.max(maxCount, targetGaladriel + 1);
+  // Galadriel needs to end with more than the current min among others (to not be fewest)
+  const targetGaladriel = otherMin + 1;
+  const tricksNeededForGaladriel = Math.max(0, targetGaladriel - myCount);
 
-  const tricksNeededForGaladriel = targetGaladriel - myCount;
-  const tricksNeededForMax = targetMax - maxCount;
+  // Galadriel's actual final count will be at least max(myCount, targetGaladriel)
+  // Someone needs to beat this (to ensure she's not the most)
+  const actualGaladriel = Math.max(myCount, targetGaladriel);
+  const targetAbove = actualGaladriel + 1;
+  const tricksNeededForAbove = Math.max(0, targetAbove - otherMax);
 
-  return tricksNeededForGaladriel + tricksNeededForMax <= tricksRemaining;
+  return tricksNeededForGaladriel + tricksNeededForAbove <= tricksRemaining;
 }
 
 /**
