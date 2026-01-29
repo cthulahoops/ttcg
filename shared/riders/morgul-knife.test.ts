@@ -23,10 +23,72 @@ describe("Morgul-Knife", () => {
       });
     });
 
-    // Tests below require GameStateBuilder extension to track who led tricks
-    // test("tentative success when led with non-ring card")
-    // test("final failure when led with a ring card")
-    // test("failure only applies to the seat that led")
+    test("tentative success when led with non-ring card", () => {
+      const { game, seats } = new GameStateBuilder(4)
+        .seatWonTrick(
+          0,
+          [
+            { suit: "mountains", value: 2 },
+            { suit: "shadows", value: 3 },
+            { suit: "forests", value: 4 },
+            { suit: "hills", value: 5 },
+          ],
+          { leader: 0 }
+        )
+        .build();
+
+      expect(MorgulKnife.objective.getStatus(game, seats[0]!)).toEqual({
+        finality: "tentative",
+        outcome: "success",
+      });
+    });
+
+    test("final failure when led with a ring card", () => {
+      const { game, seats } = new GameStateBuilder(4)
+        .seatWonTrick(
+          0,
+          [
+            { suit: "rings", value: 2 },
+            { suit: "shadows", value: 3 },
+            { suit: "forests", value: 4 },
+            { suit: "hills", value: 5 },
+          ],
+          { leader: 0 }
+        )
+        .build();
+
+      expect(MorgulKnife.objective.getStatus(game, seats[0]!)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
+    });
+
+    test("failure only applies to the seat that led", () => {
+      const { game, seats } = new GameStateBuilder(4)
+        .seatWonTrick(
+          1, // seat 1 won
+          [
+            { suit: "rings", value: 2 },
+            { suit: "shadows", value: 3 },
+            { suit: "forests", value: 4 },
+            { suit: "hills", value: 5 },
+          ],
+          { leader: 1 } // seat 1 also led with rings
+        )
+        .build();
+
+      // Seat 0 didn't lead with rings, should still be success
+      expect(MorgulKnife.objective.getStatus(game, seats[0]!)).toEqual({
+        finality: "tentative",
+        outcome: "success",
+      });
+
+      // Seat 1 led with rings, should be failure
+      expect(MorgulKnife.objective.getStatus(game, seats[1]!)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
+    });
   });
 
   describe("metadata", () => {

@@ -5,7 +5,7 @@
  * and provides implementation-agnostic tests that work regardless of how objectives count cards.
  */
 
-import { Game } from "./game";
+import { Game, TrickPlay } from "./game";
 import { Seat } from "./seat";
 import { PlayerHand } from "./hands";
 import { Controller } from "./controllers";
@@ -82,6 +82,7 @@ interface WonCardsSpec {
 interface WonTrickSpec {
   seatIndex: number;
   cards: Card[];
+  leader?: number;
 }
 
 interface WonTricksSpec {
@@ -141,12 +142,23 @@ export class GameStateBuilder {
    * Specify a single trick with specific cards that a seat has won.
    * Use this when you need multiple specific cards in one trick (e.g., testing
    * that multiple hills cards in one trick count as one trick, not multiple).
+   * @param seatIndex - The seat that won the trick
+   * @param cards - Cards in the trick (first card is the lead card)
+   * @param options.leader - Who led the trick (defaults to winner)
    */
-  seatWonTrick(seatIndex: number, cards: Card[]): this {
+  seatWonTrick(
+    seatIndex: number,
+    cards: Card[],
+    options?: { leader?: number }
+  ): this {
     if (seatIndex < 0 || seatIndex >= this.numPlayers) {
       throw new Error(`Invalid seat index: ${seatIndex}`);
     }
-    this.wonTrickSpecs.push({ seatIndex, cards });
+    const leader = options?.leader;
+    if (leader !== undefined && (leader < 0 || leader >= this.numPlayers)) {
+      throw new Error(`Invalid leader index: ${leader}`);
+    }
+    this.wonTrickSpecs.push({ seatIndex, cards, leader });
     return this;
   }
 
@@ -384,7 +396,9 @@ export class GameStateBuilder {
     remainingDeck: Card[]
   ): void {
     for (const spec of this.wonTrickSpecs) {
-      const seat = seats[spec.seatIndex]!;
+      const winner = spec.seatIndex;
+      const leader = spec.leader ?? winner;
+      const seat = seats[winner]!;
       const trickCards: Card[] = [...spec.cards];
 
       // Fill the rest of the trick with cards from remaining deck
@@ -393,7 +407,18 @@ export class GameStateBuilder {
       }
 
       if (trickCards.length > 0) {
+        // Add to seat's won tricks
         seat.addTrick(game.currentTrickNumber, trickCards);
+
+        // Add to completedTricks with play history
+        // Players play in order starting from leader
+        const plays: TrickPlay[] = trickCards.map((card, i) => ({
+          playerIndex: (leader + i) % this.numPlayers,
+          card,
+          isTrump: false,
+        }));
+        game.completedTricks.push({ plays, winner });
+
         game.currentTrickNumber++;
       }
     }
