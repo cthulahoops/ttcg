@@ -34,17 +34,25 @@ import { Gwaihir } from "./gwaihir";
 import { Shadowfax } from "./shadowfax";
 import type { CharacterDefinition } from "./types";
 
-export const allCharacters: CharacterDefinition[] = [
-  Frodo,
+// Character pools
+// Special characters have unique assignment rules
+export const specialCharacters: CharacterDefinition[] = [Frodo, Gandalf];
+
+// Fellowship members (Gandalf included here for standard mode)
+export const fellowshipCharacters: CharacterDefinition[] = [
   Gandalf,
   Merry,
-  Celeborn,
   Pippin,
-  Boromir,
   Sam,
-  Gimli,
-  Legolas,
   Aragorn,
+  Boromir,
+  Legolas,
+  Gimli,
+];
+
+// Extra characters from Middle-earth
+export const extraCharacters: CharacterDefinition[] = [
+  Celeborn,
   Goldberry,
   Glorfindel,
   Galadriel,
@@ -60,6 +68,13 @@ export const allCharacters: CharacterDefinition[] = [
   BilboBaggins,
   Gwaihir,
   Shadowfax,
+];
+
+export const allCharacters: CharacterDefinition[] = [
+  Frodo,
+  ...fellowshipCharacters.filter((c) => c !== Gandalf),
+  Gandalf,
+  ...extraCharacters,
 ];
 
 export const characterRegistry = new Map<string, CharacterDefinition>(
