@@ -28,12 +28,15 @@ describe("Gimli", () => {
     });
 
     test("returns { tentative, failure } when different mountains card won", () => {
-      // Use withLostCard to keep mountains-5 out of any tricks while still
-      // being counted as potentially winnable by the objective logic
+      // Use seatWonTrick with explicit cards to prevent mountains-5 from being filler
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Gimli")
-        .withLostCard({ suit: "mountains", value: 5 })
-        .seatWonCards(0, [{ suit: "mountains", value: 3 }])
+        .seatWonTrick(0, [
+          { suit: "mountains", value: 3 },
+          { suit: "shadows", value: 1 },
+          { suit: "forests", value: 1 },
+          { suit: "hills", value: 1 },
+        ])
         .build();
 
       seats[0]!.threatCard = 5;
@@ -74,15 +77,14 @@ describe("Gimli", () => {
     });
 
     test("ignores non-mountains cards with matching value", () => {
-      // Use withLostCard to keep mountains-5 out of any tricks while still
-      // being counted as potentially winnable by the objective logic
+      // Use seatWonTrick with explicit cards to prevent mountains-5 from being filler
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Gimli")
-        .withLostCard({ suit: "mountains", value: 5 })
-        .seatWonCards(0, [
+        .seatWonTrick(0, [
           { suit: "forests", value: 5 },
           { suit: "shadows", value: 5 },
           { suit: "hills", value: 5 },
+          { suit: "rings", value: 1 },
         ])
         .build();
 
@@ -107,17 +109,33 @@ describe("Gimli", () => {
     });
 
     test("returns { tentative, failure } when another player won a different mountains card", () => {
-      // Use withLostCard to keep mountains-5 out of any tricks while still
-      // being counted as potentially winnable by the objective logic
+      // Use seatWonTrick with explicit cards to prevent mountains-5 from being filler
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Gimli")
-        .withLostCard({ suit: "mountains", value: 5 })
-        .seatWonCards(1, [{ suit: "mountains", value: 3 }])
+        .seatWonTrick(1, [
+          { suit: "mountains", value: 3 },
+          { suit: "shadows", value: 1 },
+          { suit: "forests", value: 1 },
+          { suit: "hills", value: 1 },
+        ])
         .build();
 
       seats[0]!.threatCard = 5;
       expect(Gimli.objective.getStatus(game, seats[0]!)).toEqual({
         finality: "tentative",
+        outcome: "failure",
+      });
+    });
+
+    test("returns { final, failure } when threat card is the lost card", () => {
+      const { game, seats } = new GameStateBuilder(4)
+        .setCharacter(0, "Gimli")
+        .withLostCard({ suit: "mountains", value: 5 })
+        .build();
+
+      seats[0]!.threatCard = 5;
+      expect(Gimli.objective.getStatus(game, seats[0]!)).toEqual({
+        finality: "final",
         outcome: "failure",
       });
     });

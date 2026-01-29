@@ -9,18 +9,19 @@ describe("Boromir", () => {
         .setCharacter(0, "Boromir")
         .build();
 
+      // No tricks played yet, last trick hasn't happened
       expect(Boromir.objective.getStatus(game, seats[0]!)).toEqual({
         finality: "tentative",
         outcome: "failure",
       });
     });
 
-    test("returns { tentative, failure } when Boromir did not win the last trick", () => {
+    test("returns { tentative, failure } when some tricks played but not the last", () => {
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Boromir")
+        .seatWonTricks(0, 2) // Boromir won tricks 0 and 1, not the last trick (8)
         .build();
 
-      game.lastTrickWinner = 1; // Someone else won
       expect(Boromir.objective.getStatus(game, seats[0]!)).toEqual({
         finality: "tentative",
         outcome: "failure",
@@ -33,32 +34,20 @@ describe("Boromir", () => {
         .seatWonCards(0, [{ suit: "rings", value: 1 }])
         .build();
 
-      game.lastTrickWinner = 0;
+      // Even though last trick hasn't been played, having the 1 of Rings is final failure
       expect(Boromir.objective.getStatus(game, seats[0]!)).toEqual({
         finality: "final",
         outcome: "failure",
       });
     });
 
-    test("returns { tentative, success } when Boromir won the last trick without 1 of Rings (game not finished)", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Boromir")
-        .build();
-
-      game.lastTrickWinner = 0;
-      expect(Boromir.objective.getStatus(game, seats[0]!)).toEqual({
-        finality: "tentative",
-        outcome: "success",
-      });
-    });
-
     test("returns { final, success } when Boromir won the last trick without 1 of Rings (game finished)", () => {
+      // With finishGame(), seat 0 wins tricks 0, 4, 8 (last trick is 8)
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Boromir")
         .finishGame()
         .build();
 
-      game.lastTrickWinner = 0;
       expect(game.finished).toBe(true);
       expect(Boromir.objective.getStatus(game, seats[0]!)).toEqual({
         finality: "final",
@@ -66,44 +55,44 @@ describe("Boromir", () => {
       });
     });
 
-    test("returns { tentative, success } when Boromir won the last trick with other rings cards", () => {
+    test("returns { final, failure } when game finished but Boromir did not win last trick", () => {
+      // With finishGame(), seat 1 wins tricks 1, 5 (not 8)
       const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Boromir")
-        .seatWonCards(0, [
-          { suit: "rings", value: 2 },
-          { suit: "rings", value: 3 },
-          { suit: "rings", value: 5 },
-        ])
+        .setCharacter(1, "Boromir")
+        .finishGame()
         .build();
 
-      game.lastTrickWinner = 0;
+      expect(game.finished).toBe(true);
+      expect(Boromir.objective.getStatus(game, seats[1]!)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
+    });
+
+    test("returns { final, failure } when Boromir won the last trick but has 1 of Rings (game finished)", () => {
+      // Seat 0 wins tricks including the last, but also has the 1 of Rings
+      const { game, seats } = new GameStateBuilder(4)
+        .setCharacter(0, "Boromir")
+        .seatWonCards(0, [{ suit: "rings", value: 1 }])
+        .finishGame()
+        .build();
+
+      expect(game.finished).toBe(true);
       expect(Boromir.objective.getStatus(game, seats[0]!)).toEqual({
-        finality: "tentative",
-        outcome: "success",
+        finality: "final",
+        outcome: "failure",
       });
     });
 
     test("works correctly for different seat indices", () => {
+      // Seat 2 wins tricks 2, 6 with finishGame() - not the last trick (8)
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(2, "Boromir")
-        .build();
-
-      game.lastTrickWinner = 2;
-      expect(Boromir.objective.getStatus(game, seats[2]!)).toEqual({
-        finality: "tentative",
-        outcome: "success",
-      });
-    });
-
-    test("returns { final, failure } when game finished but Boromir did not win last trick", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Boromir")
         .finishGame()
         .build();
 
-      game.lastTrickWinner = 1;
       expect(game.finished).toBe(true);
-      expect(Boromir.objective.getStatus(game, seats[0]!)).toEqual({
+      expect(Boromir.objective.getStatus(game, seats[2]!)).toEqual({
         finality: "final",
         outcome: "failure",
       });
@@ -111,12 +100,22 @@ describe("Boromir", () => {
   });
 
   describe("objective.getDetails", () => {
-    test("shows correct details with last trick status", () => {
+    test("shows 'Last: no' when last trick not yet won", () => {
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Boromir")
         .build();
 
-      game.lastTrickWinner = 0;
+      const details = Boromir.objective.getDetails!(game, seats[0]!);
+      expect(details).toContain("Last: no");
+      expect(details).toContain("1-Ring: ok");
+    });
+
+    test("shows 'Last: yes' when Boromir won the last trick (game finished)", () => {
+      const { game, seats } = new GameStateBuilder(4)
+        .setCharacter(0, "Boromir")
+        .finishGame()
+        .build();
+
       const details = Boromir.objective.getDetails!(game, seats[0]!);
       expect(details).toContain("Last: yes");
       expect(details).toContain("1-Ring: ok");
@@ -128,19 +127,17 @@ describe("Boromir", () => {
         .seatWonCards(0, [{ suit: "rings", value: 1 }])
         .build();
 
-      game.lastTrickWinner = 0;
       const details = Boromir.objective.getDetails!(game, seats[0]!);
-      expect(details).toContain("Last: yes");
       expect(details).toContain("has 1-Ring");
     });
 
     test("shows correct details when not winning last trick", () => {
       const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Boromir")
+        .setCharacter(1, "Boromir")
+        .finishGame()
         .build();
 
-      game.lastTrickWinner = 1;
-      const details = Boromir.objective.getDetails!(game, seats[0]!);
+      const details = Boromir.objective.getDetails!(game, seats[1]!);
       expect(details).toContain("Last: no");
     });
   });

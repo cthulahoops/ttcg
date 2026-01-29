@@ -15,7 +15,7 @@ describe("Celeborn", () => {
       });
     });
 
-    test("returns { tentative, failure } when no rank has 3 cards", () => {
+    test("returns { final, failure } when game is finished and no rank has 3 cards", () => {
       // Seat 0 wins exactly 4 cards (2 of rank 1, 2 of rank 2), no rank has 3+
       // Give all 8 remaining cards of ranks 1-2 to seat 1, and absorb rest with seatWonTricks
       const { game, seats } = new GameStateBuilder(4)
@@ -39,7 +39,7 @@ describe("Celeborn", () => {
         .build();
 
       expect(Celeborn.objective.getStatus(game, seats[0]!)).toEqual({
-        finality: "tentative",
+        finality: "final",
         outcome: "failure",
       });
     });

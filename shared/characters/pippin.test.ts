@@ -138,6 +138,27 @@ describe("Pippin", () => {
         outcome: "success",
       });
     });
+
+    test("returns { final, failure } when not enough tricks for all others to catch up (shared resource)", () => {
+      const { game, seats } = new GameStateBuilder(4)
+        .setCharacter(0, "Pippin")
+        .seatWonTricks(0, 2) // Pippin has 2 tricks
+        .seatWonTricks(1, 1) // Others each have 1 trick
+        .seatWonTricks(2, 1)
+        .seatWonTricks(3, 1)
+        .build();
+
+      game.currentTrickNumber = 8; // Only 1 trick remaining
+      // Pippin has 2 tricks, all 3 others have 1 trick each
+      // Only 1 trick remains - at most ONE other player can reach 2 tricks
+      // The other two players MUST stay at 1 trick < 2
+      // So Pippin is guaranteed NOT to have the fewest
+      expect(game.tricksRemaining()).toBe(1);
+      expect(Pippin.objective.getStatus(game, seats[0]!)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
+    });
   });
 
   describe("metadata", () => {

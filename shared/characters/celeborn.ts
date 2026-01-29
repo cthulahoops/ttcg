@@ -1,5 +1,7 @@
 import type { Card, ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
+import { CARDS_PER_SUIT, SUITS } from "../types";
+import { achieveAtLeast, achieveSome } from "../objectives";
 
 export const Celeborn: CharacterDefinition = {
   name: "Celeborn",
@@ -12,17 +14,29 @@ export const Celeborn: CharacterDefinition = {
   objective: {
     text: "Win at least three cards of the same rank",
 
-    getStatus: (_game, seat): ObjectiveStatus => {
-      const rankCounts: Record<number, number> = {};
-      seat.getAllWonCards().forEach((card: Card) => {
-        rankCounts[card.value] = (rankCounts[card.value] || 0) + 1;
-      });
-      const met = Object.values(rankCounts).some((count) => count >= 3);
+    getStatus: (game, seat): ObjectiveStatus => {
+      // Check each rank (1-8) - succeed if ANY rank has 3+ cards
+      const rankStatuses = Array.from({ length: 8 }, (_, i) => {
+        const rank = i + 1;
+        let current = 0;
+        let remaining = 0;
 
-      // Once met, it's final success. Otherwise tentative (hard to determine early failure)
-      return met
-        ? { finality: "final", outcome: "success" }
-        : { finality: "tentative", outcome: "failure" };
+        for (const suit of SUITS) {
+          if (rank > CARDS_PER_SUIT[suit]) continue;
+
+          if (game.hasCard(seat, suit, rank)) {
+            current++;
+          } else if (!game.finished && !game.cardGone(seat, suit, rank)) {
+            // Only count as remaining if game isn't finished and card isn't gone
+            remaining++;
+          }
+        }
+
+        // No tricksRemaining cap - one trick can capture multiple same-rank cards
+        return achieveAtLeast({ current, max: current + remaining }, 3);
+      });
+
+      return achieveSome(rankStatuses);
     },
 
     getDetails: (_game, seat): string | undefined => {

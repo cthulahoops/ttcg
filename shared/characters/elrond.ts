@@ -1,6 +1,45 @@
 import type { Card, ObjectiveStatus } from "../types";
 import type { Seat } from "../seat";
+import type { Game } from "../game";
 import type { CharacterDefinition } from "./types";
+import { achieveAtLeast, type ObjectivePossibilities } from "../objectives";
+
+/**
+ * Counts how many seats can potentially win at least one ring card.
+ * Unlike per-seat cardsWinnable, this accounts for the shared resource constraint:
+ * if there are fewer rings remaining than seats needing them, not all can succeed.
+ */
+function seatsWithRingsWinnable(game: Game): ObjectivePossibilities {
+  let seatsWithRings = 0;
+  let ringsRemaining = 0;
+
+  // Check each seat for ring ownership using game.hasCard
+  for (const seat of game.seats) {
+    let seatHasRing = false;
+    for (let value = 1; value <= 5; value++) {
+      if (game.hasCard(seat, "rings", value)) {
+        seatHasRing = true;
+      }
+    }
+    if (seatHasRing) {
+      seatsWithRings++;
+    }
+  }
+
+  // Count rings still available (not won by anyone and not the lost card)
+  for (let value = 1; value <= 5; value++) {
+    if (game.cardAvailable("rings", value)) {
+      ringsRemaining++;
+    }
+  }
+
+  const seatsNeedingRing = game.seats.length - seatsWithRings;
+
+  return {
+    current: seatsWithRings,
+    max: seatsWithRings + Math.min(seatsNeedingRing, ringsRemaining),
+  };
+}
 
 export const Elrond: CharacterDefinition = {
   name: "Elrond",
@@ -35,39 +74,16 @@ export const Elrond: CharacterDefinition = {
     text: "Every character must win a ring card",
 
     getStatus: (game, _seat): ObjectiveStatus => {
-      const seatsNeedingRing = game.seats.filter((s: Seat) => {
-        const ringCards = s
-          .getAllWonCards()
-          .filter((c: Card) => c.suit === "rings");
-        return ringCards.length === 0;
-      }).length;
-
-      const met = seatsNeedingRing === 0;
-
-      const totalRingCardsWon = game.seats.reduce(
-        (total: number, s: Seat) =>
-          total +
-          s.getAllWonCards().filter((c: Card) => c.suit === "rings").length,
-        0
-      );
-      const ringsRemaining = 5 - totalRingCardsWon;
-      const completable = ringsRemaining >= seatsNeedingRing;
-
-      if (met) {
-        return { finality: "final", outcome: "success" };
-      } else if (!completable) {
-        return { finality: "final", outcome: "failure" };
-      } else {
-        return { finality: "tentative", outcome: "failure" };
-      }
+      const possibilities = seatsWithRingsWinnable(game);
+      return achieveAtLeast(possibilities, game.seats.length);
     },
 
     getDetails: (game, _seat): string => {
       const seatsWithRings = game.seats.filter((s: Seat) => {
-        const ringCards = s
-          .getAllWonCards()
-          .filter((c: Card) => c.suit === "rings");
-        return ringCards.length >= 1;
+        for (let value = 1; value <= 5; value++) {
+          if (game.hasCard(s, "rings", value)) return true;
+        }
+        return false;
       }).length;
 
       return `Seats with rings: ${seatsWithRings}/${game.seats.length}`;

@@ -1,5 +1,12 @@
 import type { ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
+import {
+  achieveAtLeast,
+  achieveBoth,
+  achieveCard,
+  doNot,
+  tricksWinnable,
+} from "../objectives";
 
 export const Boromir: CharacterDefinition = {
   name: "Boromir",
@@ -13,33 +20,31 @@ export const Boromir: CharacterDefinition = {
     text: "Win the last trick; do NOT win the 1 of Rings",
 
     getStatus: (game, seat): ObjectiveStatus => {
-      const wonLast = game.lastTrickWinner === seat.seatIndex;
-      const hasOneRing = game.hasCard(seat, "rings", 1);
-      const met = wonLast && !hasOneRing;
+      // Win the last trick (trick number is 0-indexed, so last trick is tricksToPlay - 1)
+      const lastTrickIndex = game.tricksToPlay - 1;
+      const lastTrick = tricksWinnable(
+        game,
+        seat,
+        (trick) => trick.number === lastTrickIndex
+      );
+      const winLastTrick = achieveAtLeast(lastTrick, 1);
 
-      // Cannot complete if already has the 1 of Rings
-      if (hasOneRing) {
-        return { finality: "final", outcome: "failure" };
-      }
+      // Do NOT win the 1 of Rings
+      const avoidOneRing = doNot(
+        achieveCard(game, seat, { suit: "rings", value: 1 })
+      );
 
-      if (game.finished) {
-        return {
-          finality: "final",
-          outcome: met ? "success" : "failure",
-        };
-      }
-
-      return {
-        finality: "tentative",
-        outcome: met ? "success" : "failure",
-      };
+      return achieveBoth(winLastTrick, avoidOneRing);
     },
 
     getDetails: (game, seat): string => {
-      const wonLast = game.lastTrickWinner === seat.seatIndex;
+      const lastTrickIndex = game.tricksToPlay - 1;
+      const wonLastTrick = seat.tricksWon.some(
+        (trick) => trick.number === lastTrickIndex
+      );
       const hasOneRing = game.hasCard(seat, "rings", 1);
 
-      const lastIcon = wonLast ? "yes" : "no";
+      const lastIcon = wonLastTrick ? "yes" : "no";
       const oneRingIcon = hasOneRing ? "has 1-Ring" : "ok";
       return `Last: ${lastIcon}, 1-Ring: ${oneRingIcon}`;
     },

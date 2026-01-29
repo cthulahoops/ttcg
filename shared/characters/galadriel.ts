@@ -1,6 +1,76 @@
+import type { Game } from "../game";
 import type { Seat } from "../seat";
 import type { ObjectiveCard, ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
+import {
+  tricksWinnable,
+  achieveMoreThan,
+  achieveSome,
+  achieveBoth,
+  type ObjectivePossibilities,
+} from "../objectives";
+
+/**
+ * Checks if a middle position (neither fewest nor most) is achievable.
+ *
+ * A middle position requires:
+ * - At least one player strictly below Galadriel (not fewest)
+ * - At least one player strictly above Galadriel (not most)
+ *
+ * This accounts for the constraint that remaining tricks are shared among all players.
+ */
+function middlePositionCompletable(game: Game, seat: Seat): boolean {
+  const myCount = seat.getTrickCount();
+  const otherCounts = game.seats
+    .filter((s: Seat) => s.seatIndex !== seat.seatIndex)
+    .map((s: Seat) => s.getTrickCount());
+  const otherMin = Math.min(...otherCounts);
+  const otherMax = Math.max(...otherCounts);
+  const tricksRemaining = game.tricksRemaining();
+
+  // Galadriel needs to end with more than the current min among others (to not be fewest)
+  const targetGaladriel = otherMin + 1;
+  const tricksNeededForGaladriel = Math.max(0, targetGaladriel - myCount);
+
+  // Galadriel's actual final count will be at least max(myCount, targetGaladriel)
+  // Someone needs to beat this (to ensure she's not the most)
+  const actualGaladriel = Math.max(myCount, targetGaladriel);
+  const targetAbove = actualGaladriel + 1;
+  const tricksNeededForAbove = Math.max(0, targetAbove - otherMax);
+
+  return tricksNeededForGaladriel + tricksNeededForAbove <= tricksRemaining;
+}
+
+/**
+ * Checks if Galadriel is guaranteed to be in the middle position.
+ * This happens when:
+ * - There's at least one player strictly below who can't catch up
+ * - There's at least one player strictly above who Galadriel can't catch
+ */
+function isGuaranteedMiddle(game: Game, seat: Seat): boolean {
+  const myCount = seat.getTrickCount();
+  const tricksRemaining = game.tricksRemaining();
+  const otherCounts = game.seats
+    .filter((s: Seat) => s.seatIndex !== seat.seatIndex)
+    .map((s: Seat) => s.getTrickCount());
+
+  const playersBelow = otherCounts.filter((c) => c < myCount);
+  const playersAbove = otherCounts.filter((c) => c > myCount);
+
+  if (playersBelow.length === 0 || playersAbove.length === 0) {
+    return false;
+  }
+
+  // Guaranteed not fewest: the highest player below can't catch up
+  const maxBelow = Math.max(...playersBelow);
+  const guaranteedNotFewest = maxBelow + tricksRemaining < myCount;
+
+  // Guaranteed not most: even winning all remaining, can't exceed the lowest above
+  const minAbove = Math.min(...playersAbove);
+  const guaranteedNotMost = myCount + tricksRemaining < minAbove;
+
+  return guaranteedNotFewest && guaranteedNotMost;
+}
 
 export const Galadriel: CharacterDefinition = {
   name: "Galadriel",
@@ -46,68 +116,54 @@ export const Galadriel: CharacterDefinition = {
     text: "Win neither the fewest nor the most tricks",
 
     getStatus: (game, seat): ObjectiveStatus => {
-      const allCounts = game.seats.map((s: Seat) => s.getTrickCount());
-      const minCount = Math.min(...allCounts);
-      const maxCount = Math.max(...allCounts);
-      const myCount = seat.getTrickCount();
-      const met = myCount !== minCount && myCount !== maxCount;
-
-      // Check completability
-      // Optimistic assumption: currentMin stays finalMin
-      // Galadriel needs to be at least currentMin + 1
-      const targetGaladriel = Math.max(minCount + 1, myCount);
-
-      // Someone needs to be above Galadriel for max
-      const targetMax = Math.max(maxCount, targetGaladriel + 1);
-
-      // Calculate tricks needed to reach this state
-      const tricksNeededForGaladriel = targetGaladriel - myCount;
-      const tricksNeededForMax = targetMax - maxCount;
-      const completable =
-        tricksNeededForGaladriel + tricksNeededForMax <= game.tricksRemaining();
-
-      // Check for early completion
-      const tricksRemaining = game.tricksRemaining();
-      const otherCounts = game.seats
+      const myTricks = tricksWinnable(game, seat);
+      const othersTricks = game.seats
         .filter((s: Seat) => s.seatIndex !== seat.seatIndex)
-        .map((s: Seat) => s.getTrickCount());
+        .map((s: Seat) => tricksWinnable(game, s));
 
-      // Find players strictly below and above Galadriel
-      const playersBelow = otherCounts.filter((c) => c < myCount);
-      const playersAbove = otherCounts.filter((c) => c > myCount);
+      // Not fewest: at least one other player has strictly fewer tricks
+      const notFewest = achieveSome(
+        othersTricks.map((other: ObjectivePossibilities) =>
+          achieveMoreThan(myTricks, other)
+        )
+      );
 
-      let earlyComplete = false;
-      if (playersBelow.length > 0 && playersAbove.length > 0) {
-        // Guaranteed not fewest: even the highest player below can't catch up
-        const maxBelow = Math.max(...playersBelow);
-        const guaranteedNotFewest = maxBelow + tricksRemaining < myCount;
+      // Not most: at least one other player has strictly more tricks
+      const notMost = achieveSome(
+        othersTricks.map((other: ObjectivePossibilities) =>
+          achieveMoreThan(other, myTricks)
+        )
+      );
 
-        // Guaranteed not most: even if Galadriel wins all remaining, can't exceed min above
-        const minAbove = Math.min(...playersAbove);
-        const guaranteedNotMost = myCount + tricksRemaining < minAbove;
+      // Combine the two constraints
+      const baseStatus = achieveBoth(notFewest, notMost);
 
-        earlyComplete = guaranteedNotFewest && guaranteedNotMost;
-      }
-
-      if (game.finished) {
-        return {
-          finality: "final",
-          outcome: met ? "success" : "failure",
-        };
-      }
-
-      if (earlyComplete && met) {
-        return { finality: "final", outcome: "success" };
-      }
-
-      if (!completable) {
+      // Apply additional feasibility check for shared trick constraint
+      if (!middlePositionCompletable(game, seat)) {
         return { finality: "final", outcome: "failure" };
       }
 
-      return {
-        finality: "tentative",
-        outcome: met ? "success" : "failure",
-      };
+      // Check for guaranteed success (early completion)
+      if (
+        baseStatus.outcome === "success" &&
+        baseStatus.finality === "tentative" &&
+        isGuaranteedMiddle(game, seat)
+      ) {
+        return { finality: "final", outcome: "success" };
+      }
+
+      // If base status is final success but we're not guaranteed middle,
+      // downgrade to tentative (the utility-based check is optimistic)
+      if (
+        baseStatus.finality === "final" &&
+        baseStatus.outcome === "success" &&
+        !game.finished &&
+        !isGuaranteedMiddle(game, seat)
+      ) {
+        return { finality: "tentative", outcome: "success" };
+      }
+
+      return baseStatus;
     },
   },
 

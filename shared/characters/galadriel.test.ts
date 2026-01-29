@@ -289,6 +289,62 @@ describe("Galadriel", () => {
       });
     });
 
+    test("returns { final, failure } when not enough tricks to catch up", () => {
+      const { game, seats } = new GameStateBuilder(4)
+        .setCharacter(0, "Galadriel")
+        // Galadriel: 0 tricks, others have more
+        .seatWonTricks(1, 2)
+        .seatWonTricks(2, 2)
+        .seatWonTricks(3, 2)
+        .build();
+
+      expect(game.finished).toBe(false);
+      expect(Galadriel.objective.getStatus(game, seats[0]!)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
+    });
+
+    test("returns { final, failure } when leading by too much for anyone to catch up", () => {
+      const { game, seats } = new GameStateBuilder(4)
+        .setCharacter(0, "Galadriel")
+        // Galadriel: 5 tricks, others far behind
+        // Even if the max other player (1 trick) wins all 3 remaining, they'd have 4 < 5
+        .seatWonTricks(0, 5)
+        .seatWonTricks(3, 1)
+        .build();
+
+      expect(game.finished).toBe(false);
+      expect(game.tricksRemaining()).toBe(3);
+      expect(Galadriel.objective.getStatus(game, seats[0]!)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
+    });
+
+    test("returns { tentative, failure } (not final) when exactly enough tricks to achieve middle (boundary case)", () => {
+      const { game, seats } = new GameStateBuilder(4)
+        .setCharacter(0, "Galadriel")
+        // Galadriel: 0 tricks, others: 1, 1, 3
+        // Currently failing (at minimum), but middle position IS achievable
+        // Galadriel needs 2 tricks to beat the min (1), someone already above at 3
+        // tricksNeeded = 2, tricksRemaining = 2 (exactly at boundary)
+        .seatWonTricks(1, 1)
+        .seatWonTricks(2, 1)
+        .seatWonTricks(3, 3)
+        .build();
+
+      game.currentTrickNumber = 7; // 2 tricks remaining
+      expect(game.tricksRemaining()).toBe(2);
+
+      // Currently failing (Galadriel has fewest), but NOT final failure
+      // because it's still achievable: Galadriel wins both → 2, others stay 1, 1, 3
+      expect(Galadriel.objective.getStatus(game, seats[0]!)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
+    });
+
     test("returns { final, failure } when game finished but at min", () => {
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Galadriel")
