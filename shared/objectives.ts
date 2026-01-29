@@ -129,12 +129,12 @@ export function leadsWinnable(
     return { current, max: current };
   }
 
-  // max: need both tricks remaining AND matching cards still in play
+  // max: need both tricks remaining AND matching cards still available
   let matchingCardsInPlay = 0;
   for (const suit of SUITS) {
     for (let value = 1; value <= CARDS_PER_SUIT[suit]; value++) {
       const card = { suit, value };
-      if (cardPredicate(card) && !game.cardGone(seat, suit, value)) {
+      if (cardPredicate(card) && game.cardAvailable(suit, value)) {
         matchingCardsInPlay++;
       }
     }
