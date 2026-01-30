@@ -90,6 +90,11 @@ interface WonTricksSpec {
   count: number;
 }
 
+interface ReservedHandSpec {
+  seatIndex: number;
+  cards: Card[];
+}
+
 export class GameStateBuilder {
   private numPlayers: 3 | 4;
   private lostCard: Card | null = null;
@@ -97,6 +102,7 @@ export class GameStateBuilder {
   private wonCardsSpecs: WonCardsSpec[] = [];
   private wonTrickSpecs: WonTrickSpec[] = [];
   private wonTricksSpecs: WonTricksSpec[] = [];
+  private reservedHandSpecs: ReservedHandSpec[] = [];
   private shouldFinishGame = false;
 
   constructor(numPlayers: 3 | 4) {
@@ -175,9 +181,33 @@ export class GameStateBuilder {
   }
 
   /**
+   * Reserve specific cards to be placed in a seat's hand.
+   * These cards will not be used in auto-filled tricks.
+   * Cannot be used with finishGame() since that puts all cards into tricks.
+   */
+  reserveToHand(seatIndex: number, cards: Card[]): this {
+    if (seatIndex < 0 || seatIndex >= this.numPlayers) {
+      throw new Error(`Invalid seat index: ${seatIndex}`);
+    }
+    if (this.shouldFinishGame) {
+      throw new Error(
+        "Cannot use reserveToHand with finishGame - finishGame puts all cards into tricks"
+      );
+    }
+    this.reservedHandSpecs.push({ seatIndex, cards });
+    return this;
+  }
+
+  /**
    * Mark the game as finished - all cards will be in tricks, none in hands.
+   * Cannot be used with reserveToHand() since that requires cards in hands.
    */
   finishGame(): this {
+    if (this.reservedHandSpecs.length > 0) {
+      throw new Error(
+        "Cannot use finishGame with reserveToHand - reserveToHand requires cards in hands"
+      );
+    }
     this.shouldFinishGame = true;
     return this;
   }
@@ -305,6 +335,23 @@ export class GameStateBuilder {
 
     // Check wonTrickSpecs (single tricks with multiple specific cards)
     for (const spec of this.wonTrickSpecs) {
+      for (const card of spec.cards) {
+        if (!isValidCard(card)) {
+          throw new Error(`Invalid card specified: ${card.suit}-${card.value}`);
+        }
+
+        const key = cardKey(card);
+        if (seenCards.has(key)) {
+          throw new Error(
+            `Duplicate card specified: ${card.suit}-${card.value}`
+          );
+        }
+        seenCards.add(key);
+      }
+    }
+
+    // Check reservedHandSpecs
+    for (const spec of this.reservedHandSpecs) {
       for (const card of spec.cards) {
         if (!isValidCard(card)) {
           throw new Error(`Invalid card specified: ${card.suit}-${card.value}`);
@@ -495,12 +542,50 @@ export class GameStateBuilder {
     remainingDeck: Card[],
     _cardsPerPlayer: number
   ): void {
+    // First, place reserved cards into their specific seats
+    for (const spec of this.reservedHandSpecs) {
+      for (const card of spec.cards) {
+        seats[spec.seatIndex]!.hand.addCard(card);
+      }
+    }
+
+    // Calculate total cards to distribute and per-seat targets
+    const totalCards =
+      this.reservedHandSpecs.reduce((sum, spec) => sum + spec.cards.length, 0) +
+      remainingDeck.length;
+    const baseTarget = Math.floor(totalCards / this.numPlayers);
+    const remainder = totalCards % this.numPlayers;
+
+    // Seats 0..remainder-1 get baseTarget+1, the rest get baseTarget
+    const targetSizes = seats.map((_, i) =>
+      i < remainder ? baseTarget + 1 : baseTarget
+    );
+
+    // Validate that no seat's reserved cards exceed its target
+    const reservedPerSeat = new Map<number, number>();
+    for (const spec of this.reservedHandSpecs) {
+      const current = reservedPerSeat.get(spec.seatIndex) ?? 0;
+      reservedPerSeat.set(spec.seatIndex, current + spec.cards.length);
+    }
+    for (const [seatIndex, reservedCount] of reservedPerSeat) {
+      const target = targetSizes[seatIndex]!;
+      if (reservedCount > target) {
+        throw new Error(
+          `Seat ${seatIndex} has ${reservedCount} reserved cards but target hand size is ${target}`
+        );
+      }
+    }
+
     // Sort remaining cards for deterministic distribution
     const sortedRemaining = sortCards(remainingDeck);
 
-    // Deal round-robin to seats
+    // Deal round-robin, skipping seats that have reached their target
     let seatIndex = 0;
     for (const card of sortedRemaining) {
+      // Find next seat that hasn't reached its target
+      while (seats[seatIndex]!.hand.getSize() >= targetSizes[seatIndex]!) {
+        seatIndex = (seatIndex + 1) % this.numPlayers;
+      }
       seats[seatIndex]!.hand.addCard(card);
       seatIndex = (seatIndex + 1) % this.numPlayers;
     }

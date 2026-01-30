@@ -139,6 +139,34 @@ describe("Frodo", () => {
         outcome: "failure",
       });
     });
+
+    test("returns { tentative, failure } when multiple rings can be won in single remaining trick", () => {
+      // Regression test: old formula used min(tricksRemaining, ringsRemaining)
+      // which incorrectly returned final failure when 1 trick left but 2+ rings available
+      // (multiple rings can be won in a single trick if multiple players play rings)
+      const { game, seats } = new GameStateBuilder(4)
+        .setCharacter(0, "Frodo")
+        // Other players won tricks with 3 rings (leaving rings 4,5 still available)
+        .seatWonCards(1, [{ suit: "rings", value: 1 }])
+        .seatWonCards(2, [{ suit: "rings", value: 2 }])
+        .seatWonCards(3, [{ suit: "rings", value: 3 }])
+        // Reserve rings 4,5 to hands so they aren't consumed by auto-filled tricks
+        .reserveToHand(0, [{ suit: "rings", value: 4 }])
+        .reserveToHand(1, [{ suit: "rings", value: 5 }])
+        // Fill up to 8 tricks total (leaving 1 trick remaining in a 9-trick game)
+        .seatWonTricks(1, 2)
+        .seatWonTricks(2, 2)
+        .seatWonTricks(3, 1)
+        .build();
+
+      // 1 trick remaining, 2 rings available (4 and 5)
+      // Frodo needs 2 rings - this IS achievable if both rings are played in the last trick
+      expect(game.tricksRemaining()).toBe(1);
+      expect(Frodo.objective.getStatus(game, seats[0]!)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
+    });
   });
 
   describe("objective.getDetails", () => {

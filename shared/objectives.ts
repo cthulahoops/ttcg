@@ -167,9 +167,11 @@ export function cardsWinnable(
     }
   }
 
+  // Each trick contains numCharacters cards, so multiple target cards can be won per trick
+  const maxCardsPlayable = game.tricksRemaining() * game.numCharacters;
   return {
     current,
-    max: current + Math.min(game.tricksRemaining(), remaining),
+    max: current + Math.min(maxCardsPlayable, remaining),
   };
 }
 
