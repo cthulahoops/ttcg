@@ -90,6 +90,11 @@ interface WonTricksSpec {
   count: number;
 }
 
+interface ReservedHandSpec {
+  seatIndex: number;
+  cards: Card[];
+}
+
 export class GameStateBuilder {
   private numPlayers: 3 | 4;
   private lostCard: Card | null = null;
@@ -97,6 +102,7 @@ export class GameStateBuilder {
   private wonCardsSpecs: WonCardsSpec[] = [];
   private wonTrickSpecs: WonTrickSpec[] = [];
   private wonTricksSpecs: WonTricksSpec[] = [];
+  private reservedHandSpecs: ReservedHandSpec[] = [];
   private shouldFinishGame = false;
 
   constructor(numPlayers: 3 | 4) {
@@ -171,6 +177,18 @@ export class GameStateBuilder {
       throw new Error(`Invalid seat index: ${seatIndex}`);
     }
     this.wonTricksSpecs.push({ seatIndex, count });
+    return this;
+  }
+
+  /**
+   * Reserve specific cards to be placed in a seat's hand.
+   * These cards will not be used in auto-filled tricks.
+   */
+  reserveToHand(seatIndex: number, cards: Card[]): this {
+    if (seatIndex < 0 || seatIndex >= this.numPlayers) {
+      throw new Error(`Invalid seat index: ${seatIndex}`);
+    }
+    this.reservedHandSpecs.push({ seatIndex, cards });
     return this;
   }
 
@@ -305,6 +323,23 @@ export class GameStateBuilder {
 
     // Check wonTrickSpecs (single tricks with multiple specific cards)
     for (const spec of this.wonTrickSpecs) {
+      for (const card of spec.cards) {
+        if (!isValidCard(card)) {
+          throw new Error(`Invalid card specified: ${card.suit}-${card.value}`);
+        }
+
+        const key = cardKey(card);
+        if (seenCards.has(key)) {
+          throw new Error(
+            `Duplicate card specified: ${card.suit}-${card.value}`
+          );
+        }
+        seenCards.add(key);
+      }
+    }
+
+    // Check reservedHandSpecs
+    for (const spec of this.reservedHandSpecs) {
       for (const card of spec.cards) {
         if (!isValidCard(card)) {
           throw new Error(`Invalid card specified: ${card.suit}-${card.value}`);
@@ -495,6 +530,13 @@ export class GameStateBuilder {
     remainingDeck: Card[],
     _cardsPerPlayer: number
   ): void {
+    // First, place reserved cards into their specific seats
+    for (const spec of this.reservedHandSpecs) {
+      for (const card of spec.cards) {
+        seats[spec.seatIndex]!.hand.addCard(card);
+      }
+    }
+
     // Sort remaining cards for deterministic distribution
     const sortedRemaining = sortCards(remainingDeck);
 

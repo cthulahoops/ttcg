@@ -150,6 +150,9 @@ describe("Frodo", () => {
         .seatWonCards(1, [{ suit: "rings", value: 1 }])
         .seatWonCards(2, [{ suit: "rings", value: 2 }])
         .seatWonCards(3, [{ suit: "rings", value: 3 }])
+        // Reserve rings 4,5 to hands so they aren't consumed by auto-filled tricks
+        .reserveToHand(0, [{ suit: "rings", value: 4 }])
+        .reserveToHand(1, [{ suit: "rings", value: 5 }])
         // Fill up to 8 tricks total (leaving 1 trick remaining in a 9-trick game)
         .seatWonTricks(1, 2)
         .seatWonTricks(2, 2)
