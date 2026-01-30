@@ -537,12 +537,28 @@ export class GameStateBuilder {
       }
     }
 
+    // Calculate total cards to distribute and per-seat targets
+    const totalCards =
+      this.reservedHandSpecs.reduce((sum, spec) => sum + spec.cards.length, 0) +
+      remainingDeck.length;
+    const baseTarget = Math.floor(totalCards / this.numPlayers);
+    const remainder = totalCards % this.numPlayers;
+
+    // Seats 0..remainder-1 get baseTarget+1, the rest get baseTarget
+    const targetSizes = seats.map((_, i) =>
+      i < remainder ? baseTarget + 1 : baseTarget
+    );
+
     // Sort remaining cards for deterministic distribution
     const sortedRemaining = sortCards(remainingDeck);
 
-    // Deal round-robin to seats
+    // Deal round-robin, skipping seats that have reached their target
     let seatIndex = 0;
     for (const card of sortedRemaining) {
+      // Find next seat that hasn't reached its target
+      while (seats[seatIndex]!.hand.getSize() >= targetSizes[seatIndex]!) {
+        seatIndex = (seatIndex + 1) % this.numPlayers;
+      }
       seats[seatIndex]!.hand.addCard(card);
       seatIndex = (seatIndex + 1) % this.numPlayers;
     }
