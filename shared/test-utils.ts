@@ -183,10 +183,16 @@ export class GameStateBuilder {
   /**
    * Reserve specific cards to be placed in a seat's hand.
    * These cards will not be used in auto-filled tricks.
+   * Cannot be used with finishGame() since that puts all cards into tricks.
    */
   reserveToHand(seatIndex: number, cards: Card[]): this {
     if (seatIndex < 0 || seatIndex >= this.numPlayers) {
       throw new Error(`Invalid seat index: ${seatIndex}`);
+    }
+    if (this.shouldFinishGame) {
+      throw new Error(
+        "Cannot use reserveToHand with finishGame - finishGame puts all cards into tricks"
+      );
     }
     this.reservedHandSpecs.push({ seatIndex, cards });
     return this;
@@ -194,8 +200,14 @@ export class GameStateBuilder {
 
   /**
    * Mark the game as finished - all cards will be in tricks, none in hands.
+   * Cannot be used with reserveToHand() since that requires cards in hands.
    */
   finishGame(): this {
+    if (this.reservedHandSpecs.length > 0) {
+      throw new Error(
+        "Cannot use finishGame with reserveToHand - reserveToHand requires cards in hands"
+      );
+    }
     this.shouldFinishGame = true;
     return this;
   }
@@ -548,6 +560,21 @@ export class GameStateBuilder {
     const targetSizes = seats.map((_, i) =>
       i < remainder ? baseTarget + 1 : baseTarget
     );
+
+    // Validate that no seat's reserved cards exceed its target
+    const reservedPerSeat = new Map<number, number>();
+    for (const spec of this.reservedHandSpecs) {
+      const current = reservedPerSeat.get(spec.seatIndex) ?? 0;
+      reservedPerSeat.set(spec.seatIndex, current + spec.cards.length);
+    }
+    for (const [seatIndex, reservedCount] of reservedPerSeat) {
+      const target = targetSizes[seatIndex]!;
+      if (reservedCount > target) {
+        throw new Error(
+          `Seat ${seatIndex} has ${reservedCount} reserved cards but target hand size is ${target}`
+        );
+      }
+    }
 
     // Sort remaining cards for deterministic distribution
     const sortedRemaining = sortCards(remainingDeck);
