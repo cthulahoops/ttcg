@@ -61,10 +61,8 @@ export const Pippin: CharacterDefinition = {
 
       return baseStatus;
     },
-  },
 
-  display: {
-    getObjectiveCards: (_game, seat) => {
+    cards: (_game, seat) => {
       const cards: ObjectiveCard[] = Array(seat.getTrickCount()).fill("trick");
       return { cards };
     },

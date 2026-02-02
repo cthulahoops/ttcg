@@ -40,10 +40,7 @@ function serializeSeat(
     asideCard = isOwnSeat || handRevealed ? seat.asideCard : "hidden";
   }
 
-  const objectiveCards = seat.character?.display.getObjectiveCards?.(
-    game,
-    seat
-  );
+  const objectiveCards = seat.character?.objective.cards?.(game, seat);
 
   // Rider fields
   const riderObjective =
@@ -51,10 +48,7 @@ function serializeSeat(
   const riderStatus = seat.rider
     ? seat.rider.objective.getStatus(game, seat)
     : undefined;
-  const riderObjectiveCards = seat.rider?.display.getObjectiveCards?.(
-    game,
-    seat
-  );
+  const riderObjectiveCards = seat.rider?.objective.cards?.(game, seat);
 
   return {
     seatIndex: seat.seatIndex,

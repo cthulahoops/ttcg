@@ -122,10 +122,8 @@ export const TomBombadil: CharacterDefinition = {
 
       return countsDisplay || undefined;
     },
-  },
 
-  display: {
-    getObjectiveCards: (_game, seat) => {
+    cards: (_game, seat) => {
       const cardsInHand = seat.hand.getAvailableCards();
       const suitsInHand = new Set(cardsInHand.map((c) => c.suit));
 

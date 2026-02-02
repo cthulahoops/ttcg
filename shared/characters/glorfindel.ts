@@ -17,10 +17,8 @@ export const Glorfindel: CharacterDefinition = {
       const shadows = cardsWinnable(game, seat, (c) => c.suit === "shadows");
       return achieveAtLeast(shadows, CARDS_PER_SUIT.shadows);
     },
-  },
 
-  display: {
-    getObjectiveCards: (_game, seat) => {
+    cards: (_game, seat) => {
       const cards = seat
         .getAllWonCards()
         .filter((c: Card) => c.suit === "shadows")

@@ -14,12 +14,8 @@ export const BlackBreath: RiderDefinition = {
       const eights = cardsWinnable(game, seat, isEight);
       return achieveExactly(eights, 0);
     },
-  },
-  display: {
-    getObjectiveCards: (
-      _game: Game,
-      seat: Seat
-    ): { cards: ObjectiveCard[] } => {
+
+    cards: (_game: Game, seat: Seat): { cards: ObjectiveCard[] } => {
       const cards = seat.getAllWonCards().filter(isEight);
       return { cards };
     },

@@ -232,13 +232,13 @@ describe("Gwaihir", () => {
     });
   });
 
-  describe("display.getObjectiveCards", () => {
+  describe("objective.cards", () => {
     test("returns empty array when no tricks won", () => {
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Gwaihir")
         .build();
 
-      const result = Gwaihir.display.getObjectiveCards!(game, seats[0]!);
+      const result = Gwaihir.objective.cards!(game, seats[0]!);
       expect(result.cards).toEqual([]);
     });
 
@@ -261,7 +261,7 @@ describe("Gwaihir", () => {
         .seatWonCards(0, [{ suit: "shadows", value: 1 }])
         .build();
 
-      const result = Gwaihir.display.getObjectiveCards!(game, seats[0]!);
+      const result = Gwaihir.objective.cards!(game, seats[0]!);
       expect(result.cards).toEqual([]);
     });
 
@@ -281,7 +281,7 @@ describe("Gwaihir", () => {
         .seatWonCards(0, [{ suit: "forests", value: 1 }])
         .build();
 
-      const result = Gwaihir.display.getObjectiveCards!(game, seats[0]!);
+      const result = Gwaihir.objective.cards!(game, seats[0]!);
       expect(result.cards).toEqual(["trick"]);
     });
 
@@ -292,7 +292,7 @@ describe("Gwaihir", () => {
         .seatWonCards(0, [{ suit: "mountains", value: 7 }])
         .build();
 
-      const result = Gwaihir.display.getObjectiveCards!(game, seats[0]!);
+      const result = Gwaihir.objective.cards!(game, seats[0]!);
       expect(result.cards).toEqual(["trick", "trick"]);
     });
 
@@ -304,7 +304,7 @@ describe("Gwaihir", () => {
         .seatWonCards(0, [{ suit: "mountains", value: 8 }])
         .build();
 
-      const result = Gwaihir.display.getObjectiveCards!(game, seats[0]!);
+      const result = Gwaihir.objective.cards!(game, seats[0]!);
       // Should be 1 trick marker, not 4 (for 4 mountain cards)
       expect(result.cards).toEqual(["trick"]);
     });

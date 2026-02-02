@@ -43,10 +43,8 @@ export const Goldberry: CharacterDefinition = {
     getStatus: (game, seat): ObjectiveStatus => {
       return achieveExactly(consecutiveTricksWinnable(game, seat), 3);
     },
-  },
 
-  display: {
-    getObjectiveCards: (_game, seat) => {
+    cards: (_game, seat) => {
       const cards: ObjectiveCard[] = Array(seat.getTrickCount()).fill("trick");
       return { cards };
     },

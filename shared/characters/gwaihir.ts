@@ -22,10 +22,8 @@ export const Gwaihir: CharacterDefinition = {
     getStatus: (game, seat): ObjectiveStatus => {
       return achieveAtLeast(mountainTricks(game, seat), 2);
     },
-  },
 
-  display: {
-    getObjectiveCards: (game, seat) => {
+    cards: (game, seat) => {
       const cards: ObjectiveCard[] = Array(
         mountainTricks(game, seat).current
       ).fill("trick");

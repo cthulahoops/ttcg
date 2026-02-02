@@ -109,13 +109,13 @@ describe("Shadowfax", () => {
     });
   });
 
-  describe("display.getObjectiveCards", () => {
+  describe("objective.cards", () => {
     test("returns empty array when no tricks won", () => {
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Shadowfax")
         .build();
 
-      const result = Shadowfax.display.getObjectiveCards!(game, seats[0]!);
+      const result = Shadowfax.objective.cards!(game, seats[0]!);
       expect(result.cards).toEqual([]);
     });
 
@@ -128,7 +128,7 @@ describe("Shadowfax", () => {
         ])
         .build();
 
-      const result = Shadowfax.display.getObjectiveCards!(game, seats[0]!);
+      const result = Shadowfax.objective.cards!(game, seats[0]!);
       expect(result.cards).toEqual([]);
     });
 
@@ -138,7 +138,7 @@ describe("Shadowfax", () => {
         .seatWonCards(0, [{ suit: "hills", value: 4 }])
         .build();
 
-      const result = Shadowfax.display.getObjectiveCards!(game, seats[0]!);
+      const result = Shadowfax.objective.cards!(game, seats[0]!);
       expect(result.cards).toEqual(["trick"]);
     });
 
@@ -151,7 +151,7 @@ describe("Shadowfax", () => {
         ])
         .build();
 
-      const result = Shadowfax.display.getObjectiveCards!(game, seats[0]!);
+      const result = Shadowfax.objective.cards!(game, seats[0]!);
       expect(result.cards).toEqual(["trick", "trick"]);
     });
 
@@ -166,7 +166,7 @@ describe("Shadowfax", () => {
         .build();
 
       // Each hills card is in a separate trick, so 3 trick markers
-      const result = Shadowfax.display.getObjectiveCards!(game, seats[0]!);
+      const result = Shadowfax.objective.cards!(game, seats[0]!);
       expect(result.cards).toEqual(["trick", "trick", "trick"]);
     });
   });

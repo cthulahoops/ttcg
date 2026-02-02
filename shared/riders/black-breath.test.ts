@@ -101,7 +101,7 @@ describe("The Black Breath", () => {
     });
   });
 
-  describe("display.getObjectiveCards", () => {
+  describe("objective.cards", () => {
     test("returns empty array when no 8s won", () => {
       const { game, seats } = new GameStateBuilder(4)
         .seatWonTrick(0, [
@@ -112,7 +112,7 @@ describe("The Black Breath", () => {
         ])
         .build();
 
-      const result = BlackBreath.display.getObjectiveCards!(game, seats[0]!);
+      const result = BlackBreath.objective.cards!(game, seats[0]!);
       expect(result.cards).toEqual([]);
     });
 
@@ -126,7 +126,7 @@ describe("The Black Breath", () => {
         ])
         .build();
 
-      const result = BlackBreath.display.getObjectiveCards!(game, seats[0]!);
+      const result = BlackBreath.objective.cards!(game, seats[0]!);
       expect(result.cards).toHaveLength(2);
       expect(result.cards).toContainEqual({ suit: "mountains", value: 8 });
       expect(result.cards).toContainEqual({ suit: "shadows", value: 8 });

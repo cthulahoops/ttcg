@@ -12,5 +12,4 @@ export const Terror: RiderDefinition = {
       return achieveExactly(hillsLeads, 0);
     },
   },
-  display: {},
 };

@@ -21,10 +21,8 @@ export const BarlimanButterbur: CharacterDefinition = {
       );
       return achieveAtLeast(lastThreeTricks, 1);
     },
-  },
 
-  display: {
-    getObjectiveCards: (game, seat) => {
+    cards: (game, seat) => {
       const tricksWon = seat.tricksWon.filter(
         (t) => t.number >= game.tricksToPlay - 3
       ).length;

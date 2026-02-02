@@ -12,10 +12,7 @@ export interface CharacterObjective {
 
   getStatus: (game: Game, seat: Seat) => ObjectiveStatus;
   getDetails?: (game: Game, seat: Seat) => string | undefined;
-}
-
-export interface CharacterDisplay {
-  getObjectiveCards?: (game: Game, seat: Seat) => ObjectiveCards;
+  cards?: (game: Game, seat: Seat) => ObjectiveCards;
 }
 
 export interface CharacterDefinition {
@@ -27,5 +24,4 @@ export interface CharacterDefinition {
     setupContext: GameSetupContext
   ) => Promise<void>;
   objective: CharacterObjective;
-  display: CharacterDisplay;
 }

@@ -19,10 +19,8 @@ export const Merry: CharacterDefinition = {
       const tricks = tricksWinnable(game, seat);
       return achieveRange(tricks, { min: 1, max: 2 });
     },
-  },
 
-  display: {
-    getObjectiveCards: (_game, seat) => {
+    cards: (_game, seat) => {
       const cards: ObjectiveCard[] = Array(seat.getTrickCount()).fill("trick");
       return { cards };
     },

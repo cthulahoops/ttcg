@@ -38,10 +38,8 @@ export const Celeborn: CharacterDefinition = {
 
       return achieveSome(rankStatuses);
     },
-  },
 
-  display: {
-    getObjectiveCards: (_game, seat) => {
+    cards: (_game, seat) => {
       const rankCounts: Record<number, Card[]> = {};
       seat.getAllWonCards().forEach((card: Card) => {
         if (!rankCounts[card.value]) {

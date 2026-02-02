@@ -38,10 +38,8 @@ export const Gloin: CharacterDefinition = {
         )
       );
     },
-  },
 
-  display: {
-    getObjectiveCards: (_game, seat) => {
+    cards: (_game, seat) => {
       const cards = seat
         .getAllWonCards()
         .filter((c: Card) => c.suit === "mountains")

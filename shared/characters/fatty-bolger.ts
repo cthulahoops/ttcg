@@ -31,10 +31,8 @@ export const FattyBolger: CharacterDefinition = {
     getStatus: (game, seat): ObjectiveStatus => {
       return achieveExactly(tricksWinnable(game, seat), 1);
     },
-  },
 
-  display: {
-    getObjectiveCards: (_game, seat) => {
+    cards: (_game, seat) => {
       const cards: ObjectiveCard[] = Array(seat.getTrickCount()).fill("trick");
       return { cards };
     },

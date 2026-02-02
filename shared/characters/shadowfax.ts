@@ -38,10 +38,8 @@ export const Shadowfax: CharacterDefinition = {
     getStatus: (game, seat): ObjectiveStatus => {
       return achieveAtLeast(hillsTricks(game, seat), 2);
     },
-  },
 
-  display: {
-    getObjectiveCards: (game, seat) => {
+    cards: (game, seat) => {
       // Show trick markers for tricks containing hills cards
       const cards: ObjectiveCard[] = Array(
         hillsTricks(game, seat).current

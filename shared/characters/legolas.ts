@@ -27,10 +27,8 @@ export const Legolas: CharacterDefinition = {
         value: seat.threatCard,
       });
     },
-  },
 
-  display: {
-    getObjectiveCards: (game, seat) => {
+    cards: (game, seat) => {
       const cards: ObjectiveCard[] = [];
       if (seat.threatCard !== null) {
         cards.push({ suit: "threat", value: seat.threatCard });

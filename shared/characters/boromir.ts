@@ -37,6 +37,4 @@ export const Boromir: CharacterDefinition = {
       return achieveBoth(winLastTrick, avoidOneRing);
     },
   },
-
-  display: {},
 };

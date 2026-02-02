@@ -28,10 +28,8 @@ export const FarmerMaggot: CharacterDefinition = {
 
       return achieveAtLeast(cardsWinnable(game, seat, matchesThreat), 2);
     },
-  },
 
-  display: {
-    getObjectiveCards: (_game, seat) => {
+    cards: (_game, seat) => {
       const cards: ObjectiveCard[] = [];
       if (seat.threatCard !== null) {
         cards.push({ suit: "threat", value: seat.threatCard });

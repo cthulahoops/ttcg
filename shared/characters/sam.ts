@@ -25,10 +25,8 @@ export const Sam: CharacterDefinition = {
       }
       return achieveCard(game, seat, { suit: "hills", value: seat.threatCard });
     },
-  },
 
-  display: {
-    getObjectiveCards: (game, seat) => {
+    cards: (game, seat) => {
       const cards: ObjectiveCard[] = [];
       if (seat.threatCard !== null) {
         cards.push({ suit: "threat", value: seat.threatCard });

@@ -12,5 +12,4 @@ export const MorgulKnife: RiderDefinition = {
       return achieveExactly(ringLeads, 0);
     },
   },
-  display: {},
 };

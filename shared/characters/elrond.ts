@@ -102,6 +102,4 @@ export const Elrond: CharacterDefinition = {
       return `${names.join(", ")}, and ${last} yet to win rings`;
     },
   },
-
-  display: {},
 };

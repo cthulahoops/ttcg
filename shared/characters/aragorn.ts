@@ -24,10 +24,8 @@ export const Aragorn: CharacterDefinition = {
       const tricks = tricksWinnable(game, seat);
       return achieveExactly(tricks, seat.threatCard);
     },
-  },
 
-  display: {
-    getObjectiveCards: (_game, seat) => {
+    cards: (_game, seat) => {
       const cards: ObjectiveCard[] = [];
       if (seat.threatCard !== null) {
         cards.push({ suit: "threat", value: seat.threatCard });

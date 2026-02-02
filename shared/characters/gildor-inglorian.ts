@@ -39,6 +39,4 @@ export const GildorInglorian: CharacterDefinition = {
       return achieveAtLeast(forestsInFinalTrickPossible(game, seat), 1);
     },
   },
-
-  display: {},
 };
