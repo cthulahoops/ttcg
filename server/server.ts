@@ -1,5 +1,5 @@
 // server/server.ts
-import { ClientMessage, ServerMessage } from "@shared/protocol";
+import { ClientMessage, ServerMessage, GameOptions } from "@shared/protocol";
 import { RoomManager } from "./room-manager.js";
 import { NetworkController } from "./controllers.js";
 import type { ServerWebSocket } from "bun";
@@ -120,7 +120,10 @@ function handleLeaveRoom(ws: ServerWebSocket<WSData>) {
   }
 }
 
-async function handleStartGame(ws: ServerWebSocket<WSData>) {
+async function handleStartGame(
+  ws: ServerWebSocket<WSData>,
+  options?: GameOptions
+) {
   const socketId = ws.data.socketId;
 
   try {
@@ -153,7 +156,7 @@ async function handleStartGame(ws: ServerWebSocket<WSData>) {
       }
     };
 
-    await roomManager.startGame(socketId, sendToPlayer);
+    await roomManager.startGame(socketId, sendToPlayer, options);
   } catch (error) {
     const errorMsg: ServerMessage = {
       type: "error",
@@ -202,7 +205,7 @@ Bun.serve<WSData>({
       } else if (msg.type === "leave_room") {
         handleLeaveRoom(ws);
       } else if (msg.type === "start_game") {
-        handleStartGame(ws);
+        handleStartGame(ws, msg.options);
       } else if (msg.type === "decision_response") {
         try {
           roomManager.handleDecisionResponse(

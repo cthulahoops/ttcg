@@ -73,7 +73,7 @@ export function App() {
           setRoomCode(roomCode);
           sendMessage({ type: "join_room", roomCode, playerName, playerId });
         }}
-        onStartGame={() => sendMessage({ type: "start_game" })}
+        onStartGame={(options) => sendMessage({ type: "start_game", options })}
         onLeaveRoom={handleLeaveRoom}
       />
     </div>

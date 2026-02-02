@@ -8,6 +8,7 @@ import { PlayerSeat } from "./PlayerSeat";
 import { GameStatus } from "./GameStatus";
 import { DecisionDialog } from "./DecisionDialog";
 import { AvailableCharacters } from "./AvailableCharacters";
+import { LongGameProgress } from "./LongGameProgress";
 
 type GameScreenProps = {
   game: SerializedGame;
@@ -54,6 +55,10 @@ export function GameScreen({
   return (
     <div className="main-content" id="gameScreen">
       <GameStatus game={game} pendingDecision={pendingDecision} />
+
+      {game.longGameProgress && (
+        <LongGameProgress progress={game.longGameProgress} />
+      )}
 
       <AvailableCharacters characters={game.availableCharacters} />
 

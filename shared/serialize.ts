@@ -12,6 +12,7 @@ import type {
   SerializedTrickPlay,
   SerializedCompletedTrick,
 } from "./serialized";
+import type { LongGameProgress } from "./protocol";
 
 /**
  * Serialize a Seat for a specific viewing seat.
@@ -104,11 +105,13 @@ function serializeCompletedTrick(
  *
  * @param game - The game instance to serialize
  * @param seatIndex - The seat index of the viewer (controls what information is visible)
+ * @param longGameProgress - Optional long game progress to include
  * @returns Serialized game state suitable for network transmission
  */
 export function serializeGameForSeat(
   game: Game,
-  seatIndex: number
+  seatIndex: number,
+  longGameProgress?: LongGameProgress
 ): SerializedGame {
   return {
     playerCount: game.playerCount,
@@ -144,5 +147,6 @@ export function serializeGameForSeat(
         }
       : null,
     phase: game.phase,
+    longGameProgress,
   };
 }
