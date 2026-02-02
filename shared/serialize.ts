@@ -6,10 +6,6 @@
 import type { Game, TrickPlay, CompletedTrick } from "./game";
 import type { Seat } from "./seat";
 import type { Card } from "./types";
-import {
-  getObjectiveStatus,
-  getObjectiveDetails,
-} from "./characters/status-adapter";
 import type {
   SerializedGame,
   SerializedSeat,
@@ -68,12 +64,8 @@ function serializeSeat(
     threatCard: seat.threatCard,
     tricksWon: seat.tricksWon,
     playedCards: seat.playedCards,
-    objectiveStatus: seat.character
-      ? getObjectiveStatus(seat.character.objective, game, seat)
-      : undefined,
-    statusDetails: seat.character
-      ? getObjectiveDetails(seat.character, game, seat)
-      : undefined,
+    objectiveStatus: seat.character?.objective.getStatus(game, seat),
+    statusDetails: seat.character?.objective.getDetails?.(game, seat),
     objective,
     hand: seat.hand ? seat.hand.serializeForViewer(isOwnSeat) : null,
     asideCard,
