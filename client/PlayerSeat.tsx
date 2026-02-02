@@ -26,6 +26,7 @@ export function PlayerSeat({
     objective,
     tricksWon,
     objectiveStatus,
+    statusDetails,
     hand,
     asideCard,
     objectiveCards,
@@ -49,7 +50,11 @@ export function PlayerSeat({
           <div>
             <span className="font-xs secondary">{tricksWon.length}</span>{" "}
             <StatusIcon objectiveStatus={objectiveStatus} />{" "}
-            <span className="font-xs accent italic">{objective}</span>
+            <ObjectiveText
+              objective={objective}
+              objectiveStatus={objectiveStatus}
+              statusDetails={statusDetails}
+            />
           </div>
           {phase === "setup" && setupText && (
             <div className="setup-text">
@@ -109,14 +114,49 @@ function StatusIcon({
 
   const { finality, outcome } = objectiveStatus;
   const isFinalSuccess = finality === "final" && outcome === "success";
-  const icon = isFinalSuccess ? "★" : outcome === "success" ? "✓" : "✗";
-  const colorClass = isFinalSuccess
-    ? "completed"
-    : outcome === "success"
-      ? "success"
-      : "error";
+  const isFinalFailure = finality === "final" && outcome === "failure";
+
+  let icon: string;
+  let colorClass: string;
+
+  if (isFinalSuccess) {
+    icon = "★";
+    colorClass = "completed";
+  } else if (isFinalFailure) {
+    icon = "⊘";
+    colorClass = "impossible";
+  } else if (outcome === "success") {
+    icon = "✓";
+    colorClass = "success";
+  } else {
+    icon = "○";
+    colorClass = "pending";
+  }
 
   return <span className={`font-xs ${colorClass}`}>{icon}</span>;
+}
+
+function ObjectiveText({
+  objective,
+  objectiveStatus,
+  statusDetails,
+}: {
+  objective: string;
+  objectiveStatus?: { finality: string; outcome: string };
+  statusDetails?: string;
+}) {
+  const isImpossible =
+    objectiveStatus?.finality === "final" &&
+    objectiveStatus?.outcome === "failure";
+
+  return (
+    <span
+      className={`font-xs accent italic ${isImpossible ? "strikethrough" : ""}`}
+    >
+      {objective}
+      {statusDetails && <span className="secondary"> ({statusDetails})</span>}
+    </span>
+  );
 }
 
 function AsideCard({
