@@ -68,12 +68,12 @@ function FailedObjectives({
     <div className="failed-objectives">
       {failedSeats.map((seat) => (
         <div key={seat.seatIndex} className="failed-objective">
-          {seat.character}: {seat.objective}
+          {seat.character ?? "Unknown"}: {seat.objective}
         </div>
       ))}
       {failedRiders.map((seat) => (
         <div key={`rider-${seat.seatIndex}`} className="failed-objective">
-          {seat.rider}: {seat.riderObjective}
+          {seat.rider ?? "Rider"}: {seat.riderObjective}
         </div>
       ))}
     </div>

@@ -1,5 +1,10 @@
 import type { SerializedSeat } from "@shared/serialized";
-import type { Card as CardType, ObjectiveCard, GamePhase } from "@shared/types";
+import type {
+  Card as CardType,
+  ObjectiveCard,
+  GamePhase,
+  ObjectiveStatus,
+} from "@shared/types";
 import { Hand } from "./Hand";
 import { Card } from "./Card";
 
@@ -108,7 +113,7 @@ function ObjectiveCardsBlock({ cards }: { cards: ObjectiveCard[] }) {
 function StatusIcon({
   objectiveStatus,
 }: {
-  objectiveStatus?: { finality: string; outcome: string };
+  objectiveStatus?: ObjectiveStatus;
 }) {
   if (!objectiveStatus) return null;
 
@@ -142,7 +147,7 @@ function ObjectiveText({
   statusDetails,
 }: {
   objective: string;
-  objectiveStatus?: { finality: string; outcome: string };
+  objectiveStatus?: ObjectiveStatus;
   statusDetails?: string;
 }) {
   const isImpossible =
