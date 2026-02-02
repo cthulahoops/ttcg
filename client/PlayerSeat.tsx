@@ -1,11 +1,12 @@
 import type { SerializedSeat } from "@shared/serialized";
-import type { Card as CardType, ObjectiveCard } from "@shared/types";
+import type { Card as CardType, ObjectiveCard, GamePhase } from "@shared/types";
 import { Hand } from "./Hand";
 import { Card } from "./Card";
 
 type PlayerSeatProps = {
   seat: SerializedSeat;
   isActive: boolean;
+  phase: GamePhase;
   selectableCards: CardType[];
   onSelectCard: (card: CardType) => void;
 };
@@ -13,6 +14,7 @@ type PlayerSeatProps = {
 export function PlayerSeat({
   seat,
   isActive,
+  phase,
   selectableCards,
   onSelectCard,
 }: PlayerSeatProps) {
@@ -20,6 +22,7 @@ export function PlayerSeat({
     seatIndex,
     playerName,
     character,
+    setupText,
     objective,
     tricksWon,
     objectiveStatus,
@@ -48,6 +51,11 @@ export function PlayerSeat({
             <StatusIcon objectiveStatus={objectiveStatus} />{" "}
             <span className="font-xs accent italic">{objective}</span>
           </div>
+          {phase === "setup" && setupText && (
+            <div className="setup-text">
+              <span className="font-xs secondary italic">{setupText}</span>
+            </div>
+          )}
           {rider && riderObjective && (
             <div className="rider-objective">
               <StatusIcon objectiveStatus={riderStatus} />{" "}
