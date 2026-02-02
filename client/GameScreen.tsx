@@ -50,7 +50,7 @@ export function GameScreen({
 
   return (
     <div className="main-content" id="gameScreen">
-      <GameStatus game={game} />
+      <GameStatus game={game} pendingDecision={pendingDecision} />
 
       <AvailableCharacters characters={game.availableCharacters} />
 
