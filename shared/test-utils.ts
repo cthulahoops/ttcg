@@ -104,6 +104,7 @@ export class GameStateBuilder {
   private wonTricksSpecs: WonTricksSpec[] = [];
   private reservedHandSpecs: ReservedHandSpec[] = [];
   private shouldFinishGame = false;
+  private emptyHandSeats: Set<number> = new Set();
 
   constructor(numPlayers: 3 | 4) {
     this.numPlayers = numPlayers;
@@ -209,6 +210,18 @@ export class GameStateBuilder {
       );
     }
     this.shouldFinishGame = true;
+    return this;
+  }
+
+  /**
+   * Empty a seat's hand by redistributing its cards to other players.
+   * Use this to simulate Fatty Bolger's post-setup state.
+   */
+  emptyHand(seatIndex: number): this {
+    if (seatIndex < 0 || seatIndex >= this.numPlayers) {
+      throw new Error(`Invalid seat index: ${seatIndex}`);
+    }
+    this.emptyHandSeats.add(seatIndex);
     return this;
   }
 
@@ -550,16 +563,37 @@ export class GameStateBuilder {
     }
 
     // Calculate total cards to distribute and per-seat targets
+    // Empty hand seats get 0 cards, their share goes to other players
+    const nonEmptyCount = this.numPlayers - this.emptyHandSeats.size;
     const totalCards =
       this.reservedHandSpecs.reduce((sum, spec) => sum + spec.cards.length, 0) +
       remainingDeck.length;
-    const baseTarget = Math.floor(totalCards / this.numPlayers);
-    const remainder = totalCards % this.numPlayers;
 
-    // Seats 0..remainder-1 get baseTarget+1, the rest get baseTarget
-    const targetSizes = seats.map((_, i) =>
-      i < remainder ? baseTarget + 1 : baseTarget
-    );
+    // Calculate target sizes: empty seats get 0, others split evenly
+    const targetSizes: number[] = [];
+    if (nonEmptyCount > 0) {
+      const baseTarget = Math.floor(totalCards / nonEmptyCount);
+      const remainder = totalCards % nonEmptyCount;
+
+      // Track how many non-empty seats we've seen to distribute remainder
+      let nonEmptyIndex = 0;
+      for (let i = 0; i < this.numPlayers; i++) {
+        if (this.emptyHandSeats.has(i)) {
+          targetSizes.push(0);
+        } else {
+          // First `remainder` non-empty seats get baseTarget+1
+          targetSizes.push(
+            nonEmptyIndex < remainder ? baseTarget + 1 : baseTarget
+          );
+          nonEmptyIndex++;
+        }
+      }
+    } else {
+      // All seats are empty - this is fine, just don't distribute any cards
+      for (let i = 0; i < this.numPlayers; i++) {
+        targetSizes.push(0);
+      }
+    }
 
     // Validate that no seat's reserved cards exceed its target
     const reservedPerSeat = new Map<number, number>();
@@ -579,7 +613,7 @@ export class GameStateBuilder {
     // Sort remaining cards for deterministic distribution
     const sortedRemaining = sortCards(remainingDeck);
 
-    // Deal round-robin, skipping seats that have reached their target
+    // Deal round-robin, skipping seats that have reached their target (including empty seats)
     let seatIndex = 0;
     for (const card of sortedRemaining) {
       // Find next seat that hasn't reached its target

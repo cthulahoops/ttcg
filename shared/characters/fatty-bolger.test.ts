@@ -92,6 +92,31 @@ describe("Fatty Bolger", () => {
         outcome: "failure",
       });
     });
+
+    test("returns { final, failure } when hand is empty and no tricks won", () => {
+      const { game, seats } = new GameStateBuilder(4)
+        .setCharacter(0, "Fatty Bolger")
+        .emptyHand(0)
+        .build();
+
+      expect(FattyBolger.objective.getStatus(game, seats[0]!)).toEqual({
+        finality: "final",
+        outcome: "failure",
+      });
+    });
+
+    test("returns { final, success } when exactly 1 trick won and hand is empty", () => {
+      const { game, seats } = new GameStateBuilder(4)
+        .setCharacter(0, "Fatty Bolger")
+        .seatWonCards(0, [{ suit: "mountains", value: 5 }])
+        .emptyHand(0)
+        .build();
+
+      expect(FattyBolger.objective.getStatus(game, seats[0]!)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
+    });
   });
 
   describe("metadata", () => {
