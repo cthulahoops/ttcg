@@ -78,15 +78,28 @@ export const Elrond: CharacterDefinition = {
       return achieveAtLeast(possibilities, game.seats.length);
     },
 
-    getDetails: (game, _seat): string => {
-      const seatsWithRings = game.seats.filter((s: Seat) => {
+    getDetails: (game, _seat): string | undefined => {
+      const seatsWithoutRings = game.seats.filter((s: Seat) => {
         for (let value = 1; value <= 5; value++) {
-          if (game.hasCard(s, "rings", value)) return true;
+          if (game.hasCard(s, "rings", value)) return false;
         }
-        return false;
-      }).length;
+        return true;
+      });
 
-      return `Seats with rings: ${seatsWithRings}/${game.seats.length}`;
+      if (seatsWithoutRings.length === 0) {
+        return undefined; // All have rings - show nothing
+      }
+
+      const names = seatsWithoutRings.map(
+        (s) => s.character?.name ?? `Seat ${s.seatIndex + 1}`
+      );
+
+      // Format: "Merry, Frodo, and Elrond yet to win rings"
+      if (names.length === 1) {
+        return `${names[0]} yet to win rings`;
+      }
+      const last = names.pop();
+      return `${names.join(", ")}, and ${last} yet to win rings`;
     },
   },
 

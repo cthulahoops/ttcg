@@ -109,40 +109,6 @@ describe("Shadowfax", () => {
     });
   });
 
-  describe("objective.getDetails", () => {
-    test("shows 0/2 when no hills tricks won", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Shadowfax")
-        .build();
-
-      const details = Shadowfax.objective.getDetails!(game, seats[0]!);
-      expect(details).toBe("Tricks with hills: 0/2");
-    });
-
-    test("shows 1/2 when 1 hills trick won", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Shadowfax")
-        .seatWonCards(0, [{ suit: "hills", value: 5 }])
-        .build();
-
-      const details = Shadowfax.objective.getDetails!(game, seats[0]!);
-      expect(details).toBe("Tricks with hills: 1/2");
-    });
-
-    test("shows 2/2 when objective achieved", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Shadowfax")
-        .seatWonCards(0, [
-          { suit: "hills", value: 5 },
-          { suit: "hills", value: 6 },
-        ])
-        .build();
-
-      const details = Shadowfax.objective.getDetails!(game, seats[0]!);
-      expect(details).toBe("Tricks with hills: 2/2");
-    });
-  });
-
   describe("display.getObjectiveCards", () => {
     test("returns empty array when no tricks won", () => {
       const { game, seats } = new GameStateBuilder(4)

@@ -9,9 +9,6 @@ import {
   type ObjectivePossibilities,
 } from "shared/objectives";
 
-const countForestsWon = (seat: Seat) =>
-  seat.getAllWonCards().filter((c: Card) => c.suit === "forests").length;
-
 const forestCardsWinnable = (game: Game, seat: Seat) =>
   cardsWinnable(game, seat, (c: Card) => c.suit === "forests");
 
@@ -40,10 +37,6 @@ export const Arwen: CharacterDefinition = {
           achieveMoreThan(myForests, other)
         )
       );
-    },
-
-    getDetails: (_game, seat): string => {
-      return `Forests: ${countForestsWon(seat)}`;
     },
   },
 

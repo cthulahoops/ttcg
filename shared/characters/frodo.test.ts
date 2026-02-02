@@ -169,28 +169,6 @@ describe("Frodo", () => {
     });
   });
 
-  describe("objective.getDetails", () => {
-    test("shows 'Rings: none' when no rings won", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Frodo")
-        .build();
-
-      expect(Frodo.objective.getDetails!(game, seats[0]!)).toBe("Rings: none");
-    });
-
-    test("shows ring values sorted when rings won", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Frodo")
-        .seatWonCards(0, [
-          { suit: "rings", value: 3 },
-          { suit: "rings", value: 1 },
-        ])
-        .build();
-
-      expect(Frodo.objective.getDetails!(game, seats[0]!)).toBe("Rings: 1, 3");
-    });
-  });
-
   describe("setup", () => {
     test("is a no-op function", async () => {
       const { game, seats } = new GameStateBuilder(4)

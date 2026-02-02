@@ -38,20 +38,6 @@ export const Celeborn: CharacterDefinition = {
 
       return achieveSome(rankStatuses);
     },
-
-    getDetails: (_game, seat): string | undefined => {
-      const rankCounts: Record<number, number> = {};
-      seat.getAllWonCards().forEach((card: Card) => {
-        rankCounts[card.value] = (rankCounts[card.value] || 0) + 1;
-      });
-
-      const ranksWithCounts = Object.entries(rankCounts)
-        .filter(([_rank, count]) => count >= 2)
-        .map(([rank, count]) => `${rank}:${count}`)
-        .join(", ");
-
-      return ranksWithCounts || undefined;
-    },
   },
 
   display: {

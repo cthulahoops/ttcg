@@ -99,49 +99,6 @@ describe("Boromir", () => {
     });
   });
 
-  describe("objective.getDetails", () => {
-    test("shows 'Last: no' when last trick not yet won", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Boromir")
-        .build();
-
-      const details = Boromir.objective.getDetails!(game, seats[0]!);
-      expect(details).toContain("Last: no");
-      expect(details).toContain("1-Ring: ok");
-    });
-
-    test("shows 'Last: yes' when Boromir won the last trick (game finished)", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Boromir")
-        .finishGame()
-        .build();
-
-      const details = Boromir.objective.getDetails!(game, seats[0]!);
-      expect(details).toContain("Last: yes");
-      expect(details).toContain("1-Ring: ok");
-    });
-
-    test("shows correct details when has 1 of Rings", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Boromir")
-        .seatWonCards(0, [{ suit: "rings", value: 1 }])
-        .build();
-
-      const details = Boromir.objective.getDetails!(game, seats[0]!);
-      expect(details).toContain("has 1-Ring");
-    });
-
-    test("shows correct details when not winning last trick", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(1, "Boromir")
-        .finishGame()
-        .build();
-
-      const details = Boromir.objective.getDetails!(game, seats[1]!);
-      expect(details).toContain("Last: no");
-    });
-  });
-
   describe("metadata", () => {
     test("has correct name", () => {
       expect(Boromir.name).toBe("Boromir");

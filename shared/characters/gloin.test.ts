@@ -319,52 +319,6 @@ describe("Gloin", () => {
     });
   });
 
-  describe("objective.getDetails", () => {
-    test("shows 'Mountains: 0' when no mountains won", () => {
-      // Assign all mountains to other seats
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Gloin")
-        .seatWonCards(1, [
-          { suit: "mountains", value: 2 },
-          { suit: "mountains", value: 3 },
-          { suit: "mountains", value: 4 },
-        ])
-        .seatWonCards(2, [
-          { suit: "mountains", value: 5 },
-          { suit: "mountains", value: 6 },
-        ])
-        .seatWonCards(3, [
-          { suit: "mountains", value: 7 },
-          { suit: "mountains", value: 8 },
-        ])
-        .build();
-
-      expect(Gloin.objective.getDetails!(game, seats[0]!)).toBe("Mountains: 0");
-    });
-
-    test("shows mountains count when mountains won", () => {
-      // Assign all mountains explicitly to control counts
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Gloin")
-        .seatWonCards(0, [
-          { suit: "mountains", value: 2 },
-          { suit: "mountains", value: 3 },
-          { suit: "mountains", value: 4 },
-        ])
-        .seatWonCards(1, [
-          { suit: "mountains", value: 5 },
-          { suit: "mountains", value: 6 },
-        ])
-        .seatWonCards(2, [
-          { suit: "mountains", value: 7 },
-          { suit: "mountains", value: 8 },
-        ])
-        .build();
-
-      expect(Gloin.objective.getDetails!(game, seats[0]!)).toBe("Mountains: 3");
-    });
-  });
-
   describe("metadata", () => {
     test("has correct name", () => {
       expect(Gloin.name).toBe("Gloin");

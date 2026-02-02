@@ -212,57 +212,6 @@ describe("Glorfindel", () => {
     });
   });
 
-  describe("objective.getDetails", () => {
-    test("shows 'Shadows: 0/8' when no shadows won", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Glorfindel")
-        .build();
-
-      const details = Glorfindel.objective.getDetails!(game, seats[0]!);
-      expect(details).toBe("Shadows: 0/8");
-    });
-
-    test("shows correct count when some shadows won", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Glorfindel")
-        .seatWonCards(0, [
-          { suit: "shadows", value: 1 },
-          { suit: "shadows", value: 3 },
-          { suit: "shadows", value: 5 },
-        ])
-        .seatWonCards(1, [
-          { suit: "shadows", value: 2 },
-          { suit: "shadows", value: 4 },
-          { suit: "shadows", value: 6 },
-          { suit: "shadows", value: 7 },
-          { suit: "shadows", value: 8 },
-        ])
-        .build();
-
-      const details = Glorfindel.objective.getDetails!(game, seats[0]!);
-      expect(details).toBe("Shadows: 3/8");
-    });
-
-    test("shows 'Shadows: 8/8' when all shadows won", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Glorfindel")
-        .seatWonCards(0, [
-          { suit: "shadows", value: 1 },
-          { suit: "shadows", value: 2 },
-          { suit: "shadows", value: 3 },
-          { suit: "shadows", value: 4 },
-          { suit: "shadows", value: 5 },
-          { suit: "shadows", value: 6 },
-          { suit: "shadows", value: 7 },
-          { suit: "shadows", value: 8 },
-        ])
-        .build();
-
-      const details = Glorfindel.objective.getDetails!(game, seats[0]!);
-      expect(details).toBe("Shadows: 8/8");
-    });
-  });
-
   describe("metadata", () => {
     test("has correct name", () => {
       expect(Glorfindel.name).toBe("Glorfindel");

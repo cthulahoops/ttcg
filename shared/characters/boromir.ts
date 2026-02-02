@@ -36,18 +36,6 @@ export const Boromir: CharacterDefinition = {
 
       return achieveBoth(winLastTrick, avoidOneRing);
     },
-
-    getDetails: (game, seat): string => {
-      const lastTrickIndex = game.tricksToPlay - 1;
-      const wonLastTrick = seat.tricksWon.some(
-        (trick) => trick.number === lastTrickIndex
-      );
-      const hasOneRing = game.hasCard(seat, "rings", 1);
-
-      const lastIcon = wonLastTrick ? "yes" : "no";
-      const oneRingIcon = hasOneRing ? "has 1-Ring" : "ok";
-      return `Last: ${lastIcon}, 1-Ring: ${oneRingIcon}`;
-    },
   },
 
   display: {},

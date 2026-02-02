@@ -26,15 +26,6 @@ export const BilboBaggins: CharacterDefinition = {
         doNot(achieveCard(game, seat, { suit: "rings", value: 1 }))
       );
     },
-
-    getDetails: (game, seat): string => {
-      const trickCount = seat.getTrickCount();
-      const hasOneRing = game.hasCard(seat, "rings", 1);
-
-      const tricksIcon = trickCount >= 3 ? "✓" : `${trickCount}/3`;
-      const oneRingIcon = hasOneRing ? "✗ (has 1-Ring)" : "✓";
-      return `Tricks: ${tricksIcon}, 1-Ring: ${oneRingIcon}`;
-    },
   },
 
   display: {

@@ -142,50 +142,75 @@ describe("Elrond", () => {
   });
 
   describe("objective.getDetails", () => {
-    test("shows correct count when no seats have rings", () => {
+    test("shows all characters when no seats have rings", () => {
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Elrond")
+        .setCharacter(1, "Frodo")
+        .setCharacter(2, "Sam")
+        .setCharacter(3, "Merry")
         .build();
 
       expect(Elrond.objective.getDetails!(game, seats[0]!)).toBe(
-        "Seats with rings: 0/4"
+        "Elrond, Frodo, Sam, and Merry yet to win rings"
       );
     });
 
-    test("shows correct count when some seats have rings", () => {
+    test("shows characters without rings when some have rings", () => {
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Elrond")
+        .setCharacter(1, "Frodo")
+        .setCharacter(2, "Sam")
+        .setCharacter(3, "Merry")
         .seatWonCards(0, [{ suit: "rings", value: 1 }])
         .seatWonCards(2, [{ suit: "rings", value: 3 }])
         .build();
 
       expect(Elrond.objective.getDetails!(game, seats[0]!)).toBe(
-        "Seats with rings: 2/4"
+        "Frodo, and Merry yet to win rings"
       );
     });
 
-    test("shows correct count when all seats have rings", () => {
+    test("shows single character when only one lacks rings", () => {
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Elrond")
+        .setCharacter(1, "Frodo")
+        .setCharacter(2, "Sam")
+        .setCharacter(3, "Merry")
+        .seatWonCards(0, [{ suit: "rings", value: 1 }])
+        .seatWonCards(1, [{ suit: "rings", value: 2 }])
+        .seatWonCards(2, [{ suit: "rings", value: 3 }])
+        .build();
+
+      expect(Elrond.objective.getDetails!(game, seats[0]!)).toBe(
+        "Merry yet to win rings"
+      );
+    });
+
+    test("returns undefined when all seats have rings", () => {
+      const { game, seats } = new GameStateBuilder(4)
+        .setCharacter(0, "Elrond")
+        .setCharacter(1, "Frodo")
+        .setCharacter(2, "Sam")
+        .setCharacter(3, "Merry")
         .seatWonCards(0, [{ suit: "rings", value: 1 }])
         .seatWonCards(1, [{ suit: "rings", value: 2 }])
         .seatWonCards(2, [{ suit: "rings", value: 3 }])
         .seatWonCards(3, [{ suit: "rings", value: 4 }])
         .build();
 
-      expect(Elrond.objective.getDetails!(game, seats[0]!)).toBe(
-        "Seats with rings: 4/4"
-      );
+      expect(Elrond.objective.getDetails!(game, seats[0]!)).toBeUndefined();
     });
 
-    test("shows correct count for 3-player game", () => {
+    test("shows characters for 3-player game", () => {
       const { game, seats } = new GameStateBuilder(3)
         .setCharacter(0, "Elrond")
+        .setCharacter(1, "Frodo")
+        .setCharacter(2, "Sam")
         .seatWonCards(0, [{ suit: "rings", value: 1 }])
         .build();
 
       expect(Elrond.objective.getDetails!(game, seats[0]!)).toBe(
-        "Seats with rings: 1/3"
+        "Frodo, and Sam yet to win rings"
       );
     });
   });

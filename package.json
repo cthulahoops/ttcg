@@ -9,7 +9,7 @@
     "dev:client": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "check": "tsc && bun run lint && bun run format:check",
+    "check": "tsc && bun run lint && bun run format:check && bun run test",
     "typecheck": "tsc",
     "test": "bun test",
     "lint": "eslint client server shared",
