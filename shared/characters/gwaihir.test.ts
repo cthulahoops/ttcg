@@ -282,7 +282,7 @@ describe("Gwaihir", () => {
         .build();
 
       const result = Gwaihir.objective.cards!(game, seats[0]!);
-      expect(result.cards).toEqual(["trick"]);
+      expect(result.cards).toEqual([{ suit: "mountains", trick: true }]);
     });
 
     test("returns 2 trick markers when 2 tricks contain mountains", () => {
@@ -293,7 +293,10 @@ describe("Gwaihir", () => {
         .build();
 
       const result = Gwaihir.objective.cards!(game, seats[0]!);
-      expect(result.cards).toEqual(["trick", "trick"]);
+      expect(result.cards).toEqual([
+        { suit: "mountains", trick: true },
+        { suit: "mountains", trick: true },
+      ]);
     });
 
     test("returns trick markers for each qualifying trick, not individual mountain cards", () => {
@@ -306,7 +309,7 @@ describe("Gwaihir", () => {
 
       const result = Gwaihir.objective.cards!(game, seats[0]!);
       // Should be 1 trick marker, not 4 (for 4 mountain cards)
-      expect(result.cards).toEqual(["trick"]);
+      expect(result.cards).toEqual([{ suit: "mountains", trick: true }]);
     });
   });
 

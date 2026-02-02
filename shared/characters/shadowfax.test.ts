@@ -139,7 +139,7 @@ describe("Shadowfax", () => {
         .build();
 
       const result = Shadowfax.objective.cards!(game, seats[0]!);
-      expect(result.cards).toEqual(["trick"]);
+      expect(result.cards).toEqual([{ suit: "hills", trick: true }]);
     });
 
     test("returns 2 trick markers when 2 tricks contain hills", () => {
@@ -152,7 +152,10 @@ describe("Shadowfax", () => {
         .build();
 
       const result = Shadowfax.objective.cards!(game, seats[0]!);
-      expect(result.cards).toEqual(["trick", "trick"]);
+      expect(result.cards).toEqual([
+        { suit: "hills", trick: true },
+        { suit: "hills", trick: true },
+      ]);
     });
 
     test("returns trick markers for each qualifying trick", () => {
@@ -167,7 +170,11 @@ describe("Shadowfax", () => {
 
       // Each hills card is in a separate trick, so 3 trick markers
       const result = Shadowfax.objective.cards!(game, seats[0]!);
-      expect(result.cards).toEqual(["trick", "trick", "trick"]);
+      expect(result.cards).toEqual([
+        { suit: "hills", trick: true },
+        { suit: "hills", trick: true },
+        { suit: "hills", trick: true },
+      ]);
     });
   });
 
