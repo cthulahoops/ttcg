@@ -75,7 +75,8 @@ export type ObjectiveStatus = { finality: Finality; outcome: Outcome };
 export type GamePhase = "assignment" | "setup" | "play" | "gameover";
 
 // Represents a trick won (UI decides how to render - e.g., as card back)
-export type ObjectiveTrick = "trick";
+// Can be a generic "trick" or a suit-specific trick placeholder with { suit, trick: true }
+export type ObjectiveTrick = "trick" | { suit: Suit; trick: true };
 
 // Objective cards can be real cards, threat cards, or tricks
 export type ObjectiveCard = Card | ThreatCard | ObjectiveTrick;

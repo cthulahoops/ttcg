@@ -20,6 +20,14 @@ export function Card({ card, clickable = false, onClick }: CardProps) {
     return <div className="card trick"></div>;
   }
 
+  if (typeof card === "object" && "trick" in card) {
+    return (
+      <div className={`card ${card.suit}`}>
+        <div className="value">?</div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`card ${card.suit} ${clickable ? "clickable" : ""}`}

@@ -43,7 +43,7 @@ export const Shadowfax: CharacterDefinition = {
       // Show trick markers for tricks containing hills cards
       const cards: ObjectiveCard[] = Array(
         hillsTricks(game, seat).current
-      ).fill("trick");
+      ).fill({ suit: "hills", trick: true });
       return { cards };
     },
   },

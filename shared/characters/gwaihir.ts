@@ -26,7 +26,7 @@ export const Gwaihir: CharacterDefinition = {
     cards: (game, seat) => {
       const cards: ObjectiveCard[] = Array(
         mountainTricks(game, seat).current
-      ).fill("trick");
+      ).fill({ suit: "mountains", trick: true });
       return { cards };
     },
   },
