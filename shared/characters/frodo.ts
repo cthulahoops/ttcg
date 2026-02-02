@@ -46,21 +46,6 @@ export const Frodo: CharacterDefinition = {
       const rings = cardsWinnable(game, seat, (c) => c.suit === "rings");
       return achieveAtLeast(rings, ringsNeeded);
     },
-
-    getDetails: (_game, seat): string => {
-      const ringCards = seat
-        .getAllWonCards()
-        .filter((c: Card) => c.suit === "rings");
-
-      if (ringCards.length > 0) {
-        const ringList = ringCards
-          .map((c) => c.value)
-          .sort((a: number, b: number) => a - b)
-          .join(", ");
-        return `Rings: ${ringList}`;
-      }
-      return "Rings: none";
-    },
   },
 
   display: {

@@ -9,9 +9,6 @@ import {
   type ObjectivePossibilities,
 } from "../objectives";
 
-const countMountainsWon = (seat: Seat) =>
-  seat.getAllWonCards().filter((c: Card) => c.suit === "mountains").length;
-
 const mountainCardsWinnable = (game: Game, seat: Seat) =>
   cardsWinnable(game, seat, (c: Card) => c.suit === "mountains");
 
@@ -40,10 +37,6 @@ export const Gloin: CharacterDefinition = {
           achieveMoreThan(myMountains, other)
         )
       );
-    },
-
-    getDetails: (_game, seat): string => {
-      return `Mountains: ${countMountainsWon(seat)}`;
     },
   },
 

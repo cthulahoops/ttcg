@@ -38,10 +38,6 @@ export const Shadowfax: CharacterDefinition = {
     getStatus: (game, seat): ObjectiveStatus => {
       return achieveAtLeast(hillsTricks(game, seat), 2);
     },
-
-    getDetails: (game, seat): string => {
-      return `Tricks with hills: ${hillsTricks(game, seat).current}/2`;
-    },
   },
 
   display: {

@@ -28,16 +28,6 @@ export const FarmerMaggot: CharacterDefinition = {
 
       return achieveAtLeast(cardsWinnable(game, seat, matchesThreat), 2);
     },
-
-    getDetails: (_game, seat): string | undefined => {
-      if (!seat.threatCard) return undefined;
-
-      const matchingCards = seat
-        .getAllWonCards()
-        .filter((c) => c.value === seat.threatCard);
-
-      return `Threat: ${seat.threatCard}, Won: ${matchingCards.length}/2`;
-    },
   },
 
   display: {
