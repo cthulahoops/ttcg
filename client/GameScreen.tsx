@@ -20,10 +20,15 @@ export function GameScreen({
   pendingDecision,
   onRespond,
 }: GameScreenProps) {
-  // Rotate seats so viewer's seat appears first
+  // In solitaire mode, rotate so Frodo appears first
+  // Otherwise, rotate so viewer's seat appears first
+  const rotateIndex =
+    game.playerCount === 1
+      ? game.seats.findIndex((s) => s.character === "Frodo")
+      : game.viewerSeat;
   const rotatedSeats = [
-    ...game.seats.slice(game.viewerSeat),
-    ...game.seats.slice(0, game.viewerSeat),
+    ...game.seats.slice(rotateIndex),
+    ...game.seats.slice(0, rotateIndex),
   ];
 
   // Derive select_card decision state
