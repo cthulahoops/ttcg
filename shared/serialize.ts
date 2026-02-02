@@ -64,6 +64,7 @@ function serializeSeat(
     seatIndex: seat.seatIndex,
     playerName: seat.controller.playerName,
     character: seat.character?.name ?? null,
+    setupText: seat.character?.setupText ?? null,
     threatCard: seat.threatCard,
     tricksWon: seat.tricksWon,
     playedCards: seat.playedCards,
@@ -156,5 +157,6 @@ export function serializeGameForSeat(
             "",
         }
       : null,
+    phase: game.phase,
   };
 }

@@ -72,6 +72,8 @@ export type Finality = "tentative" | "final";
 export type Outcome = "failure" | "success";
 export type ObjectiveStatus = { finality: Finality; outcome: Outcome };
 
+export type GamePhase = "assignment" | "setup" | "play" | "gameover";
+
 // Represents a trick won (UI decides how to render - e.g., as card back)
 export type ObjectiveTrick = "trick";
 

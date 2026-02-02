@@ -5,7 +5,7 @@ import { allCharacters, characterRegistry } from "./characters/registry";
 import type { CharacterDefinition } from "./characters/registry";
 import { allRiders } from "./riders/registry";
 import type { RiderDefinition } from "./riders/registry";
-import type { Card, Suit, ThreatCard, ChoiceButton } from "./types";
+import type { Card, Suit, ThreatCard, ChoiceButton, GamePhase } from "./types";
 
 // ===== INTERFACES =====
 
@@ -51,6 +51,7 @@ export class Game {
   threatDeck: number[];
   tricksToPlay: number;
   drawnRider: RiderDefinition | null; // Rider during assignment phase
+  phase: GamePhase;
   onStateChange?: (game: Game) => void;
   onLog?: (
     line: string,
@@ -81,6 +82,7 @@ export class Game {
     this.threatDeck = [1, 2, 3, 4, 5, 6, 7];
     this.tricksToPlay = numCharacters === 3 ? 12 : 9;
     this.drawnRider = null;
+    this.phase = "assignment";
 
     this.threatDeck = shuffleDeck(
       this.threatDeck.map((v) => ({ value: v }))
@@ -685,6 +687,8 @@ async function selectCardFromPlayer(
 }
 
 async function runTrickTakingPhase(gameState: Game): Promise<void> {
+  gameState.phase = "play";
+  gameState.notifyStateChange();
   gameState.log("=== PLAYING PHASE ===", true);
 
   while (!isGameOver(gameState)) {
@@ -823,6 +827,8 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
 }
 
 async function runSetupPhase(gameState: Game): Promise<void> {
+  gameState.phase = "setup";
+  gameState.notifyStateChange();
   gameState.log("=== SETUP PHASE ===", true);
 
   const setupContext: GameSetupContext = {
@@ -1006,6 +1012,9 @@ export async function runGame(gameState: Game): Promise<void> {
   await runRiderAssignment(gameState);
   await runSetupPhase(gameState);
   await runTrickTakingPhase(gameState);
+
+  gameState.phase = "gameover";
+  gameState.notifyStateChange();
 
   const gameOverMsg = getGameOverMessage(gameState);
   gameState.log("--- GAME OVER ---", true);

@@ -8,6 +8,7 @@ import type {
   Trick,
   ObjectiveStatus,
   ObjectiveCards,
+  GamePhase,
 } from "./types";
 
 /**
@@ -62,6 +63,7 @@ export interface SerializedSeat {
   seatIndex: number;
   playerName: string | null;
   character: string | null;
+  setupText: string | null;
   threatCard: number | null;
   tricksWon: Trick[];
   playedCards: Card[];
@@ -99,4 +101,5 @@ export interface SerializedGame {
   lastTrickWinner: number | null;
   tricksToPlay: number;
   drawnRider: { name: string; objective: string } | null;
+  phase: GamePhase;
 }

@@ -89,6 +89,7 @@ export function GameScreen({
               key={seat.seatIndex}
               seat={seat}
               isActive={isActive}
+              phase={game.phase}
               selectableCards={selectableCards}
               onSelectCard={handleSelectCard}
             />
