@@ -1,3 +1,6 @@
+import { useState } from "react";
+import type { GameMode, GameOptions } from "@shared/protocol";
+
 type Player = {
   name: string;
   connected: boolean;
@@ -6,7 +9,7 @@ type Player = {
 type RoomLobbyProps = {
   roomCode: string;
   players: Player[];
-  onStartGame: () => void;
+  onStartGame: (options: GameOptions) => void;
   onLeaveRoom: () => void;
 };
 
@@ -16,7 +19,12 @@ export function RoomLobby({
   onStartGame,
   onLeaveRoom,
 }: RoomLobbyProps) {
+  const [gameMode, setGameMode] = useState<GameMode>("short");
   const canStartGame = players.length >= 1;
+
+  const handleStartGame = () => {
+    onStartGame({ mode: gameMode });
+  };
 
   return (
     <div className="room-lobby">
@@ -43,12 +51,40 @@ export function RoomLobby({
         </ul>
       </div>
 
+      <div className="game-mode-selection">
+        <h3>Game Mode</h3>
+        <label className="radio-option">
+          <input
+            type="radio"
+            name="gameMode"
+            value="short"
+            checked={gameMode === "short"}
+            onChange={() => setGameMode("short")}
+          />
+          <span>Short Game</span>
+          <span className="mode-description">Single round</span>
+        </label>
+        <label className="radio-option">
+          <input
+            type="radio"
+            name="gameMode"
+            value="long"
+            checked={gameMode === "long"}
+            onChange={() => setGameMode("long")}
+          />
+          <span>Long Game</span>
+          <span className="mode-description">
+            Campaign mode - complete all characters
+          </span>
+        </label>
+      </div>
+
       <div className="lobby-buttons">
         <button
           type="button"
           className="primary-btn"
           disabled={!canStartGame}
-          onClick={onStartGame}
+          onClick={handleStartGame}
         >
           Start Game
         </button>

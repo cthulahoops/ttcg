@@ -10,6 +10,7 @@ import type {
   ObjectiveCards,
   GamePhase,
 } from "./types";
+import type { LongGameProgress } from "./protocol";
 
 /**
  * Serialized representation of a trick play.
@@ -102,4 +103,5 @@ export interface SerializedGame {
   tricksToPlay: number;
   drawnRider: { name: string; objective: string } | null;
   phase: GamePhase;
+  longGameProgress?: LongGameProgress;
 }

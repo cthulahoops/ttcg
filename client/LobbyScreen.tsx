@@ -1,5 +1,6 @@
 import { LobbyMenu } from "./LobbyMenu";
 import { RoomLobby } from "./RoomLobby";
+import type { GameOptions } from "@shared/protocol";
 
 type Player = {
   name: string;
@@ -11,7 +12,7 @@ type LobbyScreenProps = {
   players: Player[];
   playerName: string | null;
   onJoinRoom: (playerName: string, roomCode: string) => void;
-  onStartGame: () => void;
+  onStartGame: (options: GameOptions) => void;
   onLeaveRoom: () => void;
 };
 

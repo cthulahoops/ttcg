@@ -8,6 +8,7 @@ import type {
 } from "./types";
 import type { Game } from "./game";
 import type { Seat } from "./seat";
+import type { LongGameProgress } from "./protocol";
 
 export abstract class Controller {
   playerName: string | null = null;
@@ -29,7 +30,11 @@ export abstract class Controller {
   }
 
   /** Send game state to this player. No-op for non-network controllers. */
-  sendGameState(_game: Game, _seat: Seat): void {}
+  sendGameState(
+    _game: Game,
+    _seat: Seat,
+    _longGameProgress?: LongGameProgress
+  ): void {}
 }
 
 export class AIController extends Controller {

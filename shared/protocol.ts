@@ -15,6 +15,21 @@ export interface Player {
   connected: boolean;
 }
 
+// Game mode options
+export type GameMode = "short" | "long";
+
+export interface GameOptions {
+  mode: GameMode;
+}
+
+// Long game progress for client display
+export interface LongGameProgress {
+  currentRound: number;
+  characterPool: string[]; // All character names in campaign
+  completedCharacters: string[]; // Names of completed characters
+  riderCompleted: boolean;
+}
+
 // Client → Server messages
 export type ClientMessage =
   | { type: "ping" }
@@ -25,7 +40,7 @@ export type ClientMessage =
       playerId: string;
     }
   | { type: "leave_room" }
-  | { type: "start_game" }
+  | { type: "start_game"; options?: GameOptions }
   | { type: "decision_response"; requestId: string; response: unknown };
 
 // Server → Client messages
@@ -44,7 +59,11 @@ export type ServerMessage =
   | { type: "game_log"; line: string; important?: boolean }
   | { type: "error"; message: string }
   | { type: "decision_request"; requestId: string; decision: DecisionRequest }
-  | { type: "game_reset"; players: Player[] }; // Return to room lobby
+  | {
+      type: "game_reset";
+      players: Player[];
+      longGameProgress?: LongGameProgress;
+    }; // Return to room lobby
 
 // Decision request types
 export type DecisionRequest =

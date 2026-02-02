@@ -6,7 +6,11 @@ import type {
   ChoiceButtonOptions,
   ChoiceCardOptions,
 } from "../shared/types";
-import type { ServerMessage, DecisionRequest } from "../shared/protocol";
+import type {
+  ServerMessage,
+  DecisionRequest,
+  LongGameProgress,
+} from "../shared/protocol";
 import type { Game } from "../shared/game";
 import type { Seat } from "../shared/seat";
 import { serializeGameForSeat } from "../shared/serialize";
@@ -131,8 +135,12 @@ export class NetworkController extends Controller {
   /**
    * Send game state to this player
    */
-  override sendGameState(game: Game, seat: Seat): void {
-    const state = serializeGameForSeat(game, seat.seatIndex);
+  override sendGameState(
+    game: Game,
+    seat: Seat,
+    longGameProgress?: LongGameProgress
+  ): void {
+    const state = serializeGameForSeat(game, seat.seatIndex, longGameProgress);
     this.sendMessage({
       type: "game_state",
       state,
