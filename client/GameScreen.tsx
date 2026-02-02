@@ -22,10 +22,13 @@ export function GameScreen({
 }: GameScreenProps) {
   // In solitaire mode, rotate so Frodo appears first
   // Otherwise, rotate so viewer's seat appears first
-  const rotateIndex =
-    game.playerCount === 1
-      ? game.seats.findIndex((s) => s.character === "Frodo")
-      : game.viewerSeat;
+  let rotateIndex: number;
+  if (game.playerCount === 1) {
+    const frodoIndex = game.seats.findIndex((s) => s.character === "Frodo");
+    rotateIndex = frodoIndex === -1 ? 0 : frodoIndex;
+  } else {
+    rotateIndex = game.viewerSeat;
+  }
   const rotatedSeats = [
     ...game.seats.slice(rotateIndex),
     ...game.seats.slice(0, rotateIndex),
