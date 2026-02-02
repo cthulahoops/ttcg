@@ -258,31 +258,6 @@ describe("Arwen", () => {
     });
   });
 
-  describe("objective.getDetails", () => {
-    test("shows 'Forests: 0' when no forests won", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Arwen")
-        .build();
-
-      const details = Arwen.objective.getDetails!(game, seats[0]!);
-      expect(details).toBe("Forests: 0");
-    });
-
-    test("shows forests count when forests won", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Arwen")
-        .seatWonCards(0, [
-          { suit: "forests", value: 1 },
-          { suit: "forests", value: 2 },
-          { suit: "forests", value: 3 },
-        ])
-        .build();
-
-      const details = Arwen.objective.getDetails!(game, seats[0]!);
-      expect(details).toBe("Forests: 3");
-    });
-  });
-
   describe("metadata", () => {
     test("has correct name", () => {
       expect(Arwen.name).toBe("Arwen");

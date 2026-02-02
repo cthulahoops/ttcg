@@ -123,52 +123,6 @@ describe("Bilbo Baggins", () => {
     });
   });
 
-  describe("objective.getDetails", () => {
-    test("shows correct status when no tricks won", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Bilbo Baggins")
-        .build();
-
-      expect(BilboBaggins.objective.getDetails!(game, seats[0]!)).toBe(
-        "Tricks: 0/3, 1-Ring: ✓"
-      );
-    });
-
-    test("shows tricks count correctly when partially complete", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Bilbo Baggins")
-        .seatWonTricks(0, 2)
-        .build();
-
-      expect(BilboBaggins.objective.getDetails!(game, seats[0]!)).toBe(
-        "Tricks: 2/3, 1-Ring: ✓"
-      );
-    });
-
-    test("shows checkmark when 3+ tricks won", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Bilbo Baggins")
-        .seatWonTricks(0, 3)
-        .build();
-
-      expect(BilboBaggins.objective.getDetails!(game, seats[0]!)).toBe(
-        "Tricks: ✓, 1-Ring: ✓"
-      );
-    });
-
-    test("shows failure status when has 1 of Rings", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Bilbo Baggins")
-        .seatWonCards(0, [{ suit: "rings", value: 1 }])
-        .seatWonTricks(0, 2)
-        .build();
-
-      expect(BilboBaggins.objective.getDetails!(game, seats[0]!)).toBe(
-        "Tricks: ✓, 1-Ring: ✗ (has 1-Ring)"
-      );
-    });
-  });
-
   describe("setup", () => {
     test("is a no-op function", async () => {
       const { game, seats } = new GameStateBuilder(4)

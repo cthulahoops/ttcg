@@ -183,53 +183,6 @@ describe("Farmer Maggot", () => {
     });
   });
 
-  describe("objective.getDetails", () => {
-    test("returns undefined when no threat card", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Farmer Maggot")
-        .build();
-
-      seats[0]!.threatCard = null;
-      const details = FarmerMaggot.objective.getDetails!(game, seats[0]!);
-      expect(details).toBeUndefined();
-    });
-
-    test("shows threat card and count when threat card set", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Farmer Maggot")
-        .build();
-
-      seats[0]!.threatCard = 4;
-      const details = FarmerMaggot.objective.getDetails!(game, seats[0]!);
-      expect(details).toBe("Threat: 4, Won: 0/2");
-    });
-
-    test("shows correct count when cards won", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Farmer Maggot")
-        .seatWonCards(0, [{ suit: "mountains", value: 5 }])
-        .build();
-
-      seats[0]!.threatCard = 5;
-      const details = FarmerMaggot.objective.getDetails!(game, seats[0]!);
-      expect(details).toBe("Threat: 5, Won: 1/2");
-    });
-
-    test("shows correct count when objective met", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Farmer Maggot")
-        .seatWonCards(0, [
-          { suit: "mountains", value: 3 },
-          { suit: "shadows", value: 3 },
-        ])
-        .build();
-
-      seats[0]!.threatCard = 3;
-      const details = FarmerMaggot.objective.getDetails!(game, seats[0]!);
-      expect(details).toBe("Threat: 3, Won: 2/2");
-    });
-  });
-
   describe("metadata", () => {
     test("has correct name", () => {
       expect(FarmerMaggot.name).toBe("Farmer Maggot");

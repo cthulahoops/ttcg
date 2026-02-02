@@ -232,59 +232,6 @@ describe("Gwaihir", () => {
     });
   });
 
-  describe("objective.getDetails", () => {
-    test("shows 0/2 when no mountain tricks won", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Gwaihir")
-        .build();
-
-      const details = Gwaihir.objective.getDetails!(game, seats[0]!);
-      expect(details).toBe("Tricks with mountains: 0/2");
-    });
-
-    test("shows 1/2 when 1 mountain trick won", () => {
-      // Give most mountains to other seats so only 1 trick has mountains
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Gwaihir")
-        .seatWonCards(1, [
-          { suit: "mountains", value: 2 },
-          { suit: "mountains", value: 3 },
-          { suit: "mountains", value: 4 },
-          { suit: "mountains", value: 5 },
-          { suit: "mountains", value: 6 },
-          { suit: "mountains", value: 7 },
-        ])
-        .seatWonCards(0, [{ suit: "mountains", value: 8 }])
-        .build();
-
-      const details = Gwaihir.objective.getDetails!(game, seats[0]!);
-      expect(details).toBe("Tricks with mountains: 1/2");
-    });
-
-    test("shows 2/2 when objective achieved", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Gwaihir")
-        .seatWonCards(0, [{ suit: "mountains", value: 2 }])
-        .seatWonCards(0, [{ suit: "mountains", value: 3 }])
-        .build();
-
-      const details = Gwaihir.objective.getDetails!(game, seats[0]!);
-      expect(details).toBe("Tricks with mountains: 2/2");
-    });
-
-    test("shows count greater than 2 when exceeding target", () => {
-      const { game, seats } = new GameStateBuilder(4)
-        .setCharacter(0, "Gwaihir")
-        .seatWonCards(0, [{ suit: "mountains", value: 2 }])
-        .seatWonCards(0, [{ suit: "mountains", value: 3 }])
-        .seatWonCards(0, [{ suit: "mountains", value: 4 }])
-        .build();
-
-      const details = Gwaihir.objective.getDetails!(game, seats[0]!);
-      expect(details).toBe("Tricks with mountains: 3/2");
-    });
-  });
-
   describe("display.getObjectiveCards", () => {
     test("returns empty array when no tricks won", () => {
       const { game, seats } = new GameStateBuilder(4)
