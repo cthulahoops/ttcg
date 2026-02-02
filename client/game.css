@@ -3,6 +3,7 @@
   --card-height: 5.625rem;
 
   --font-size-title: 2.5;
+  --font-size-xl: 1.5rem;
   --font-size-lg: 1.125rem;
   --font-size-base: 1rem;
   --font-size-sm: 0.875rem;
@@ -226,6 +227,26 @@ button:hover {
   color: var(--color-accent);
   margin: var(--space-lg) 0;
   font-weight: bold;
+}
+
+.game-status.victory {
+  font-size: var(--font-size-xl);
+  color: var(--color-success);
+}
+
+.game-status.defeat {
+  font-size: var(--font-size-xl);
+  color: var(--color-error);
+}
+
+.failed-objectives {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-sm);
+}
+
+.failed-objective {
+  margin-top: var(--space-xs);
 }
 
 .player.active {
