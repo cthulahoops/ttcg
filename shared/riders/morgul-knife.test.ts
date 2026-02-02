@@ -131,6 +131,16 @@ describe("Morgul-Knife", () => {
         outcome: "success",
       });
     });
+
+    test("final success when hand is empty and never led with rings", () => {
+      const { game, seats } = new GameStateBuilder(4).emptyHand(0).build();
+
+      // Can't lead any more tricks, so can't fail
+      expect(MorgulKnife.objective.getStatus(game, seats[0]!)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
+    });
   });
 
   describe("metadata", () => {

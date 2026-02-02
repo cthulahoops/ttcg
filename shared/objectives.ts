@@ -4,6 +4,16 @@ import type { Seat } from "shared/seat";
 import type { Game } from "shared/game";
 
 /**
+ * Calculate the maximum number of additional tricks a seat can win from this point.
+ * This is limited by both the tricks remaining in the game AND the cards the player has.
+ */
+function maxTricksWinnableFromHere(game: Game, seat: Seat): number {
+  const cardsInHand =
+    seat.hand.getAvailableCards().length + (seat.asideCard ? 1 : 0);
+  return Math.min(game.tricksRemaining(), cardsInHand);
+}
+
+/**
  * Combines two objective statuses where both must be achieved.
  * - Outcome: success only if both are success
  * - Finality: final if either is {final, failure} OR both are final
@@ -39,7 +49,7 @@ export function tricksWinnable(
     const current = seat.getTrickCount();
     return {
       current,
-      max: current + game.tricksRemaining(),
+      max: current + maxTricksWinnableFromHere(game, seat),
     };
   }
 
@@ -66,7 +76,9 @@ export function tricksWinnable(
 
   return {
     current,
-    max: current + matchingRemaining,
+    max:
+      current +
+      Math.min(matchingRemaining, maxTricksWinnableFromHere(game, seat)),
   };
 }
 
@@ -98,7 +110,9 @@ export function tricksWithCardsWinnable(
 
   return {
     current,
-    max: current + Math.min(matchingCardsInPlay, game.tricksRemaining()),
+    max:
+      current +
+      Math.min(matchingCardsInPlay, maxTricksWinnableFromHere(game, seat)),
   };
 }
 
@@ -142,7 +156,9 @@ export function leadsWinnable(
 
   return {
     current,
-    max: current + Math.min(game.tricksRemaining(), matchingCardsInPlay),
+    max:
+      current +
+      Math.min(maxTricksWinnableFromHere(game, seat), matchingCardsInPlay),
   };
 }
 
@@ -168,7 +184,8 @@ export function cardsWinnable(
   }
 
   // Each trick contains numCharacters cards, so multiple target cards can be won per trick
-  const maxCardsPlayable = game.tricksRemaining() * game.numCharacters;
+  const maxCardsPlayable =
+    maxTricksWinnableFromHere(game, seat) * game.numCharacters;
   return {
     current,
     max: current + Math.min(maxCardsPlayable, remaining),

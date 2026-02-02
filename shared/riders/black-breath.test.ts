@@ -89,6 +89,16 @@ describe("The Black Breath", () => {
         outcome: "failure",
       });
     });
+
+    test("final success when hand is empty and no 8s won", () => {
+      const { game, seats } = new GameStateBuilder(4).emptyHand(0).build();
+
+      // Can't win any more tricks, so can't win any 8s
+      expect(BlackBreath.objective.getStatus(game, seats[0]!)).toEqual({
+        finality: "final",
+        outcome: "success",
+      });
+    });
   });
 
   describe("display.getObjectiveCards", () => {
