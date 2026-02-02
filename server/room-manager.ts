@@ -1,7 +1,20 @@
 import { Game, runGame } from "../shared/game.js";
-import type { Player } from "../shared/protocol.js";
+import type {
+  Player,
+  GameOptions,
+  LongGameProgress,
+} from "../shared/protocol.js";
 import { NetworkController } from "./controllers.js";
 import { newGame } from "./game-server.js";
+import { shuffleDeck } from "../shared/utils.js";
+import {
+  fellowshipCharacters,
+  extraCharacters,
+  characterRegistry,
+} from "../shared/characters/registry.js";
+import type { CharacterDefinition } from "../shared/characters/registry.js";
+import type { LongGameState } from "../shared/long-game.js";
+import { toLongGameProgress } from "../shared/long-game.js";
 
 interface InternalPlayer {
   playerId: string; // UUID (separate from socket ID)
@@ -17,6 +30,74 @@ interface Room {
   started: boolean; // false for MVP, reserved for future
   createdAt: number; // Timestamp for cleanup
   controllers: Map<string, NetworkController>; // Player ID to controller mapping
+  longGameState: LongGameState | null; // null for short games
+}
+
+// Long game helper functions
+
+function initializeLongGame(seatCount: number): LongGameState {
+  const frodo = characterRegistry.get("Frodo")!;
+  const gandalf = characterRegistry.get("Gandalf")!;
+
+  const pool: CharacterDefinition[] = [frodo, gandalf];
+  const shuffledFellowship = shuffleDeck(
+    fellowshipCharacters.filter((c) => c.name !== "Gandalf")
+  );
+  const shuffledExtras = shuffleDeck([...extraCharacters]);
+
+  if (seatCount === 3) {
+    // 3 seats: Frodo + Gandalf + 4 Fellowship + 3 Extra = 9 characters
+    pool.push(...shuffledFellowship.slice(0, 4));
+    pool.push(...shuffledExtras.slice(0, 3));
+  } else {
+    // 4 seats: Frodo + Gandalf + 5 Fellowship + 6 Extra = 13 characters
+    pool.push(...shuffledFellowship.slice(0, 5));
+    pool.push(...shuffledExtras.slice(0, 6));
+  }
+
+  return {
+    characterPool: pool,
+    completedCharacters: [],
+    currentRound: 1,
+    riderCompleted: false,
+  };
+}
+
+function allObjectivesCompleted(game: Game): boolean {
+  return game.seats.every((seat) => {
+    const status = seat.getObjectiveStatus(game);
+    return status.outcome === "success";
+  });
+}
+
+function markCharactersCompleted(state: LongGameState, game: Game): void {
+  for (const seat of game.seats) {
+    if (
+      seat.character &&
+      !state.completedCharacters.includes(seat.character.name)
+    ) {
+      state.completedCharacters.push(seat.character.name);
+    }
+    // Check if rider was completed
+    if (seat.rider) {
+      const riderStatus = seat.rider.objective.getStatus(game, seat);
+      if (riderStatus.outcome === "success") {
+        state.riderCompleted = true;
+      }
+    }
+  }
+}
+
+function isLongGameVictory(state: LongGameState): boolean {
+  // All characters in pool (except Frodo) must be completed
+  const nonFrodoPool = state.characterPool.filter((c) => c.name !== "Frodo");
+  const allCompleted = nonFrodoPool.every((c) =>
+    state.completedCharacters.includes(c.name)
+  );
+
+  // Note: We don't require rider to be completed for victory check here
+  // since it's optional to play a rider. Victory is all characters completed.
+  return allCompleted;
 }
 
 export class RoomManager {
@@ -85,6 +166,7 @@ export class RoomManager {
         started: false,
         createdAt: Date.now(),
         controllers: new Map(),
+        longGameState: null,
       };
       this.rooms.set(roomCode, room);
     }
@@ -238,12 +320,14 @@ export class RoomManager {
    * Start the game for a room
    * @param socketId - The socket ID of the player starting the game
    * @param sendToPlayer - Callback to send a message to a specific player
+   * @param options - Game options (mode: short or long)
    * @returns The initialized game
    * @throws Error if room doesn't exist or game already started
    */
   async startGame(
     socketId: string,
-    sendToPlayer: (playerId: string, message: string) => void
+    sendToPlayer: (playerId: string, message: string) => void,
+    options?: GameOptions
   ): Promise<Game> {
     const lookup = this.socketToPlayer.get(socketId);
     if (!lookup) {
@@ -264,6 +348,22 @@ export class RoomManager {
     let playAgain = true;
     let game: Game | null = null;
 
+    // Determine seat count (1p and 4p use 4 seats, 2p and 3p use 3 seats)
+    const playerCount = room.players.size;
+    const seatCount = playerCount === 1 || playerCount === 4 ? 4 : 3;
+
+    // Initialize long game state if mode is "long"
+    if (options?.mode === "long") {
+      room.longGameState = initializeLongGame(seatCount);
+    }
+
+    // Helper to get current long game progress
+    const getLongGameProgress = (): LongGameProgress | undefined => {
+      return room.longGameState
+        ? toLongGameProgress(room.longGameState)
+        : undefined;
+    };
+
     while (playAgain) {
       // Create a NetworkController for each player and build seat-to-player mapping
       const playerList = Array.from(room.players.values());
@@ -279,14 +379,17 @@ export class RoomManager {
         return controller;
       });
 
+      // Get available characters for this round
+      const availableCharacters = room.longGameState?.characterPool;
+
       // Initialize the game (this shuffles controllers)
-      game = newGame(controllers);
+      game = newGame(controllers, { availableCharacters });
       room.game = game;
 
       // Set up state change callback to broadcast game state
       game.onStateChange = () => {
         for (const seat of game!.seats) {
-          seat.controller.sendGameState(game!, seat);
+          seat.controller.sendGameState(game!, seat, getLongGameProgress());
         }
       };
 
@@ -330,9 +433,46 @@ export class RoomManager {
       // Run the game loop and wait for it to complete
       await runGame(game);
 
-      // Game is over - ask all players if they want to play again
-      // First response wins
-      playAgain = await this.askPlayAgain(room);
+      // For long games, track round results
+      if (room.longGameState) {
+        const roundSuccessful = allObjectivesCompleted(game);
+        if (roundSuccessful) {
+          markCharactersCompleted(room.longGameState, game);
+        }
+
+        // Check for long game victory
+        if (isLongGameVictory(room.longGameState)) {
+          // Victory! Show victory message and end long game
+          const victoryMessage = room.longGameState.riderCompleted
+            ? "Campaign Complete! All characters and rider objectives achieved!"
+            : "Campaign Complete! All character objectives achieved!";
+
+          for (const playerId of room.players.keys()) {
+            sendToPlayer(
+              playerId,
+              JSON.stringify({
+                type: "game_log",
+                line: victoryMessage,
+                important: true,
+              })
+            );
+          }
+
+          // Ask if they want to start a new campaign
+          playAgain = await this.askPlayAgain(room, true);
+          if (playAgain) {
+            // Reset long game state for new campaign
+            room.longGameState = initializeLongGame(seatCount);
+          }
+        } else {
+          // Continue campaign - increment round
+          room.longGameState.currentRound++;
+          playAgain = await this.askContinueCampaign(room);
+        }
+      } else {
+        // Short game - ask if they want to play again
+        playAgain = await this.askPlayAgain(room, false);
+      }
 
       if (playAgain) {
         // Clear controllers for new game
@@ -350,6 +490,7 @@ export class RoomManager {
             JSON.stringify({
               type: "game_reset",
               players,
+              longGameProgress: getLongGameProgress(),
             })
           );
         }
@@ -357,6 +498,7 @@ export class RoomManager {
     }
 
     // Player chose not to play again - reset room to lobby state
+    room.longGameState = null;
     this.resetRoomToLobby(room, sendToPlayer);
 
     return game!;
@@ -366,15 +508,54 @@ export class RoomManager {
    * Ask all players if they want to play again. First response wins.
    * Times out after 1 hour, defaulting to false.
    */
-  private async askPlayAgain(room: Room): Promise<boolean> {
+  private async askPlayAgain(
+    room: Room,
+    campaignComplete: boolean
+  ): Promise<boolean> {
     const PLAY_AGAIN_TIMEOUT_MS = 60 * 60 * 1000; // 1 hour
+
+    const message = campaignComplete
+      ? "Campaign complete! Start a new campaign?"
+      : "Would you like to play again?";
 
     const options = {
       title: "Game Over",
-      message: "Would you like to play again?",
+      message,
       buttons: [
         { label: "Yes", value: true },
         { label: "No", value: false },
+      ],
+    };
+
+    // Ask each controller - first response wins
+    const controllerPromises = Array.from(room.controllers.values()).map(
+      (controller) => controller.chooseButton(options)
+    );
+
+    // Timeout defaults to false
+    const timeoutPromise = new Promise<boolean>((resolve) => {
+      setTimeout(() => resolve(false), PLAY_AGAIN_TIMEOUT_MS);
+    });
+
+    return Promise.race([...controllerPromises, timeoutPromise]);
+  }
+
+  /**
+   * Ask all players if they want to continue the campaign. First response wins.
+   * Times out after 1 hour, defaulting to false.
+   */
+  private async askContinueCampaign(room: Room): Promise<boolean> {
+    const PLAY_AGAIN_TIMEOUT_MS = 60 * 60 * 1000; // 1 hour
+
+    const completedCount = room.longGameState?.completedCharacters.length ?? 0;
+    const totalCount = (room.longGameState?.characterPool.length ?? 1) - 1; // Exclude Frodo from count
+
+    const options = {
+      title: "Round Complete",
+      message: `Progress: ${completedCount}/${totalCount} characters completed. Continue campaign?`,
+      buttons: [
+        { label: "Continue", value: true },
+        { label: "End Campaign", value: false },
       ],
     };
 

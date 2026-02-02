@@ -518,13 +518,13 @@ button:hover {
   margin-bottom: var(--space-md);
 }
 
-#playersList {
+.players-list ul {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-#playersList li {
+.players-list li {
   padding: var(--space-sm);
   margin: var(--space-xs) 0;
   background: rgba(255, 255, 255, 0.1);
@@ -534,16 +534,16 @@ button:hover {
   gap: var(--space-sm);
 }
 
-#playersList li.disconnected {
+.players-list li.disconnected {
   opacity: 0.5;
 }
 
-#playersList li::before {
+.players-list li::before {
   content: "👤";
   font-size: var(--font-size-lg);
 }
 
-#playersList li.disconnected::before {
+.players-list li.disconnected::before {
   content: "💤";
 }
 
@@ -730,4 +730,91 @@ button:hover {
   .dialog-buttons button {
     padding: var(--space-sm) 12px;
   }
+}
+
+/* Game Mode Selection */
+.game-mode-selection {
+  margin: var(--space-lg) 0;
+}
+
+.game-mode-selection h3 {
+  color: var(--color-accent);
+  margin-bottom: var(--space-md);
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  margin: var(--space-xs) 0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--space-xs);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.radio-option:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.radio-option input[type="radio"] {
+  accent-color: var(--color-accent);
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+.radio-option .mode-description {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  margin-left: auto;
+}
+
+/* Long Game Progress */
+.long-game-progress {
+  background: var(--color-bg-overlay);
+  border-radius: var(--space-sm);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.long-game-progress h3 {
+  color: var(--color-accent);
+  margin: 0 0 var(--space-sm) 0;
+  font-size: var(--font-size-base);
+}
+
+.long-game-progress .round-info {
+  font-size: var(--font-size-lg);
+  font-weight: bold;
+  margin-bottom: var(--space-sm);
+}
+
+.long-game-progress .character-progress {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.long-game-progress .character-chip {
+  padding: 2px var(--space-sm);
+  border-radius: var(--space-xs);
+  font-size: var(--font-size-sm);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.long-game-progress .character-chip.completed {
+  background: var(--color-success);
+  color: var(--color-text);
+}
+
+.long-game-progress .rider-status {
+  margin-top: var(--space-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.long-game-progress .rider-status.completed {
+  color: var(--color-success);
 }

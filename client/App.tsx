@@ -65,7 +65,7 @@ export function App() {
           setPlayerName(playerName);
           setRoomCode(roomCode);
         }}
-        onStartGame={() => sendMessage({ type: "start_game" })}
+        onStartGame={(options) => sendMessage({ type: "start_game", options })}
         onLeaveRoom={handleLeaveRoom}
       />
     </div>

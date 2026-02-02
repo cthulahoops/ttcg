@@ -16,7 +16,14 @@ import {
 } from "@shared/characters/registry";
 import type { CharacterDefinition } from "@shared/characters/registry";
 
-export function newGame(controllers: Controller[]): Game {
+export interface NewGameOptions {
+  availableCharacters?: CharacterDefinition[];
+}
+
+export function newGame(
+  controllers: Controller[],
+  options?: NewGameOptions
+): Game {
   const playerCount = controllers.length;
 
   if (playerCount == 1) {
@@ -60,26 +67,34 @@ export function newGame(controllers: Controller[]): Game {
     seats.push(seat);
   }
 
-  // Draw characters alternating between fellowship and extras
-  // 3-seat: Frodo + 2 Fellowship + 1 Extra
-  // 4-seat: Frodo + 2 Fellowship + 2 Extra
-  const frodo = allCharacters.find((c) => c.name === "Frodo")!;
-  const shuffledFellowship = shuffleDeck([...fellowshipCharacters]);
-  const shuffledExtras = shuffleDeck([...extraCharacters]);
+  // Use provided characters or generate default pool
+  let availableCharacters: CharacterDefinition[];
+  if (options?.availableCharacters) {
+    availableCharacters = [...options.availableCharacters].sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  } else {
+    // Draw characters alternating between fellowship and extras
+    // 3-seat: Frodo + 2 Fellowship + 1 Extra
+    // 4-seat: Frodo + 2 Fellowship + 2 Extra
+    const frodo = allCharacters.find((c) => c.name === "Frodo")!;
+    const shuffledFellowship = shuffleDeck([...fellowshipCharacters]);
+    const shuffledExtras = shuffleDeck([...extraCharacters]);
 
-  const availableCharacters: CharacterDefinition[] = [frodo];
-  for (let i = 0; i < numCharacters; i++) {
-    if (i % 2 === 0) {
-      // Fellowship on even indices (0, 2, ...)
-      const char = shuffledFellowship.shift();
-      if (char) availableCharacters.push(char);
-    } else {
-      // Extras on odd indices (1, 3, ...)
-      const char = shuffledExtras.shift();
-      if (char) availableCharacters.push(char);
+    availableCharacters = [frodo];
+    for (let i = 0; i < numCharacters; i++) {
+      if (i % 2 === 0) {
+        // Fellowship on even indices (0, 2, ...)
+        const char = shuffledFellowship.shift();
+        if (char) availableCharacters.push(char);
+      } else {
+        // Extras on odd indices (1, 3, ...)
+        const char = shuffledExtras.shift();
+        if (char) availableCharacters.push(char);
+      }
     }
+    availableCharacters.sort((a, b) => a.name.localeCompare(b.name));
   }
-  availableCharacters.sort((a, b) => a.name.localeCompare(b.name));
 
   const gameState = new Game(
     playerCount,
