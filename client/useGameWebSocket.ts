@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef } from "react";
 import { clientReducer } from "./reducer";
 import { ClientState } from "./types";
 import type { ClientMessage, ServerMessage } from "@shared/protocol";
@@ -14,15 +14,23 @@ export const initialClientState: ClientState = {
   gameLog: [],
 };
 
-export function useGameWebSocket() {
+type WebSocketOptions = {
+  onConnect?: (send: (msg: ClientMessage) => void) => void;
+};
+
+export function useGameWebSocket(options: WebSocketOptions = {}) {
+  const { onConnect } = options;
   const [state, dispatch] = useReducer(clientReducer, initialClientState);
-  const [connected, setConnected] = useState<boolean>(false);
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
   const reconnectAttemptRef = useRef(0);
+  const onConnectRef = useRef(onConnect);
+  useEffect(() => {
+    onConnectRef.current = onConnect;
+  }, [onConnect]);
 
   useEffect(() => {
     function connect() {
@@ -33,12 +41,14 @@ export function useGameWebSocket() {
       wsRef.current = ws;
 
       ws.onopen = () => {
+        if (wsRef.current !== ws) return; // Stale guard
         console.log("WebSocket connected");
-        setConnected(true);
         reconnectAttemptRef.current = 0;
+        onConnectRef.current?.((msg) => ws.send(JSON.stringify(msg)));
       };
 
       ws.onmessage = (event) => {
+        if (wsRef.current !== ws) return; // Stale guard
         const message: ServerMessage = JSON.parse(event.data);
         console.log("Received: ", message);
         dispatch(message);
@@ -49,8 +59,8 @@ export function useGameWebSocket() {
       };
 
       ws.onclose = () => {
+        if (wsRef.current !== ws) return; // Stale guard
         console.warn("WebSocket closed");
-        setConnected(false);
 
         // Reconnect with exponential backoff (max 10 seconds)
         const delay = Math.min(
@@ -72,7 +82,6 @@ export function useGameWebSocket() {
         clearTimeout(reconnectTimeoutRef.current);
       }
       wsRef.current?.close();
-      setConnected(false);
     };
   }, []);
 
@@ -94,7 +103,6 @@ export function useGameWebSocket() {
 
   return {
     state,
-    connected,
     sendMessage,
     respondToDecision,
   };

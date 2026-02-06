@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { LobbyScreen } from "./LobbyScreen";
 import { GameScreen } from "./GameScreen";
 import { GameLog } from "./GameLog";
@@ -6,37 +6,44 @@ import { useGameWebSocket } from "./useGameWebSocket";
 import { useRoomCode } from "./useRoomCode";
 import { usePlayerId } from "./usePlayerId";
 import { usePlayerName } from "./usePlayerName";
+import type { ClientMessage } from "@shared/protocol";
 
 export function App() {
   const { roomCode, setRoomCode, clearRoomCode } = useRoomCode();
-  const { state, connected, sendMessage, respondToDecision } =
-    useGameWebSocket();
   const playerId = usePlayerId();
   const { playerName, setPlayerName } = usePlayerName();
 
-  // Track current room without triggering effect re-runs
-  const currentRoomRef = useRef(state.roomCode);
-  useEffect(() => {
-    currentRoomRef.current = state.roomCode;
-  }, [state.roomCode]);
+  const roomCodeRef = useRef(roomCode);
+  const playerNameRef = useRef(playerName);
+  const playerIdRef = useRef(playerId);
 
   useEffect(() => {
-    if (!connected) return;
-    if (!roomCode) return;
-    if (!playerName) return;
+    roomCodeRef.current = roomCode;
+  }, [roomCode]);
+  useEffect(() => {
+    playerNameRef.current = playerName;
+  }, [playerName]);
+  useEffect(() => {
+    playerIdRef.current = playerId;
+  }, [playerId]);
 
-    // Leave existing room if we're joining a different one
-    if (currentRoomRef.current && currentRoomRef.current !== roomCode) {
-      sendMessage({ type: "leave_room" });
+  const onConnect = useCallback((send: (msg: ClientMessage) => void) => {
+    const code = roomCodeRef.current;
+    const name = playerNameRef.current;
+    const id = playerIdRef.current;
+    if (code && name) {
+      send({
+        type: "join_room",
+        roomCode: code,
+        playerName: name,
+        playerId: id,
+      });
     }
+  }, []);
 
-    sendMessage({
-      type: "join_room",
-      playerName,
-      roomCode,
-      playerId,
-    });
-  }, [connected, roomCode, playerName, playerId, sendMessage]);
+  const { state, sendMessage, respondToDecision } = useGameWebSocket({
+    onConnect,
+  });
 
   const handleLeaveRoom = () => {
     sendMessage({ type: "leave_room" });
@@ -64,6 +71,7 @@ export function App() {
         onJoinRoom={(playerName, roomCode) => {
           setPlayerName(playerName);
           setRoomCode(roomCode);
+          sendMessage({ type: "join_room", roomCode, playerName, playerId });
         }}
         onStartGame={() => sendMessage({ type: "start_game" })}
         onLeaveRoom={handleLeaveRoom}
