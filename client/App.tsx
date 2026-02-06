@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { LobbyScreen } from "./LobbyScreen";
 import { GameScreen } from "./GameScreen";
 import { GameLog } from "./GameLog";
@@ -13,14 +13,33 @@ export function App() {
   const playerId = usePlayerId();
   const { playerName, setPlayerName } = usePlayerName();
 
-  const onConnect = useCallback(
-    (send: (msg: ClientMessage) => void) => {
-      if (roomCode && playerName) {
-        send({ type: "join_room", roomCode, playerName, playerId });
-      }
-    },
-    [roomCode, playerName, playerId]
-  );
+  const roomCodeRef = useRef(roomCode);
+  const playerNameRef = useRef(playerName);
+  const playerIdRef = useRef(playerId);
+
+  useEffect(() => {
+    roomCodeRef.current = roomCode;
+  }, [roomCode]);
+  useEffect(() => {
+    playerNameRef.current = playerName;
+  }, [playerName]);
+  useEffect(() => {
+    playerIdRef.current = playerId;
+  }, [playerId]);
+
+  const onConnect = useCallback((send: (msg: ClientMessage) => void) => {
+    const code = roomCodeRef.current;
+    const name = playerNameRef.current;
+    const id = playerIdRef.current;
+    if (code && name) {
+      send({
+        type: "join_room",
+        roomCode: code,
+        playerName: name,
+        playerId: id,
+      });
+    }
+  }, []);
 
   const { state, sendMessage, respondToDecision } = useGameWebSocket({
     onConnect,
