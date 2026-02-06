@@ -67,8 +67,11 @@
   --suit-hills-mix: #4a3010;
   --suit-hills-text: #f0e8d8;
   --suit-rings-color: #d4b820;
+  --suit-rings-mix: black;
+  --suit-rings-text: black;
   --suit-rings-border: #9a8a10;
   --suit-threat-color: #6a1a1a;
+  --suit-threat-mix: #2a0808;
   --suit-threat-text: #f4e8e8;
   --suit-hidden-color: #6a4a8a;
   --suit-hidden-text: #e0d8ea;
