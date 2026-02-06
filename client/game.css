@@ -1,50 +1,78 @@
+/* Stained Glass / Cathedral (Light)
+   Gothic cathedral stained glass feel viewed from outside in daylight —
+   pale limestone walls, warm sunlit stone, jewel-toned glass panels
+   seen against bright sky. Lead came structure, airy atmosphere. */
+
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800&family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap");
+
 :root {
   --card-width: 3.75rem;
   --card-height: 5.625rem;
 
-  --font-size-title: 2.5;
+  --font-size-title: 2.5rem;
   --font-size-xl: 1.5rem;
   --font-size-lg: 1.125rem;
   --font-size-base: 1rem;
   --font-size-sm: 0.875rem;
   --font-size-xs: 0.75rem;
 
-  /* Backgrounds */
-  --color-bg: #2d5016;
-  --color-bg-dark: #1a3009;
-  --color-bg-overlay: rgba(0, 0, 0, 0.3);
+  /* Warm limestone backgrounds */
+  --color-bg: #eae6dc;
+  --color-bg-dark: #e0dbd0;
+  --color-bg-overlay: rgba(0, 0, 0, 0.06);
 
-  /* Borders */
-  --color-border: #4a7023;
-  --color-border-hover: #5a8030;
+  /* Lead came borders */
+  --color-border: #8a8878;
+  --color-border-hover: #7a7868;
 
-  /* Text */
-  --color-text: #fff;
-  --color-text-secondary: #aed581;
-  --color-text-muted: #aaa;
-  --color-text-dark: #333;
+  /* Dark inscription text */
+  --color-text: #2a2820;
+  --color-text-secondary: #4a4838;
+  --color-text-muted: #7a7868;
+  --color-text-dark: #1a1810;
 
-  /* Accent (gold) */
-  --color-accent: #ffd700;
-  --color-accent-hover: #ffed4e;
+  /* Rich amber accent */
+  --color-accent: #9a5c00;
+  --color-accent-hover: #b06a08;
 
   /* Status */
-  --color-success: #4caf50;
-  --color-error: #f44336;
+  --color-success: #2a6a30;
+  --color-error: #9a2828;
 
   /* Disabled */
-  --color-disabled-bg: #666;
-  --color-disabled-text: #999;
+  --color-disabled-bg: #ccc8bc;
+  --color-disabled-text: #8a8878;
 
-  /* Secondary button (red) */
-  --color-danger: #8b4a4a;
-  --color-danger-hover: #ab5a5a;
+  /* Secondary */
+  --color-danger: #7a2020;
+  --color-danger-hover: #9a3030;
 
   /* Spacing */
   --space-lg: 2rem;
   --space-md: 1rem;
   --space-sm: 0.5rem;
   --space-xs: 0.25rem;
+
+  /* Suit colors — jewel tones, bright against light stone */
+  --suit-mountains-color: #5a7aaa;
+  --suit-mountains-mix: #3a4a6a;
+  --suit-mountains-text: #e8f0fa;
+  --suit-shadows-color: #8a1a28;
+  --suit-shadows-mix: #4a0a14;
+  --suit-shadows-text: #f4dce0;
+  --suit-forests-color: #1a6a28;
+  --suit-forests-mix: #0a3810;
+  --suit-forests-text: #daf4e0;
+  --suit-hills-color: #8a6838;
+  --suit-hills-mix: #4a3010;
+  --suit-hills-text: #f0e8d8;
+  --suit-rings-color: #d4b820;
+  --suit-rings-border: #9a8a10;
+  --suit-threat-color: #6a1a1a;
+  --suit-threat-text: #f4e8e8;
+  --suit-hidden-color: #6a4a8a;
+  --suit-hidden-text: #e0d8ea;
+  --suit-hidden-mix: #4a2a6a;
 }
 
 /* Utility classes */
@@ -66,10 +94,40 @@
 }
 
 body {
-  font-family: Arial, sans-serif;
+  font-family: "Spectral", "Palatino Linotype", serif;
+  font-weight: 500;
   margin: 0;
-  background-color: var(--color-bg);
+  background-color: #ddd8cc;
+  /* Colored light shafts from stained glass */
+  background-image:
+    radial-gradient(
+      ellipse at 15% 10%,
+      rgba(60, 80, 180, 0.15) 0%,
+      transparent 40%
+    ),
+    radial-gradient(
+      ellipse at 50% 5%,
+      rgba(212, 160, 48, 0.12) 0%,
+      transparent 35%
+    ),
+    radial-gradient(
+      ellipse at 85% 15%,
+      rgba(180, 40, 40, 0.12) 0%,
+      transparent 35%
+    ),
+    radial-gradient(
+      ellipse at 35% 50%,
+      rgba(40, 120, 80, 0.1) 0%,
+      transparent 40%
+    ),
+    radial-gradient(
+      ellipse at 65% 60%,
+      rgba(120, 60, 160, 0.1) 0%,
+      transparent 40%
+    );
+  background-attachment: fixed;
   color: var(--color-text);
+  line-height: 1.55;
 }
 
 .container {
@@ -77,6 +135,8 @@ body {
   gap: var(--space-lg);
   max-width: calc(min(1400px, 100% - 40px));
   margin: 0 auto;
+  position: relative;
+  z-index: 1;
 }
 
 @media (width >= 1000px) {
@@ -103,25 +163,41 @@ h1 {
   display: none;
 }
 
-/* Base section styling - shared by all section-like areas */
+/* Leaded glass panel sections — light stone */
 section {
-  background-color: var(--color-bg-dark);
-  border-radius: var(--space-sm);
-  border: 2px solid var(--color-border);
+  background: linear-gradient(
+    180deg,
+    rgba(234, 230, 220, 0.95) 0%,
+    rgba(228, 224, 212, 0.92) 100%
+  );
+  border-radius: 0;
+  border: 3px solid var(--color-border);
   padding: var(--space-md);
+  position: relative;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 0 20px rgba(0, 0, 0, 0.03),
+    0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 section h2,
 section h3 {
+  font-family: "Cinzel", serif;
   font-size: var(--font-size-base);
+  font-weight: 700;
   text-align: left;
   margin-top: 0;
   color: var(--color-accent);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 /* Lost Card Section */
 .lost-card-section {
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .players {
@@ -156,47 +232,68 @@ section h3 {
   background-color: var(--color-bg);
 }
 
+/* Jewel-tone buttons on light stone */
 button {
-  background-color: var(--color-accent);
-  color: var(--color-bg-dark);
-  border: none;
+  background: linear-gradient(
+    180deg,
+    rgba(154, 92, 0, 0.1) 0%,
+    rgba(154, 92, 0, 0.04) 100%
+  );
+  color: var(--color-accent);
+  border: 2px solid var(--color-border);
   padding: var(--space-sm) var(--space-lg);
   font-size: var(--font-size-base);
-  font-weight: bold;
-  border-radius: var(--space-xs);
+  font-weight: 600;
+  font-family: "Cinzel", serif;
+  border-radius: 0;
   cursor: pointer;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: all 0.2s;
 }
 
 button:hover {
-  background-color: var(--color-accent-hover);
+  border-color: var(--color-accent);
+  background: linear-gradient(
+    180deg,
+    rgba(154, 92, 0, 0.18) 0%,
+    rgba(154, 92, 0, 0.06) 100%
+  );
+  box-shadow: 0 0 10px rgba(154, 92, 0, 0.1);
 }
 
 .trick-header {
   display: flex;
   align-items: center;
-  gap: var(--space-md);
+  column-gap: var(--space-md);
+  margin-bottom: var(--space-xs);
 }
 
 .trick-header h2 {
   margin-bottom: 0;
 }
 
+/* Gothic badges */
 .rings-status {
   font-size: var(--font-size-xs);
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: 0;
+  font-family: "Cinzel", serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .rings-status.sealed {
-  background-color: rgba(100, 149, 237, 0.3);
-  color: #87ceeb;
-  border: 1px solid #4682b4;
+  background-color: rgba(60, 90, 138, 0.08);
+  color: #3a5a8a;
+  border: 1px solid #3a5a8a;
 }
 
 .rings-status.broken {
-  background-color: rgba(255, 165, 0, 0.3);
-  color: #ffa500;
-  border: 1px solid #ff8c00;
+  background-color: rgba(154, 40, 40, 0.08);
+  color: #9a2828;
+  border: 1px solid #9a2828;
 }
 
 .trick-cards {
@@ -219,24 +316,29 @@ button:hover {
 .trick-card.winner .card {
   outline: 3px solid var(--color-accent);
   outline-offset: 2px;
+  box-shadow: 0 0 10px rgba(154, 92, 0, 0.2);
 }
 
+/* Illuminated status */
 .game-status {
   text-align: center;
+  font-family: "Cinzel", serif;
   font-size: var(--font-size-lg);
+  font-weight: 800;
   color: var(--color-accent);
   margin: var(--space-lg) 0;
-  font-weight: bold;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .game-status.victory {
   font-size: var(--font-size-xl);
-  color: var(--color-success);
+  color: #2a6a30;
 }
 
 .game-status.defeat {
   font-size: var(--font-size-xl);
-  color: var(--color-error);
+  color: #9a2828;
 }
 
 .failed-objectives {
@@ -271,16 +373,15 @@ button:hover {
 }
 
 .success {
-  color: var(--color-success);
+  color: #2a6a30;
 }
 
 .error {
-  color: var(--color-error);
+  color: #9a2828;
 }
 
 .impossible {
-  color: var(--color-error);
-  opacity: 0.7;
+  color: #9a2828;
 }
 
 .pending {
@@ -299,15 +400,23 @@ button:hover {
   margin-top: 3px;
 }
 
-/* Unified Dialog Area - appears above trick area instead of covering interface */
+/* Unified Dialog Area — appears above trick area instead of covering interface */
 .dialog-area {
   border: 3px solid var(--color-accent);
   text-align: center;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  background: rgba(250, 245, 230, 0.98);
+  box-shadow:
+    0 0 30px rgba(154, 92, 0, 0.2),
+    0 0 60px rgba(154, 92, 0, 0.08),
+    inset 0 0 20px rgba(154, 92, 0, 0.04);
 }
 
 .dialog-content h3 {
   margin-bottom: var(--space-md);
+  font-family: "Cinzel", serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .dialog-message {
@@ -344,13 +453,22 @@ button:hover {
   font-size: var(--font-size-sm);
 }
 
-/* Game Log */
+/* Game Log — sunlit chapel wall */
 .game-log {
   padding: var(--space-md);
   height: calc(100vh - 40px);
   overflow-y: auto;
   position: sticky;
   top: var(--space-lg);
+  background: linear-gradient(
+    180deg,
+    rgba(224, 219, 208, 0.98) 0%,
+    rgba(218, 213, 200, 0.95) 100%
+  );
+  border: 3px solid var(--color-border);
+  box-shadow:
+    inset 0 0 20px rgba(0, 0, 0, 0.03),
+    0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .game-log-header {
@@ -361,26 +479,32 @@ button:hover {
 }
 
 .game-log h2 {
+  font-family: "Cinzel", serif;
   font-size: var(--font-size-lg);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   margin-bottom: 0;
 }
 
 .copy-log-button {
   padding: var(--space-xs) var(--space-sm);
   font-size: var(--font-size-xs);
-  background-color: var(--color-border);
-  color: var(--color-text);
+  background: rgba(154, 92, 0, 0.06);
+  color: #7a7868;
+  border: 1px solid var(--color-border);
 }
 
 .copy-log-button:hover {
-  background-color: var(--color-border-hover);
+  color: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 .log-entry {
-  color: var(--color-text-secondary);
+  color: #7a7868;
   font-size: var(--font-size-sm);
   padding: 3px 0;
-  border-bottom: 1px solid var(--color-bg);
+  border-bottom: 1px solid rgba(122, 120, 104, 0.15);
 }
 
 .log-entry:last-child {
@@ -392,7 +516,7 @@ button:hover {
   font-weight: bold;
 }
 
-/* Lobby Screen Styles */
+/* Lobby — cathedral entrance, sunlit */
 .lobby-screen {
   min-height: 60vh;
   display: flex;
@@ -400,28 +524,43 @@ button:hover {
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
+  position: relative;
+  z-index: 1;
 }
 
 .lobby-screen h1 {
+  display: block;
+  font-family: "Cinzel", serif;
+  font-weight: 800;
   color: var(--color-accent);
   margin-bottom: 40px;
   font-size: var(--font-size-title);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
 }
 
 .lobby-menu,
 .room-lobby {
-  background: var(--color-bg-overlay);
-  border-radius: var(--space-sm);
+  background: rgba(234, 230, 220, 0.97);
+  border: 3px solid var(--color-border);
+  border-radius: 0;
   padding: 30px;
   max-width: 500px;
   width: 100%;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.1),
+    inset 0 0 20px rgba(0, 0, 0, 0.02);
 }
 
 .lobby-menu h2,
 .room-lobby h2 {
+  font-family: "Cinzel", serif;
+  font-weight: 700;
   color: var(--color-accent);
   text-align: center;
   margin-top: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .lobby-form {
@@ -433,10 +572,17 @@ button:hover {
 .lobby-form input {
   padding: 12px;
   font-size: var(--font-size-base);
+  background: rgba(250, 248, 240, 0.95);
   border: 2px solid var(--color-border);
-  border-radius: var(--space-xs);
-  background: rgba(255, 255, 255, 0.9);
-  color: var(--color-text-dark);
+  border-radius: 0;
+  color: var(--color-text);
+  font-family: "Spectral", serif;
+}
+
+.lobby-form input:focus {
+  border-color: var(--color-accent);
+  outline: none;
+  box-shadow: 0 0 8px rgba(154, 92, 0, 0.12);
 }
 
 .lobby-buttons {
@@ -466,34 +612,46 @@ button:hover {
   padding: 12px 24px;
   font-size: var(--font-size-base);
   border: none;
-  border-radius: var(--space-xs);
+  border-radius: 0;
   cursor: pointer;
-  font-weight: bold;
+  font-weight: 600;
+  font-family: "Cinzel", serif;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   transition: background-color 0.2s;
 }
 
 .primary-btn {
-  background: var(--color-border);
-  color: var(--color-text);
+  background: linear-gradient(
+    180deg,
+    rgba(154, 92, 0, 0.12) 0%,
+    rgba(154, 92, 0, 0.04) 100%
+  );
+  color: var(--color-accent);
+  border: 2px solid var(--color-border);
 }
 
 .primary-btn:hover:not(:disabled) {
-  background: var(--color-border-hover);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 10px rgba(154, 92, 0, 0.12);
 }
 
 .primary-btn:disabled {
-  background: var(--color-disabled-bg);
+  background: rgba(204, 200, 188, 0.5);
+  border-color: #a8a498;
+  color: #8a8878;
   cursor: not-allowed;
   opacity: 0.5;
 }
 
 .secondary-btn {
-  background: var(--color-danger);
-  color: var(--color-text);
+  background: rgba(122, 32, 32, 0.08);
+  color: #9a3030;
+  border: 2px solid #7a2020;
 }
 
 .secondary-btn:hover {
-  background: var(--color-danger-hover);
+  background: rgba(122, 32, 32, 0.15);
 }
 
 .lobby-error {
@@ -527,8 +685,9 @@ button:hover {
 #playersList li {
   padding: var(--space-sm);
   margin: var(--space-xs) 0;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: var(--space-xs);
+  background: rgba(154, 92, 0, 0.03);
+  border: 1px solid rgba(122, 120, 104, 0.2);
+  border-radius: 0;
   display: flex;
   align-items: center;
   gap: var(--space-sm);
@@ -558,11 +717,11 @@ button:hover {
   display: grid;
   grid-template-columns: repeat(var(--columns), 1fr);
   gap: 1px;
-  background-color: var(--color-border);
+  background-color: rgba(122, 120, 104, 0.1);
 }
 
 .character-card {
-  background-color: var(--color-bg-dark);
+  background: rgba(234, 230, 220, 0.95);
   padding: var(--space-md);
 }
 
@@ -586,10 +745,13 @@ button:hover {
 }
 
 .character-name {
+  font-family: "Cinzel", serif;
+  font-weight: 700;
   color: var(--color-accent);
-  font-weight: bold;
   font-size: var(--font-size-lg);
   margin-bottom: var(--space-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .character-objective,
@@ -601,23 +763,25 @@ button:hover {
 
 .character-objective strong,
 .character-setup strong {
-  color: #ccc;
+  color: var(--color-text);
 }
 
 /* Drawn Rider Section */
 
 .drawn-rider {
-  background-color: var(--color-bg-dark);
-  border: 1px solid var(--color-border);
+  background: rgba(234, 230, 220, 0.95);
+  border: 3px solid var(--color-border);
   padding: var(--space-md);
-  margin-bottom: var(--space-md);
   text-align: center;
 }
 
 .drawn-rider h3 {
+  font-family: "Cinzel", serif;
+  font-weight: 700;
   color: var(--color-accent);
   margin: 0 0 var(--space-xs);
   font-size: var(--font-size-lg);
+  text-transform: uppercase;
 }
 
 .drawn-rider p {
@@ -634,34 +798,40 @@ button:hover {
   color: var(--color-error);
 }
 
-/* Single players container with dividers (instead of individual bordered sections)
-   Overrides base .players grid gap with divider-based spacing */
+/* Players — limestone wall container */
 .players {
-  background-color: var(--color-bg-dark);
-  border-radius: 6px;
-  border: 2px solid var(--color-border);
+  background: linear-gradient(
+    180deg,
+    rgba(224, 219, 208, 0.95) 0%,
+    rgba(218, 213, 200, 0.9) 100%
+  );
+  border-radius: 0;
+  border: 3px solid var(--color-border);
   padding: 8px;
   gap: 0;
+  box-shadow:
+    inset 0 0 20px rgba(0, 0, 0, 0.03),
+    0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .players .player {
   background: none;
   border: none;
   border-radius: 0;
-  padding: var(--space-sm) 0;
+  padding: var(--space-sm);
 }
 
 .players .player + .player {
-  border-top: 1px solid var(--color-border);
-  margin-top: var(--space-sm);
-  padding-top: var(--space-sm);
+  border-top: 2px solid rgba(122, 120, 104, 0.2);
 }
 
-/* Active player highlight in mobile container */
+/* Active player highlight — warm glow on light stone */
 .players .player.active {
-  border-left: 3px solid var(--color-accent);
-  padding-left: 5px;
-  border-top: 1px solid var(--color-border);
+  background: rgba(250, 245, 230, 0.98);
+  border-left: none;
+  padding-left: 8px;
+  border-top: 2px solid rgba(122, 120, 104, 0.2);
+  box-shadow: 0 0 12px rgba(154, 92, 0, 0.15);
 }
 
 .players .player.active:first-child {
@@ -682,7 +852,11 @@ button:hover {
 
 .player-header h3 {
   margin: 0;
+  font-family: "Cinzel", serif;
   font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .objective-cards {
