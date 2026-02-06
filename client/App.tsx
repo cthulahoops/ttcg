@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback } from "react";
 import { LobbyScreen } from "./LobbyScreen";
 import { GameScreen } from "./GameScreen";
 import { GameLog } from "./GameLog";
@@ -6,37 +6,25 @@ import { useGameWebSocket } from "./useGameWebSocket";
 import { useRoomCode } from "./useRoomCode";
 import { usePlayerId } from "./usePlayerId";
 import { usePlayerName } from "./usePlayerName";
+import type { ClientMessage } from "@shared/protocol";
 
 export function App() {
   const { roomCode, setRoomCode, clearRoomCode } = useRoomCode();
-  const { state, connected, sendMessage, respondToDecision } =
-    useGameWebSocket();
   const playerId = usePlayerId();
   const { playerName, setPlayerName } = usePlayerName();
 
-  // Track current room without triggering effect re-runs
-  const currentRoomRef = useRef(state.roomCode);
-  useEffect(() => {
-    currentRoomRef.current = state.roomCode;
-  }, [state.roomCode]);
+  const onConnect = useCallback(
+    (send: (msg: ClientMessage) => void) => {
+      if (roomCode && playerName) {
+        send({ type: "join_room", roomCode, playerName, playerId });
+      }
+    },
+    [roomCode, playerName, playerId]
+  );
 
-  useEffect(() => {
-    if (!connected) return;
-    if (!roomCode) return;
-    if (!playerName) return;
-
-    // Leave existing room if we're joining a different one
-    if (currentRoomRef.current && currentRoomRef.current !== roomCode) {
-      sendMessage({ type: "leave_room" });
-    }
-
-    sendMessage({
-      type: "join_room",
-      playerName,
-      roomCode,
-      playerId,
-    });
-  }, [connected, roomCode, playerName, playerId, sendMessage]);
+  const { state, sendMessage, respondToDecision } = useGameWebSocket({
+    onConnect,
+  });
 
   const handleLeaveRoom = () => {
     sendMessage({ type: "leave_room" });
@@ -64,6 +52,7 @@ export function App() {
         onJoinRoom={(playerName, roomCode) => {
           setPlayerName(playerName);
           setRoomCode(roomCode);
+          sendMessage({ type: "join_room", roomCode, playerName, playerId });
         }}
         onStartGame={() => sendMessage({ type: "start_game" })}
         onLeaveRoom={handleLeaveRoom}
