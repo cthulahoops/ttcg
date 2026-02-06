@@ -27,6 +27,10 @@ export function useGameWebSocket(options: WebSocketOptions = {}) {
     null
   );
   const reconnectAttemptRef = useRef(0);
+  const onConnectRef = useRef(onConnect);
+  useEffect(() => {
+    onConnectRef.current = onConnect;
+  }, [onConnect]);
 
   useEffect(() => {
     function connect() {
@@ -40,7 +44,7 @@ export function useGameWebSocket(options: WebSocketOptions = {}) {
         if (wsRef.current !== ws) return; // Stale guard
         console.log("WebSocket connected");
         reconnectAttemptRef.current = 0;
-        onConnect?.((msg) => ws.send(JSON.stringify(msg)));
+        onConnectRef.current?.((msg) => ws.send(JSON.stringify(msg)));
       };
 
       ws.onmessage = (event) => {
@@ -79,7 +83,7 @@ export function useGameWebSocket(options: WebSocketOptions = {}) {
       }
       wsRef.current?.close();
     };
-  }, [onConnect]);
+  }, []);
 
   const sendMessage = useCallback((message: ClientMessage) => {
     const ws = wsRef.current;
