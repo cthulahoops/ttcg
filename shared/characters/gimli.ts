@@ -32,10 +32,10 @@ export const Gimli: CharacterDefinition = {
     cards: (game, seat) => {
       const cards: ObjectiveCard[] = [];
       if (seat.threatCard !== null) {
-        cards.push({ suit: "threat", value: seat.threatCard });
         if (game.hasCard(seat, "mountains", seat.threatCard)) {
           cards.push({ suit: "mountains", value: seat.threatCard });
         }
+        cards.push({ suit: "threat", value: seat.threatCard });
       }
       return { cards };
     },

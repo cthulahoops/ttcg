@@ -27,10 +27,10 @@ export const Aragorn: CharacterDefinition = {
 
     cards: (_game, seat) => {
       const cards: ObjectiveCard[] = [];
+      cards.push(...Array(seat.getTrickCount()).fill("trick"));
       if (seat.threatCard !== null) {
         cards.push({ suit: "threat", value: seat.threatCard });
       }
-      cards.push(...Array(seat.getTrickCount()).fill("trick"));
       return { cards };
     },
   },
