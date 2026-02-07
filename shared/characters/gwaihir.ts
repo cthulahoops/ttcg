@@ -12,8 +12,25 @@ export const Gwaihir: CharacterDefinition = {
   setupText: "Exchange with Gandalf twice",
 
   setup: async (game, seat, setupContext) => {
-    await game.exchange(seat, setupContext, (c: string) => c === "Gandalf");
-    await game.exchange(seat, setupContext, (c: string) => c === "Gandalf");
+    const firstExchanged = await game.exchange(
+      seat,
+      setupContext,
+      (c: string) => c === "Gandalf"
+    );
+
+    if (firstExchanged) {
+      // Reset solo exchange limit to allow the second exchange
+      if (game.playerCount === 1) {
+        setupContext.exchangeMade = false;
+      }
+      try {
+        await game.exchange(seat, setupContext, (c: string) => c === "Gandalf");
+      } finally {
+        if (game.playerCount === 1) {
+          setupContext.exchangeMade = true;
+        }
+      }
+    }
   },
 
   objective: {
