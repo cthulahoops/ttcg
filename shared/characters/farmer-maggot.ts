@@ -32,11 +32,11 @@ export const FarmerMaggot: CharacterDefinition = {
     cards: (_game, seat) => {
       const cards: ObjectiveCard[] = [];
       if (seat.threatCard !== null) {
-        cards.push({ suit: "threat", value: seat.threatCard });
         const matchingCards = seat
           .getAllWonCards()
           .filter((c: Card) => c.value === seat.threatCard);
         cards.push(...matchingCards);
+        cards.push({ suit: "threat", value: seat.threatCard });
       }
       return { cards };
     },

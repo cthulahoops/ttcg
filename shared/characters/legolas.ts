@@ -31,10 +31,10 @@ export const Legolas: CharacterDefinition = {
     cards: (game, seat) => {
       const cards: ObjectiveCard[] = [];
       if (seat.threatCard !== null) {
-        cards.push({ suit: "threat", value: seat.threatCard });
         if (game.hasCard(seat, "forests", seat.threatCard)) {
           cards.push({ suit: "forests", value: seat.threatCard });
         }
+        cards.push({ suit: "threat", value: seat.threatCard });
       }
       return { cards };
     },
