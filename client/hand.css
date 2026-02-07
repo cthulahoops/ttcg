@@ -53,33 +53,58 @@
     inset 0 0 10px rgba(255, 255, 255, 0.06);
 }
 
-.card.mountains {
+.mountains {
   --suit-color: var(--suit-mountains-color);
   --suit-mix: var(--suit-mountains-mix);
+}
+
+.shadows {
+  --suit-color: var(--suit-shadows-color);
+  --suit-mix: var(--suit-shadows-mix);
+}
+
+.forests {
+  --suit-color: var(--suit-forests-color);
+  --suit-mix: var(--suit-forests-mix);
+}
+
+.hills {
+  --suit-color: var(--suit-hills-color);
+  --suit-mix: var(--suit-hills-mix);
+}
+
+.rings {
+  --suit-color: var(--suit-rings-color);
+  --suit-mix: var(--suit-rings-mix);
+}
+
+.threat {
+  --suit-color: var(--suit-threat-color);
+  --suit-mix: var(--suit-threat-mix);
+}
+
+.hidden {
+  --suit-color: var(--suit-hidden-color);
+  --suit-mix: var(--suit-hidden-mix);
+}
+
+.card.mountains {
   color: var(--suit-mountains-text);
 }
 
 .card.shadows {
-  --suit-color: var(--suit-shadows-color);
-  --suit-mix: var(--suit-shadows-mix);
   color: var(--suit-shadows-text);
 }
 
 .card.forests {
-  --suit-color: var(--suit-forests-color);
-  --suit-mix: var(--suit-forests-mix);
   color: var(--suit-forests-text);
 }
 
 .card.hills {
-  --suit-color: var(--suit-hills-color);
-  --suit-mix: var(--suit-hills-mix);
   color: var(--suit-hills-text);
 }
 
 .card.rings {
-  --suit-color: var(--suit-rings-color);
-  --suit-mix: var(--suit-rings-mix);
   color: var(--suit-rings-text);
   border-color: var(--suit-rings-border);
   box-shadow:
@@ -89,14 +114,10 @@
 }
 
 .card.threat {
-  --suit-color: var(--suit-threat-color);
-  --suit-mix: var(--suit-threat-mix);
   color: var(--suit-threat-text);
 }
 
 .card.hidden {
-  --suit-color: var(--suit-hidden-color);
-  --suit-mix: var(--suit-hidden-mix);
   color: var(--suit-hidden-text);
 }
 

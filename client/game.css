@@ -299,6 +299,18 @@ button:hover {
   border: 1px solid #9a2828;
 }
 
+.trick-area {
+  border-color: var(--suit-color, var(--color-border));
+  background: color-mix(
+    in srgb,
+    var(--suit-color, var(--color-bg)) 8%,
+    var(--color-bg)
+  );
+  transition:
+    border-color 0.3s,
+    background 0.3s;
+}
+
 .trick-cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, var(--card-width));

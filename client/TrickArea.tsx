@@ -22,8 +22,13 @@ export function TrickArea({ game }: TrickAreaProps) {
 
   const isCompleted = !currentTrickInProgress && lastCompletedTrick !== null;
 
+  // Determine lead suit for styling
+  const leadSuit = currentTrickInProgress
+    ? game.leadSuit
+    : (displayTrick.plays[0]?.card.suit ?? null);
+
   return (
-    <section className="trick-area">
+    <section className={`trick-area${leadSuit ? ` ${leadSuit}` : ""}`}>
       <div className="trick-header">
         <h2>{isCompleted ? "Last Trick" : "Current Trick"}</h2>
         <span
