@@ -145,13 +145,12 @@ export class Game {
 
   async exchangeWithLostCard(
     seat: Seat,
-    _setupContext: GameSetupContext
+    setupContext: GameSetupContext
   ): Promise<void> {
     if (!this.lostCard) return;
 
-    const hand = seat.hand;
-    const cards = hand.getCards ? hand.getCards() : hand.getAllCards();
-    const sortedCards = sortHand(cards);
+    const availableCards = seat.hand.getAvailableCards();
+    const sortedCards = sortHand(availableCards);
 
     const cardToGive = await seat.controller.chooseCard({
       title: `${seat.character?.name} - Exchange with Lost Card`,
@@ -164,6 +163,11 @@ export class Game {
     this.lostCard = cardToGive;
 
     this.log(`${seat.getDisplayName()} exchanges with the lost card`);
+
+    if (this.playerCount === 1) {
+      setupContext.exchangeMade = true;
+    }
+
     this.notifyStateChange();
   }
 
