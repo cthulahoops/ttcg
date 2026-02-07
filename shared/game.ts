@@ -396,7 +396,7 @@ export class Game {
     seat: Seat,
     setupContext: GameSetupContext,
     canExchangeWith: (character: string) => boolean
-  ): Promise<void> {
+  ): Promise<boolean> {
     const exchangeSetup = await this.setupExchange(
       seat,
       setupContext,
@@ -406,7 +406,9 @@ export class Game {
     if (exchangeSetup) {
       this.completeExchange(exchangeSetup, setupContext);
       this.notifyStateChange();
+      return true;
     }
+    return false;
   }
 
   hasCard(seat: Seat, suit: Suit, value: number): boolean {
