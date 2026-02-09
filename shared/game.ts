@@ -4,9 +4,8 @@ import { ProxyController } from "./controllers";
 import { characterRegistry } from "./characters/registry";
 import type { CharacterDefinition } from "./characters/registry";
 import { MerryBurdened } from "./characters/burdened/merry";
-import { allRiders } from "./riders/registry";
 import type { RiderDefinition } from "./riders/registry";
-import type { Card, Suit, ThreatCard, GamePhase } from "./types";
+import type { Card, Suit, ThreatCard, ChoiceButton, GamePhase } from "./types";
 import { isCharacter } from "./characters/character-utils";
 
 // ===== INTERFACES =====
@@ -53,6 +52,7 @@ export class Game {
   threatDeck: number[];
   tricksToPlay: number;
   drawnRider: RiderDefinition | null; // Rider during assignment phase
+  riderAllowSkip: boolean; // Allow skipping rider assignment
   phase: GamePhase;
   allowThreatRedraw: boolean;
   onStateChange?: (game: Game) => void;
@@ -85,6 +85,7 @@ export class Game {
     this.threatDeck = [1, 2, 3, 4, 5, 6, 7];
     this.tricksToPlay = numCharacters === 3 ? 12 : 9;
     this.drawnRider = null;
+    this.riderAllowSkip = false;
     this.phase = "assignment";
     this.allowThreatRedraw = false;
 
@@ -914,17 +915,6 @@ async function runSetupPhase(gameState: Game): Promise<void> {
 async function runCharacterAssignment(gameState: Game): Promise<void> {
   gameState.log("=== CHARACTER ASSIGNMENT ===", true);
 
-  // Draw a random rider before character selection
-  const shuffledRiders = shuffleDeck([...allRiders]);
-  gameState.drawnRider = shuffledRiders[0] ?? null;
-  if (gameState.drawnRider) {
-    gameState.log(`Rider drawn: ${gameState.drawnRider.name}`, true);
-    if (gameState.drawnRider.objective.text) {
-      gameState.log(`  "${gameState.drawnRider.objective.text}"`);
-    }
-  }
-  gameState.notifyStateChange();
-
   const startPlayer = gameState.leadPlayer; // Player with 1 of Rings
   const frodoSeat = gameState.seats[startPlayer];
   if (!frodoSeat) {
@@ -1029,19 +1019,35 @@ async function runRiderAssignment(gameState: Game): Promise<void> {
     throw new Error("Frodo seat not found for rider assignment");
   }
 
-  const eligibleSeats = gameState.seats.map((seat) => seat.seatIndex);
+  const buttons: ChoiceButton<number>[] = gameState.seats.map((seat) => ({
+    label: `Assign ${gameState.drawnRider?.name} to ${seat.character!.name}`,
+    value: seat.seatIndex,
+  }));
+  if (gameState.riderAllowSkip) {
+    buttons.push({ label: "Skip", value: -1 });
+  }
 
   const rider = gameState.drawnRider;
   const riderText = rider?.objective.text ?? "";
 
-  const targetIndex = await frodoSeat.controller.selectSeat(
-    `Assign "${rider?.name}" (${riderText}) to a character:`,
-    eligibleSeats,
+  const targetIndex = await frodoSeat.controller.chooseButton(
     {
-      forSeat: frodoSeat.seatIndex,
-      buttonTemplate: `Assign ${rider?.name} to {seat}`,
-    }
+      title: "Assign Rider",
+      message: `Assign "${rider?.name}" (${riderText}) to a character:`,
+      buttons,
+    },
+    frodoSeat.seatIndex
   );
+
+  if (targetIndex === -1) {
+    gameState.log(
+      `${frodoSeat.getDisplayName()} skips assigning ${rider?.name}`,
+      true
+    );
+    gameState.drawnRider = null;
+    gameState.notifyStateChange();
+    return;
+  }
 
   const targetSeat = gameState.seats[targetIndex];
   if (!targetSeat) {

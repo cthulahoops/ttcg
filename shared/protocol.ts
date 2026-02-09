@@ -22,6 +22,7 @@ export interface LongGameProgress {
   characterPool: string[]; // All character names in campaign
   completedCharacters: string[]; // Names of completed characters
   riderCompleted: boolean;
+  campaignRiderName: string;
 }
 
 // Client → Server messages
