@@ -41,8 +41,20 @@ export function PlayerSeat({
     riderObjectiveCards,
   } = seat;
 
-  // Show character name when assigned, otherwise player name
-  const displayName = character ?? playerName ?? `Player ${seatIndex + 1}`;
+  const basePlayerName = playerName ?? `Player ${seatIndex + 1}`;
+  const displayName = character ? (
+    <>
+      {character}
+      {playerName && (
+        <>
+          {" "}
+          <span className="seat-player-name">({playerName})</span>
+        </>
+      )}
+    </>
+  ) : (
+    basePlayerName
+  );
 
   return (
     <section

@@ -328,6 +328,11 @@ button:hover {
   color: var(--color-text-secondary);
 }
 
+.seat-player-name {
+  font-size: 0.85em;
+  color: var(--color-text-secondary);
+}
+
 .trick-card.winner .card {
   outline: 3px solid var(--color-accent);
   outline-offset: 2px;
