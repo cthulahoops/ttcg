@@ -53,6 +53,7 @@ export class Game {
   tricksToPlay: number;
   drawnRider: RiderDefinition | null; // Rider during assignment phase
   phase: GamePhase;
+  allowThreatRedraw: boolean;
   onStateChange?: (game: Game) => void;
   onLog?: (
     line: string,
@@ -84,6 +85,7 @@ export class Game {
     this.tricksToPlay = numCharacters === 3 ? 12 : 9;
     this.drawnRider = null;
     this.phase = "assignment";
+    this.allowThreatRedraw = false;
 
     this.threatDeck = shuffleDeck(
       this.threatDeck.map((v) => ({ value: v }))
@@ -201,6 +203,28 @@ export class Game {
     seat.threatCard = threatCard;
     this.log(`${seat.getDisplayName()} draws threat card: ${threatCard}`, true);
     this.notifyStateChange();
+
+    if (this.allowThreatRedraw && this.threatDeck.length > 0) {
+      const choice = await seat.controller.chooseButton({
+        title: `${seat.getDisplayName()} - Threat Card Drawn`,
+        message: `You drew threat card ${threatCard}. Keep or redraw?`,
+        buttons: [
+          { label: "Keep", value: "keep" },
+          { label: "Redraw", value: "redraw" },
+        ],
+      });
+
+      if (choice === "redraw") {
+        this.threatDeck.push(threatCard);
+        const newCard = this.threatDeck.shift()!;
+        seat.threatCard = newCard;
+        this.log(
+          `${seat.getDisplayName()} redraws threat card: ${newCard}`,
+          true
+        );
+        this.notifyStateChange();
+      }
+    }
   }
 
   async chooseThreatCard(seat: Seat): Promise<void> {
@@ -956,6 +980,10 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
     gameState.availableCharacters = gameState.availableCharacters.filter(
       (c) => c.name !== selectedName
     );
+
+    if (character.name === "Merry (Burdened)") {
+      gameState.allowThreatRedraw = true;
+    }
 
     gameState.notifyStateChange();
   }
