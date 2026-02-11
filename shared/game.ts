@@ -216,7 +216,13 @@ export class Game {
 
       if (choice === "redraw") {
         this.threatDeck.push(threatCard);
-        const newCard = this.threatDeck.shift()!;
+        let newCard: number;
+        do {
+          if (this.threatDeck.length === 0) {
+            throw new Error("Threat deck is empty during redraw!");
+          }
+          newCard = this.threatDeck.shift()!;
+        } while (exclude !== undefined && newCard === exclude);
         seat.threatCard = newCard;
         this.log(
           `${seat.getDisplayName()} redraws threat card: ${newCard}`,

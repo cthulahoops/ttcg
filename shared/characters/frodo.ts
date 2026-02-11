@@ -44,15 +44,18 @@ export const Frodo: CharacterDefinition = {
 
     getStatus: (game, seat): ObjectiveStatus => {
       const ringsNeeded = getRingsNeeded(game);
-      let rings = cardsWinnable(game, seat, (c) => c.suit === "rings");
+      const frodoRings = cardsWinnable(game, seat, (c) => c.suit === "rings");
 
-      // Sam (Burdened)'s rings count toward Frodo's goal
+      // Sam (Burdened)'s rings count toward Frodo's goal.
+      // current is additive (won cards are disjoint), but max shares the
+      // same pool of remaining ring cards so we must not double-count.
       const burdenedSamSeat = game.seats.find(
         (s) =>
           s.character &&
           isCharacter(s.character.name, "Sam") &&
           s.character.name !== "Sam"
       );
+      let rings = frodoRings;
       if (burdenedSamSeat) {
         const samRings = cardsWinnable(
           game,
@@ -60,8 +63,11 @@ export const Frodo: CharacterDefinition = {
           (c) => c.suit === "rings"
         );
         rings = {
-          current: rings.current + samRings.current,
-          max: rings.max + samRings.max,
+          current: frodoRings.current + samRings.current,
+          max:
+            frodoRings.current +
+            samRings.current +
+            (frodoRings.max - frodoRings.current),
         };
       }
 
