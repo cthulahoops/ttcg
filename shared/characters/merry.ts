@@ -2,9 +2,11 @@ import type { ObjectiveCard, ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
 import { tricksWinnable, achieveRange } from "shared/objectives";
 import { isOneOf } from "./character-utils";
+import { MerryBurdened } from "./burdened/merry";
 
 export const Merry: CharacterDefinition = {
   name: "Merry",
+  burdened: MerryBurdened,
   setupText: "Exchange with Frodo, Pippin, or Sam",
 
   setup: async (game, seat, setupContext) => {

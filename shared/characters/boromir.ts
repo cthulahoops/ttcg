@@ -8,9 +8,11 @@ import {
   tricksWinnable,
 } from "../objectives";
 import { isCharacter } from "./character-utils";
+import { BoromirBurdened } from "./burdened/boromir";
 
 export const Boromir: CharacterDefinition = {
   name: "Boromir",
+  burdened: BoromirBurdened,
   setupText: "Exchange with anyone except Frodo",
 
   setup: async (game, seat, setupContext) => {

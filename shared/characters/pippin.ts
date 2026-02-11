@@ -7,6 +7,7 @@ import {
   achieveEvery,
 } from "shared/objectives";
 import { isOneOf } from "./character-utils";
+import { PippinBurdened } from "./burdened/pippin";
 
 /**
  * Checks if it's still possible for all other players to catch up to Pippin,
@@ -27,6 +28,7 @@ function canAllCatchUp(
 
 export const Pippin: CharacterDefinition = {
   name: "Pippin",
+  burdened: PippinBurdened,
   setupText: "Exchange with Frodo, Merry, or Sam",
 
   setup: async (game, seat, setupContext) => {

@@ -2,9 +2,11 @@ import type { ObjectiveCard, ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
 import { achieveCard } from "../objectives";
 import { isOneOf } from "./character-utils";
+import { GimliBurdened } from "./burdened/gimli";
 
 export const Gimli: CharacterDefinition = {
   name: "Gimli",
+  burdened: GimliBurdened,
   setupText:
     "Draw a Mountains threat card, then exchange with Legolas or Aragorn",
 

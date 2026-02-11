@@ -28,6 +28,13 @@ import { Gloin } from "./gloin";
 import { BilboBaggins } from "./bilbo-baggins";
 import { Gwaihir } from "./gwaihir";
 import { Shadowfax } from "./shadowfax";
+import { SamBurdened } from "./burdened/sam";
+import { LegolasBurdened } from "./burdened/legolas";
+import { GimliBurdened } from "./burdened/gimli";
+import { AragornBurdened } from "./burdened/aragorn";
+import { BoromirBurdened } from "./burdened/boromir";
+import { MerryBurdened } from "./burdened/merry";
+import { PippinBurdened } from "./burdened/pippin";
 import type { CharacterDefinition } from "./types";
 
 // Character pools
@@ -66,11 +73,22 @@ export const extraCharacters: CharacterDefinition[] = [
   Shadowfax,
 ];
 
+export const burdenedCharacters: CharacterDefinition[] = [
+  SamBurdened,
+  LegolasBurdened,
+  GimliBurdened,
+  AragornBurdened,
+  BoromirBurdened,
+  MerryBurdened,
+  PippinBurdened,
+];
+
 export const allCharacters: CharacterDefinition[] = [
   Frodo,
   ...fellowshipCharacters.filter((c) => c !== Gandalf),
   Gandalf,
   ...extraCharacters,
+  ...burdenedCharacters,
 ];
 
 export const characterRegistry = new Map<string, CharacterDefinition>(
