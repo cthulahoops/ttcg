@@ -82,11 +82,18 @@ export function newGame(
     const shuffledExtras = shuffleDeck([...extraCharacters]);
 
     availableCharacters = [frodo];
+    let burdenedApplied = false;
     for (let i = 0; i < numCharacters; i++) {
       if (i % 2 === 0) {
         // Fellowship on even indices (0, 2, ...)
-        const char = shuffledFellowship.shift();
-        if (char) availableCharacters.push(char);
+        let char = shuffledFellowship.shift();
+        if (char) {
+          if (!burdenedApplied && char.name !== "Gandalf" && char.burdened) {
+            char = char.burdened;
+            burdenedApplied = true;
+          }
+          availableCharacters.push(char);
+        }
       } else {
         // Extras on odd indices (1, 3, ...)
         const char = shuffledExtras.shift();
