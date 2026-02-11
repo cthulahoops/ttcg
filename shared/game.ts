@@ -1,7 +1,7 @@
 import { shuffleDeck, sortHand, delay } from "./utils";
 import { Seat } from "./seat";
 import { ProxyController } from "./controllers";
-import { allCharacters, characterRegistry } from "./characters/registry";
+import { characterRegistry } from "./characters/registry";
 import type { CharacterDefinition } from "./characters/registry";
 import { allRiders } from "./riders/registry";
 import type { RiderDefinition } from "./riders/registry";
@@ -906,7 +906,7 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
     throw new Error(`Invalid start player seat index: ${startPlayer}`);
   }
 
-  const frodoCharacter = allCharacters.find((c) => c.name === "Frodo")!;
+  const frodoCharacter = characterRegistry.get("Frodo")!;
   gameState.log(
     `${frodoSeat.getDisplayName()} gets Frodo (has 1 of Rings)`,
     true

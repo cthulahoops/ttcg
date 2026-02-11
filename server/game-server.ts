@@ -10,7 +10,7 @@ import { Seat } from "@shared/seat";
 import { SolitaireHand, PlayerHand, PyramidHand, Hand } from "@shared/hands";
 
 import {
-  allCharacters,
+  characterRegistry,
   fellowshipCharacters,
   extraCharacters,
 } from "@shared/characters/registry";
@@ -77,7 +77,7 @@ export function newGame(
     // Draw characters alternating between fellowship and extras
     // 3-seat: Frodo + 2 Fellowship + 1 Extra
     // 4-seat: Frodo + 2 Fellowship + 2 Extra
-    const frodo = allCharacters.find((c) => c.name === "Frodo")!;
+    const frodo = characterRegistry.get("Frodo")!;
     const shuffledFellowship = shuffleDeck([...fellowshipCharacters]);
     const shuffledExtras = shuffleDeck([...extraCharacters]);
 

@@ -37,10 +37,6 @@ import { MerryBurdened } from "./burdened/merry";
 import { PippinBurdened } from "./burdened/pippin";
 import type { CharacterDefinition } from "./types";
 
-// Character pools
-// Special characters have unique assignment rules
-export const specialCharacters: CharacterDefinition[] = [Frodo, Gandalf];
-
 // Fellowship members (Gandalf included here for standard mode)
 export const fellowshipCharacters: CharacterDefinition[] = [
   Gandalf,
@@ -73,7 +69,7 @@ export const extraCharacters: CharacterDefinition[] = [
   Shadowfax,
 ];
 
-export const burdenedCharacters: CharacterDefinition[] = [
+const burdenedCharacters: CharacterDefinition[] = [
   SamBurdened,
   LegolasBurdened,
   GimliBurdened,
@@ -83,7 +79,7 @@ export const burdenedCharacters: CharacterDefinition[] = [
   PippinBurdened,
 ];
 
-export const allCharacters: CharacterDefinition[] = [
+const allCharacters: CharacterDefinition[] = [
   Frodo,
   ...fellowshipCharacters.filter((c) => c !== Gandalf),
   Gandalf,
@@ -94,5 +90,3 @@ export const allCharacters: CharacterDefinition[] = [
 export const characterRegistry = new Map<string, CharacterDefinition>(
   allCharacters.map((c) => [c.name, c])
 );
-
-export const allCharacterNames = allCharacters.map((c) => c.name);
