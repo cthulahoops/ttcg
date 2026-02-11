@@ -1,6 +1,5 @@
 import type { SerializedGame } from "@shared/serialized";
 import type { DecisionRequest } from "@shared/protocol";
-import type { AnyCard } from "@shared/types";
 
 import { TrickArea } from "./TrickArea";
 import { LostCard } from "./LostCard";

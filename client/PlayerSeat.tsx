@@ -76,8 +76,8 @@ export function PlayerSeat({
   );
 
   // Derive selectable cards and presented cards from seatDecision
-  let selectableCards: CardType[] = [];
-  let presentedCards: AnyCard[] = [];
+  const selectableCards: CardType[] = [];
+  const presentedCards: AnyCard[] = [];
   let inlineMessage: string | undefined;
   let inlineButtons: DecisionRequest | undefined;
 
