@@ -9,6 +9,11 @@ export interface SelectCardOptions {
   forSeat?: number;
 }
 
+export interface SelectSeatOptions {
+  forSeat?: number;
+  buttonTemplate?: string; // Use {seat} placeholder for character name
+}
+
 export abstract class Controller {
   playerName: string | null = null;
 
@@ -29,7 +34,7 @@ export abstract class Controller {
   async selectSeat(
     _message: string,
     _eligibleSeats: number[],
-    _forSeat?: number
+    _options?: SelectSeatOptions
   ): Promise<number> {
     throw new Error("Abstract");
   }
@@ -114,12 +119,12 @@ export class ProxyController extends Controller {
   selectSeat(
     message: string,
     eligibleSeats: number[],
-    forSeat?: number
+    options?: SelectSeatOptions
   ): Promise<number> {
     if (!this.realController) {
       throw new Error("Controller must be assigned!");
     }
-    return this.realController.selectSeat(message, eligibleSeats, forSeat);
+    return this.realController.selectSeat(message, eligibleSeats, options);
   }
 
   selectCharacter(

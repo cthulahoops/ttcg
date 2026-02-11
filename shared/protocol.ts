@@ -77,6 +77,7 @@ export type DecisionRequest =
       seatIndex: number;
       message: string;
       eligibleSeats: number[];
+      buttonTemplate?: string; // Use {seat} placeholder for character name
     }
   | {
       type: "select_character";

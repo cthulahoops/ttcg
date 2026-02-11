@@ -1,5 +1,8 @@
 import { Controller } from "../shared/controllers";
-import type { SelectCardOptions } from "../shared/controllers";
+import type {
+  SelectCardOptions,
+  SelectSeatOptions,
+} from "../shared/controllers";
 import type {
   AnyCard,
   Serializable,
@@ -113,7 +116,7 @@ export class NetworkController extends Controller {
   ): Promise<T> {
     return this.sendRequest<T>({
       type: "choose_button",
-      seatIndex: forSeat ?? this.seatIndex,
+      seatIndex: forSeat,
       options,
     });
   }
@@ -133,13 +136,14 @@ export class NetworkController extends Controller {
   async selectSeat(
     message: string,
     eligibleSeats: number[],
-    forSeat?: number
+    options?: SelectSeatOptions
   ): Promise<number> {
     return this.sendRequest<number>({
       type: "select_seat",
-      seatIndex: forSeat ?? this.seatIndex,
+      seatIndex: options?.forSeat ?? this.seatIndex,
       message,
       eligibleSeats,
+      buttonTemplate: options?.buttonTemplate,
     });
   }
 

@@ -85,9 +85,14 @@ export function PlayerSeat({
     const allCards = seatDecision.cards;
     inlineMessage = seatDecision.message;
 
-    // Split cards: those in hand are selectable inline, others are presented
+    // Split cards: those in hand or aside are selectable inline, others are presented
     for (const card of allCards) {
-      if (card.suit !== "threat" && isCardInHand(card, hand)) {
+      const isAside =
+        asideCard != null &&
+        asideCard !== "hidden" &&
+        card.suit === asideCard.suit &&
+        card.value === asideCard.value;
+      if (card.suit !== "threat" && (isCardInHand(card, hand) || isAside)) {
         selectableCards.push(card as CardType);
       } else {
         presentedCards.push(card);
@@ -181,7 +186,12 @@ export function PlayerSeat({
           className="seat-select-btn"
           onClick={() => onRespond(seatIndex)}
         >
-          Select
+          {selectSeatDecision?.buttonTemplate
+            ? selectSeatDecision.buttonTemplate.replace(
+                "{seat}",
+                character ?? `Player ${seatIndex + 1}`
+              )
+            : (character ?? `Player ${seatIndex + 1}`)}
         </button>
       )}
 

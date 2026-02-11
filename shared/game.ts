@@ -326,7 +326,7 @@ export class Game {
       const targetIndex = await seat.controller.selectSeat(
         "Choose who to exchange with:",
         eligibleSeats,
-        seat.seatIndex
+        { forSeat: seat.seatIndex, buttonTemplate: "Exchange with {seat}" }
       );
 
       const chosen = this.seats[targetIndex];
@@ -864,7 +864,10 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
         nextLeader = await winnerSeat.controller.selectSeat(
           "Choose who leads the next trick:",
           eligibleSeats,
-          winnerSeat.seatIndex
+          {
+            forSeat: winnerSeat.seatIndex,
+            buttonTemplate: "{seat} leads next trick",
+          }
         );
 
         if (nextLeader !== winnerIndex) {
@@ -1031,7 +1034,10 @@ async function runRiderAssignment(gameState: Game): Promise<void> {
   const targetIndex = await frodoSeat.controller.selectSeat(
     `Assign "${rider?.name}" (${riderText}) to a character:`,
     eligibleSeats,
-    frodoSeat.seatIndex
+    {
+      forSeat: frodoSeat.seatIndex,
+      buttonTemplate: `Assign ${rider?.name} to {seat}`,
+    }
   );
 
   const targetSeat = gameState.seats[targetIndex];
