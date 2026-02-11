@@ -1,6 +1,6 @@
 import type { SerializedGame } from "@shared/serialized";
 import type { DecisionRequest } from "@shared/protocol";
-import type { Card } from "@shared/types";
+import type { AnyCard } from "@shared/types";
 
 import { TrickArea } from "./TrickArea";
 import { LostCard } from "./LostCard";
@@ -35,22 +35,25 @@ export function GameScreen({
     ...game.seats.slice(0, rotateIndex),
   ];
 
-  // Derive select_card decision state
-  const isSelectCard = pendingDecision?.decision.type === "select_card";
-  const selectableCardsFromDecision =
-    isSelectCard && pendingDecision.decision.type === "select_card"
-      ? pendingDecision.decision.availableCards
-      : null;
-  const selectCardRequestId = isSelectCard ? pendingDecision.requestId : null;
+  const decision = pendingDecision?.decision;
+  const decisionSeatIndex =
+    decision && "seatIndex" in decision ? decision.seatIndex : undefined;
 
-  const handleSelectCard = (card: Card) => {
-    if (selectCardRequestId) {
-      onRespond(selectCardRequestId, card);
+  const handleRespond = (response: unknown) => {
+    if (pendingDecision) {
+      onRespond(pendingDecision.requestId, response);
     }
   };
 
-  // Only render dialog for non-select_card decisions
-  const showDialog = pendingDecision && !isSelectCard;
+  // Determine what kind of decision routing we need
+  const isSelectCharacter = decision?.type === "select_character";
+  const isSelectSeat = decision?.type === "select_seat";
+  const isTopLevelDialog =
+    pendingDecision && decisionSeatIndex === undefined && !isSelectCharacter;
+
+  // Use decision seatIndex for active highlighting when available
+  const activeSeatIndex =
+    decisionSeatIndex !== undefined ? decisionSeatIndex : game.currentPlayer;
 
   return (
     <div className="main-content" id="gameScreen">
@@ -60,7 +63,11 @@ export function GameScreen({
         <LongGameProgress progress={game.longGameProgress} />
       )}
 
-      <AvailableCharacters characters={game.availableCharacters} />
+      <AvailableCharacters
+        characters={game.availableCharacters}
+        selectCharacterDecision={isSelectCharacter ? decision : undefined}
+        onRespond={handleRespond}
+      />
 
       {game.drawnRider && (
         <div className="drawn-rider">
@@ -69,12 +76,10 @@ export function GameScreen({
         </div>
       )}
 
-      {showDialog && (
+      {isTopLevelDialog && (
         <DecisionDialog
           decision={pendingDecision.decision}
-          onRespond={(response) =>
-            onRespond(pendingDecision.requestId, response)
-          }
+          onRespond={handleRespond}
         />
       )}
 
@@ -85,12 +90,21 @@ export function GameScreen({
 
       <div className="players">
         {rotatedSeats.map((seat) => {
-          const isActive = seat.seatIndex === game.currentPlayer;
-          // Only pass selectable cards to the active player's seat
-          const selectableCards =
-            isActive && selectableCardsFromDecision
-              ? selectableCardsFromDecision
-              : [];
+          const isActive = seat.seatIndex === activeSeatIndex;
+
+          // Build seat-specific decision if this seat owns it
+          const seatDecision =
+            decisionSeatIndex === seat.seatIndex &&
+            !isSelectSeat &&
+            !isSelectCharacter
+              ? decision
+              : undefined;
+
+          // For select_seat, pass to all seats so eligible ones show buttons
+          const selectSeatDecision =
+            isSelectSeat && decision.type === "select_seat"
+              ? decision
+              : undefined;
 
           return (
             <PlayerSeat
@@ -98,8 +112,9 @@ export function GameScreen({
               seat={seat}
               isActive={isActive}
               phase={game.phase}
-              selectableCards={selectableCards}
-              onSelectCard={handleSelectCard}
+              seatDecision={seatDecision}
+              selectSeatDecision={selectSeatDecision}
+              onRespond={handleRespond}
             />
           );
         })}

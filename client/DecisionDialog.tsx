@@ -1,5 +1,4 @@
 import type { DecisionRequest } from "@shared/protocol";
-import { Card } from "./Card";
 
 type DecisionDialogProps = {
   decision: DecisionRequest;
@@ -26,25 +25,10 @@ export function DecisionDialog({ decision, onRespond }: DecisionDialogProps) {
         </Dialog>
       );
 
-    case "choose_card":
-      return (
-        <Dialog
-          title={decision.options.title}
-          message={decision.options.message}
-        >
-          {decision.options.cards.map((card) => (
-            <Card
-              key={`${card.suit}-${card.value}`}
-              card={card}
-              clickable
-              onClick={() => onRespond(card)}
-            />
-          ))}
-        </Dialog>
-      );
-
+    // select_card, select_seat, select_character are handled inline
     case "select_card":
-      // select_card is handled by making cards in the hand selectable, not via dialog
+    case "select_seat":
+    case "select_character":
       return null;
 
     default:
