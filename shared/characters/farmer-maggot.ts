@@ -2,6 +2,7 @@ import type { ObjectiveCard, Card, ObjectiveStatus } from "../types";
 import { CARDS_PER_SUIT } from "../types";
 import type { CharacterDefinition } from "./types";
 import { cardsWinnable, achieveAtLeast } from "../objectives";
+import { isOneOf } from "./character-utils";
 
 export const FarmerMaggot: CharacterDefinition = {
   name: "Farmer Maggot",
@@ -10,7 +11,7 @@ export const FarmerMaggot: CharacterDefinition = {
   setup: async (game, seat, setupContext) => {
     await game.drawThreatCard(seat);
     await game.exchange(seat, setupContext, (c: string) =>
-      ["Merry", "Pippin"].includes(c)
+      isOneOf(c, ["Merry", "Pippin"])
     );
   },
 

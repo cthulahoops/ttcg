@@ -1,6 +1,7 @@
 import type { ObjectiveCard, ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
 import { achieveCard } from "../objectives";
+import { isOneOf } from "./character-utils";
 
 export const Sam: CharacterDefinition = {
   name: "Sam",
@@ -12,7 +13,7 @@ export const Sam: CharacterDefinition = {
       exclude: game.lostCard?.value,
     });
     await game.exchange(seat, setupContext, (c: string) =>
-      ["Frodo", "Merry", "Pippin"].includes(c)
+      isOneOf(c, ["Frodo", "Merry", "Pippin"])
     );
   },
 

@@ -8,6 +8,7 @@ import {
   achieveMoreThan,
   type ObjectivePossibilities,
 } from "../objectives";
+import { isOneOf } from "./character-utils";
 
 const mountainCardsWinnable = (game: Game, seat: Seat) =>
   cardsWinnable(game, seat, (c: Card) => c.suit === "mountains");
@@ -18,7 +19,7 @@ export const Gloin: CharacterDefinition = {
 
   setup: async (game, seat, setupContext) => {
     await game.exchange(seat, setupContext, (c: string) =>
-      ["Bilbo Baggins", "Gimli"].includes(c)
+      isOneOf(c, ["Bilbo Baggins", "Gimli"])
     );
   },
 

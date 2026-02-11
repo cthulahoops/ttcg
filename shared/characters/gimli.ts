@@ -1,6 +1,7 @@
 import type { ObjectiveCard, ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
 import { achieveCard } from "../objectives";
+import { isOneOf } from "./character-utils";
 
 export const Gimli: CharacterDefinition = {
   name: "Gimli",
@@ -12,7 +13,7 @@ export const Gimli: CharacterDefinition = {
       exclude: game.lostCard?.value,
     });
     await game.exchange(seat, setupContext, (c: string) =>
-      ["Legolas", "Aragorn"].includes(c)
+      isOneOf(c, ["Legolas", "Aragorn"])
     );
   },
 

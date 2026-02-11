@@ -1,6 +1,7 @@
 import type { ObjectiveCard, ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
 import { achieveExactly, tricksWinnable } from "../objectives";
+import { isCharacter } from "./character-utils";
 
 export const BillThePony: CharacterDefinition = {
   name: "Bill the Pony",
@@ -10,12 +11,12 @@ export const BillThePony: CharacterDefinition = {
     const samExchange = await game.setupExchange(
       seat,
       setupContext,
-      (c) => c === "Sam"
+      (c) => isCharacter(c, "Sam")
     );
     const frodoExchange = await game.setupExchange(
       seat,
       setupContext,
-      (c) => c === "Frodo"
+      (c) => isCharacter(c, "Frodo")
     );
 
     if (samExchange) {

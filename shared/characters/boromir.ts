@@ -7,13 +7,14 @@ import {
   doNot,
   tricksWinnable,
 } from "../objectives";
+import { isCharacter } from "./character-utils";
 
 export const Boromir: CharacterDefinition = {
   name: "Boromir",
   setupText: "Exchange with anyone except Frodo",
 
   setup: async (game, seat, setupContext) => {
-    await game.exchange(seat, setupContext, (c: string) => c !== "Frodo");
+    await game.exchange(seat, setupContext, (c: string) => !isCharacter(c, "Frodo"));
   },
 
   objective: {

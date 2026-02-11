@@ -1,6 +1,7 @@
 import type { ObjectiveCard, ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
 import { tricksWinnable, achieveRange } from "shared/objectives";
+import { isOneOf } from "./character-utils";
 
 export const Merry: CharacterDefinition = {
   name: "Merry",
@@ -8,7 +9,7 @@ export const Merry: CharacterDefinition = {
 
   setup: async (game, seat, setupContext) => {
     await game.exchange(seat, setupContext, (c: string) =>
-      ["Frodo", "Pippin", "Sam"].includes(c)
+      isOneOf(c, ["Frodo", "Pippin", "Sam"])
     );
   },
 

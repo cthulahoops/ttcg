@@ -6,6 +6,7 @@ import {
   achieveAtLeast,
   achieveEvery,
 } from "shared/objectives";
+import { isOneOf } from "./character-utils";
 
 /**
  * Checks if it's still possible for all other players to catch up to Pippin,
@@ -30,7 +31,7 @@ export const Pippin: CharacterDefinition = {
 
   setup: async (game, seat, setupContext) => {
     await game.exchange(seat, setupContext, (c: string) =>
-      ["Frodo", "Merry", "Sam"].includes(c)
+      isOneOf(c, ["Frodo", "Merry", "Sam"])
     );
   },
 
