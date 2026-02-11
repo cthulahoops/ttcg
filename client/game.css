@@ -892,6 +892,65 @@ button:hover {
   grid-column: span 1;
 }
 
+/* Deciding player highlight — distinct from active */
+.players .player.deciding {
+  background: rgba(250, 245, 230, 0.98);
+  box-shadow: 0 0 12px rgba(154, 92, 0, 0.15);
+}
+
+/* Inline decision area (buttons, messages) rendered within a player seat */
+.inline-decision {
+  margin: var(--space-sm) 0;
+}
+
+.inline-message {
+  font-size: var(--font-size-sm);
+  font-style: italic;
+  color: var(--color-text-secondary);
+  margin: var(--space-xs) 0;
+}
+
+.inline-buttons {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  margin-top: var(--space-xs);
+}
+
+.inline-buttons .primary-btn {
+  padding: var(--space-xs) var(--space-md);
+  font-size: var(--font-size-sm);
+}
+
+/* Presented cards row for non-hand selectable cards (e.g. threat cards, received exchange card) */
+.presented-cards {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  margin: var(--space-sm) 0;
+}
+
+/* Seat select button for select_seat decisions */
+.seat-select-btn {
+  padding: var(--space-xs) var(--space-md);
+  font-size: var(--font-size-sm);
+  margin: var(--space-xs) 0;
+}
+
+/* Clickable character cards during assignment */
+.character-card.clickable {
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+  border: 2px solid transparent;
+}
+
+.character-card.clickable:hover {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 10px rgba(154, 92, 0, 0.15);
+}
+
 /* ===========================================
    MOBILE STYLES (max-width: 600px)
    =========================================== */

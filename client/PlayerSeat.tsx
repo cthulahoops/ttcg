@@ -1,6 +1,8 @@
 import type { SerializedSeat } from "@shared/serialized";
+import type { DecisionRequest } from "@shared/protocol";
 import type {
   Card as CardType,
+  AnyCard,
   ObjectiveCard,
   GamePhase,
   ObjectiveStatus,
@@ -12,16 +14,33 @@ type PlayerSeatProps = {
   seat: SerializedSeat;
   isActive: boolean;
   phase: GamePhase;
-  selectableCards: CardType[];
-  onSelectCard: (card: CardType) => void;
+  seatDecision?: DecisionRequest; // Decision owned by this seat (choose_button or select_card)
+  selectSeatDecision?: DecisionRequest & { type: "select_seat" }; // select_seat passed to all seats
+  onRespond: (response: unknown) => void;
 };
+
+function isCardInHand(card: AnyCard, hand: SerializedSeat["hand"]): boolean {
+  if (!hand) return false;
+  const cards =
+    hand.type === "pyramid"
+      ? [...hand.positions.filter(Boolean), ...hand.extraCards]
+      : hand.cards;
+  return cards.some(
+    (c) =>
+      c !== null &&
+      c !== "hidden" &&
+      c.suit === card.suit &&
+      c.value === card.value
+  );
+}
 
 export function PlayerSeat({
   seat,
   isActive,
   phase,
-  selectableCards,
-  onSelectCard,
+  seatDecision,
+  selectSeatDecision,
+  onRespond,
 }: PlayerSeatProps) {
   const {
     seatIndex,
@@ -56,9 +75,42 @@ export function PlayerSeat({
     basePlayerName
   );
 
+  // Derive selectable cards and presented cards from seatDecision
+  const selectableCards: CardType[] = [];
+  const presentedCards: AnyCard[] = [];
+  let inlineMessage: string | undefined;
+  let inlineButtons: DecisionRequest | undefined;
+
+  if (seatDecision?.type === "select_card") {
+    const allCards = seatDecision.cards;
+    inlineMessage = seatDecision.message;
+
+    // Split cards: those in hand or aside are selectable inline, others are presented
+    for (const card of allCards) {
+      const isAside =
+        asideCard != null &&
+        asideCard !== "hidden" &&
+        card.suit === asideCard.suit &&
+        card.value === asideCard.value;
+      if (card.suit !== "threat" && (isCardInHand(card, hand) || isAside)) {
+        selectableCards.push(card as CardType);
+      } else {
+        presentedCards.push(card);
+      }
+    }
+  } else if (seatDecision?.type === "choose_button") {
+    inlineButtons = seatDecision;
+  }
+
+  // Check if this seat is eligible for select_seat
+  const isEligibleForSelect =
+    selectSeatDecision?.eligibleSeats.includes(seatIndex) ?? false;
+
+  const isDeciding = seatDecision !== undefined;
+
   return (
     <section
-      className={`player ${isActive ? "active" : ""}`}
+      className={`player ${isActive ? "active" : ""} ${isDeciding ? "deciding" : ""}`}
       data-player={seatIndex + 1}
     >
       <div className="player-header">
@@ -93,10 +145,60 @@ export function PlayerSeat({
         )}
       </div>
 
+      {/* Inline decision area: buttons, messages, presented cards */}
+      {inlineButtons?.type === "choose_button" && (
+        <div className="inline-decision">
+          <p className="inline-message">{inlineButtons.options.message}</p>
+          <div className="inline-buttons">
+            {inlineButtons.options.buttons.map((btn) => (
+              <button
+                key={String(btn.value)}
+                className="primary-btn"
+                onClick={() => onRespond(btn.value)}
+              >
+                {btn.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {inlineMessage && !inlineButtons && (
+        <p className="inline-message">{inlineMessage}</p>
+      )}
+
+      {presentedCards.length > 0 && (
+        <div className="presented-cards">
+          {presentedCards.map((card) => (
+            <Card
+              key={`${card.suit}-${card.value}`}
+              card={card}
+              clickable
+              onClick={() => onRespond(card)}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* select_seat button */}
+      {isEligibleForSelect && (
+        <button
+          className="seat-select-btn"
+          onClick={() => onRespond(seatIndex)}
+        >
+          {selectSeatDecision?.buttonTemplate
+            ? selectSeatDecision.buttonTemplate.replace(
+                "{seat}",
+                character ?? `Player ${seatIndex + 1}`
+              )
+            : (character ?? `Player ${seatIndex + 1}`)}
+        </button>
+      )}
+
       {asideCard && (
         <AsideCard
           asideCard={asideCard}
-          onSelectCard={onSelectCard}
+          onSelectCard={(card) => onRespond(card)}
           selectableCards={selectableCards}
         />
       )}
@@ -105,7 +207,7 @@ export function PlayerSeat({
         <Hand
           hand={hand}
           selectableCards={selectableCards}
-          onSelectCard={onSelectCard}
+          onSelectCard={(card) => onRespond(card)}
         />
       )}
     </section>

@@ -396,6 +396,13 @@ export class RoomManager {
       game = newGame(controllers, { availableCharacters });
       room.game = game;
 
+      // Set seatIndex on each NetworkController as fallback for decision routing
+      for (const seat of game.seats) {
+        if (seat.controller instanceof NetworkController) {
+          seat.controller.seatIndex = seat.seatIndex;
+        }
+      }
+
       // Set up state change callback to broadcast game state
       game.onStateChange = () => {
         for (const seat of game!.seats) {

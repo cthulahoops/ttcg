@@ -9,8 +9,9 @@ import { Game, TrickPlay } from "./game";
 import { Seat } from "./seat";
 import { PlayerHand } from "./hands";
 import { Controller } from "./controllers";
+import type { SelectCardOptions } from "./controllers";
 import { characterRegistry } from "./characters/registry";
-import type { Card } from "./types";
+import type { AnyCard, Card, Serializable, ChoiceButtonOptions } from "./types";
 import { SUITS, CARDS_PER_SUIT } from "./types";
 
 // ===== TEST CONTROLLER =====
@@ -19,13 +20,16 @@ import { SUITS, CARDS_PER_SUIT } from "./types";
  * Minimal controller for testing - throws on any method call.
  */
 export class TestController extends Controller {
-  async chooseButton<T>(): Promise<T> {
+  async chooseButton<T extends Serializable>(
+    _options: ChoiceButtonOptions<T>,
+    _forSeat?: number
+  ): Promise<T> {
     throw new Error("Not implemented in test");
   }
-  async chooseCard<T>(): Promise<T> {
-    throw new Error("Not implemented in test");
-  }
-  async selectCard(): Promise<Card> {
+  async selectCard<T extends AnyCard>(
+    _cards: T[],
+    _options?: SelectCardOptions
+  ): Promise<T> {
     throw new Error("Not implemented in test");
   }
 }

@@ -22,13 +22,14 @@ export const AragornBurdened: CharacterDefinition = {
       const card1 = game.threatDeck.shift()!;
       const card2 = game.threatDeck.shift()!;
 
-      const choice = await seat.controller.chooseCard({
-        title: `${seat.character?.name} - Choose Threat Card`,
+      const threatCards: { value: number; suit: "threat" }[] = [
+        { value: card1, suit: "threat" },
+        { value: card2, suit: "threat" },
+      ];
+
+      const choice = await seat.controller.selectCard(threatCards, {
         message: "Choose one of these threat cards:",
-        cards: [
-          { value: card1, suit: "threat" },
-          { value: card2, suit: "threat" },
-        ],
+        forSeat: seat.seatIndex,
       });
 
       const chosen = choice.value;

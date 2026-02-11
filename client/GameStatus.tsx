@@ -15,11 +15,25 @@ export function GameStatus({ game, pendingDecision }: GameStatusProps) {
   const seat = game.seats[game.currentPlayer];
   if (!seat) return null;
 
-  // Use decision title when available (choose_button, choose_card)
+  // Show decision-specific status messages
   if (pendingDecision) {
     const { decision } = pendingDecision;
-    if (decision.type === "choose_button" || decision.type === "choose_card") {
+    const hasSeatIndex =
+      "seatIndex" in decision && decision.seatIndex !== undefined;
+
+    if (!hasSeatIndex && decision.type === "choose_button") {
       return <div className="game-status">{decision.options.title}</div>;
+    }
+
+    if (decision.type === "select_seat") {
+      return <div className="game-status">{decision.message}</div>;
+    }
+
+    if (decision.type === "select_character") {
+      const decidingSeat = game.seats[decision.seatIndex];
+      const seatLabel =
+        decidingSeat?.playerName ?? `Player ${decision.seatIndex + 1}`;
+      return <div className="game-status">{seatLabel}: Choose a character</div>;
     }
   }
 

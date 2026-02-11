@@ -6,7 +6,7 @@ import type { CharacterDefinition } from "./characters/registry";
 import { MerryBurdened } from "./characters/burdened/merry";
 import { allRiders } from "./riders/registry";
 import type { RiderDefinition } from "./riders/registry";
-import type { Card, Suit, ThreatCard, ChoiceButton, GamePhase } from "./types";
+import type { Card, Suit, ThreatCard, GamePhase } from "./types";
 import { isCharacter } from "./characters/character-utils";
 
 // ===== INTERFACES =====
@@ -120,24 +120,30 @@ export class Game {
     question: string,
     options: string[]
   ): Promise<string> {
-    return await seat.controller.chooseButton({
-      title: question,
-      message: question,
-      buttons: options.map((opt) => ({ label: opt, value: opt })),
-    });
+    return await seat.controller.chooseButton(
+      {
+        title: question,
+        message: question,
+        buttons: options.map((opt) => ({ label: opt, value: opt })),
+      },
+      seat.seatIndex
+    );
   }
 
   async takeLostCard(seat: Seat): Promise<void> {
     if (!this.lostCard) return;
 
-    const shouldTake = await seat.controller.chooseButton({
-      title: `${seat.character?.name} - Lost Card`,
-      message: `Take the lost card (${this.lostCard.value} of ${this.lostCard.suit})?`,
-      buttons: [
-        { label: "Yes", value: true },
-        { label: "No", value: false },
-      ],
-    });
+    const shouldTake = await seat.controller.chooseButton(
+      {
+        title: `${seat.character?.name} - Lost Card`,
+        message: `Take the lost card (${this.lostCard.value} of ${this.lostCard.suit})?`,
+        buttons: [
+          { label: "Yes", value: true },
+          { label: "No", value: false },
+        ],
+      },
+      seat.seatIndex
+    );
 
     if (shouldTake) {
       seat.hand.addCard(this.lostCard);
@@ -156,10 +162,9 @@ export class Game {
     const availableCards = seat.hand.getAvailableCards();
     const sortedCards = sortHand(availableCards);
 
-    const cardToGive = await seat.controller.chooseCard({
-      title: `${seat.character?.name} - Exchange with Lost Card`,
+    const cardToGive = await seat.controller.selectCard(sortedCards, {
       message: `Choose a card to exchange with the lost card (${this.lostCard.value} of ${this.lostCard.suit})`,
-      cards: sortedCards,
+      forSeat: seat.seatIndex,
     });
 
     seat.hand.removeCard(cardToGive);
@@ -206,14 +211,17 @@ export class Game {
     this.notifyStateChange();
 
     if (this.allowThreatRedraw && this.threatDeck.length > 0) {
-      const choice = await seat.controller.chooseButton({
-        title: `${seat.getDisplayName()} - Threat Card Drawn`,
-        message: `You drew threat card ${threatCard}. Keep or redraw?`,
-        buttons: [
-          { label: "Keep", value: "keep" },
-          { label: "Redraw", value: "redraw" },
-        ],
-      });
+      const choice = await seat.controller.chooseButton(
+        {
+          title: `${seat.getDisplayName()} - Threat Card Drawn`,
+          message: `You drew threat card ${threatCard}. Keep or redraw?`,
+          buttons: [
+            { label: "Keep", value: "keep" },
+            { label: "Redraw", value: "redraw" },
+          ],
+        },
+        seat.seatIndex
+      );
 
       if (choice === "redraw") {
         this.threatDeck.push(threatCard);
@@ -244,13 +252,12 @@ export class Game {
       .sort((a, b) => a - b)
       .map((value) => ({
         value,
-        suit: "threat",
+        suit: "threat" as const,
       }));
 
-    const choice = await seat.controller.chooseCard({
-      title: `${seat.character?.name} - Choose Threat Card`,
+    const choice = await seat.controller.selectCard(threatCards, {
       message: "Choose a threat card:",
-      cards: threatCards,
+      forSeat: seat.seatIndex,
     });
 
     const index = this.threatDeck.indexOf(choice.value);
@@ -294,14 +301,17 @@ export class Game {
           ? validPlayers[0]!.character!.name
           : validPlayers.map((p) => p.character?.name).join(" or ");
 
-      const wantsToExchange = await seat.controller.chooseButton({
-        title: `${seat.character?.name} - Exchange?`,
-        message: `Do you want ${seat.character?.name} to exchange with ${targetDescription}?`,
-        buttons: [
-          { label: "Yes, Exchange", value: true },
-          { label: "No, Skip", value: false },
-        ],
-      });
+      const wantsToExchange = await seat.controller.chooseButton(
+        {
+          title: `${seat.character?.name} - Exchange?`,
+          message: `Do you want ${seat.character?.name} to exchange with ${targetDescription}?`,
+          buttons: [
+            { label: "Yes, Exchange", value: true },
+            { label: "No, Skip", value: false },
+          ],
+        },
+        seat.seatIndex
+      );
 
       if (!wantsToExchange) {
         return null;
@@ -314,16 +324,13 @@ export class Game {
       if (!first) return null;
       targetSeat = first;
     } else {
-      const choices: ChoiceButton<number>[] = validPlayers.map((p) => ({
-        label: p.character!.name,
-        value: p.seatIndex,
-      }));
+      const eligibleSeats = validPlayers.map((p) => p.seatIndex);
 
-      const targetIndex = await seat.controller.chooseButton({
-        title: `${seat.character?.name} - Choose Exchange Partner`,
-        message: "Choose who to exchange with:",
-        buttons: choices,
-      });
+      const targetIndex = await seat.controller.selectSeat(
+        "Choose who to exchange with:",
+        eligibleSeats,
+        { forSeat: seat.seatIndex, buttonTemplate: "Exchange with {seat}" }
+      );
 
       const chosen = this.seats[targetIndex];
       if (!chosen) return null;
@@ -345,11 +352,13 @@ export class Game {
       messageFrom += " (Frodo cannot give away the 1 of Rings)";
     }
 
-    const cardFromFirst = await seat.controller.chooseCard({
-      title: `${seat.character?.name} - Exchange with ${targetSeat.character?.name}`,
-      message: messageFrom,
-      cards: sortHand(playableFrom),
-    });
+    const cardFromFirst = await seat.controller.selectCard(
+      sortHand(playableFrom),
+      {
+        message: messageFrom,
+        forSeat: seat.seatIndex,
+      }
+    );
 
     // Second player can choose from their hand plus the card they're receiving
     const availableTo = targetSeat.hand.getAvailableCards();
@@ -370,11 +379,13 @@ export class Game {
       messageTo += " (Frodo cannot give away the 1 of Rings)";
     }
 
-    const cardFromSecond = await targetSeat.controller.chooseCard({
-      title: `${targetSeat.character?.name} - Exchange with ${seat.character?.name}`,
-      message: messageTo,
-      cards: sortHand(choicesForSecond),
-    });
+    const cardFromSecond = await targetSeat.controller.selectCard(
+      sortHand(choicesForSecond),
+      {
+        message: messageTo,
+        forSeat: targetSeat.seatIndex,
+      }
+    );
 
     return {
       fromSeat: seat,
@@ -509,11 +520,13 @@ export class Game {
       throw new Error(`${fromSeat.getDisplayName()} has no cards to give`);
     }
 
-    const cardToGive = await fromSeat.controller.chooseCard({
-      title: `${fromSeat.character?.name} - Give Card`,
-      message: `Choose a card to give to ${toSeat.getDisplayName()}`,
-      cards: sortHand(availableCards),
-    });
+    const cardToGive = await fromSeat.controller.selectCard(
+      sortHand(availableCards),
+      {
+        message: `Choose a card to give to ${toSeat.getDisplayName()}`,
+        forSeat: fromSeat.seatIndex,
+      }
+    );
 
     fromSeat.hand.removeCard(cardToGive);
     toSeat.hand.addCard(cardToGive);
@@ -725,7 +738,9 @@ async function selectCardFromPlayer(
   legalMoves: Card[]
 ): Promise<Card> {
   gameState.currentPlayer = seat.seatIndex;
-  return await seat.controller.selectCard(legalMoves);
+  return await seat.controller.selectCard(legalMoves, {
+    forSeat: seat.seatIndex,
+  });
 }
 
 async function runTrickTakingPhase(gameState: Game): Promise<void> {
@@ -787,14 +802,17 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
             `Invalid seat for 1 of Rings player: ${oneRingPlay.playerIndex}`
           );
         }
-        const useTrump = await oneRingSeat.controller.chooseButton({
-          title: "You played the 1 of Rings!",
-          message: "Do you want to use it as trump to win this trick?",
-          buttons: [
-            { label: "Yes, Win Trick", value: true },
-            { label: "No, Play Normal", value: false },
-          ],
-        });
+        const useTrump = await oneRingSeat.controller.chooseButton(
+          {
+            title: "You played the 1 of Rings!",
+            message: "Do you want to use it as trump to win this trick?",
+            buttons: [
+              { label: "Yes, Win Trick", value: true },
+              { label: "No, Play Normal", value: false },
+            ],
+          },
+          oneRingSeat.seatIndex
+        );
         oneRingPlay.isTrump = useTrump;
         gameState.notifyStateChange();
       }
@@ -844,16 +862,16 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
 
       if (eligibleLeaders.length > 1) {
         // Offer choice only if there's more than one option
-        const options = eligibleLeaders.map((seat) => ({
-          label: seat.getDisplayName(),
-          value: seat.seatIndex,
-        }));
+        const eligibleSeats = eligibleLeaders.map((seat) => seat.seatIndex);
 
-        nextLeader = await winnerSeat.controller.chooseButton({
-          title: "Bilbo's Ability",
-          message: "Choose who leads the next trick:",
-          buttons: options,
-        });
+        nextLeader = await winnerSeat.controller.selectSeat(
+          "Choose who leads the next trick:",
+          eligibleSeats,
+          {
+            forSeat: winnerSeat.seatIndex,
+            buttonTemplate: "{seat} leads next trick",
+          }
+        );
 
         if (nextLeader !== winnerIndex) {
           const chosenSeat = gameState.seats[nextLeader];
@@ -969,18 +987,13 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
     gameState.currentPlayer = playerIndex;
     gameState.notifyStateChange();
 
-    const buttons: ChoiceButton<string>[] = gameState.availableCharacters.map(
-      (char) => ({
-        label: char.name,
-        value: char.name,
-      })
-    );
+    const characterNames = gameState.availableCharacters.map((c) => c.name);
 
-    const selectedName = await seat.controller.chooseButton({
-      title: `${seat.getDisplayName()} - Choose Your Character`,
-      message: "Select a character to play as",
-      buttons,
-    });
+    const selectedName = await seat.controller.selectCharacter(
+      "Select a character to play as",
+      characterNames,
+      seat.seatIndex
+    );
 
     const character = characterRegistry.get(selectedName);
     if (!character) {
@@ -1016,19 +1029,19 @@ async function runRiderAssignment(gameState: Game): Promise<void> {
     throw new Error("Frodo seat not found for rider assignment");
   }
 
-  const buttons: ChoiceButton<number>[] = gameState.seats.map((seat) => ({
-    label: seat.character!.name,
-    value: seat.seatIndex,
-  }));
+  const eligibleSeats = gameState.seats.map((seat) => seat.seatIndex);
 
   const rider = gameState.drawnRider;
   const riderText = rider?.objective.text ?? "";
 
-  const targetIndex = await frodoSeat.controller.chooseButton({
-    title: "Assign Rider",
-    message: `Assign "${rider?.name}" (${riderText}) to a character:`,
-    buttons,
-  });
+  const targetIndex = await frodoSeat.controller.selectSeat(
+    `Assign "${rider?.name}" (${riderText}) to a character:`,
+    eligibleSeats,
+    {
+      forSeat: frodoSeat.seatIndex,
+      buttonTemplate: `Assign ${rider?.name} to {seat}`,
+    }
+  );
 
   const targetSeat = gameState.seats[targetIndex];
   if (!targetSeat) {

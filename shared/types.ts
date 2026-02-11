@@ -52,13 +52,6 @@ export interface ChoiceButtonOptions<T extends Serializable> {
   info?: string;
 }
 
-export interface ChoiceCardOptions<T extends AnyCard = AnyCard> {
-  title: string;
-  message: string;
-  cards: T[];
-  info?: string;
-}
-
 // ObjectiveStatus represents a character's objective state as a two-axis type:
 //   Finality: "tentative" (can still change) vs "final" (locked in)
 //   Outcome: "failure" (not met) vs "success" (met)

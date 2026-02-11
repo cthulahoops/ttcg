@@ -1,13 +1,7 @@
 // shared/protocol.ts
 
 import type { SerializedGame } from "./serialized";
-import type {
-  Card,
-  AnyCard,
-  Serializable,
-  ChoiceButtonOptions,
-  ChoiceCardOptions,
-} from "./types";
+import type { AnyCard, Serializable, ChoiceButtonOptions } from "./types";
 
 // Player info shared between client and server (public information only)
 export interface Player {
@@ -69,7 +63,24 @@ export type ServerMessage =
 export type DecisionRequest =
   | {
       type: "choose_button";
+      seatIndex?: number;
       options: ChoiceButtonOptions<Serializable>;
     }
-  | { type: "choose_card"; options: ChoiceCardOptions<AnyCard> }
-  | { type: "select_card"; availableCards: Card[] };
+  | {
+      type: "select_card";
+      seatIndex?: number;
+      cards: AnyCard[];
+      message?: string;
+    }
+  | {
+      type: "select_seat";
+      seatIndex: number;
+      message: string;
+      eligibleSeats: number[];
+      buttonTemplate?: string; // Use {seat} placeholder for character name
+    }
+  | {
+      type: "select_character";
+      seatIndex: number;
+      message: string;
+    };
