@@ -211,14 +211,17 @@ export class Game {
     this.notifyStateChange();
 
     if (this.allowThreatRedraw && this.threatDeck.length > 0) {
-      const choice = await seat.controller.chooseButton({
-        title: `${seat.getDisplayName()} - Threat Card Drawn`,
-        message: `You drew threat card ${threatCard}. Keep or redraw?`,
-        buttons: [
-          { label: "Keep", value: "keep" },
-          { label: "Redraw", value: "redraw" },
-        ],
-      });
+      const choice = await seat.controller.chooseButton(
+        {
+          title: `${seat.getDisplayName()} - Threat Card Drawn`,
+          message: `You drew threat card ${threatCard}. Keep or redraw?`,
+          buttons: [
+            { label: "Keep", value: "keep" },
+            { label: "Redraw", value: "redraw" },
+          ],
+        },
+        seat.seatIndex
+      );
 
       if (choice === "redraw") {
         this.threatDeck.push(threatCard);
