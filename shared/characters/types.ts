@@ -25,5 +25,4 @@ export interface CharacterDefinition {
   ) => Promise<void>;
   objective: CharacterObjective;
   burdened?: CharacterDefinition;
-  grantsThreatRedraw?: boolean;
 }

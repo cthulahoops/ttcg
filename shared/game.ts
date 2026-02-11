@@ -3,6 +3,7 @@ import { Seat } from "./seat";
 import { ProxyController } from "./controllers";
 import { characterRegistry } from "./characters/registry";
 import type { CharacterDefinition } from "./characters/registry";
+import { MerryBurdened } from "./characters/burdened/merry";
 import { allRiders } from "./riders/registry";
 import type { RiderDefinition } from "./riders/registry";
 import type { Card, Suit, ThreatCard, ChoiceButton, GamePhase } from "./types";
@@ -991,7 +992,7 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
       (c) => c.name !== selectedName
     );
 
-    if (character.grantsThreatRedraw) {
+    if (character === MerryBurdened) {
       gameState.allowThreatRedraw = true;
     }
 
