@@ -16,11 +16,13 @@ export const Shadowfax: CharacterDefinition = {
   setup: async (game, seat, _setupContext) => {
     const availableCards = seat.hand.getAvailableCards();
 
-    const cardToSetAside = await seat.controller.chooseCard({
-      title: "Shadowfax - Set Card Aside",
-      message: "Choose a card to set aside",
-      cards: sortHand(availableCards),
-    });
+    const cardToSetAside = await seat.controller.selectCard(
+      sortHand(availableCards),
+      {
+        message: "Choose a card to set aside",
+        forSeat: seat.seatIndex,
+      }
+    );
 
     seat.hand.removeCard(cardToSetAside);
     seat.asideCard = cardToSetAside;
