@@ -24,4 +24,5 @@ export interface CharacterDefinition {
     setupContext: GameSetupContext
   ) => Promise<void>;
   objective: CharacterObjective;
+  burdened?: CharacterDefinition;
 }
