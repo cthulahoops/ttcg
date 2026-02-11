@@ -3,6 +3,7 @@ import type { Seat } from "../seat";
 import type { Game } from "../game";
 import type { CharacterDefinition } from "./types";
 import { achieveAtLeast, cardsWinnable } from "../objectives";
+import { isCharacter } from "./character-utils";
 
 /**
  * Calculate how many rings Frodo needs to win.
@@ -43,15 +44,45 @@ export const Frodo: CharacterDefinition = {
 
     getStatus: (game, seat): ObjectiveStatus => {
       const ringsNeeded = getRingsNeeded(game);
-      const rings = cardsWinnable(game, seat, (c) => c.suit === "rings");
+      let rings = cardsWinnable(game, seat, (c) => c.suit === "rings");
+
+      // Sam (Burdened)'s rings count toward Frodo's goal
+      const burdenedSamSeat = game.seats.find(
+        (s) => s.character && isCharacter(s.character.name, "Sam") && s.character.name !== "Sam"
+      );
+      if (burdenedSamSeat) {
+        const samRings = cardsWinnable(
+          game,
+          burdenedSamSeat,
+          (c) => c.suit === "rings"
+        );
+        rings = {
+          current: rings.current + samRings.current,
+          max: rings.max + samRings.max,
+        };
+      }
+
       return achieveAtLeast(rings, ringsNeeded);
     },
 
-    cards: (_game, seat) => {
+    cards: (game, seat) => {
       const ringCards = seat
         .getAllWonCards()
         .filter((c: Card) => c.suit === "rings")
         .sort((a, b) => a.value - b.value);
+
+      // Include Sam (Burdened)'s rings in the display
+      const burdenedSamSeat = game.seats.find(
+        (s) => s.character && isCharacter(s.character.name, "Sam") && s.character.name !== "Sam"
+      );
+      if (burdenedSamSeat) {
+        const samRings = burdenedSamSeat
+          .getAllWonCards()
+          .filter((c: Card) => c.suit === "rings")
+          .sort((a, b) => a.value - b.value);
+        ringCards.push(...samRings);
+      }
+
       return { cards: ringCards };
     },
   },
