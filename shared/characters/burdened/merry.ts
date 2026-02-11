@@ -12,6 +12,7 @@ import { isOneOf } from "../character-utils";
 
 export const MerryBurdened: CharacterDefinition = {
   name: "Merry (Burdened)",
+  grantsThreatRedraw: true,
   setupText:
     "Exchange with Frodo, Sam, or Pippin (all threat draws this round may be redrawn)",
 

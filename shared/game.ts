@@ -991,7 +991,7 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
       (c) => c.name !== selectedName
     );
 
-    if (character.name === "Merry (Burdened)") {
+    if (character.grantsThreatRedraw) {
       gameState.allowThreatRedraw = true;
     }
 

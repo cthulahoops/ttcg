@@ -11,6 +11,15 @@ import { isCharacter } from "./character-utils";
  * However, if Elrond is in the game (requiring all players to win a ring),
  * Frodo only needs 2 rings to make the combined objectives achievable.
  */
+function findBurdenedSamSeat(game: Game): Seat | undefined {
+  return game.seats.find(
+    (s) =>
+      s.character &&
+      isCharacter(s.character.name, "Sam") &&
+      s.character.name !== "Sam"
+  );
+}
+
 function getRingsNeeded(game: Game): number {
   // Check if Elrond is in play
   const elrondInPlay = game.seats.some(
@@ -49,12 +58,7 @@ export const Frodo: CharacterDefinition = {
       // Sam (Burdened)'s rings count toward Frodo's goal.
       // current is additive (won cards are disjoint), but max shares the
       // same pool of remaining ring cards so we must not double-count.
-      const burdenedSamSeat = game.seats.find(
-        (s) =>
-          s.character &&
-          isCharacter(s.character.name, "Sam") &&
-          s.character.name !== "Sam"
-      );
+      const burdenedSamSeat = findBurdenedSamSeat(game);
       let rings = frodoRings;
       if (burdenedSamSeat) {
         const samRings = cardsWinnable(
@@ -81,12 +85,7 @@ export const Frodo: CharacterDefinition = {
         .sort((a, b) => a.value - b.value);
 
       // Include Sam (Burdened)'s rings in the display
-      const burdenedSamSeat = game.seats.find(
-        (s) =>
-          s.character &&
-          isCharacter(s.character.name, "Sam") &&
-          s.character.name !== "Sam"
-      );
+      const burdenedSamSeat = findBurdenedSamSeat(game);
       if (burdenedSamSeat) {
         const samRings = burdenedSamSeat
           .getAllWonCards()
