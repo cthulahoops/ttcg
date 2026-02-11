@@ -8,7 +8,7 @@ type CharacterInfo = {
 
 type AvailableCharactersProps = {
   characters: CharacterInfo[];
-  selectCharacterDecision?: DecisionRequest;
+  selectCharacterDecision?: DecisionRequest & { type: "select_character" };
   onRespond?: (response: unknown) => void;
 };
 

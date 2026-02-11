@@ -35,8 +35,14 @@ export function GameScreen({
   ];
 
   const decision = pendingDecision?.decision;
-  const decisionSeatIndex =
+  const rawSeatIndex =
     decision && "seatIndex" in decision ? decision.seatIndex : undefined;
+  // For select_card without seatIndex, fall back to viewer's seat
+  // (mirrors NetworkController.selectCard which uses this.seatIndex as fallback)
+  const decisionSeatIndex =
+    rawSeatIndex === undefined && decision?.type === "select_card"
+      ? game.viewerSeat
+      : rawSeatIndex;
 
   const handleRespond = (response: unknown) => {
     if (pendingDecision) {
