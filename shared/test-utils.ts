@@ -22,10 +22,7 @@ export class TestController extends Controller {
   async chooseButton<T>(): Promise<T> {
     throw new Error("Not implemented in test");
   }
-  async chooseCard<T>(): Promise<T> {
-    throw new Error("Not implemented in test");
-  }
-  async selectCard(): Promise<Card> {
+  async selectCard<T>(): Promise<T> {
     throw new Error("Not implemented in test");
   }
 }

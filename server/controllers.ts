@@ -1,10 +1,9 @@
 import { Controller } from "../shared/controllers";
+import type { SelectCardOptions } from "../shared/controllers";
 import type {
-  Card,
   AnyCard,
   Serializable,
   ChoiceButtonOptions,
-  ChoiceCardOptions,
 } from "../shared/types";
 import type {
   ServerMessage,
@@ -24,6 +23,7 @@ interface PendingRequest<T = unknown> {
 
 export class NetworkController extends Controller {
   readonly playerId: string;
+  seatIndex: number = 0; // Set after game creation as fallback
   private sendMessage: (message: ServerMessage) => void;
   // Using PendingRequest<unknown> since requests store heterogeneous response types
   private pendingRequests: Map<string, PendingRequest<unknown>>;
@@ -108,27 +108,50 @@ export class NetworkController extends Controller {
   }
 
   async chooseButton<T extends Serializable>(
-    options: ChoiceButtonOptions<T>
+    options: ChoiceButtonOptions<T>,
+    forSeat?: number
   ): Promise<T> {
     return this.sendRequest<T>({
       type: "choose_button",
+      seatIndex: forSeat ?? this.seatIndex,
       options,
     });
   }
 
-  async chooseCard<T extends AnyCard = AnyCard>(
-    options: ChoiceCardOptions<T>
+  async selectCard<T extends AnyCard>(
+    cards: T[],
+    options?: SelectCardOptions
   ): Promise<T> {
     return this.sendRequest<T>({
-      type: "choose_card",
-      options,
+      type: "select_card",
+      seatIndex: options?.forSeat ?? this.seatIndex,
+      cards,
+      message: options?.message,
     });
   }
 
-  async selectCard(availableCards: Card[]): Promise<Card> {
-    return this.sendRequest<Card>({
-      type: "select_card",
-      availableCards,
+  async selectSeat(
+    message: string,
+    eligibleSeats: number[],
+    forSeat?: number
+  ): Promise<number> {
+    return this.sendRequest<number>({
+      type: "select_seat",
+      seatIndex: forSeat ?? this.seatIndex,
+      message,
+      eligibleSeats,
+    });
+  }
+
+  async selectCharacter(
+    message: string,
+    _characterNames: string[],
+    forSeat?: number
+  ): Promise<string> {
+    return this.sendRequest<string>({
+      type: "select_character",
+      seatIndex: forSeat ?? this.seatIndex,
+      message,
     });
   }
 
