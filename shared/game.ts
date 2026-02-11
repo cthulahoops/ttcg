@@ -5,7 +5,7 @@ import { characterRegistry } from "./characters/registry";
 import type { CharacterDefinition } from "./characters/registry";
 import { MerryBurdened } from "./characters/burdened/merry";
 import type { RiderDefinition } from "./riders/registry";
-import type { Card, Suit, ThreatCard, ChoiceButton, GamePhase } from "./types";
+import type { Card, Suit, ThreatCard, GamePhase } from "./types";
 import { isCharacter } from "./characters/character-utils";
 
 // ===== INTERFACES =====
@@ -1019,27 +1019,31 @@ async function runRiderAssignment(gameState: Game): Promise<void> {
     throw new Error("Frodo seat not found for rider assignment");
   }
 
-  const buttons: ChoiceButton<number>[] = gameState.seats.map((seat) => ({
-    label: `Assign ${gameState.drawnRider?.name} to ${seat.character!.name}`,
-    value: seat.seatIndex,
-  }));
-  if (gameState.riderAllowSkip) {
-    buttons.push({ label: "Skip", value: -1 });
-  }
+  const eligibleSeats = gameState.seats.map((seat) => seat.seatIndex);
 
   const rider = gameState.drawnRider;
   const riderText = rider?.objective.text ?? "";
 
-  const targetIndex = await frodoSeat.controller.chooseButton(
-    {
-      title: "Assign Rider",
-      message: `Assign "${rider?.name}" (${riderText}) to a character:`,
-      buttons,
-    },
-    frodoSeat.seatIndex
-  );
+  const targetIndex = gameState.riderAllowSkip
+    ? await frodoSeat.controller.selectSeat(
+        `Assign "${rider?.name}" (${riderText}) to a character:`,
+        eligibleSeats,
+        {
+          forSeat: frodoSeat.seatIndex,
+          buttonTemplate: `Assign ${rider?.name} to {seat}`,
+          skipLabel: "Skip",
+        }
+      )
+    : await frodoSeat.controller.selectSeat(
+        `Assign "${rider?.name}" (${riderText}) to a character:`,
+        eligibleSeats,
+        {
+          forSeat: frodoSeat.seatIndex,
+          buttonTemplate: `Assign ${rider?.name} to {seat}`,
+        }
+      );
 
-  if (targetIndex === -1) {
+  if (targetIndex === null) {
     gameState.log(
       `${frodoSeat.getDisplayName()} skips assigning ${rider?.name}`,
       true
