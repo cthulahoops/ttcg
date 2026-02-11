@@ -76,7 +76,9 @@ export const TomBombadil: CharacterDefinition = {
 
   setup: async (game, seat, setupContext) => {
     await game.takeLostCard(seat);
-    await game.exchange(seat, setupContext, (c: string) => isCharacter(c, "Frodo"));
+    await game.exchange(seat, setupContext, (c: string) =>
+      isCharacter(c, "Frodo")
+    );
   },
 
   objective: {

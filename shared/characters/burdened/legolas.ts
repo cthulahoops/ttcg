@@ -5,8 +5,7 @@ import { isOneOf } from "../character-utils";
 
 export const LegolasBurdened: CharacterDefinition = {
   name: "Legolas (Burdened)",
-  setupText:
-    "Draw a threat card, then exchange with Gimli or Aragorn",
+  setupText: "Draw a threat card, then exchange with Gimli or Aragorn",
 
   setup: async (game, seat, setupContext) => {
     const exclude =

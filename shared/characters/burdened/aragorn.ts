@@ -36,10 +36,7 @@ export const AragornBurdened: CharacterDefinition = {
 
       seat.threatCard = chosen;
       game.threatDeck.push(unchosen);
-      game.log(
-        `${seat.getDisplayName()} chooses threat card: ${chosen}`,
-        true
-      );
+      game.log(`${seat.getDisplayName()} chooses threat card: ${chosen}`, true);
       game.notifyStateChange();
     }
 

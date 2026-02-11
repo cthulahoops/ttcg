@@ -8,15 +8,11 @@ export const BillThePony: CharacterDefinition = {
   setupText: "Exchange simultaneously with Sam and Frodo",
 
   setup: async (game, seat, setupContext) => {
-    const samExchange = await game.setupExchange(
-      seat,
-      setupContext,
-      (c) => isCharacter(c, "Sam")
+    const samExchange = await game.setupExchange(seat, setupContext, (c) =>
+      isCharacter(c, "Sam")
     );
-    const frodoExchange = await game.setupExchange(
-      seat,
-      setupContext,
-      (c) => isCharacter(c, "Frodo")
+    const frodoExchange = await game.setupExchange(seat, setupContext, (c) =>
+      isCharacter(c, "Frodo")
     );
 
     if (samExchange) {

@@ -99,7 +99,9 @@ export const Galadriel: CharacterDefinition = {
       if (choice === "Lost Card") {
         await game.exchangeWithLostCard(seat, setupContext);
       } else {
-        await game.exchange(seat, setupContext, (c: string) => isCharacter(c, "Gandalf"));
+        await game.exchange(seat, setupContext, (c: string) =>
+          isCharacter(c, "Gandalf")
+        );
       }
       return;
     }

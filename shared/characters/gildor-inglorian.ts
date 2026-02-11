@@ -30,7 +30,9 @@ export const GildorInglorian: CharacterDefinition = {
   setupText: "Exchange with Frodo",
 
   setup: async (game, seat, setupContext) => {
-    await game.exchange(seat, setupContext, (c: string) => isCharacter(c, "Frodo"));
+    await game.exchange(seat, setupContext, (c: string) =>
+      isCharacter(c, "Frodo")
+    );
   },
 
   objective: {

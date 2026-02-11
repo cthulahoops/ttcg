@@ -324,7 +324,9 @@ export class Game {
     }
 
     const availableFrom = seat.hand.getAvailableCards();
-    const isFrodoFrom = seat.character ? isCharacter(seat.character.name, "Frodo") : false;
+    const isFrodoFrom = seat.character
+      ? isCharacter(seat.character.name, "Frodo")
+      : false;
     const playableFrom = isFrodoFrom
       ? availableFrom.filter(
           (card) => !(card.suit === "rings" && card.value === 1)
@@ -344,7 +346,9 @@ export class Game {
 
     // Second player can choose from their hand plus the card they're receiving
     const availableTo = targetSeat.hand.getAvailableCards();
-    const isFrodoTo = targetSeat.character ? isCharacter(targetSeat.character.name, "Frodo") : false;
+    const isFrodoTo = targetSeat.character
+      ? isCharacter(targetSeat.character.name, "Frodo")
+      : false;
     const playableTo = isFrodoTo
       ? availableTo.filter(
           (card) => !(card.suit === "rings" && card.value === 1)

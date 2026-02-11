@@ -48,7 +48,10 @@ export const Frodo: CharacterDefinition = {
 
       // Sam (Burdened)'s rings count toward Frodo's goal
       const burdenedSamSeat = game.seats.find(
-        (s) => s.character && isCharacter(s.character.name, "Sam") && s.character.name !== "Sam"
+        (s) =>
+          s.character &&
+          isCharacter(s.character.name, "Sam") &&
+          s.character.name !== "Sam"
       );
       if (burdenedSamSeat) {
         const samRings = cardsWinnable(
@@ -73,7 +76,10 @@ export const Frodo: CharacterDefinition = {
 
       // Include Sam (Burdened)'s rings in the display
       const burdenedSamSeat = game.seats.find(
-        (s) => s.character && isCharacter(s.character.name, "Sam") && s.character.name !== "Sam"
+        (s) =>
+          s.character &&
+          isCharacter(s.character.name, "Sam") &&
+          s.character.name !== "Sam"
       );
       if (burdenedSamSeat) {
         const samRings = burdenedSamSeat

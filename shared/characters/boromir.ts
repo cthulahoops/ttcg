@@ -16,7 +16,11 @@ export const Boromir: CharacterDefinition = {
   setupText: "Exchange with anyone except Frodo",
 
   setup: async (game, seat, setupContext) => {
-    await game.exchange(seat, setupContext, (c: string) => !isCharacter(c, "Frodo"));
+    await game.exchange(
+      seat,
+      setupContext,
+      (c: string) => !isCharacter(c, "Frodo")
+    );
   },
 
   objective: {
