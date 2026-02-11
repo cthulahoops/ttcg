@@ -3,6 +3,7 @@ import type { CharacterDefinition } from "./types";
 import type { Game } from "../game";
 import type { Seat } from "../seat";
 import { achieveAtLeast, type ObjectivePossibilities } from "../objectives";
+import { isCharacter } from "./character-utils";
 
 function forestsInFinalTrickPossible(
   game: Game,
@@ -29,7 +30,9 @@ export const GildorInglorian: CharacterDefinition = {
   setupText: "Exchange with Frodo",
 
   setup: async (game, seat, setupContext) => {
-    await game.exchange(seat, setupContext, (c: string) => c === "Frodo");
+    await game.exchange(seat, setupContext, (c: string) =>
+      isCharacter(c, "Frodo")
+    );
   },
 
   objective: {

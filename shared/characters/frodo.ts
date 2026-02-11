@@ -3,6 +3,7 @@ import type { Seat } from "../seat";
 import type { Game } from "../game";
 import type { CharacterDefinition } from "./types";
 import { achieveAtLeast, cardsWinnable } from "../objectives";
+import { isCharacter } from "./character-utils";
 
 /**
  * Calculate how many rings Frodo needs to win.
@@ -10,6 +11,15 @@ import { achieveAtLeast, cardsWinnable } from "../objectives";
  * However, if Elrond is in the game (requiring all players to win a ring),
  * Frodo only needs 2 rings to make the combined objectives achievable.
  */
+function findBurdenedSamSeat(game: Game): Seat | undefined {
+  return game.seats.find(
+    (s) =>
+      s.character &&
+      isCharacter(s.character.name, "Sam") &&
+      s.character.name !== "Sam"
+  );
+}
+
 function getRingsNeeded(game: Game): number {
   // Check if Elrond is in play
   const elrondInPlay = game.seats.some(
@@ -43,15 +53,47 @@ export const Frodo: CharacterDefinition = {
 
     getStatus: (game, seat): ObjectiveStatus => {
       const ringsNeeded = getRingsNeeded(game);
-      const rings = cardsWinnable(game, seat, (c) => c.suit === "rings");
+      const frodoRings = cardsWinnable(game, seat, (c) => c.suit === "rings");
+
+      // Sam (Burdened)'s rings count toward Frodo's goal.
+      // current is additive (won cards are disjoint), but max shares the
+      // same pool of remaining ring cards so we must not double-count.
+      const burdenedSamSeat = findBurdenedSamSeat(game);
+      let rings = frodoRings;
+      if (burdenedSamSeat) {
+        const samRings = cardsWinnable(
+          game,
+          burdenedSamSeat,
+          (c) => c.suit === "rings"
+        );
+        rings = {
+          current: frodoRings.current + samRings.current,
+          max:
+            frodoRings.current +
+            samRings.current +
+            (frodoRings.max - frodoRings.current),
+        };
+      }
+
       return achieveAtLeast(rings, ringsNeeded);
     },
 
-    cards: (_game, seat) => {
+    cards: (game, seat) => {
       const ringCards = seat
         .getAllWonCards()
         .filter((c: Card) => c.suit === "rings")
         .sort((a, b) => a.value - b.value);
+
+      // Include Sam (Burdened)'s rings in the display
+      const burdenedSamSeat = findBurdenedSamSeat(game);
+      if (burdenedSamSeat) {
+        const samRings = burdenedSamSeat
+          .getAllWonCards()
+          .filter((c: Card) => c.suit === "rings")
+          .sort((a, b) => a.value - b.value);
+        ringCards.push(...samRings);
+      }
+
       return { cards: ringCards };
     },
   },

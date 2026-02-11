@@ -8,6 +8,7 @@ import type { CharacterDefinition } from "./types";
 import type { Game } from "../game";
 import type { Seat } from "../seat";
 import { achieveAtLeast, type ObjectivePossibilities } from "../objectives";
+import { isCharacter } from "./character-utils";
 
 /**
  * Calculate suit-winning possibilities for Tom Bombadil's objective.
@@ -75,7 +76,9 @@ export const TomBombadil: CharacterDefinition = {
 
   setup: async (game, seat, setupContext) => {
     await game.takeLostCard(seat);
-    await game.exchange(seat, setupContext, (c: string) => c === "Frodo");
+    await game.exchange(seat, setupContext, (c: string) =>
+      isCharacter(c, "Frodo")
+    );
   },
 
   objective: {

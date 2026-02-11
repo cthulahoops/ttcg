@@ -1,11 +1,13 @@
 import { shuffleDeck, sortHand, delay } from "./utils";
 import { Seat } from "./seat";
 import { ProxyController } from "./controllers";
-import { allCharacters, characterRegistry } from "./characters/registry";
+import { characterRegistry } from "./characters/registry";
 import type { CharacterDefinition } from "./characters/registry";
+import { MerryBurdened } from "./characters/burdened/merry";
 import { allRiders } from "./riders/registry";
 import type { RiderDefinition } from "./riders/registry";
 import type { Card, Suit, ThreatCard, ChoiceButton, GamePhase } from "./types";
+import { isCharacter } from "./characters/character-utils";
 
 // ===== INTERFACES =====
 
@@ -52,6 +54,7 @@ export class Game {
   tricksToPlay: number;
   drawnRider: RiderDefinition | null; // Rider during assignment phase
   phase: GamePhase;
+  allowThreatRedraw: boolean;
   onStateChange?: (game: Game) => void;
   onLog?: (
     line: string,
@@ -83,6 +86,7 @@ export class Game {
     this.tricksToPlay = numCharacters === 3 ? 12 : 9;
     this.drawnRider = null;
     this.phase = "assignment";
+    this.allowThreatRedraw = false;
 
     this.threatDeck = shuffleDeck(
       this.threatDeck.map((v) => ({ value: v }))
@@ -200,6 +204,34 @@ export class Game {
     seat.threatCard = threatCard;
     this.log(`${seat.getDisplayName()} draws threat card: ${threatCard}`, true);
     this.notifyStateChange();
+
+    if (this.allowThreatRedraw && this.threatDeck.length > 0) {
+      const choice = await seat.controller.chooseButton({
+        title: `${seat.getDisplayName()} - Threat Card Drawn`,
+        message: `You drew threat card ${threatCard}. Keep or redraw?`,
+        buttons: [
+          { label: "Keep", value: "keep" },
+          { label: "Redraw", value: "redraw" },
+        ],
+      });
+
+      if (choice === "redraw") {
+        this.threatDeck.push(threatCard);
+        let newCard: number;
+        do {
+          if (this.threatDeck.length === 0) {
+            throw new Error("Threat deck is empty during redraw!");
+          }
+          newCard = this.threatDeck.shift()!;
+        } while (exclude !== undefined && newCard === exclude);
+        seat.threatCard = newCard;
+        this.log(
+          `${seat.getDisplayName()} redraws threat card: ${newCard}`,
+          true
+        );
+        this.notifyStateChange();
+      }
+    }
   }
 
   async chooseThreatCard(seat: Seat): Promise<void> {
@@ -299,7 +331,9 @@ export class Game {
     }
 
     const availableFrom = seat.hand.getAvailableCards();
-    const isFrodoFrom = seat.character?.name === "Frodo";
+    const isFrodoFrom = seat.character
+      ? isCharacter(seat.character.name, "Frodo")
+      : false;
     const playableFrom = isFrodoFrom
       ? availableFrom.filter(
           (card) => !(card.suit === "rings" && card.value === 1)
@@ -319,7 +353,9 @@ export class Game {
 
     // Second player can choose from their hand plus the card they're receiving
     const availableTo = targetSeat.hand.getAvailableCards();
-    const isFrodoTo = targetSeat.character?.name === "Frodo";
+    const isFrodoTo = targetSeat.character
+      ? isCharacter(targetSeat.character.name, "Frodo")
+      : false;
     const playableTo = isFrodoTo
       ? availableTo.filter(
           (card) => !(card.suit === "rings" && card.value === 1)
@@ -877,7 +913,7 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
     throw new Error(`Invalid start player seat index: ${startPlayer}`);
   }
 
-  const frodoCharacter = allCharacters.find((c) => c.name === "Frodo")!;
+  const frodoCharacter = characterRegistry.get("Frodo")!;
   gameState.log(
     `${frodoSeat.getDisplayName()} gets Frodo (has 1 of Rings)`,
     true
@@ -955,6 +991,10 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
     gameState.availableCharacters = gameState.availableCharacters.filter(
       (c) => c.name !== selectedName
     );
+
+    if (character === MerryBurdened) {
+      gameState.allowThreatRedraw = true;
+    }
 
     gameState.notifyStateChange();
   }

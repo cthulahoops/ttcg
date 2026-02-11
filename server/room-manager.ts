@@ -45,13 +45,23 @@ function initializeLongGame(seatCount: number): LongGameState {
   );
   const shuffledExtras = shuffleDeck([...extraCharacters]);
 
+  // Replace the first non-Gandalf fellowship character with its burdened variant
+  let burdenedApplied = false;
+  const burdenFellowship = shuffledFellowship.map((char) => {
+    if (!burdenedApplied && char.burdened) {
+      burdenedApplied = true;
+      return char.burdened;
+    }
+    return char;
+  });
+
   if (seatCount === 3) {
     // 3 seats: Frodo + Gandalf + 4 Fellowship + 3 Extra = 9 characters
-    pool.push(...shuffledFellowship.slice(0, 4));
+    pool.push(...burdenFellowship.slice(0, 4));
     pool.push(...shuffledExtras.slice(0, 3));
   } else {
     // 4 seats: Frodo + Gandalf + 5 Fellowship + 6 Extra = 13 characters
-    pool.push(...shuffledFellowship.slice(0, 5));
+    pool.push(...burdenFellowship.slice(0, 5));
     pool.push(...shuffledExtras.slice(0, 6));
   }
 

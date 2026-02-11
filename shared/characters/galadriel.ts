@@ -9,6 +9,7 @@ import {
   achieveBoth,
   type ObjectivePossibilities,
 } from "../objectives";
+import { isCharacter } from "./character-utils";
 
 /**
  * Checks if a middle position (neither fewest nor most) is achievable.
@@ -78,7 +79,7 @@ export const Galadriel: CharacterDefinition = {
 
   setup: async (game, seat, setupContext) => {
     const gandalfInPlay = game.seats.some(
-      (s) => s.character?.name === "Gandalf"
+      (s) => s.character && isCharacter(s.character.name, "Gandalf")
     );
     const lostCardExists = game.lostCard !== null;
 
@@ -98,7 +99,9 @@ export const Galadriel: CharacterDefinition = {
       if (choice === "Lost Card") {
         await game.exchangeWithLostCard(seat, setupContext);
       } else {
-        await game.exchange(seat, setupContext, (c: string) => c === "Gandalf");
+        await game.exchange(seat, setupContext, (c: string) =>
+          isCharacter(c, "Gandalf")
+        );
       }
       return;
     }

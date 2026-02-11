@@ -28,11 +28,14 @@ import { Gloin } from "./gloin";
 import { BilboBaggins } from "./bilbo-baggins";
 import { Gwaihir } from "./gwaihir";
 import { Shadowfax } from "./shadowfax";
+import { SamBurdened } from "./burdened/sam";
+import { LegolasBurdened } from "./burdened/legolas";
+import { GimliBurdened } from "./burdened/gimli";
+import { AragornBurdened } from "./burdened/aragorn";
+import { BoromirBurdened } from "./burdened/boromir";
+import { MerryBurdened } from "./burdened/merry";
+import { PippinBurdened } from "./burdened/pippin";
 import type { CharacterDefinition } from "./types";
-
-// Character pools
-// Special characters have unique assignment rules
-export const specialCharacters: CharacterDefinition[] = [Frodo, Gandalf];
 
 // Fellowship members (Gandalf included here for standard mode)
 export const fellowshipCharacters: CharacterDefinition[] = [
@@ -66,15 +69,24 @@ export const extraCharacters: CharacterDefinition[] = [
   Shadowfax,
 ];
 
-export const allCharacters: CharacterDefinition[] = [
+const burdenedCharacters: CharacterDefinition[] = [
+  SamBurdened,
+  LegolasBurdened,
+  GimliBurdened,
+  AragornBurdened,
+  BoromirBurdened,
+  MerryBurdened,
+  PippinBurdened,
+];
+
+const allCharacters: CharacterDefinition[] = [
   Frodo,
   ...fellowshipCharacters.filter((c) => c !== Gandalf),
   Gandalf,
   ...extraCharacters,
+  ...burdenedCharacters,
 ];
 
 export const characterRegistry = new Map<string, CharacterDefinition>(
   allCharacters.map((c) => [c.name, c])
 );
-
-export const allCharacterNames = allCharacters.map((c) => c.name);

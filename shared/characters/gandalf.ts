@@ -1,6 +1,7 @@
 import type { ObjectiveCard, ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
 import { tricksWinnable, achieveAtLeast } from "shared/objectives";
+import { isCharacter } from "./character-utils";
 
 export const Gandalf: CharacterDefinition = {
   name: "Gandalf",
@@ -8,7 +9,9 @@ export const Gandalf: CharacterDefinition = {
 
   setup: async (game, seat, setupContext) => {
     await game.takeLostCard(seat);
-    await game.exchange(seat, setupContext, (c: string) => c === "Frodo");
+    await game.exchange(seat, setupContext, (c: string) =>
+      isCharacter(c, "Frodo")
+    );
   },
 
   objective: {

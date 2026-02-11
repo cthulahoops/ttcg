@@ -1,9 +1,12 @@
 import type { ObjectiveCard, ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
 import { achieveCard } from "../objectives";
+import { isOneOf } from "./character-utils";
+import { LegolasBurdened } from "./burdened/legolas";
 
 export const Legolas: CharacterDefinition = {
   name: "Legolas",
+  burdened: LegolasBurdened,
   setupText: "Draw a Forests threat card, then exchange with Gimli or Aragorn",
 
   setup: async (game, seat, setupContext) => {
@@ -11,7 +14,7 @@ export const Legolas: CharacterDefinition = {
       exclude: game.lostCard?.value,
     });
     await game.exchange(seat, setupContext, (c: string) =>
-      ["Gimli", "Aragorn"].includes(c)
+      isOneOf(c, ["Gimli", "Aragorn"])
     );
   },
 

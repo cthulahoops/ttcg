@@ -1,21 +1,18 @@
 import type { ObjectiveCard, ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
 import { achieveExactly, tricksWinnable } from "../objectives";
+import { isCharacter } from "./character-utils";
 
 export const BillThePony: CharacterDefinition = {
   name: "Bill the Pony",
   setupText: "Exchange simultaneously with Sam and Frodo",
 
   setup: async (game, seat, setupContext) => {
-    const samExchange = await game.setupExchange(
-      seat,
-      setupContext,
-      (c) => c === "Sam"
+    const samExchange = await game.setupExchange(seat, setupContext, (c) =>
+      isCharacter(c, "Sam")
     );
-    const frodoExchange = await game.setupExchange(
-      seat,
-      setupContext,
-      (c) => c === "Frodo"
+    const frodoExchange = await game.setupExchange(seat, setupContext, (c) =>
+      isCharacter(c, "Frodo")
     );
 
     if (samExchange) {

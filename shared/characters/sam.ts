@@ -1,9 +1,12 @@
 import type { ObjectiveCard, ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
 import { achieveCard } from "../objectives";
+import { isOneOf } from "./character-utils";
+import { SamBurdened } from "./burdened/sam";
 
 export const Sam: CharacterDefinition = {
   name: "Sam",
+  burdened: SamBurdened,
   setupText:
     "Draw a Hills threat card, then exchange with Frodo, Merry, or Pippin",
 
@@ -12,7 +15,7 @@ export const Sam: CharacterDefinition = {
       exclude: game.lostCard?.value,
     });
     await game.exchange(seat, setupContext, (c: string) =>
-      ["Frodo", "Merry", "Pippin"].includes(c)
+      isOneOf(c, ["Frodo", "Merry", "Pippin"])
     );
   },
 

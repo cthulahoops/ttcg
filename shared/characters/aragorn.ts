@@ -1,15 +1,18 @@
 import type { ObjectiveCard, ObjectiveStatus } from "../types";
 import type { CharacterDefinition } from "./types";
 import { tricksWinnable, achieveExactly } from "shared/objectives";
+import { isOneOf } from "./character-utils";
+import { AragornBurdened } from "./burdened/aragorn";
 
 export const Aragorn: CharacterDefinition = {
   name: "Aragorn",
+  burdened: AragornBurdened,
   setupText: "Choose a threat card, then exchange with Gimli or Legolas",
 
   setup: async (game, seat, setupContext) => {
     await game.chooseThreatCard(seat);
     await game.exchange(seat, setupContext, (c: string) =>
-      ["Gimli", "Legolas"].includes(c)
+      isOneOf(c, ["Gimli", "Legolas"])
     );
   },
 

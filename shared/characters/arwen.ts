@@ -8,6 +8,7 @@ import {
   achieveMoreThan,
   type ObjectivePossibilities,
 } from "shared/objectives";
+import { isOneOf } from "./character-utils";
 
 const forestCardsWinnable = (game: Game, seat: Seat) =>
   cardsWinnable(game, seat, (c: Card) => c.suit === "forests");
@@ -18,7 +19,7 @@ export const Arwen: CharacterDefinition = {
 
   setup: async (game, seat, setupContext) => {
     await game.exchange(seat, setupContext, (c: string) =>
-      ["Elrond", "Aragorn"].includes(c)
+      isOneOf(c, ["Elrond", "Aragorn"])
     );
   },
 
