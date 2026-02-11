@@ -133,17 +133,28 @@ export class NetworkController extends Controller {
     });
   }
 
-  async selectSeat(
+  selectSeat(
+    message: string,
+    eligibleSeats: number[],
+    options: SelectSeatOptions & { skipLabel: string }
+  ): Promise<number | null>;
+  selectSeat(
     message: string,
     eligibleSeats: number[],
     options?: SelectSeatOptions
-  ): Promise<number> {
-    return this.sendRequest<number>({
+  ): Promise<number>;
+  selectSeat(
+    message: string,
+    eligibleSeats: number[],
+    options?: SelectSeatOptions
+  ): Promise<number | null> {
+    return this.sendRequest<number | null>({
       type: "select_seat",
       seatIndex: options?.forSeat ?? this.seatIndex,
       message,
       eligibleSeats,
       buttonTemplate: options?.buttonTemplate,
+      skipLabel: options?.skipLabel,
     });
   }
 

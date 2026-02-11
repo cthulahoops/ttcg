@@ -12,6 +12,7 @@ export interface SelectCardOptions {
 export interface SelectSeatOptions {
   forSeat?: number;
   buttonTemplate?: string; // Use {seat} placeholder for character name
+  skipLabel?: string; // If set, show a skip button with this label
 }
 
 export abstract class Controller {
@@ -31,11 +32,21 @@ export abstract class Controller {
     throw new Error("Abstract");
   }
 
+  selectSeat(
+    message: string,
+    eligibleSeats: number[],
+    options: SelectSeatOptions & { skipLabel: string }
+  ): Promise<number | null>;
+  selectSeat(
+    message: string,
+    eligibleSeats: number[],
+    options?: SelectSeatOptions
+  ): Promise<number>;
   async selectSeat(
     _message: string,
     _eligibleSeats: number[],
     _options?: SelectSeatOptions
-  ): Promise<number> {
+  ): Promise<number | null> {
     throw new Error("Abstract");
   }
 
@@ -119,12 +130,22 @@ export class ProxyController extends Controller {
   selectSeat(
     message: string,
     eligibleSeats: number[],
+    options: SelectSeatOptions & { skipLabel: string }
+  ): Promise<number | null>;
+  selectSeat(
+    message: string,
+    eligibleSeats: number[],
     options?: SelectSeatOptions
-  ): Promise<number> {
+  ): Promise<number>;
+  selectSeat(
+    message: string,
+    eligibleSeats: number[],
+    options?: SelectSeatOptions
+  ): Promise<number | null> {
     if (!this.realController) {
       throw new Error("Controller must be assigned!");
     }
-    return this.realController.selectSeat(message, eligibleSeats, options);
+    return this.realController.selectSeat(message, eligibleSeats, options!);
   }
 
   selectCharacter(

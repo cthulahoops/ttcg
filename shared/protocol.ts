@@ -22,6 +22,7 @@ export interface LongGameProgress {
   characterPool: string[]; // All character names in campaign
   completedCharacters: string[]; // Names of completed characters
   riderCompleted: boolean;
+  campaignRiderName: string;
 }
 
 // Client → Server messages
@@ -78,6 +79,7 @@ export type DecisionRequest =
       message: string;
       eligibleSeats: number[];
       buttonTemplate?: string; // Use {seat} placeholder for character name
+      skipLabel?: string;
     }
   | {
       type: "select_character";

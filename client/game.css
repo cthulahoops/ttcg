@@ -1061,12 +1061,10 @@ button:hover {
   color: var(--color-text);
 }
 
-.long-game-progress .rider-status {
-  margin-top: var(--space-sm);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
+.long-game-progress .character-chip.rider-chip {
+  border: 1px solid var(--color-accent);
 }
 
-.long-game-progress .rider-status.completed {
-  color: var(--color-success);
+.long-game-progress .character-chip.rider-chip.completed {
+  border-color: var(--color-success);
 }

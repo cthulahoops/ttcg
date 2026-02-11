@@ -25,10 +25,13 @@ export function LongGameProgress({ progress }: LongGameProgressProps) {
             {name}
           </span>
         ))}
+        <span
+          className={`character-chip rider-chip ${progress.riderCompleted ? "completed" : ""}`}
+        >
+          {progress.riderCompleted ? "\u2713 " : ""}
+          Rider: {progress.campaignRiderName}
+        </span>
       </div>
-      {progress.riderCompleted && (
-        <div className="rider-status completed">Rider completed</div>
-      )}
     </div>
   );
 }

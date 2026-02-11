@@ -12,6 +12,7 @@ import {
   extraCharacters,
   characterRegistry,
 } from "../shared/characters/registry.js";
+import { allRiders } from "../shared/riders/registry.js";
 import type { CharacterDefinition } from "../shared/characters/registry.js";
 import type { LongGameState } from "../shared/long-game.js";
 import { toLongGameProgress } from "../shared/long-game.js";
@@ -70,6 +71,7 @@ function initializeLongGame(seatCount: number): LongGameState {
     completedCharacters: [],
     currentRound: 1,
     riderCompleted: false,
+    campaignRider: shuffleDeck([...allRiders])[0]!,
   };
 }
 
@@ -105,9 +107,7 @@ function isLongGameVictory(state: LongGameState): boolean {
     state.completedCharacters.includes(c.name)
   );
 
-  // Note: We don't require rider to be completed for victory check here
-  // since it's optional to play a rider. Victory is all characters completed.
-  return allCompleted;
+  return allCompleted && state.riderCompleted;
 }
 
 export class RoomManager {
@@ -447,6 +447,28 @@ export class RoomManager {
         }
       };
 
+      // Configure rider for this round
+      if (room.longGameState) {
+        if (!room.longGameState.riderCompleted) {
+          game.drawnRider = room.longGameState.campaignRider;
+          game.riderAllowSkip = true;
+        } else {
+          game.drawnRider = null;
+          game.riderAllowSkip = false;
+        }
+      } else {
+        const shuffledRiders = shuffleDeck([...allRiders]);
+        game.drawnRider = shuffledRiders[0] ?? null;
+        game.riderAllowSkip = false;
+      }
+
+      if (game.drawnRider) {
+        game.log(`Rider drawn: ${game.drawnRider.name}`, true);
+        if (game.drawnRider.objective.text) {
+          game.log(`  "${game.drawnRider.objective.text}"`);
+        }
+      }
+
       // Run the game loop and wait for it to complete
       await runGame(game);
 
@@ -460,9 +482,8 @@ export class RoomManager {
         // Check for long game victory
         if (isLongGameVictory(room.longGameState)) {
           // Victory! Show victory message and end long game
-          const victoryMessage = room.longGameState.riderCompleted
-            ? "Campaign Complete! All characters and rider objectives achieved!"
-            : "Campaign Complete! All character objectives achieved!";
+          const victoryMessage =
+            "Campaign Complete! All characters and rider objectives achieved!";
 
           for (const playerId of room.players.keys()) {
             sendToPlayer(

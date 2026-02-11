@@ -124,6 +124,16 @@ export function GameScreen({
           );
         })}
       </div>
+
+      {isSelectSeat &&
+        decision.type === "select_seat" &&
+        decision.skipLabel && (
+          <div className="select-seat-skip">
+            <button className="primary-btn" onClick={() => handleRespond(null)}>
+              {decision.skipLabel}
+            </button>
+          </div>
+        )}
     </div>
   );
 }
