@@ -116,42 +116,48 @@ export class NetworkController extends Controller {
 
   async chooseButton<T extends Serializable>(
     options: ChoiceButtonOptions<T>,
-    forSeat?: number
+    forSeat: number | undefined,
+    publicMessage: string
   ): Promise<T> {
     return this.sendRequest<T>({
       type: "choose_button",
       seatIndex: forSeat,
       options,
+      publicMessage,
     });
   }
 
   async selectCard<T extends AnyCard>(
     cards: T[],
-    options: SelectCardOptions
+    options: SelectCardOptions,
+    publicMessage: string
   ): Promise<T> {
     return this.sendRequest<T>({
       type: "select_card",
       seatIndex: options.forSeat ?? this.seatIndex,
       cards,
       message: options.message,
-      publicMessage: options.publicMessage,
+      publicMessage,
     });
   }
 
   selectSeat(
     message: string,
     eligibleSeats: number[],
-    options: SelectSeatOptions & { skipLabel: string }
+    options: SelectSeatOptions & { skipLabel: string },
+    publicMessage: string
   ): Promise<number | null>;
   selectSeat(
     message: string,
     eligibleSeats: number[],
-    options: SelectSeatOptions
+    options: SelectSeatOptions,
+    publicMessage: string
   ): Promise<number>;
   selectSeat(
     message: string,
     eligibleSeats: number[],
-    options: SelectSeatOptions
+    options: SelectSeatOptions,
+    publicMessage: string
   ): Promise<number | null> {
     return this.sendRequest<number | null>({
       type: "select_seat",
@@ -160,20 +166,21 @@ export class NetworkController extends Controller {
       eligibleSeats,
       buttonTemplate: options.buttonTemplate,
       skipLabel: options.skipLabel,
-      publicMessage: options.publicMessage,
+      publicMessage,
     });
   }
 
   async selectCharacter(
     message: string,
     _characterNames: string[],
-    options: { forSeat?: number; publicMessage: string }
+    forSeat: number | undefined,
+    publicMessage: string
   ): Promise<string> {
     return this.sendRequest<string>({
       type: "select_character",
-      seatIndex: options.forSeat ?? this.seatIndex,
+      seatIndex: forSeat ?? this.seatIndex,
       message,
-      publicMessage: options.publicMessage,
+      publicMessage,
     });
   }
 
@@ -199,7 +206,7 @@ function toDecisionStatus(decision: DecisionRequest): SerializedDecisionStatus {
       return {
         seatIndex: decision.seatIndex,
         action: "choose_button",
-        message: decision.options.publicMessage,
+        message: decision.publicMessage,
       };
     case "select_card":
       return {

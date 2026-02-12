@@ -7,11 +7,9 @@ import type { LongGameProgress } from "./protocol";
 export interface SelectCardOptions {
   forSeat?: number;
   message?: string;
-  publicMessage: string;
 }
 
 export interface SelectSeatOptions {
-  publicMessage: string;
   forSeat?: number;
   buttonTemplate?: string; // Use {seat} placeholder for character name
   skipLabel?: string; // If set, show a skip button with this label
@@ -22,14 +20,16 @@ export abstract class Controller {
 
   async chooseButton<T extends Serializable>(
     _options: ChoiceButtonOptions<T>,
-    _forSeat?: number
+    _forSeat: number | undefined,
+    _publicMessage: string
   ): Promise<T> {
     throw new Error("Abstract");
   }
 
   async selectCard<T extends AnyCard>(
     _cards: T[],
-    _options: SelectCardOptions
+    _options: SelectCardOptions,
+    _publicMessage: string
   ): Promise<T> {
     throw new Error("Abstract");
   }
@@ -37,17 +37,20 @@ export abstract class Controller {
   selectSeat(
     message: string,
     eligibleSeats: number[],
-    options: SelectSeatOptions & { skipLabel: string }
+    options: SelectSeatOptions & { skipLabel: string },
+    publicMessage: string
   ): Promise<number | null>;
   selectSeat(
     message: string,
     eligibleSeats: number[],
-    options: SelectSeatOptions
+    options: SelectSeatOptions,
+    publicMessage: string
   ): Promise<number>;
   async selectSeat(
     _message: string,
     _eligibleSeats: number[],
-    _options: SelectSeatOptions
+    _options: SelectSeatOptions,
+    _publicMessage: string
   ): Promise<number | null> {
     throw new Error("Abstract");
   }
@@ -55,7 +58,8 @@ export abstract class Controller {
   async selectCharacter(
     _message: string,
     _characterNames: string[],
-    _options: { forSeat?: number; publicMessage: string }
+    _forSeat: number | undefined,
+    _publicMessage: string
   ): Promise<string> {
     throw new Error("Abstract");
   }
@@ -76,16 +80,19 @@ export class AIController extends Controller {
     this.delay = delay;
   }
 
-  async chooseButton<T extends Serializable>({
-    buttons,
-  }: ChoiceButtonOptions<T>): Promise<T> {
+  async chooseButton<T extends Serializable>(
+    { buttons }: ChoiceButtonOptions<T>,
+    _forSeat: number | undefined,
+    _publicMessage: string
+  ): Promise<T> {
     await delay(this.delay);
     return randomChoice(buttons).value;
   }
 
   async selectCard<T extends AnyCard>(
     cards: T[],
-    _options: SelectCardOptions
+    _options: SelectCardOptions,
+    _publicMessage: string
   ): Promise<T> {
     await delay(this.delay);
     return randomChoice(cards);
@@ -94,7 +101,8 @@ export class AIController extends Controller {
   async selectSeat(
     _message: string,
     eligibleSeats: number[],
-    _options: SelectSeatOptions
+    _options: SelectSeatOptions,
+    _publicMessage: string
   ): Promise<number> {
     await delay(this.delay);
     return randomChoice(eligibleSeats);
@@ -103,7 +111,8 @@ export class AIController extends Controller {
   async selectCharacter(
     _message: string,
     characterNames: string[],
-    _options: { forSeat?: number; publicMessage: string }
+    _forSeat: number | undefined,
+    _publicMessage: string
   ): Promise<string> {
     await delay(this.delay);
     return randomChoice(characterNames);
@@ -119,49 +128,60 @@ export class ProxyController extends Controller {
 
   chooseButton<T extends Serializable>(
     options: ChoiceButtonOptions<T>,
-    forSeat?: number
+    forSeat: number | undefined,
+    publicMessage: string
   ): Promise<T> {
     if (!this.realController) {
       throw new Error("Controller must be assigned!");
     }
-    return this.realController.chooseButton(options, forSeat);
+    return this.realController.chooseButton(options, forSeat, publicMessage);
   }
 
   selectCard<T extends AnyCard>(
     cards: T[],
-    options: SelectCardOptions
+    options: SelectCardOptions,
+    publicMessage: string
   ): Promise<T> {
     if (!this.realController) {
       throw new Error("Controller must be assigned!");
     }
-    return this.realController.selectCard(cards, options);
+    return this.realController.selectCard(cards, options, publicMessage);
   }
 
   selectSeat(
     message: string,
     eligibleSeats: number[],
-    options: SelectSeatOptions & { skipLabel: string }
+    options: SelectSeatOptions & { skipLabel: string },
+    publicMessage: string
   ): Promise<number | null>;
   selectSeat(
     message: string,
     eligibleSeats: number[],
-    options: SelectSeatOptions
+    options: SelectSeatOptions,
+    publicMessage: string
   ): Promise<number>;
   selectSeat(
     message: string,
     eligibleSeats: number[],
-    options: SelectSeatOptions
+    options: SelectSeatOptions,
+    publicMessage: string
   ): Promise<number | null> {
     if (!this.realController) {
       throw new Error("Controller must be assigned!");
     }
-    return this.realController.selectSeat(message, eligibleSeats, options!);
+    return this.realController.selectSeat(
+      message,
+      eligibleSeats,
+      options!,
+      publicMessage
+    );
   }
 
   selectCharacter(
     message: string,
     characterNames: string[],
-    options: { forSeat?: number; publicMessage: string }
+    forSeat: number | undefined,
+    publicMessage: string
   ): Promise<string> {
     if (!this.realController) {
       throw new Error("Controller must be assigned!");
@@ -169,7 +189,8 @@ export class ProxyController extends Controller {
     return this.realController.selectCharacter(
       message,
       characterNames,
-      options
+      forSeat,
+      publicMessage
     );
   }
 }

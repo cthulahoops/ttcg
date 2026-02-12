@@ -563,7 +563,6 @@ export class RoomManager {
     const options = {
       title: "Game Over",
       message,
-      publicMessage: "deciding whether to play again",
       buttons: [
         { label: "Yes", value: true },
         { label: "No", value: false },
@@ -572,7 +571,12 @@ export class RoomManager {
 
     // Ask each controller - first response wins
     const controllerPromises = Array.from(room.controllers.values()).map(
-      (controller) => controller.chooseButton(options)
+      (controller) =>
+        controller.chooseButton(
+          options,
+          undefined,
+          "deciding whether to play again"
+        )
     );
 
     // Timeout defaults to false
@@ -596,7 +600,6 @@ export class RoomManager {
     const options = {
       title: "Round Complete",
       message: `Progress: ${completedCount}/${totalCount} characters completed. Continue campaign?`,
-      publicMessage: "deciding whether to continue the campaign",
       buttons: [
         { label: "Continue", value: true },
         { label: "End Campaign", value: false },
@@ -605,7 +608,12 @@ export class RoomManager {
 
     // Ask each controller - first response wins
     const controllerPromises = Array.from(room.controllers.values()).map(
-      (controller) => controller.chooseButton(options)
+      (controller) =>
+        controller.chooseButton(
+          options,
+          undefined,
+          "deciding whether to continue the campaign"
+        )
     );
 
     // Timeout defaults to false

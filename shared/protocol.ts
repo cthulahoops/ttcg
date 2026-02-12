@@ -66,6 +66,7 @@ export type DecisionRequest =
       type: "choose_button";
       seatIndex?: number;
       options: ChoiceButtonOptions<Serializable>;
+      publicMessage: string;
     }
   | {
       type: "select_card";
