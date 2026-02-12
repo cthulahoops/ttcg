@@ -104,7 +104,11 @@ export class NetworkController extends Controller {
     console.log(
       `[NetworkController] Sending decision request ${requestId}, type: ${decision?.type}, total pending: ${this.pendingRequests.size}`
     );
-    this.onDecisionStatusChange?.(toDecisionStatus(decision));
+    this.onDecisionStatusChange?.({
+      seatIndex: decision.seatIndex,
+      action: decision.type,
+      message: decision.publicMessage,
+    });
     this.sendMessage({
       type: "decision_request",
       requestId,
@@ -197,34 +201,5 @@ export class NetworkController extends Controller {
       type: "game_state",
       state,
     });
-  }
-}
-
-function toDecisionStatus(decision: DecisionRequest): SerializedDecisionStatus {
-  switch (decision.type) {
-    case "choose_button":
-      return {
-        seatIndex: decision.seatIndex,
-        action: "choose_button",
-        message: decision.publicMessage,
-      };
-    case "select_card":
-      return {
-        seatIndex: decision.seatIndex,
-        action: "select_card",
-        message: decision.publicMessage,
-      };
-    case "select_seat":
-      return {
-        seatIndex: decision.seatIndex,
-        action: "select_seat",
-        message: decision.publicMessage,
-      };
-    case "select_character":
-      return {
-        seatIndex: decision.seatIndex,
-        action: "select_character",
-        message: decision.publicMessage,
-      };
   }
 }
