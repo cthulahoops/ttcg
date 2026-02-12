@@ -13,6 +13,17 @@ import type {
 import type { LongGameProgress } from "./protocol";
 
 /**
+ * Serialized representation of a pending decision.
+ * Shows which player is deciding and what type of decision,
+ * without revealing sensitive information (like card options).
+ */
+export interface SerializedPendingDecision {
+  seatIndex: number;
+  type: "choose_button" | "select_card" | "select_seat" | "select_character";
+  message: string;
+}
+
+/**
  * Serialized representation of a trick play.
  * Only includes seatIndex and card to reduce payload and avoid
  * accidental hand leakage if Seat contains a hand reference.
@@ -104,4 +115,5 @@ export interface SerializedGame {
   drawnRider: { name: string; objective: string } | null;
   phase: GamePhase;
   longGameProgress?: LongGameProgress;
+  pendingDecision?: SerializedPendingDecision;
 }
