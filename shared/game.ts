@@ -55,6 +55,7 @@ export class Game {
   riderAllowSkip: boolean; // Allow skipping rider assignment
   phase: GamePhase;
   allowThreatRedraw: boolean;
+  pendingDecision?: { seatIndex: number; type: string; message: string };
   onStateChange?: (game: Game) => void;
   onLog?: (
     line: string,
@@ -116,41 +117,65 @@ export class Game {
 
   // ===== GAME API METHODS FOR CHARACTER SETUP/OBJECTIVES =====
 
+  private setPendingDecision(
+    seatIndex: number,
+    type: "choose_button" | "select_card" | "select_seat" | "select_character",
+    message: string
+  ): void {
+    this.pendingDecision = { seatIndex, type, message };
+    this.notifyStateChange();
+  }
+
+  private clearPendingDecision(): void {
+    this.pendingDecision = undefined;
+    this.notifyStateChange();
+  }
+
   async choice(
     seat: Seat,
     question: string,
     options: string[]
   ): Promise<string> {
-    return await seat.controller.chooseButton(
-      {
-        title: question,
-        message: question,
-        buttons: options.map((opt) => ({ label: opt, value: opt })),
-      },
-      seat.seatIndex
-    );
+    this.setPendingDecision(seat.seatIndex, "choose_button", question);
+    try {
+      return await seat.controller.chooseButton(
+        {
+          title: question,
+          message: question,
+          buttons: options.map((opt) => ({ label: opt, value: opt })),
+        },
+        seat.seatIndex
+      );
+    } finally {
+      this.clearPendingDecision();
+    }
   }
 
   async takeLostCard(seat: Seat): Promise<void> {
     if (!this.lostCard) return;
 
-    const shouldTake = await seat.controller.chooseButton(
-      {
-        title: `${seat.character?.name} - Lost Card`,
-        message: `Take the lost card (${this.lostCard.value} of ${this.lostCard.suit})?`,
-        buttons: [
-          { label: "Yes", value: true },
-          { label: "No", value: false },
-        ],
-      },
-      seat.seatIndex
-    );
+    this.setPendingDecision(seat.seatIndex, "choose_button", "Lost Card");
+    try {
+      const shouldTake = await seat.controller.chooseButton(
+        {
+          title: `${seat.character?.name} - Lost Card`,
+          message: `Take the lost card (${this.lostCard.value} of ${this.lostCard.suit})?`,
+          buttons: [
+            { label: "Yes", value: true },
+            { label: "No", value: false },
+          ],
+        },
+        seat.seatIndex
+      );
 
-    if (shouldTake) {
-      seat.hand.addCard(this.lostCard);
-      this.lostCard = null;
-      this.log(`${seat.getDisplayName()} takes the lost card`);
-      this.notifyStateChange();
+      if (shouldTake) {
+        seat.hand.addCard(this.lostCard);
+        this.lostCard = null;
+        this.log(`${seat.getDisplayName()} takes the lost card`);
+        this.notifyStateChange();
+      }
+    } finally {
+      this.clearPendingDecision();
     }
   }
 
@@ -160,25 +185,30 @@ export class Game {
   ): Promise<void> {
     if (!this.lostCard) return;
 
-    const availableCards = seat.hand.getAvailableCards();
-    const sortedCards = sortHand(availableCards);
+    this.setPendingDecision(seat.seatIndex, "select_card", "Choosing a card");
+    try {
+      const availableCards = seat.hand.getAvailableCards();
+      const sortedCards = sortHand(availableCards);
 
-    const cardToGive = await seat.controller.selectCard(sortedCards, {
-      message: `Choose a card to exchange with the lost card (${this.lostCard.value} of ${this.lostCard.suit})`,
-      forSeat: seat.seatIndex,
-    });
+      const cardToGive = await seat.controller.selectCard(sortedCards, {
+        message: `Choose a card to exchange with the lost card (${this.lostCard.value} of ${this.lostCard.suit})`,
+        forSeat: seat.seatIndex,
+      });
 
-    seat.hand.removeCard(cardToGive);
-    seat.hand.addCard(this.lostCard);
-    this.lostCard = cardToGive;
+      seat.hand.removeCard(cardToGive);
+      seat.hand.addCard(this.lostCard);
+      this.lostCard = cardToGive;
 
-    this.log(`${seat.getDisplayName()} exchanges with the lost card`);
+      this.log(`${seat.getDisplayName()} exchanges with the lost card`);
 
-    if (this.playerCount === 1) {
-      setupContext.exchangeMade = true;
+      if (this.playerCount === 1) {
+        setupContext.exchangeMade = true;
+      }
+
+      this.notifyStateChange();
+    } finally {
+      this.clearPendingDecision();
     }
-
-    this.notifyStateChange();
   }
 
   revealHand(seat: Seat): void {
@@ -212,33 +242,42 @@ export class Game {
     this.notifyStateChange();
 
     if (this.allowThreatRedraw && this.threatDeck.length > 0) {
-      const choice = await seat.controller.chooseButton(
-        {
-          title: `${seat.getDisplayName()} - Threat Card Drawn`,
-          message: `You drew threat card ${threatCard}. Keep or redraw?`,
-          buttons: [
-            { label: "Keep", value: "keep" },
-            { label: "Redraw", value: "redraw" },
-          ],
-        },
-        seat.seatIndex
+      this.setPendingDecision(
+        seat.seatIndex,
+        "choose_button",
+        "Threat Card Drawn"
       );
-
-      if (choice === "redraw") {
-        this.threatDeck.push(threatCard);
-        let newCard: number;
-        do {
-          if (this.threatDeck.length === 0) {
-            throw new Error("Threat deck is empty during redraw!");
-          }
-          newCard = this.threatDeck.shift()!;
-        } while (exclude !== undefined && newCard === exclude);
-        seat.threatCard = newCard;
-        this.log(
-          `${seat.getDisplayName()} redraws threat card: ${newCard}`,
-          true
+      try {
+        const choice = await seat.controller.chooseButton(
+          {
+            title: `${seat.getDisplayName()} - Threat Card Drawn`,
+            message: `You drew threat card ${threatCard}. Keep or redraw?`,
+            buttons: [
+              { label: "Keep", value: "keep" },
+              { label: "Redraw", value: "redraw" },
+            ],
+          },
+          seat.seatIndex
         );
-        this.notifyStateChange();
+
+        if (choice === "redraw") {
+          this.threatDeck.push(threatCard);
+          let newCard: number;
+          do {
+            if (this.threatDeck.length === 0) {
+              throw new Error("Threat deck is empty during redraw!");
+            }
+            newCard = this.threatDeck.shift()!;
+          } while (exclude !== undefined && newCard === exclude);
+          seat.threatCard = newCard;
+          this.log(
+            `${seat.getDisplayName()} redraws threat card: ${newCard}`,
+            true
+          );
+          this.notifyStateChange();
+        }
+      } finally {
+        this.clearPendingDecision();
       }
     }
   }
@@ -256,22 +295,31 @@ export class Game {
         suit: "threat" as const,
       }));
 
-    const choice = await seat.controller.selectCard(threatCards, {
-      message: "Choose a threat card:",
-      forSeat: seat.seatIndex,
-    });
-
-    const index = this.threatDeck.indexOf(choice.value);
-    if (index > -1) {
-      this.threatDeck.splice(index, 1);
-    }
-
-    seat.threatCard = choice.value;
-    this.log(
-      `${seat.getDisplayName()} chooses threat card: ${choice.value}`,
-      true
+    this.setPendingDecision(
+      seat.seatIndex,
+      "select_card",
+      "Choosing a threat card"
     );
-    this.notifyStateChange();
+    try {
+      const choice = await seat.controller.selectCard(threatCards, {
+        message: "Choose a threat card:",
+        forSeat: seat.seatIndex,
+      });
+
+      const index = this.threatDeck.indexOf(choice.value);
+      if (index > -1) {
+        this.threatDeck.splice(index, 1);
+      }
+
+      seat.threatCard = choice.value;
+      this.log(
+        `${seat.getDisplayName()} chooses threat card: ${choice.value}`,
+        true
+      );
+      this.notifyStateChange();
+    } finally {
+      this.clearPendingDecision();
+    }
   }
 
   async setupExchange(
@@ -302,17 +350,23 @@ export class Game {
           ? validPlayers[0]!.character!.name
           : validPlayers.map((p) => p.character?.name).join(" or ");
 
-      const wantsToExchange = await seat.controller.chooseButton(
-        {
-          title: `${seat.character?.name} - Exchange?`,
-          message: `Do you want ${seat.character?.name} to exchange with ${targetDescription}?`,
-          buttons: [
-            { label: "Yes, Exchange", value: true },
-            { label: "No, Skip", value: false },
-          ],
-        },
-        seat.seatIndex
-      );
+      this.setPendingDecision(seat.seatIndex, "choose_button", "Exchange?");
+      let wantsToExchange: boolean;
+      try {
+        wantsToExchange = await seat.controller.chooseButton(
+          {
+            title: `${seat.character?.name} - Exchange?`,
+            message: `Do you want ${seat.character?.name} to exchange with ${targetDescription}?`,
+            buttons: [
+              { label: "Yes, Exchange", value: true },
+              { label: "No, Skip", value: false },
+            ],
+          },
+          seat.seatIndex
+        );
+      } finally {
+        this.clearPendingDecision();
+      }
 
       if (!wantsToExchange) {
         return null;
@@ -327,11 +381,21 @@ export class Game {
     } else {
       const eligibleSeats = validPlayers.map((p) => p.seatIndex);
 
-      const targetIndex = await seat.controller.selectSeat(
-        "Choose who to exchange with:",
-        eligibleSeats,
-        { forSeat: seat.seatIndex, buttonTemplate: "Exchange with {seat}" }
+      this.setPendingDecision(
+        seat.seatIndex,
+        "select_seat",
+        "Choosing who to exchange with"
       );
+      let targetIndex: number;
+      try {
+        targetIndex = await seat.controller.selectSeat(
+          "Choose who to exchange with:",
+          eligibleSeats,
+          { forSeat: seat.seatIndex, buttonTemplate: "Exchange with {seat}" }
+        );
+      } finally {
+        this.clearPendingDecision();
+      }
 
       const chosen = this.seats[targetIndex];
       if (!chosen) return null;
@@ -353,13 +417,16 @@ export class Game {
       messageFrom += " (Frodo cannot give away the 1 of Rings)";
     }
 
-    const cardFromFirst = await seat.controller.selectCard(
-      sortHand(playableFrom),
-      {
+    this.setPendingDecision(seat.seatIndex, "select_card", "Choosing a card");
+    let cardFromFirst: Card;
+    try {
+      cardFromFirst = await seat.controller.selectCard(sortHand(playableFrom), {
         message: messageFrom,
         forSeat: seat.seatIndex,
-      }
-    );
+      });
+    } finally {
+      this.clearPendingDecision();
+    }
 
     // Second player can choose from their hand plus the card they're receiving
     const availableTo = targetSeat.hand.getAvailableCards();
@@ -380,13 +447,23 @@ export class Game {
       messageTo += " (Frodo cannot give away the 1 of Rings)";
     }
 
-    const cardFromSecond = await targetSeat.controller.selectCard(
-      sortHand(choicesForSecond),
-      {
-        message: messageTo,
-        forSeat: targetSeat.seatIndex,
-      }
+    this.setPendingDecision(
+      targetSeat.seatIndex,
+      "select_card",
+      "Choosing a card"
     );
+    let cardFromSecond: Card;
+    try {
+      cardFromSecond = await targetSeat.controller.selectCard(
+        sortHand(choicesForSecond),
+        {
+          message: messageTo,
+          forSeat: targetSeat.seatIndex,
+        }
+      );
+    } finally {
+      this.clearPendingDecision();
+    }
 
     return {
       fromSeat: seat,
@@ -739,9 +816,18 @@ async function selectCardFromPlayer(
   legalMoves: Card[]
 ): Promise<Card> {
   gameState.currentPlayer = seat.seatIndex;
-  return await seat.controller.selectCard(legalMoves, {
-    forSeat: seat.seatIndex,
-  });
+  gameState.setPendingDecision(
+    seat.seatIndex,
+    "select_card",
+    "Choosing a card"
+  );
+  try {
+    return await seat.controller.selectCard(legalMoves, {
+      forSeat: seat.seatIndex,
+    });
+  } finally {
+    gameState.clearPendingDecision();
+  }
 }
 
 async function runTrickTakingPhase(gameState: Game): Promise<void> {
@@ -803,19 +889,28 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
             `Invalid seat for 1 of Rings player: ${oneRingPlay.playerIndex}`
           );
         }
-        const useTrump = await oneRingSeat.controller.chooseButton(
-          {
-            title: "You played the 1 of Rings!",
-            message: "Do you want to use it as trump to win this trick?",
-            buttons: [
-              { label: "Yes, Win Trick", value: true },
-              { label: "No, Play Normal", value: false },
-            ],
-          },
-          oneRingSeat.seatIndex
+        gameState.setPendingDecision(
+          oneRingSeat.seatIndex,
+          "choose_button",
+          "Use the 1 of Rings as trump?"
         );
-        oneRingPlay.isTrump = useTrump;
-        gameState.notifyStateChange();
+        try {
+          const useTrump = await oneRingSeat.controller.chooseButton(
+            {
+              title: "You played the 1 of Rings!",
+              message: "Do you want to use it as trump to win this trick?",
+              buttons: [
+                { label: "Yes, Win Trick", value: true },
+                { label: "No, Play Normal", value: false },
+              ],
+            },
+            oneRingSeat.seatIndex
+          );
+          oneRingPlay.isTrump = useTrump;
+          gameState.notifyStateChange();
+        } finally {
+          gameState.clearPendingDecision();
+        }
       }
     }
 
@@ -865,20 +960,29 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
         // Offer choice only if there's more than one option
         const eligibleSeats = eligibleLeaders.map((seat) => seat.seatIndex);
 
-        nextLeader = await winnerSeat.controller.selectSeat(
-          "Choose who leads the next trick:",
-          eligibleSeats,
-          {
-            forSeat: winnerSeat.seatIndex,
-            buttonTemplate: "{seat} leads next trick",
-          }
+        gameState.setPendingDecision(
+          winnerSeat.seatIndex,
+          "select_seat",
+          "Choosing who leads the next trick"
         );
-
-        if (nextLeader !== winnerIndex) {
-          const chosenSeat = gameState.seats[nextLeader];
-          gameState.log(
-            `${winnerSeat.getDisplayName()} chooses ${chosenSeat?.getDisplayName()} to lead the next trick.`
+        try {
+          nextLeader = await winnerSeat.controller.selectSeat(
+            "Choose who leads the next trick:",
+            eligibleSeats,
+            {
+              forSeat: winnerSeat.seatIndex,
+              buttonTemplate: "{seat} leads next trick",
+            }
           );
+
+          if (nextLeader !== winnerIndex) {
+            const chosenSeat = gameState.seats[nextLeader];
+            gameState.log(
+              `${winnerSeat.getDisplayName()} chooses ${chosenSeat?.getDisplayName()} to lead the next trick.`
+            );
+          }
+        } finally {
+          gameState.clearPendingDecision();
         }
       }
     }
@@ -979,11 +1083,21 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
 
     const characterNames = gameState.availableCharacters.map((c) => c.name);
 
-    const selectedName = await seat.controller.selectCharacter(
-      "Select a character to play as",
-      characterNames,
-      seat.seatIndex
+    gameState.setPendingDecision(
+      seat.seatIndex,
+      "select_character",
+      "Choosing a character"
     );
+    let selectedName: string;
+    try {
+      selectedName = await seat.controller.selectCharacter(
+        "Select a character to play as",
+        characterNames,
+        seat.seatIndex
+      );
+    } finally {
+      gameState.clearPendingDecision();
+    }
 
     const character = characterRegistry.get(selectedName);
     if (!character) {
@@ -1024,24 +1138,34 @@ async function runRiderAssignment(gameState: Game): Promise<void> {
   const rider = gameState.drawnRider;
   const riderText = rider?.objective.text ?? "";
 
-  const targetIndex = gameState.riderAllowSkip
-    ? await frodoSeat.controller.selectSeat(
-        `Assign "${rider?.name}" (${riderText}) to a character:`,
-        eligibleSeats,
-        {
-          forSeat: frodoSeat.seatIndex,
-          buttonTemplate: `Assign ${rider?.name} to {seat}`,
-          skipLabel: "Skip",
-        }
-      )
-    : await frodoSeat.controller.selectSeat(
-        `Assign "${rider?.name}" (${riderText}) to a character:`,
-        eligibleSeats,
-        {
-          forSeat: frodoSeat.seatIndex,
-          buttonTemplate: `Assign ${rider?.name} to {seat}`,
-        }
-      );
+  gameState.setPendingDecision(
+    frodoSeat.seatIndex,
+    "select_seat",
+    `Assigning ${rider?.name}`
+  );
+  let targetIndex: number | null;
+  try {
+    targetIndex = gameState.riderAllowSkip
+      ? await frodoSeat.controller.selectSeat(
+          `Assign "${rider?.name}" (${riderText}) to a character:`,
+          eligibleSeats,
+          {
+            forSeat: frodoSeat.seatIndex,
+            buttonTemplate: `Assign ${rider?.name} to {seat}`,
+            skipLabel: "Skip",
+          }
+        )
+      : await frodoSeat.controller.selectSeat(
+          `Assign "${rider?.name}" (${riderText}) to a character:`,
+          eligibleSeats,
+          {
+            forSeat: frodoSeat.seatIndex,
+            buttonTemplate: `Assign ${rider?.name} to {seat}`,
+          }
+        );
+  } finally {
+    gameState.clearPendingDecision();
+  }
 
   if (targetIndex === null) {
     gameState.log(
