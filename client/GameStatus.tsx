@@ -1,43 +1,30 @@
 import type { SerializedGame, SerializedSeat } from "@shared/serialized";
-import type { DecisionRequest } from "@shared/protocol";
 
 type GameStatusProps = {
   game: SerializedGame;
-  pendingDecision: { requestId: string; decision: DecisionRequest } | null;
 };
 
-export function GameStatus({ game, pendingDecision }: GameStatusProps) {
+export function GameStatus({ game }: GameStatusProps) {
   // Game over - show victory/defeat
   if (game.phase === "gameover") {
     return <GameOverStatus game={game} />;
   }
 
-  const seat = game.seats[game.currentPlayer];
-  if (!seat) return null;
-
-  // Show decision-specific status messages
-  if (pendingDecision) {
-    const { decision } = pendingDecision;
-    const hasSeatIndex =
-      "seatIndex" in decision && decision.seatIndex !== undefined;
-
-    if (!hasSeatIndex && decision.type === "choose_button") {
-      return <div className="game-status">{decision.options.title}</div>;
-    }
-
-    if (decision.type === "select_seat") {
-      return <div className="game-status">{decision.message}</div>;
-    }
-
-    if (decision.type === "select_character") {
-      const decidingSeat = game.seats[decision.seatIndex];
-      const seatLabel =
-        decidingSeat?.playerName ?? `Player ${decision.seatIndex + 1}`;
-      return <div className="game-status">{seatLabel}: Choose a character</div>;
-    }
+  // Show decision-specific status messages from game state
+  if (game.pendingDecision) {
+    const decidingSeat = game.seats[game.pendingDecision.seatIndex];
+    const playerName =
+      decidingSeat?.character ?? `Player ${game.pendingDecision.seatIndex + 1}`;
+    return (
+      <div className="game-status">
+        {playerName}: {game.pendingDecision.message}
+      </div>
+    );
   }
 
-  // Default: show player's turn
+  // Default: show current player's turn
+  const seat = game.seats[game.currentPlayer];
+  if (!seat) return null;
   const playerName = seat.character ?? `Player ${game.currentPlayer + 1}`;
   return <div className="game-status">{playerName}'s turn</div>;
 }
