@@ -55,7 +55,11 @@ export class Game {
   riderAllowSkip: boolean; // Allow skipping rider assignment
   phase: GamePhase;
   allowThreatRedraw: boolean;
-  pendingDecision?: { seatIndex: number; type: string; message: string };
+  pendingDecision?: {
+    seatIndex: number;
+    type: "choose_button" | "select_card" | "select_seat" | "select_character";
+    message: string;
+  };
   onStateChange?: (game: Game) => void;
   onLog?: (
     line: string,
@@ -117,7 +121,7 @@ export class Game {
 
   // ===== GAME API METHODS FOR CHARACTER SETUP/OBJECTIVES =====
 
-  private setPendingDecision(
+  setPendingDecision(
     seatIndex: number,
     type: "choose_button" | "select_card" | "select_seat" | "select_character",
     message: string
@@ -126,7 +130,7 @@ export class Game {
     this.notifyStateChange();
   }
 
-  private clearPendingDecision(): void {
+  clearPendingDecision(): void {
     this.pendingDecision = undefined;
     this.notifyStateChange();
   }
