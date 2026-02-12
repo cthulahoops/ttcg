@@ -563,6 +563,7 @@ export class RoomManager {
     const options = {
       title: "Game Over",
       message,
+      publicMessage: "deciding whether to play again",
       buttons: [
         { label: "Yes", value: true },
         { label: "No", value: false },
@@ -595,6 +596,7 @@ export class RoomManager {
     const options = {
       title: "Round Complete",
       message: `Progress: ${completedCount}/${totalCount} characters completed. Continue campaign?`,
+      publicMessage: "deciding whether to continue the campaign",
       buttons: [
         { label: "Continue", value: true },
         { label: "End Campaign", value: false },

@@ -5,11 +5,13 @@ import type { Seat } from "./seat";
 import type { LongGameProgress } from "./protocol";
 
 export interface SelectCardOptions {
-  message?: string;
   forSeat?: number;
+  message?: string;
+  publicMessage: string;
 }
 
 export interface SelectSeatOptions {
+  publicMessage: string;
   forSeat?: number;
   buttonTemplate?: string; // Use {seat} placeholder for character name
   skipLabel?: string; // If set, show a skip button with this label
@@ -27,7 +29,7 @@ export abstract class Controller {
 
   async selectCard<T extends AnyCard>(
     _cards: T[],
-    _options?: SelectCardOptions
+    _options: SelectCardOptions
   ): Promise<T> {
     throw new Error("Abstract");
   }
@@ -40,12 +42,12 @@ export abstract class Controller {
   selectSeat(
     message: string,
     eligibleSeats: number[],
-    options?: SelectSeatOptions
+    options: SelectSeatOptions
   ): Promise<number>;
   async selectSeat(
     _message: string,
     _eligibleSeats: number[],
-    _options?: SelectSeatOptions
+    _options: SelectSeatOptions
   ): Promise<number | null> {
     throw new Error("Abstract");
   }
@@ -53,7 +55,7 @@ export abstract class Controller {
   async selectCharacter(
     _message: string,
     _characterNames: string[],
-    _forSeat?: number
+    _options: { forSeat?: number; publicMessage: string }
   ): Promise<string> {
     throw new Error("Abstract");
   }
@@ -81,19 +83,27 @@ export class AIController extends Controller {
     return randomChoice(buttons).value;
   }
 
-  async selectCard<T extends AnyCard>(cards: T[]): Promise<T> {
+  async selectCard<T extends AnyCard>(
+    cards: T[],
+    _options: SelectCardOptions
+  ): Promise<T> {
     await delay(this.delay);
     return randomChoice(cards);
   }
 
-  async selectSeat(_message: string, eligibleSeats: number[]): Promise<number> {
+  async selectSeat(
+    _message: string,
+    eligibleSeats: number[],
+    _options: SelectSeatOptions
+  ): Promise<number> {
     await delay(this.delay);
     return randomChoice(eligibleSeats);
   }
 
   async selectCharacter(
     _message: string,
-    characterNames: string[]
+    characterNames: string[],
+    _options: { forSeat?: number; publicMessage: string }
   ): Promise<string> {
     await delay(this.delay);
     return randomChoice(characterNames);
@@ -119,7 +129,7 @@ export class ProxyController extends Controller {
 
   selectCard<T extends AnyCard>(
     cards: T[],
-    options?: SelectCardOptions
+    options: SelectCardOptions
   ): Promise<T> {
     if (!this.realController) {
       throw new Error("Controller must be assigned!");
@@ -135,12 +145,12 @@ export class ProxyController extends Controller {
   selectSeat(
     message: string,
     eligibleSeats: number[],
-    options?: SelectSeatOptions
+    options: SelectSeatOptions
   ): Promise<number>;
   selectSeat(
     message: string,
     eligibleSeats: number[],
-    options?: SelectSeatOptions
+    options: SelectSeatOptions
   ): Promise<number | null> {
     if (!this.realController) {
       throw new Error("Controller must be assigned!");
@@ -151,7 +161,7 @@ export class ProxyController extends Controller {
   selectCharacter(
     message: string,
     characterNames: string[],
-    forSeat?: number
+    options: { forSeat?: number; publicMessage: string }
   ): Promise<string> {
     if (!this.realController) {
       throw new Error("Controller must be assigned!");
@@ -159,7 +169,7 @@ export class ProxyController extends Controller {
     return this.realController.selectCharacter(
       message,
       characterNames,
-      forSeat
+      options
     );
   }
 }

@@ -128,6 +128,7 @@ export class Game {
       {
         title: question,
         message: question,
+        publicMessage: "choosing an option",
         buttons: options.map((opt) => ({ label: opt, value: opt })),
       },
       seat.seatIndex
@@ -141,6 +142,7 @@ export class Game {
       {
         title: `${seat.character?.name} - Lost Card`,
         message: `Take the lost card (${this.lostCard.value} of ${this.lostCard.suit})?`,
+        publicMessage: "deciding whether to take the lost card",
         buttons: [
           { label: "Yes", value: true },
           { label: "No", value: false },
@@ -169,6 +171,7 @@ export class Game {
     const cardToGive = await seat.controller.selectCard(sortedCards, {
       message: `Choose a card to exchange with the lost card (${this.lostCard.value} of ${this.lostCard.suit})`,
       forSeat: seat.seatIndex,
+      publicMessage: "choosing a card to exchange with the lost card",
     });
 
     seat.hand.removeCard(cardToGive);
@@ -219,6 +222,7 @@ export class Game {
         {
           title: `${seat.getDisplayName()} - Threat Card Drawn`,
           message: `You drew threat card ${threatCard}. Keep or redraw?`,
+          publicMessage: "deciding whether to keep or redraw a threat card",
           buttons: [
             { label: "Keep", value: "keep" },
             { label: "Redraw", value: "redraw" },
@@ -262,6 +266,7 @@ export class Game {
     const choice = await seat.controller.selectCard(threatCards, {
       message: "Choose a threat card:",
       forSeat: seat.seatIndex,
+      publicMessage: "choosing a threat card",
     });
 
     const index = this.threatDeck.indexOf(choice.value);
@@ -309,6 +314,7 @@ export class Game {
         {
           title: `${seat.character?.name} - Exchange?`,
           message: `Do you want ${seat.character?.name} to exchange with ${targetDescription}?`,
+          publicMessage: "deciding whether to exchange",
           buttons: [
             { label: "Yes, Exchange", value: true },
             { label: "No, Skip", value: false },
@@ -333,7 +339,11 @@ export class Game {
       const targetIndex = await seat.controller.selectSeat(
         "Choose who to exchange with:",
         eligibleSeats,
-        { forSeat: seat.seatIndex, buttonTemplate: "Exchange with {seat}" }
+        {
+          forSeat: seat.seatIndex,
+          buttonTemplate: "Exchange with {seat}",
+          publicMessage: "choosing who to exchange with",
+        }
       );
 
       const chosen = this.seats[targetIndex];
@@ -361,6 +371,7 @@ export class Game {
       {
         message: messageFrom,
         forSeat: seat.seatIndex,
+        publicMessage: "choosing a card to give",
       }
     );
 
@@ -388,6 +399,7 @@ export class Game {
       {
         message: messageTo,
         forSeat: targetSeat.seatIndex,
+        publicMessage: "choosing a card to return in an exchange",
       }
     );
 
@@ -529,6 +541,7 @@ export class Game {
       {
         message: `Choose a card to give to ${toSeat.getDisplayName()}`,
         forSeat: fromSeat.seatIndex,
+        publicMessage: "choosing a card to give",
       }
     );
 
@@ -744,6 +757,7 @@ async function selectCardFromPlayer(
   gameState.currentPlayer = seat.seatIndex;
   return await seat.controller.selectCard(legalMoves, {
     forSeat: seat.seatIndex,
+    publicMessage: "playing a card",
   });
 }
 
@@ -810,6 +824,7 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
           {
             title: "You played the 1 of Rings!",
             message: "Do you want to use it as trump to win this trick?",
+            publicMessage: "deciding whether to use the 1 of Rings as trump",
             buttons: [
               { label: "Yes, Win Trick", value: true },
               { label: "No, Play Normal", value: false },
@@ -874,6 +889,7 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
           {
             forSeat: winnerSeat.seatIndex,
             buttonTemplate: "{seat} leads next trick",
+            publicMessage: "choosing who leads the next trick",
           }
         );
 
@@ -985,7 +1001,7 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
     const selectedName = await seat.controller.selectCharacter(
       "Select a character to play as",
       characterNames,
-      seat.seatIndex
+      { forSeat: seat.seatIndex, publicMessage: "choosing a character" }
     );
 
     const character = characterRegistry.get(selectedName);
@@ -1035,6 +1051,7 @@ async function runRiderAssignment(gameState: Game): Promise<void> {
           forSeat: frodoSeat.seatIndex,
           buttonTemplate: `Assign ${rider?.name} to {seat}`,
           skipLabel: "Skip",
+          publicMessage: "assigning a rider",
         }
       )
     : await frodoSeat.controller.selectSeat(
@@ -1043,6 +1060,7 @@ async function runRiderAssignment(gameState: Game): Promise<void> {
         {
           forSeat: frodoSeat.seatIndex,
           buttonTemplate: `Assign ${rider?.name} to {seat}`,
+          publicMessage: "assigning a rider",
         }
       );
 

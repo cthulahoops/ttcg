@@ -53,6 +53,7 @@ export const Elrond: CharacterDefinition = {
       const card = await seat.controller.selectCard(availableCards, {
         message: "Choose a card to pass to the player on your right",
         forSeat: seat.seatIndex,
+        publicMessage: "choosing a card to pass right",
       });
       cardsToPass.push(card);
     }

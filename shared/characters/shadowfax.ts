@@ -21,6 +21,7 @@ export const Shadowfax: CharacterDefinition = {
       {
         message: "Choose a card to set aside",
         forSeat: seat.seatIndex,
+        publicMessage: "choosing a card to set aside",
       }
     );
 

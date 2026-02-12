@@ -28,7 +28,7 @@ export class TestController extends Controller {
   }
   async selectCard<T extends AnyCard>(
     _cards: T[],
-    _options?: SelectCardOptions
+    _options: SelectCardOptions
   ): Promise<T> {
     throw new Error("Not implemented in test");
   }

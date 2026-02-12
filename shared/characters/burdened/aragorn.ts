@@ -30,6 +30,7 @@ export const AragornBurdened: CharacterDefinition = {
       const choice = await seat.controller.selectCard(threatCards, {
         message: "Choose one of these threat cards:",
         forSeat: seat.seatIndex,
+        publicMessage: "choosing a threat card",
       });
 
       const chosen = choice.value;

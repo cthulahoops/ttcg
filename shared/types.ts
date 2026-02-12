@@ -50,6 +50,7 @@ export interface ChoiceButtonOptions<T extends Serializable> {
   message: string;
   buttons: ChoiceButton<T>[];
   info?: string;
+  publicMessage: string;
 }
 
 // ObjectiveStatus represents a character's objective state as a two-axis type:
