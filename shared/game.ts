@@ -6,6 +6,7 @@ import type { CharacterDefinition } from "./characters/registry";
 import { MerryBurdened } from "./characters/burdened/merry";
 import type { RiderDefinition } from "./riders/registry";
 import type { Card, Suit, ThreatCard, GamePhase } from "./types";
+import type { SerializedDecisionStatus } from "./serialized";
 import { isCharacter } from "./characters/character-utils";
 
 // ===== INTERFACES =====
@@ -55,6 +56,7 @@ export class Game {
   riderAllowSkip: boolean; // Allow skipping rider assignment
   phase: GamePhase;
   allowThreatRedraw: boolean;
+  currentDecisionStatus: SerializedDecisionStatus | null;
   onStateChange?: (game: Game) => void;
   onLog?: (
     line: string,
@@ -88,6 +90,7 @@ export class Game {
     this.riderAllowSkip = false;
     this.phase = "assignment";
     this.allowThreatRedraw = false;
+    this.currentDecisionStatus = null;
 
     this.threatDeck = shuffleDeck(
       this.threatDeck.map((v) => ({ value: v }))
@@ -127,7 +130,8 @@ export class Game {
         message: question,
         buttons: options.map((opt) => ({ label: opt, value: opt })),
       },
-      seat.seatIndex
+      seat.seatIndex,
+      "choosing an option"
     );
   }
 
@@ -143,7 +147,8 @@ export class Game {
           { label: "No", value: false },
         ],
       },
-      seat.seatIndex
+      seat.seatIndex,
+      "deciding whether to take the lost card"
     );
 
     if (shouldTake) {
@@ -163,10 +168,14 @@ export class Game {
     const availableCards = seat.hand.getAvailableCards();
     const sortedCards = sortHand(availableCards);
 
-    const cardToGive = await seat.controller.selectCard(sortedCards, {
-      message: `Choose a card to exchange with the lost card (${this.lostCard.value} of ${this.lostCard.suit})`,
-      forSeat: seat.seatIndex,
-    });
+    const cardToGive = await seat.controller.selectCard(
+      sortedCards,
+      {
+        message: `Choose a card to exchange with the lost card (${this.lostCard.value} of ${this.lostCard.suit})`,
+        forSeat: seat.seatIndex,
+      },
+      "choosing a card to exchange with the lost card"
+    );
 
     seat.hand.removeCard(cardToGive);
     seat.hand.addCard(this.lostCard);
@@ -221,7 +230,8 @@ export class Game {
             { label: "Redraw", value: "redraw" },
           ],
         },
-        seat.seatIndex
+        seat.seatIndex,
+        "deciding whether to keep or redraw a threat card"
       );
 
       if (choice === "redraw") {
@@ -256,10 +266,14 @@ export class Game {
         suit: "threat" as const,
       }));
 
-    const choice = await seat.controller.selectCard(threatCards, {
-      message: "Choose a threat card:",
-      forSeat: seat.seatIndex,
-    });
+    const choice = await seat.controller.selectCard(
+      threatCards,
+      {
+        message: "Choose a threat card:",
+        forSeat: seat.seatIndex,
+      },
+      "choosing a threat card"
+    );
 
     const index = this.threatDeck.indexOf(choice.value);
     if (index > -1) {
@@ -311,7 +325,8 @@ export class Game {
             { label: "No, Skip", value: false },
           ],
         },
-        seat.seatIndex
+        seat.seatIndex,
+        "deciding whether to exchange"
       );
 
       if (!wantsToExchange) {
@@ -330,7 +345,11 @@ export class Game {
       const targetIndex = await seat.controller.selectSeat(
         "Choose who to exchange with:",
         eligibleSeats,
-        { forSeat: seat.seatIndex, buttonTemplate: "Exchange with {seat}" }
+        {
+          forSeat: seat.seatIndex,
+          buttonTemplate: "Exchange with {seat}",
+        },
+        "choosing who to exchange with"
       );
 
       const chosen = this.seats[targetIndex];
@@ -358,7 +377,8 @@ export class Game {
       {
         message: messageFrom,
         forSeat: seat.seatIndex,
-      }
+      },
+      "choosing a card to give"
     );
 
     // Second player can choose from their hand plus the card they're receiving
@@ -385,7 +405,8 @@ export class Game {
       {
         message: messageTo,
         forSeat: targetSeat.seatIndex,
-      }
+      },
+      "choosing a card to return in an exchange"
     );
 
     return {
@@ -526,7 +547,8 @@ export class Game {
       {
         message: `Choose a card to give to ${toSeat.getDisplayName()}`,
         forSeat: fromSeat.seatIndex,
-      }
+      },
+      "choosing a card to give"
     );
 
     fromSeat.hand.removeCard(cardToGive);
@@ -739,9 +761,11 @@ async function selectCardFromPlayer(
   legalMoves: Card[]
 ): Promise<Card> {
   gameState.currentPlayer = seat.seatIndex;
-  return await seat.controller.selectCard(legalMoves, {
-    forSeat: seat.seatIndex,
-  });
+  return await seat.controller.selectCard(
+    legalMoves,
+    { forSeat: seat.seatIndex },
+    "playing a card"
+  );
 }
 
 async function runTrickTakingPhase(gameState: Game): Promise<void> {
@@ -812,7 +836,8 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
               { label: "No, Play Normal", value: false },
             ],
           },
-          oneRingSeat.seatIndex
+          oneRingSeat.seatIndex,
+          "deciding whether to use the 1 of Rings as trump"
         );
         oneRingPlay.isTrump = useTrump;
         gameState.notifyStateChange();
@@ -871,7 +896,8 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
           {
             forSeat: winnerSeat.seatIndex,
             buttonTemplate: "{seat} leads next trick",
-          }
+          },
+          "choosing who leads the next trick"
         );
 
         if (nextLeader !== winnerIndex) {
@@ -982,7 +1008,8 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
     const selectedName = await seat.controller.selectCharacter(
       "Select a character to play as",
       characterNames,
-      seat.seatIndex
+      seat.seatIndex,
+      "choosing a character"
     );
 
     const character = characterRegistry.get(selectedName);
@@ -1032,7 +1059,8 @@ async function runRiderAssignment(gameState: Game): Promise<void> {
           forSeat: frodoSeat.seatIndex,
           buttonTemplate: `Assign ${rider?.name} to {seat}`,
           skipLabel: "Skip",
-        }
+        },
+        "assigning a rider"
       )
     : await frodoSeat.controller.selectSeat(
         `Assign "${rider?.name}" (${riderText}) to a character:`,
@@ -1040,7 +1068,8 @@ async function runRiderAssignment(gameState: Game): Promise<void> {
         {
           forSeat: frodoSeat.seatIndex,
           buttonTemplate: `Assign ${rider?.name} to {seat}`,
-        }
+        },
+        "assigning a rider"
       );
 
   if (targetIndex === null) {

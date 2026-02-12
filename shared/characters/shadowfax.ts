@@ -21,7 +21,8 @@ export const Shadowfax: CharacterDefinition = {
       {
         message: "Choose a card to set aside",
         forSeat: seat.seatIndex,
-      }
+      },
+      "choosing a card to set aside"
     );
 
     seat.hand.removeCard(cardToSetAside);

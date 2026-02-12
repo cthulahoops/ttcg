@@ -148,5 +148,6 @@ export function serializeGameForSeat(
       : null,
     phase: game.phase,
     longGameProgress,
+    currentDecisionStatus: game.currentDecisionStatus,
   };
 }

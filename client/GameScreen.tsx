@@ -62,7 +62,7 @@ export function GameScreen({
 
   return (
     <div className="main-content" id="gameScreen">
-      <GameStatus game={game} pendingDecision={pendingDecision} />
+      <GameStatus game={game} />
 
       {game.longGameProgress && (
         <LongGameProgress progress={game.longGameProgress} />

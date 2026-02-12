@@ -22,13 +22,15 @@ import { SUITS, CARDS_PER_SUIT } from "./types";
 export class TestController extends Controller {
   async chooseButton<T extends Serializable>(
     _options: ChoiceButtonOptions<T>,
-    _forSeat?: number
+    _forSeat: number | undefined,
+    _publicMessage: string
   ): Promise<T> {
     throw new Error("Not implemented in test");
   }
   async selectCard<T extends AnyCard>(
     _cards: T[],
-    _options?: SelectCardOptions
+    _options: SelectCardOptions,
+    _publicMessage: string
   ): Promise<T> {
     throw new Error("Not implemented in test");
   }

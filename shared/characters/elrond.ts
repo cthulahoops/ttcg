@@ -50,10 +50,14 @@ export const Elrond: CharacterDefinition = {
     for (const seat of game.seats) {
       const availableCards = seat.hand.getAvailableCards();
 
-      const card = await seat.controller.selectCard(availableCards, {
-        message: "Choose a card to pass to the player on your right",
-        forSeat: seat.seatIndex,
-      });
+      const card = await seat.controller.selectCard(
+        availableCards,
+        {
+          message: "Choose a card to pass to the player on your right",
+          forSeat: seat.seatIndex,
+        },
+        "choosing a card to pass right"
+      );
       cardsToPass.push(card);
     }
 

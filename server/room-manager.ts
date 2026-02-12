@@ -400,6 +400,10 @@ export class RoomManager {
       for (const seat of game.seats) {
         if (seat.controller instanceof NetworkController) {
           seat.controller.seatIndex = seat.seatIndex;
+          seat.controller.onDecisionStatusChange = (status) => {
+            game!.currentDecisionStatus = status;
+            game!.notifyStateChange();
+          };
         }
       }
 
@@ -567,7 +571,12 @@ export class RoomManager {
 
     // Ask each controller - first response wins
     const controllerPromises = Array.from(room.controllers.values()).map(
-      (controller) => controller.chooseButton(options)
+      (controller) =>
+        controller.chooseButton(
+          options,
+          undefined,
+          "deciding whether to play again"
+        )
     );
 
     // Timeout defaults to false
@@ -599,7 +608,12 @@ export class RoomManager {
 
     // Ask each controller - first response wins
     const controllerPromises = Array.from(room.controllers.values()).map(
-      (controller) => controller.chooseButton(options)
+      (controller) =>
+        controller.chooseButton(
+          options,
+          undefined,
+          "deciding whether to continue the campaign"
+        )
     );
 
     // Timeout defaults to false

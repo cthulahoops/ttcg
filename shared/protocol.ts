@@ -66,12 +66,14 @@ export type DecisionRequest =
       type: "choose_button";
       seatIndex?: number;
       options: ChoiceButtonOptions<Serializable>;
+      publicMessage: string;
     }
   | {
       type: "select_card";
       seatIndex?: number;
       cards: AnyCard[];
       message?: string;
+      publicMessage: string;
     }
   | {
       type: "select_seat";
@@ -80,9 +82,11 @@ export type DecisionRequest =
       eligibleSeats: number[];
       buttonTemplate?: string; // Use {seat} placeholder for character name
       skipLabel?: string;
+      publicMessage: string;
     }
   | {
       type: "select_character";
       seatIndex: number;
       message: string;
+      publicMessage: string;
     };

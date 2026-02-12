@@ -16,6 +16,7 @@ import type {
 import type { Game } from "../shared/game";
 import type { Seat } from "../shared/seat";
 import { serializeGameForSeat } from "../shared/serialize";
+import type { SerializedDecisionStatus } from "../shared/serialized";
 
 interface PendingRequest<T = unknown> {
   resolve: (value: T) => void;
@@ -27,6 +28,7 @@ interface PendingRequest<T = unknown> {
 export class NetworkController extends Controller {
   readonly playerId: string;
   seatIndex: number = 0; // Set after game creation as fallback
+  onDecisionStatusChange?: (status: SerializedDecisionStatus | null) => void;
   private sendMessage: (message: ServerMessage) => void;
   // Using PendingRequest<unknown> since requests store heterogeneous response types
   private pendingRequests: Map<string, PendingRequest<unknown>>;
@@ -53,6 +55,7 @@ export class NetworkController extends Controller {
         `[NetworkController] Received response for request ${requestId}, remaining pending: ${this.pendingRequests.size - 1}`
       );
       this.pendingRequests.delete(requestId);
+      this.onDecisionStatusChange?.(null);
       pending.resolve(response);
     } else {
       console.log(
@@ -101,6 +104,11 @@ export class NetworkController extends Controller {
     console.log(
       `[NetworkController] Sending decision request ${requestId}, type: ${decision?.type}, total pending: ${this.pendingRequests.size}`
     );
+    this.onDecisionStatusChange?.({
+      seatIndex: decision.seatIndex,
+      action: decision.type,
+      message: decision.publicMessage,
+    });
     this.sendMessage({
       type: "decision_request",
       requestId,
@@ -112,61 +120,71 @@ export class NetworkController extends Controller {
 
   async chooseButton<T extends Serializable>(
     options: ChoiceButtonOptions<T>,
-    forSeat?: number
+    forSeat: number | undefined,
+    publicMessage: string
   ): Promise<T> {
     return this.sendRequest<T>({
       type: "choose_button",
       seatIndex: forSeat,
       options,
+      publicMessage,
     });
   }
 
   async selectCard<T extends AnyCard>(
     cards: T[],
-    options?: SelectCardOptions
+    options: SelectCardOptions,
+    publicMessage: string
   ): Promise<T> {
     return this.sendRequest<T>({
       type: "select_card",
-      seatIndex: options?.forSeat ?? this.seatIndex,
+      seatIndex: options.forSeat ?? this.seatIndex,
       cards,
-      message: options?.message,
+      message: options.message,
+      publicMessage,
     });
   }
 
   selectSeat(
     message: string,
     eligibleSeats: number[],
-    options: SelectSeatOptions & { skipLabel: string }
+    options: SelectSeatOptions & { skipLabel: string },
+    publicMessage: string
   ): Promise<number | null>;
   selectSeat(
     message: string,
     eligibleSeats: number[],
-    options?: SelectSeatOptions
+    options: SelectSeatOptions,
+    publicMessage: string
   ): Promise<number>;
   selectSeat(
     message: string,
     eligibleSeats: number[],
-    options?: SelectSeatOptions
+    options: SelectSeatOptions,
+    publicMessage: string
   ): Promise<number | null> {
     return this.sendRequest<number | null>({
       type: "select_seat",
-      seatIndex: options?.forSeat ?? this.seatIndex,
+      seatIndex: options.forSeat ?? this.seatIndex,
       message,
       eligibleSeats,
-      buttonTemplate: options?.buttonTemplate,
-      skipLabel: options?.skipLabel,
+      buttonTemplate: options.buttonTemplate,
+      skipLabel: options.skipLabel,
+      publicMessage,
     });
   }
 
   async selectCharacter(
     message: string,
     _characterNames: string[],
-    forSeat?: number
+    forSeat: number | undefined,
+    publicMessage: string
   ): Promise<string> {
     return this.sendRequest<string>({
       type: "select_character",
       seatIndex: forSeat ?? this.seatIndex,
       message,
+      publicMessage,
     });
   }
 

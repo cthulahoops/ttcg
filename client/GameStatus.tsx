@@ -1,12 +1,10 @@
 import type { SerializedGame, SerializedSeat } from "@shared/serialized";
-import type { DecisionRequest } from "@shared/protocol";
 
 type GameStatusProps = {
   game: SerializedGame;
-  pendingDecision: { requestId: string; decision: DecisionRequest } | null;
 };
 
-export function GameStatus({ game, pendingDecision }: GameStatusProps) {
+export function GameStatus({ game }: GameStatusProps) {
   // Game over - show victory/defeat
   if (game.phase === "gameover") {
     return <GameOverStatus game={game} />;
@@ -15,31 +13,25 @@ export function GameStatus({ game, pendingDecision }: GameStatusProps) {
   const seat = game.seats[game.currentPlayer];
   if (!seat) return null;
 
-  // Show decision-specific status messages
-  if (pendingDecision) {
-    const { decision } = pendingDecision;
-    const hasSeatIndex =
-      "seatIndex" in decision && decision.seatIndex !== undefined;
-
-    if (!hasSeatIndex && decision.type === "choose_button") {
-      return <div className="game-status">{decision.options.title}</div>;
-    }
-
-    if (decision.type === "select_seat") {
-      return <div className="game-status">{decision.message}</div>;
-    }
-
-    if (decision.type === "select_character") {
-      const decidingSeat = game.seats[decision.seatIndex];
-      const seatLabel =
-        decidingSeat?.playerName ?? `Player ${decision.seatIndex + 1}`;
-      return <div className="game-status">{seatLabel}: Choose a character</div>;
-    }
+  if (game.currentDecisionStatus) {
+    const { seatIndex, message } = game.currentDecisionStatus;
+    const actorLabel =
+      seatIndex !== undefined ? getActorLabel(game.seats[seatIndex]) : null;
+    return (
+      <div className="game-status">
+        {actorLabel ? `${actorLabel} is ${message}` : `A player is ${message}`}
+      </div>
+    );
   }
 
   // Default: show player's turn
   const playerName = seat.character ?? `Player ${game.currentPlayer + 1}`;
   return <div className="game-status">{playerName}'s turn</div>;
+}
+
+function getActorLabel(seat?: SerializedSeat): string {
+  if (!seat) return "Unknown player";
+  return seat.character ?? `Player ${seat.seatIndex + 1}`;
 }
 
 function GameOverStatus({ game }: { game: SerializedGame }) {

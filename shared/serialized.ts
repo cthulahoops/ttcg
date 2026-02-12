@@ -31,6 +31,18 @@ export interface SerializedCompletedTrick {
   winner: number;
 }
 
+export type SerializedDecisionAction =
+  | "choose_button"
+  | "select_card"
+  | "select_seat"
+  | "select_character";
+
+export interface SerializedDecisionStatus {
+  seatIndex?: number;
+  action: SerializedDecisionAction;
+  message: string;
+}
+
 /**
  * Serialized hand types that preserve positional information
  * while allowing cards to be hidden from non-viewing seats.
@@ -104,4 +116,5 @@ export interface SerializedGame {
   drawnRider: { name: string; objective: string } | null;
   phase: GamePhase;
   longGameProgress?: LongGameProgress;
+  currentDecisionStatus: SerializedDecisionStatus | null;
 }
