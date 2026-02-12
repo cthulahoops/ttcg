@@ -6,6 +6,7 @@ import type { CharacterDefinition } from "./characters/registry";
 import { MerryBurdened } from "./characters/burdened/merry";
 import type { RiderDefinition } from "./riders/registry";
 import type { Card, Suit, ThreatCard, GamePhase } from "./types";
+import type { SerializedDecisionStatus } from "./serialized";
 import { isCharacter } from "./characters/character-utils";
 
 // ===== INTERFACES =====
@@ -55,6 +56,7 @@ export class Game {
   riderAllowSkip: boolean; // Allow skipping rider assignment
   phase: GamePhase;
   allowThreatRedraw: boolean;
+  currentDecisionStatus: SerializedDecisionStatus | null;
   onStateChange?: (game: Game) => void;
   onLog?: (
     line: string,
@@ -88,6 +90,7 @@ export class Game {
     this.riderAllowSkip = false;
     this.phase = "assignment";
     this.allowThreatRedraw = false;
+    this.currentDecisionStatus = null;
 
     this.threatDeck = shuffleDeck(
       this.threatDeck.map((v) => ({ value: v }))

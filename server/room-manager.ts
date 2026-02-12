@@ -400,6 +400,10 @@ export class RoomManager {
       for (const seat of game.seats) {
         if (seat.controller instanceof NetworkController) {
           seat.controller.seatIndex = seat.seatIndex;
+          seat.controller.onDecisionStatusChange = (status) => {
+            game!.currentDecisionStatus = status;
+            game!.notifyStateChange();
+          };
         }
       }
 

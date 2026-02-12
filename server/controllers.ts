@@ -16,6 +16,7 @@ import type {
 import type { Game } from "../shared/game";
 import type { Seat } from "../shared/seat";
 import { serializeGameForSeat } from "../shared/serialize";
+import type { SerializedDecisionStatus } from "../shared/serialized";
 
 interface PendingRequest<T = unknown> {
   resolve: (value: T) => void;
@@ -27,6 +28,7 @@ interface PendingRequest<T = unknown> {
 export class NetworkController extends Controller {
   readonly playerId: string;
   seatIndex: number = 0; // Set after game creation as fallback
+  onDecisionStatusChange?: (status: SerializedDecisionStatus | null) => void;
   private sendMessage: (message: ServerMessage) => void;
   // Using PendingRequest<unknown> since requests store heterogeneous response types
   private pendingRequests: Map<string, PendingRequest<unknown>>;
@@ -53,6 +55,7 @@ export class NetworkController extends Controller {
         `[NetworkController] Received response for request ${requestId}, remaining pending: ${this.pendingRequests.size - 1}`
       );
       this.pendingRequests.delete(requestId);
+      this.onDecisionStatusChange?.(null);
       pending.resolve(response);
     } else {
       console.log(
@@ -101,6 +104,7 @@ export class NetworkController extends Controller {
     console.log(
       `[NetworkController] Sending decision request ${requestId}, type: ${decision?.type}, total pending: ${this.pendingRequests.size}`
     );
+    this.onDecisionStatusChange?.(toDecisionStatus(decision));
     this.sendMessage({
       type: "decision_request",
       requestId,
@@ -184,4 +188,153 @@ export class NetworkController extends Controller {
       state,
     });
   }
+}
+
+function toDecisionStatus(decision: DecisionRequest): SerializedDecisionStatus {
+  switch (decision.type) {
+    case "choose_button":
+      return {
+        seatIndex: decision.seatIndex,
+        action: "choose_button",
+        message: summarizeChooseButtonDecision(
+          decision.options.title,
+          decision.options.message
+        ),
+      };
+    case "select_card":
+      return {
+        seatIndex: decision.seatIndex,
+        action: "select_card",
+        message: summarizeSelectCardDecision(decision.message),
+      };
+    case "select_seat":
+      return {
+        seatIndex: decision.seatIndex,
+        action: "select_seat",
+        message: summarizeSelectSeatDecision(decision.message),
+      };
+    case "select_character":
+      return {
+        seatIndex: decision.seatIndex,
+        action: "select_character",
+        message: summarizeSelectCharacterDecision(decision.message),
+      };
+  }
+}
+
+function summarizeChooseButtonDecision(
+  title?: string,
+  message?: string
+): string {
+  const normalizedTitle = title?.toLowerCase() ?? "";
+  const normalizedMessage = message?.toLowerCase() ?? "";
+
+  if (
+    normalizedTitle.includes("you played the 1 of rings") ||
+    normalizedMessage.includes("use it as trump")
+  ) {
+    return "deciding whether to use the 1 of Rings as trump";
+  }
+
+  if (
+    normalizedTitle.includes("threat card drawn") ||
+    normalizedMessage.includes("keep or redraw")
+  ) {
+    return "deciding whether to keep or redraw a threat card";
+  }
+
+  if (
+    normalizedTitle.includes("lost card") ||
+    normalizedMessage.includes("take the lost card")
+  ) {
+    return "deciding whether to take the lost card";
+  }
+
+  if (
+    normalizedTitle.includes("exchange?") ||
+    normalizedMessage.includes("to exchange")
+  ) {
+    return "deciding whether to exchange";
+  }
+
+  if (
+    normalizedTitle.includes("game over") ||
+    normalizedMessage.includes("play again")
+  ) {
+    return "deciding whether to play again";
+  }
+
+  if (
+    normalizedTitle.includes("round complete") ||
+    normalizedMessage.includes("continue campaign")
+  ) {
+    return "deciding whether to continue the campaign";
+  }
+
+  return "making a choice";
+}
+
+function summarizeSelectCardDecision(message?: string): string {
+  if (!message) {
+    return "playing a card";
+  }
+
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes("set aside")) {
+    return "choosing a card to set aside";
+  }
+
+  if (normalized.includes("threat card")) {
+    return "choosing a threat card";
+  }
+
+  if (normalized.includes("exchange with the lost card")) {
+    return "choosing a card to exchange with the lost card";
+  }
+
+  if (
+    normalized.includes("you received") &&
+    normalized.includes("choose a card to give")
+  ) {
+    return "choosing a card to return in an exchange";
+  }
+
+  if (normalized.includes("to pass to the player on your right")) {
+    return "choosing a card to pass right";
+  }
+
+  if (normalized.includes("choose a card to give")) {
+    return "choosing a card to give";
+  }
+
+  return "choosing a card";
+}
+
+function summarizeSelectSeatDecision(message: string): string {
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes("exchange with")) {
+    return "choosing who to exchange with";
+  }
+
+  if (normalized.includes("leads the next trick")) {
+    return "choosing who leads the next trick";
+  }
+
+  if (normalized.includes("assign") && normalized.includes("to a character")) {
+    return "choosing who receives a rider";
+  }
+
+  return "choosing a player";
+}
+
+function summarizeSelectCharacterDecision(message: string): string {
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes("select a character")) {
+    return "choosing a character";
+  }
+
+  return "choosing a role";
 }
