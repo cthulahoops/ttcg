@@ -17,6 +17,7 @@ export interface SelectSeatOptions {
 
 export abstract class Controller {
   playerName: string | null = null;
+  onDecisionStart?: (seatIndex: number, description: string) => void;
 
   async chooseButton<T extends Serializable>(
     _options: ChoiceButtonOptions<T>,

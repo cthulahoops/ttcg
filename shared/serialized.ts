@@ -104,4 +104,5 @@ export interface SerializedGame {
   drawnRider: { name: string; objective: string } | null;
   phase: GamePhase;
   longGameProgress?: LongGameProgress;
+  waitingFor: { seatIndex: number; description: string } | null;
 }

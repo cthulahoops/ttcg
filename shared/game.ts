@@ -55,6 +55,7 @@ export class Game {
   riderAllowSkip: boolean; // Allow skipping rider assignment
   phase: GamePhase;
   allowThreatRedraw: boolean;
+  waitingFor: { seatIndex: number; description: string } | null;
   onStateChange?: (game: Game) => void;
   onLog?: (
     line: string,
@@ -88,6 +89,7 @@ export class Game {
     this.riderAllowSkip = false;
     this.phase = "assignment";
     this.allowThreatRedraw = false;
+    this.waitingFor = null;
 
     this.threatDeck = shuffleDeck(
       this.threatDeck.map((v) => ({ value: v }))
@@ -819,6 +821,8 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
       }
     }
 
+    gameState.waitingFor = null;
+
     const winnerIndex = determineTrickWinner(gameState);
     const winnerSeat = gameState.seats[winnerIndex];
     if (!winnerSeat) {
@@ -908,6 +912,7 @@ async function runSetupPhase(gameState: Game): Promise<void> {
     gameState.notifyStateChange();
 
     await seat.character!.setup(gameState, seat, setupContext);
+    gameState.waitingFor = null;
     gameState.notifyStateChange();
   }
 }
@@ -989,6 +994,7 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
     if (!character) {
       throw new Error(`Unknown character: ${selectedName}`);
     }
+    gameState.waitingFor = null;
     gameState.log(`${seat.getDisplayName()} chose ${character.name}`);
     seat.character = character;
     gameState.availableCharacters = gameState.availableCharacters.filter(

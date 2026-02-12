@@ -81,10 +81,29 @@ export class NetworkController extends Controller {
     }
   }
 
+  private getWaitingDescription(decision: DecisionRequest): string {
+    switch (decision.type) {
+      case "choose_button":
+        return decision.options.title ?? "Making a choice";
+      case "select_card":
+        return decision.message ?? "Choosing a card";
+      case "select_seat":
+        return decision.message;
+      case "select_character":
+        return "Choosing a character";
+    }
+  }
+
   /**
    * Send a decision request and wait for response
    */
   private async sendRequest<T>(decision: DecisionRequest): Promise<T> {
+    const seatIndex =
+      ("seatIndex" in decision ? decision.seatIndex : undefined) ??
+      this.seatIndex;
+    const description = this.getWaitingDescription(decision);
+    this.onDecisionStart?.(seatIndex, description);
+
     const requestId = crypto.randomUUID();
 
     const promise = new Promise<T>((resolve, reject) => {

@@ -37,6 +37,20 @@ export function GameStatus({ game, pendingDecision }: GameStatusProps) {
     }
   }
 
+  // Show waiting-for status when another player is deciding
+  if (game.waitingFor) {
+    const waitingSeat = game.seats[game.waitingFor.seatIndex];
+    const name =
+      waitingSeat?.character ??
+      waitingSeat?.playerName ??
+      `Player ${game.waitingFor.seatIndex + 1}`;
+    return (
+      <div className="game-status">
+        {name}: {game.waitingFor.description}
+      </div>
+    );
+  }
+
   // Default: show player's turn
   const playerName = seat.character ?? `Player ${game.currentPlayer + 1}`;
   return <div className="game-status">{playerName}'s turn</div>;

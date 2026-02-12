@@ -403,6 +403,14 @@ export class RoomManager {
         }
       }
 
+      // Set up waiting-for callback on each controller
+      for (const seat of game.seats) {
+        seat.controller.onDecisionStart = (seatIndex, description) => {
+          game!.waitingFor = { seatIndex, description };
+          game!.notifyStateChange();
+        };
+      }
+
       // Set up state change callback to broadcast game state
       game.onStateChange = () => {
         for (const seat of game!.seats) {
