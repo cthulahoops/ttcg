@@ -115,9 +115,20 @@ export function PlayerSeat({
 
   const isDeciding = seatDecision !== undefined;
 
+  const isGameOver = phase === "gameover";
+  const seatFailed =
+    isGameOver &&
+    (objectiveStatus?.outcome === "failure" ||
+      riderStatus?.outcome === "failure");
+  const gameOverClass = isGameOver
+    ? seatFailed
+      ? "gameover-failure"
+      : "gameover-success"
+    : "";
+
   return (
     <section
-      className={`player ${isActive ? "active" : ""} ${isDeciding ? "deciding" : ""}`}
+      className={`player ${isActive ? "active" : ""} ${isDeciding ? "deciding" : ""} ${gameOverClass}`}
       data-player={seatIndex + 1}
     >
       <div className="player-header">

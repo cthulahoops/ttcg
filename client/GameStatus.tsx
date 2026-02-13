@@ -5,11 +5,6 @@ type GameStatusProps = {
 };
 
 export function GameStatus({ game }: GameStatusProps) {
-  // Game over - show victory/defeat
-  if (game.phase === "gameover") {
-    return <GameOverStatus game={game} />;
-  }
-
   const seat = game.seats[game.currentPlayer];
   if (!seat) return null;
 
@@ -34,26 +29,24 @@ function getActorLabel(seat?: SerializedSeat): string {
   return seat.character ?? `Seat ${seat.seatIndex + 1}`;
 }
 
-function GameOverStatus({ game }: { game: SerializedGame }) {
-  // Check which characters failed (final failure)
-  const failedSeats = game.seats.filter(
-    (seat) =>
-      seat.objectiveStatus?.finality === "final" &&
-      seat.objectiveStatus?.outcome === "failure"
-  );
-
-  // Also check rider objectives
-  const failedRiders = game.seats.filter(
-    (seat) =>
-      seat.riderStatus?.finality === "final" &&
-      seat.riderStatus?.outcome === "failure"
-  );
-
-  const isVictory = failedSeats.length === 0 && failedRiders.length === 0;
-
+export function GameOverStatus({
+  game,
+  isVictory,
+}: {
+  game: SerializedGame;
+  isVictory: boolean;
+}) {
   if (isVictory) {
     return <div className="game-status victory">Victory!</div>;
   }
+
+  const failedSeats = game.seats.filter(
+    (seat) => seat.objectiveStatus?.outcome === "failure"
+  );
+
+  const failedRiders = game.seats.filter(
+    (seat) => seat.riderStatus?.outcome === "failure"
+  );
 
   return (
     <div className="game-status defeat">
