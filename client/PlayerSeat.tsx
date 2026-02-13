@@ -148,7 +148,9 @@ export function PlayerSeat({
       {/* Inline decision area: buttons, messages, presented cards */}
       {inlineButtons?.type === "choose_button" && (
         <div className="inline-decision">
-          <p className="inline-message">{inlineButtons.options.message}</p>
+          <p className="inline-message inline-prompt-message">
+            {inlineButtons.options.message}
+          </p>
           <div className="inline-buttons">
             {inlineButtons.options.buttons.map((btn) => (
               <button
