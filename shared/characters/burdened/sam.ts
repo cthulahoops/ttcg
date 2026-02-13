@@ -19,7 +19,7 @@ export const SamBurdened: CharacterDefinition = {
   },
 
   objective: {
-    text: "Win both the Hills and Shadows cards matching your threat card",
+    text: "Win both the Hills and Shadows cards matching your threat card. Your Rings cards count toward Frodo's objective.",
 
     getStatus: (game, seat): ObjectiveStatus => {
       if (!seat.threatCard) {

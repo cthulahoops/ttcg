@@ -901,6 +901,8 @@ button:hover {
 /* Inline decision area (buttons, messages) rendered within a player seat */
 .inline-decision {
   margin: var(--space-sm) 0;
+  padding: var(--space-xs) var(--space-sm);
+  background: rgba(154, 92, 0, 0.05);
 }
 
 .inline-message {
@@ -908,6 +910,14 @@ button:hover {
   font-style: italic;
   color: var(--color-text-secondary);
   margin: var(--space-xs) 0;
+}
+
+.inline-prompt-message {
+  font-family: "Cinzel", serif;
+  color: var(--color-text-dark);
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .inline-buttons {
@@ -946,9 +956,11 @@ button:hover {
   border: 2px solid transparent;
 }
 
-.character-card.clickable:hover {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 10px rgba(154, 92, 0, 0.15);
+@media (hover: hover) {
+  .character-card.clickable:hover {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 10px rgba(154, 92, 0, 0.15);
+  }
 }
 
 /* ===========================================

@@ -1051,26 +1051,24 @@ async function runRiderAssignment(gameState: Game): Promise<void> {
   const rider = gameState.drawnRider;
   const riderText = rider?.objective.text ?? "";
 
-  const targetIndex = gameState.riderAllowSkip
-    ? await frodoSeat.controller.selectSeat(
-        `Assign "${rider?.name}" (${riderText}) to a character:`,
-        eligibleSeats,
-        {
-          forSeat: frodoSeat.seatIndex,
-          buttonTemplate: `Assign ${rider?.name} to {seat}`,
-          skipLabel: "Skip",
-        },
-        "assigning a rider"
-      )
-    : await frodoSeat.controller.selectSeat(
-        `Assign "${rider?.name}" (${riderText}) to a character:`,
-        eligibleSeats,
-        {
-          forSeat: frodoSeat.seatIndex,
-          buttonTemplate: `Assign ${rider?.name} to {seat}`,
-        },
-        "assigning a rider"
-      );
+  const options: {
+    forSeat: number;
+    buttonTemplate: string;
+    skipLabel?: string;
+  } = {
+    forSeat: frodoSeat.seatIndex,
+    buttonTemplate: `Assign ${rider?.name} (${riderText})`,
+  };
+  if (gameState.riderAllowSkip) {
+    options.skipLabel = "Skip";
+  }
+
+  const targetIndex = await frodoSeat.controller.selectSeat(
+    `Assign "${rider?.name}" (${riderText}) to a character:`,
+    eligibleSeats,
+    options,
+    "assigning a rider"
+  );
 
   if (targetIndex === null) {
     gameState.log(
