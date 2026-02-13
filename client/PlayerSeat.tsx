@@ -118,10 +118,8 @@ export function PlayerSeat({
   const isGameOver = phase === "gameover";
   const seatFailed =
     isGameOver &&
-    ((objectiveStatus?.finality === "final" &&
-      objectiveStatus?.outcome === "failure") ||
-      (riderStatus?.finality === "final" &&
-        riderStatus?.outcome === "failure"));
+    (objectiveStatus?.outcome === "failure" ||
+      riderStatus?.outcome === "failure");
   const gameOverClass = isGameOver
     ? seatFailed
       ? "gameover-failure"
