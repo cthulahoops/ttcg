@@ -25,13 +25,13 @@ export function GameStatus({ game }: GameStatusProps) {
   }
 
   // Default: show player's turn
-  const playerName = seat.character ?? `Player ${game.currentPlayer + 1}`;
+  const playerName = seat.character ?? `Seat ${game.currentPlayer + 1}`;
   return <div className="game-status">{playerName}'s turn</div>;
 }
 
 function getActorLabel(seat?: SerializedSeat): string {
-  if (!seat) return "Unknown player";
-  return seat.character ?? `Player ${seat.seatIndex + 1}`;
+  if (!seat) return "Unknown seat";
+  return seat.character ?? `Seat ${seat.seatIndex + 1}`;
 }
 
 function GameOverStatus({ game }: { game: SerializedGame }) {

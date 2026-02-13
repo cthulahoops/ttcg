@@ -301,19 +301,9 @@ export class SolitaireHand extends Hand {
 
   constructor(cards: Card[] = []) {
     super();
-    // Ensure 1 of Rings is in the initially revealed cards
-    SolitaireHand._ensureOneRingRevealed(cards);
+    // In 1-player mode, 1 of Rings is guaranteed to be dealt to seat 0
     this._revealedCards = cards.slice(0, 4);
     this._hiddenCards = cards.slice(4);
-  }
-
-  private static _ensureOneRingRevealed(cards: Card[]): void {
-    const oneRingIndex = cards.findIndex(
-      (c) => c.suit === "rings" && c.value === 1
-    );
-    if (oneRingIndex >= 4) {
-      [cards[3], cards[oneRingIndex]] = [cards[oneRingIndex]!, cards[3]!];
-    }
   }
 
   addCard(card: Card): void {

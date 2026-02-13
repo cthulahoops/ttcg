@@ -14,6 +14,7 @@ type PlayerSeatProps = {
   seat: SerializedSeat;
   isActive: boolean;
   phase: GamePhase;
+  playerCount: number;
   seatDecision?: DecisionRequest; // Decision owned by this seat (choose_button or select_card)
   selectSeatDecision?: DecisionRequest & { type: "select_seat" }; // select_seat passed to all seats
   onRespond: (response: unknown) => void;
@@ -38,6 +39,7 @@ export function PlayerSeat({
   seat,
   isActive,
   phase,
+  playerCount,
   seatDecision,
   selectSeatDecision,
   onRespond,
@@ -60,11 +62,16 @@ export function PlayerSeat({
     riderObjectiveCards,
   } = seat;
 
-  const basePlayerName = playerName ?? `Player ${seatIndex + 1}`;
+  // Determine display name based on mode and state
+  const defaultName =
+    playerCount === 1
+      ? `Seat ${seatIndex + 1}`
+      : (playerName ?? `Seat ${seatIndex + 1}`);
+
   const displayName = character ? (
     <>
       {character}
-      {playerName && (
+      {playerCount > 1 && playerName && (
         <>
           {" "}
           <span className="seat-player-name">({playerName})</span>
@@ -72,7 +79,7 @@ export function PlayerSeat({
       )}
     </>
   ) : (
-    basePlayerName
+    defaultName
   );
 
   // Derive selectable cards and presented cards from seatDecision
@@ -191,9 +198,9 @@ export function PlayerSeat({
           {selectSeatDecision?.buttonTemplate
             ? selectSeatDecision.buttonTemplate.replace(
                 "{seat}",
-                character ?? `Player ${seatIndex + 1}`
+                character ?? `Seat ${seatIndex + 1}`
               )
-            : (character ?? `Player ${seatIndex + 1}`)}
+            : (character ?? `Seat ${seatIndex + 1}`)}
         </button>
       )}
 
