@@ -1073,7 +1073,18 @@ async function runRiderAssignment(gameState: Game): Promise<void> {
   const rider = gameState.drawnRider;
   const riderText = rider?.objective.text ?? "";
 
-  const eligibleSeats = gameState.seats.map((seat) => seat.seatIndex);
+  // The Unseen prefers characters that draw threat cards;
+  // fall back to all seats if none qualify (assignment will cause immediate failure)
+  const preferredSeats = gameState.seats
+    .filter(
+      (seat) =>
+        rider.name !== "The Unseen" || seat.character?.drawsThreatCard === true
+    )
+    .map((seat) => seat.seatIndex);
+  const eligibleSeats =
+    preferredSeats.length > 0
+      ? preferredSeats
+      : gameState.seats.map((seat) => seat.seatIndex);
 
   const options: {
     forSeat: number;
