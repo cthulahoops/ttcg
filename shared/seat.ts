@@ -47,9 +47,9 @@ export class Seat {
         return this.character.name;
       }
     } else {
-      // Use player name if available, otherwise fall back to "Player X"
+      // Use player name if available, otherwise fall back to "Seat X"
       const baseName =
-        this.controller.playerName ?? `Player ${this.seatIndex + 1}`;
+        this.controller.playerName ?? `Seat ${this.seatIndex + 1}`;
       if (this.isPyramid) {
         return `${baseName} (Pyramid)`;
       } else {

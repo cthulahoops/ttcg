@@ -115,6 +115,7 @@ export function GameScreen({
               seat={seat}
               isActive={isActive}
               phase={game.phase}
+              playerCount={game.playerCount}
               seatDecision={seatDecision}
               selectSeatDecision={selectSeatDecision}
               onRespond={handleRespond}
