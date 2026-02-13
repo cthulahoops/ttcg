@@ -77,6 +77,34 @@ describe("Aragorn", () => {
       });
     });
 
+    test("does not mark as impossible mid-trick when seat has already played", () => {
+      const { game, seats } = new GameStateBuilder(4)
+        .setCharacter(0, "Aragorn")
+        .seatWonTricks(1, 2)
+        .seatWonTricks(2, 2)
+        .seatWonTricks(3, 2)
+        .build();
+
+      // Seat 0 has won 0 tricks, needs 3, and we're at trick 6 (3 remaining).
+      // Seat 0 has already played a card in the current trick, so their hand
+      // has 1 fewer card, but they can still potentially win this trick.
+      seats[0]!.threatCard = 3;
+      game.currentTrickNumber = 6; // tricksRemaining = 9 - 6 = 3
+      // Simulate seat 0 having played a card in the current trick
+      const playedCard = seats[0]!.hand.getAvailableCards()[0]!;
+      seats[0]!.hand.removeCard(playedCard);
+      game.currentTrick = [
+        { playerIndex: 0, card: playedCard, isTrump: false },
+      ];
+
+      // Should NOT be final failure - seat can still win 3 tricks
+      // (current trick + 2 more with 2 cards in hand)
+      expect(Aragorn.objective.getStatus(game, seats[0]!)).toEqual({
+        finality: "tentative",
+        outcome: "failure",
+      });
+    });
+
     test("returns { final, failure } when game finished but below target", () => {
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Aragorn")
