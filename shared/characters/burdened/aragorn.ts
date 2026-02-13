@@ -4,6 +4,7 @@ import { tricksWinnable, achieveExactly } from "../../objectives";
 
 export const AragornBurdened: CharacterDefinition = {
   name: "Aragorn (Burdened)",
+  drawsThreatCard: true,
   setupText: "Draw and choose from 2 threat cards, then exchange with anyone",
 
   setup: async (game, seat, setupContext) => {
@@ -15,7 +16,14 @@ export const AragornBurdened: CharacterDefinition = {
       // Only 1 card left, just draw it
       const card = game.threatDeck.shift()!;
       seat.threatCard = card;
-      game.log(`${seat.getDisplayName()} draws threat card: ${card}`, true);
+      if (seat.rider?.name === "The Unseen") {
+        game.log(`${seat.getDisplayName()} draws a threat card`, true, {
+          visibleTo: [seat.seatIndex],
+          hiddenMessage: `${seat.getDisplayName()} draws a threat card`,
+        });
+      } else {
+        game.log(`${seat.getDisplayName()} draws threat card: ${card}`, true);
+      }
       game.notifyStateChange();
     } else {
       // Draw 2, let player choose
@@ -41,7 +49,17 @@ export const AragornBurdened: CharacterDefinition = {
 
       seat.threatCard = chosen;
       game.threatDeck.push(unchosen);
-      game.log(`${seat.getDisplayName()} chooses threat card: ${chosen}`, true);
+      if (seat.rider?.name === "The Unseen") {
+        game.log(`${seat.getDisplayName()} chooses a threat card`, true, {
+          visibleTo: [seat.seatIndex],
+          hiddenMessage: `${seat.getDisplayName()} chooses a threat card`,
+        });
+      } else {
+        game.log(
+          `${seat.getDisplayName()} chooses threat card: ${chosen}`,
+          true
+        );
+      }
       game.notifyStateChange();
     }
 

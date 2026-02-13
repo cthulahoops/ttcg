@@ -217,7 +217,17 @@ export class Game {
     } while (exclude !== undefined && threatCard === exclude);
 
     seat.threatCard = threatCard;
-    this.log(`${seat.getDisplayName()} draws threat card: ${threatCard}`, true);
+    if (seat.rider?.name === "The Unseen") {
+      this.log(`${seat.getDisplayName()} draws a threat card`, true, {
+        visibleTo: [seat.seatIndex],
+        hiddenMessage: `${seat.getDisplayName()} draws a threat card`,
+      });
+    } else {
+      this.log(
+        `${seat.getDisplayName()} draws threat card: ${threatCard}`,
+        true
+      );
+    }
     this.notifyStateChange();
 
     if (this.allowThreatRedraw && this.threatDeck.length > 0) {
@@ -244,10 +254,17 @@ export class Game {
           newCard = this.threatDeck.shift()!;
         } while (exclude !== undefined && newCard === exclude);
         seat.threatCard = newCard;
-        this.log(
-          `${seat.getDisplayName()} redraws threat card: ${newCard}`,
-          true
-        );
+        if (seat.rider?.name === "The Unseen") {
+          this.log(`${seat.getDisplayName()} redraws a threat card`, true, {
+            visibleTo: [seat.seatIndex],
+            hiddenMessage: `${seat.getDisplayName()} redraws a threat card`,
+          });
+        } else {
+          this.log(
+            `${seat.getDisplayName()} redraws threat card: ${newCard}`,
+            true
+          );
+        }
         this.notifyStateChange();
       }
     }
@@ -281,10 +298,17 @@ export class Game {
     }
 
     seat.threatCard = choice.value;
-    this.log(
-      `${seat.getDisplayName()} chooses threat card: ${choice.value}`,
-      true
-    );
+    if (seat.rider?.name === "The Unseen") {
+      this.log(`${seat.getDisplayName()} chooses a threat card`, true, {
+        visibleTo: [seat.seatIndex],
+        hiddenMessage: `${seat.getDisplayName()} chooses a threat card`,
+      });
+    } else {
+      this.log(
+        `${seat.getDisplayName()} chooses threat card: ${choice.value}`,
+        true
+      );
+    }
     this.notifyStateChange();
   }
 
@@ -1046,7 +1070,13 @@ async function runRiderAssignment(gameState: Game): Promise<void> {
     throw new Error("Frodo seat not found for rider assignment");
   }
 
-  const eligibleSeats = gameState.seats.map((seat) => seat.seatIndex);
+  // The Unseen can only be assigned to characters that draw threat cards
+  const eligibleSeats = gameState.seats
+    .filter(
+      (seat) =>
+        rider.name !== "The Unseen" || seat.character?.drawsThreatCard === true
+    )
+    .map((seat) => seat.seatIndex);
 
   const rider = gameState.drawnRider;
   const riderText = rider?.objective.text ?? "";

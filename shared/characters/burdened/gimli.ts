@@ -5,6 +5,7 @@ import { isOneOf } from "../character-utils";
 
 export const GimliBurdened: CharacterDefinition = {
   name: "Gimli (Burdened)",
+  drawsThreatCard: true,
   setupText: "Draw a threat card, then exchange with Legolas or Aragorn",
 
   setup: async (game, seat, setupContext) => {

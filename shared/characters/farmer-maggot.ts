@@ -6,6 +6,7 @@ import { isOneOf } from "./character-utils";
 
 export const FarmerMaggot: CharacterDefinition = {
   name: "Farmer Maggot",
+  drawsThreatCard: true,
   setupText: "Draw a threat card, then exchange with Merry or Pippin",
 
   setup: async (game, seat, setupContext) => {
