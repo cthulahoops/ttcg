@@ -1073,20 +1073,7 @@ async function runRiderAssignment(gameState: Game): Promise<void> {
   const rider = gameState.drawnRider;
   const riderText = rider?.objective.text ?? "";
 
-  // The Unseen can only be assigned to characters that draw threat cards
-  const eligibleSeats = gameState.seats
-    .filter(
-      (seat) =>
-        rider.name !== "The Unseen" || seat.character?.drawsThreatCard === true
-    )
-    .map((seat) => seat.seatIndex);
-
-  if (eligibleSeats.length === 0) {
-    gameState.log(`No eligible characters for ${rider.name}, skipping`, true);
-    gameState.drawnRider = null;
-    gameState.notifyStateChange();
-    return;
-  }
+  const eligibleSeats = gameState.seats.map((seat) => seat.seatIndex);
 
   const options: {
     forSeat: number;
