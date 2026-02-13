@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { tricksWinnable, leadsWinnable } from "./objectives";
+import {
+  tricksWinnable,
+  leadsWinnable,
+  cardsWinnable,
+  tricksWithCardsWinnable,
+} from "./objectives";
 import { GameStateBuilder } from "./test-utils";
 
 describe("tricksWinnable", () => {
@@ -82,5 +87,68 @@ describe("leadsWinnable", () => {
     // max should be at most current + 1 = 2 (not current + 2 = 3).
     expect(result.current).toBe(1);
     expect(result.max).toBeLessThanOrEqual(2);
+  });
+});
+
+describe("cardsWinnable", () => {
+  test("includes current trick cards as winnable on last card played", () => {
+    const targetCard = { suit: "forests" as const, value: 3 };
+    const { game, seats } = new GameStateBuilder(4)
+      .seatWonTricks(0, 1)
+      .seatWonTricks(1, 3)
+      .seatWonTricks(2, 2)
+      .seatWonTricks(3, 2)
+      .reserveToHand(1, [targetCard])
+      .build();
+
+    // Trick 8 (the last one). Seat 0 plays their only remaining card.
+    const lastCard = seats[0]!.hand.getAvailableCards()[0]!;
+    seats[0]!.hand.removeCard(lastCard);
+    seats[1]!.hand.removeCard(targetCard);
+    game.currentTrick = [
+      { playerIndex: 0, card: lastCard, isTrump: false },
+      { playerIndex: 1, card: targetCard, isTrump: false },
+    ];
+
+    const result = cardsWinnable(
+      game,
+      seats[0]!,
+      (c) => c.suit === targetCard.suit && c.value === targetCard.value
+    );
+    // The target card is in the current trick, not won yet → in remaining.
+    // With 0 cards in hand but 1 trick remaining, maxTricksWinnableFromHere
+    // must account for the card already played.
+    expect(result.max).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe("tricksWithCardsWinnable", () => {
+  test("includes current trick as potential win on last card played", () => {
+    const targetCard = { suit: "hills" as const, value: 5 };
+    const { game, seats } = new GameStateBuilder(4)
+      .seatWonTricks(0, 1)
+      .seatWonTricks(1, 3)
+      .seatWonTricks(2, 2)
+      .seatWonTricks(3, 2)
+      .reserveToHand(1, [targetCard])
+      .build();
+
+    // Trick 8 (the last one). Seat 0 plays their only remaining card.
+    const lastCard = seats[0]!.hand.getAvailableCards()[0]!;
+    seats[0]!.hand.removeCard(lastCard);
+    seats[1]!.hand.removeCard(targetCard);
+    game.currentTrick = [
+      { playerIndex: 0, card: lastCard, isTrump: false },
+      { playerIndex: 1, card: targetCard, isTrump: false },
+    ];
+
+    const result = tricksWithCardsWinnable(
+      game,
+      seats[0]!,
+      (c) => c.suit === "hills"
+    );
+    // Current trick has a hills card. Seat could win it.
+    // max should be current + 1, not current + 0.
+    expect(result.max).toBe(result.current + 1);
   });
 });
