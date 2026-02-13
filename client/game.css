@@ -946,9 +946,11 @@ button:hover {
   border: 2px solid transparent;
 }
 
-.character-card.clickable:hover {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 10px rgba(154, 92, 0, 0.15);
+@media (hover: hover) {
+  .character-card.clickable:hover {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 10px rgba(154, 92, 0, 0.15);
+  }
 }
 
 /* ===========================================
