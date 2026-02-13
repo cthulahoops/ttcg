@@ -21,6 +21,18 @@ export class Deck {
     return this.cards.shift();
   }
 
+  takeCard(target: Card): Card {
+    const index = this.cards.findIndex(
+      (c) => c.suit === target.suit && c.value === target.value
+    );
+    if (index < 0) {
+      throw new Error(
+        `Card ${target.value} of ${target.suit} not found in deck`
+      );
+    }
+    return this.cards.splice(index, 1)[0]!;
+  }
+
   get length() {
     return this.cards.length;
   }

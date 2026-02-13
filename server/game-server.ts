@@ -44,7 +44,7 @@ export function newGame(
 
   const numCharacters = controllers.length;
 
-  const { lostCard, playerCards } = dealCards(numCharacters);
+  const { lostCard, playerCards } = dealCards(numCharacters, playerCount);
 
   const startPlayer = findPlayerWithCard(playerCards, {
     suit: "rings",
@@ -115,7 +115,7 @@ export function newGame(
   return gameState;
 }
 
-function dealCards(numCharacters: number) {
+function dealCards(numCharacters: number, playerCount: number) {
   let deck: Deck, lostCard: Card;
 
   do {
@@ -131,7 +131,13 @@ function dealCards(numCharacters: number) {
   const playerCards: Card[][] = Array.from({ length: numCharacters }, () => []);
   for (let i = 0; i < cardsPerPlayer; i++) {
     for (let p = 0; p < numCharacters; p++) {
-      playerCards[p]!.push(deck.draw()!);
+      // In 1-player mode, ensure seat 0 gets the 1 of Rings on first deal
+      if (playerCount === 1 && i === 0 && p === 0) {
+        // Take the 1 of Rings from deck and give to seat 0
+        playerCards[p]!.push(deck.takeCard({ suit: "rings", value: 1 })!);
+      } else {
+        playerCards[p]!.push(deck.draw()!);
+      }
     }
   }
 
