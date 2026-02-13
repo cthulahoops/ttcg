@@ -117,6 +117,19 @@ export class Game {
     this.onLog?.(line, important, options);
   }
 
+  /** Log a threat card action, hiding the value from other players if The Unseen is active. */
+  logThreatCard(seat: Seat, action: string, value: number): void {
+    const name = seat.getDisplayName();
+    if (seat.rider?.name === "The Unseen") {
+      this.log(`${name} ${action} a threat card`, true, {
+        visibleTo: [seat.seatIndex],
+        hiddenMessage: `${name} ${action} a threat card`,
+      });
+    } else {
+      this.log(`${name} ${action} threat card: ${value}`, true);
+    }
+  }
+
   // ===== GAME API METHODS FOR CHARACTER SETUP/OBJECTIVES =====
 
   async choice(
@@ -217,17 +230,7 @@ export class Game {
     } while (exclude !== undefined && threatCard === exclude);
 
     seat.threatCard = threatCard;
-    if (seat.rider?.name === "The Unseen") {
-      this.log(`${seat.getDisplayName()} draws a threat card`, true, {
-        visibleTo: [seat.seatIndex],
-        hiddenMessage: `${seat.getDisplayName()} draws a threat card`,
-      });
-    } else {
-      this.log(
-        `${seat.getDisplayName()} draws threat card: ${threatCard}`,
-        true
-      );
-    }
+    this.logThreatCard(seat, "draws", threatCard);
     this.notifyStateChange();
 
     if (this.allowThreatRedraw && this.threatDeck.length > 0) {
@@ -254,17 +257,7 @@ export class Game {
           newCard = this.threatDeck.shift()!;
         } while (exclude !== undefined && newCard === exclude);
         seat.threatCard = newCard;
-        if (seat.rider?.name === "The Unseen") {
-          this.log(`${seat.getDisplayName()} redraws a threat card`, true, {
-            visibleTo: [seat.seatIndex],
-            hiddenMessage: `${seat.getDisplayName()} redraws a threat card`,
-          });
-        } else {
-          this.log(
-            `${seat.getDisplayName()} redraws threat card: ${newCard}`,
-            true
-          );
-        }
+        this.logThreatCard(seat, "redraws", newCard);
         this.notifyStateChange();
       }
     }
@@ -298,17 +291,7 @@ export class Game {
     }
 
     seat.threatCard = choice.value;
-    if (seat.rider?.name === "The Unseen") {
-      this.log(`${seat.getDisplayName()} chooses a threat card`, true, {
-        visibleTo: [seat.seatIndex],
-        hiddenMessage: `${seat.getDisplayName()} chooses a threat card`,
-      });
-    } else {
-      this.log(
-        `${seat.getDisplayName()} chooses threat card: ${choice.value}`,
-        true
-      );
-    }
+    this.logThreatCard(seat, "chooses", choice.value);
     this.notifyStateChange();
   }
 

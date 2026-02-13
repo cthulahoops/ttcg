@@ -16,14 +16,7 @@ export const AragornBurdened: CharacterDefinition = {
       // Only 1 card left, just draw it
       const card = game.threatDeck.shift()!;
       seat.threatCard = card;
-      if (seat.rider?.name === "The Unseen") {
-        game.log(`${seat.getDisplayName()} draws a threat card`, true, {
-          visibleTo: [seat.seatIndex],
-          hiddenMessage: `${seat.getDisplayName()} draws a threat card`,
-        });
-      } else {
-        game.log(`${seat.getDisplayName()} draws threat card: ${card}`, true);
-      }
+      game.logThreatCard(seat, "draws", card);
       game.notifyStateChange();
     } else {
       // Draw 2, let player choose
@@ -49,17 +42,7 @@ export const AragornBurdened: CharacterDefinition = {
 
       seat.threatCard = chosen;
       game.threatDeck.push(unchosen);
-      if (seat.rider?.name === "The Unseen") {
-        game.log(`${seat.getDisplayName()} chooses a threat card`, true, {
-          visibleTo: [seat.seatIndex],
-          hiddenMessage: `${seat.getDisplayName()} chooses a threat card`,
-        });
-      } else {
-        game.log(
-          `${seat.getDisplayName()} chooses threat card: ${chosen}`,
-          true
-        );
-      }
+      game.logThreatCard(seat, "chooses", chosen);
       game.notifyStateChange();
     }
 
