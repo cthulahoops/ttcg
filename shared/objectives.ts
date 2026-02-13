@@ -161,11 +161,20 @@ export function leadsWinnable(
     }
   }
 
+  // maxTricksWinnableFromHere includes the current trick if the seat has played,
+  // but the current trick is already accounted for in `current` and can't generate
+  // a new lead. Subtract it to get only future lead opportunities.
+  const playedInCurrentTrick = game.currentTrick.some(
+    (play) => play.playerIndex === seat.seatIndex
+  )
+    ? 1
+    : 0;
+  const futureWins =
+    maxTricksWinnableFromHere(game, seat) - playedInCurrentTrick;
+
   return {
     current,
-    max:
-      current +
-      Math.min(maxTricksWinnableFromHere(game, seat), matchingCardsInPlay),
+    max: current + Math.min(futureWins, matchingCardsInPlay),
   };
 }
 
