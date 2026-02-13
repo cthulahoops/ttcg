@@ -7,6 +7,7 @@ import { AragornBurdened } from "./burdened/aragorn";
 export const Aragorn: CharacterDefinition = {
   name: "Aragorn",
   burdened: AragornBurdened,
+  drawsThreatCard: true,
   setupText: "Choose a threat card, then exchange with Gimli or Legolas",
 
   setup: async (game, seat, setupContext) => {

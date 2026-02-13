@@ -7,6 +7,7 @@ import { GimliBurdened } from "./burdened/gimli";
 export const Gimli: CharacterDefinition = {
   name: "Gimli",
   burdened: GimliBurdened,
+  drawsThreatCard: true,
   setupText:
     "Draw a Mountains threat card, then exchange with Legolas or Aragorn",
 

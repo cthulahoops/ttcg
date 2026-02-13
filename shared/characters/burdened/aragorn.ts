@@ -4,6 +4,7 @@ import { tricksWinnable, achieveExactly } from "../../objectives";
 
 export const AragornBurdened: CharacterDefinition = {
   name: "Aragorn (Burdened)",
+  drawsThreatCard: true,
   setupText: "Draw and choose from 2 threat cards, then exchange with anyone",
 
   setup: async (game, seat, setupContext) => {
@@ -15,10 +16,7 @@ export const AragornBurdened: CharacterDefinition = {
       // Only 1 card left, just draw it
       const card = game.threatDeck.shift()!;
       seat.threatCard = card;
-      game.log(
-        `${seat.getDisplayName(game.playerCount)} draws threat card: ${card}`,
-        true
-      );
+      game.logThreatCard(seat, "draws", card);
       game.notifyStateChange();
     } else {
       // Draw 2, let player choose
@@ -44,10 +42,7 @@ export const AragornBurdened: CharacterDefinition = {
 
       seat.threatCard = chosen;
       game.threatDeck.push(unchosen);
-      game.log(
-        `${seat.getDisplayName(game.playerCount)} chooses threat card: ${chosen}`,
-        true
-      );
+      game.logThreatCard(seat, "chooses", chosen);
       game.notifyStateChange();
     }
 

@@ -12,7 +12,7 @@ import {
   extraCharacters,
   characterRegistry,
 } from "../shared/characters/registry.js";
-import { allRiders } from "../shared/riders/registry.js";
+import { allRiders, multiplayerOnlyRiders } from "../shared/riders/registry.js";
 import type { CharacterDefinition } from "../shared/characters/registry.js";
 import type { LongGameState } from "../shared/long-game.js";
 import { toLongGameProgress } from "../shared/long-game.js";
@@ -461,7 +461,11 @@ export class RoomManager {
           game.riderAllowSkip = false;
         }
       } else {
-        const shuffledRiders = shuffleDeck([...allRiders]);
+        const eligibleRiders =
+          playerCount === 1
+            ? allRiders.filter((r) => !multiplayerOnlyRiders.has(r))
+            : allRiders;
+        const shuffledRiders = shuffleDeck([...eligibleRiders]);
         game.drawnRider = shuffledRiders[0] ?? null;
         game.riderAllowSkip = false;
       }
