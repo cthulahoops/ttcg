@@ -12,7 +12,8 @@ import {
   extraCharacters,
   characterRegistry,
 } from "../shared/characters/registry.js";
-import { allRiders, multiplayerOnlyRiders } from "../shared/riders/registry.js";
+import { allRiders } from "../shared/riders/registry.js";
+import { TheUnseen } from "../shared/riders/the-unseen.js";
 import type { CharacterDefinition } from "../shared/characters/registry.js";
 import type { LongGameState } from "../shared/long-game.js";
 import { toLongGameProgress } from "../shared/long-game.js";
@@ -465,7 +466,7 @@ export class RoomManager {
           (c) => c.drawsThreatCard
         );
         const eligibleRiders = allRiders.filter((r) => {
-          if (playerCount === 1 && multiplayerOnlyRiders.has(r)) return false;
+          if (playerCount === 1 && r === TheUnseen) return false;
           if (r.name === "The Unseen" && !hasThreatCardCharacter) return false;
           return true;
         });

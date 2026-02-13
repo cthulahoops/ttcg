@@ -14,6 +14,3 @@ export const allRiders: RiderDefinition[] = [
   Terror,
   TheUnseen,
 ];
-
-/** Riders that require multiplayer (excluded from single-player) */
-export const multiplayerOnlyRiders: Set<RiderDefinition> = new Set([TheUnseen]);
