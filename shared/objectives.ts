@@ -161,16 +161,14 @@ export function leadsWinnable(
     }
   }
 
-  // maxTricksWinnableFromHere includes the current trick if the seat has played,
-  // but the current trick is already accounted for in `current` and can't generate
-  // a new lead. Subtract it to get only future lead opportunities.
-  const playedInCurrentTrick = game.currentTrick.some(
-    (play) => play.playerIndex === seat.seatIndex
-  )
-    ? 1
-    : 0;
-  const futureWins =
-    maxTricksWinnableFromHere(game, seat) - playedInCurrentTrick;
+  // The current trick is already counted in `current` (if applicable) and can't
+  // generate a new lead, so we only count future tricks the seat could win.
+  const cardsInHand =
+    seat.hand.getAvailableCards().length + (seat.asideCard ? 1 : 0);
+  const futureWins = Math.min(
+    game.tricksRemaining() - (game.currentTrick.length > 0 ? 1 : 0),
+    cardsInHand
+  );
 
   return {
     current,
