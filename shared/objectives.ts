@@ -10,7 +10,14 @@ import type { Game } from "shared/game";
 function maxTricksWinnableFromHere(game: Game, seat: Seat): number {
   const cardsInHand =
     seat.hand.getAvailableCards().length + (seat.asideCard ? 1 : 0);
-  return Math.min(game.tricksRemaining(), cardsInHand);
+  // If the seat has already played a card in the current trick, that card
+  // is no longer in hand but the current trick is still a potential win.
+  const playedInCurrentTrick = game.currentTrick.some(
+    (play) => play.playerIndex === seat.seatIndex
+  )
+    ? 1
+    : 0;
+  return Math.min(game.tricksRemaining(), cardsInHand + playedInCurrentTrick);
 }
 
 /**
@@ -154,11 +161,18 @@ export function leadsWinnable(
     }
   }
 
+  // The current trick is already counted in `current` (if applicable) and can't
+  // generate a new lead, so we only count future tricks the seat could win.
+  const cardsInHand =
+    seat.hand.getAvailableCards().length + (seat.asideCard ? 1 : 0);
+  const futureWins = Math.min(
+    game.tricksRemaining() - (game.currentTrick.length > 0 ? 1 : 0),
+    cardsInHand
+  );
+
   return {
     current,
-    max:
-      current +
-      Math.min(maxTricksWinnableFromHere(game, seat), matchingCardsInPlay),
+    max: current + Math.min(futureWins, matchingCardsInPlay),
   };
 }
 
