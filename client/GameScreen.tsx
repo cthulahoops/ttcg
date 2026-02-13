@@ -1,13 +1,13 @@
 import type { SerializedGame } from "@shared/serialized";
 import type { DecisionRequest } from "@shared/protocol";
-
 import { TrickArea } from "./TrickArea";
 import { LostCard } from "./LostCard";
 import { PlayerSeat } from "./PlayerSeat";
-import { GameStatus } from "./GameStatus";
+import { GameStatus, GameOverStatus } from "./GameStatus";
 import { DecisionDialog } from "./DecisionDialog";
 import { AvailableCharacters } from "./AvailableCharacters";
 import { LongGameProgress } from "./LongGameProgress";
+import { GameOverOverlay } from "./GameOverOverlay";
 
 type GameScreenProps = {
   game: SerializedGame;
@@ -55,12 +55,31 @@ export function GameScreen({
     pendingDecision && decisionSeatIndex === undefined && !isSelectCharacter;
 
   // Use decision seatIndex for active highlighting when available
+  // No active highlighting during gameover
   const activeSeatIndex =
-    decisionSeatIndex !== undefined ? decisionSeatIndex : game.currentPlayer;
+    game.phase === "gameover"
+      ? -1
+      : decisionSeatIndex !== undefined
+        ? decisionSeatIndex
+        : game.currentPlayer;
+
+  // Determine victory/defeat for overlay
+  const isGameOver = game.phase === "gameover";
+  const hasAnyFailure = game.seats.some(
+    (seat) =>
+      seat.objectiveStatus?.outcome === "failure" ||
+      seat.riderStatus?.outcome === "failure"
+  );
+  const isVictory = isGameOver && !hasAnyFailure;
 
   return (
     <div className="main-content" id="gameScreen">
-      <GameStatus game={game} />
+      {isGameOver && <GameOverOverlay isVictory={isVictory} />}
+      {isGameOver ? (
+        <GameOverStatus game={game} isVictory={isVictory} />
+      ) : (
+        <GameStatus game={game} />
+      )}
 
       {game.longGameProgress && (
         <LongGameProgress progress={game.longGameProgress} />

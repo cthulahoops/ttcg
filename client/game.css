@@ -1080,3 +1080,174 @@ button:hover {
 .long-game-progress .character-chip.rider-chip.completed {
   border-color: var(--color-success);
 }
+
+/* ===========================================
+   GAME OVER EFFECTS
+   =========================================== */
+
+/* Full-screen particle canvas */
+.gameover-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 100;
+  animation: gameover-canvas-fadein 1.5s ease-out;
+}
+
+.gameover-canvas-victory {
+  background: radial-gradient(
+    ellipse at center,
+    transparent 30%,
+    rgba(212, 184, 32, 0.06) 60%,
+    rgba(154, 92, 0, 0.1) 100%
+  );
+}
+
+.gameover-canvas-defeat {
+  background: radial-gradient(
+    ellipse at center,
+    transparent 20%,
+    rgba(40, 10, 10, 0.08) 55%,
+    rgba(20, 5, 5, 0.2) 100%
+  );
+}
+
+@keyframes gameover-canvas-fadein {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Per-seat game over result overlays */
+.players .player:nth-child(1) {
+  --reveal-delay: 0.1s;
+}
+.players .player:nth-child(2) {
+  --reveal-delay: 0.3s;
+}
+.players .player:nth-child(3) {
+  --reveal-delay: 0.5s;
+}
+.players .player:nth-child(4) {
+  --reveal-delay: 0.7s;
+}
+
+/* Background tint */
+.players .player.gameover-success,
+.players .player.gameover-failure {
+  position: relative;
+  transition: none;
+}
+
+.players .player.gameover-success::before,
+.players .player.gameover-failure::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  animation: gameover-tint 0.6s ease-out forwards;
+  animation-delay: var(--reveal-delay, 0s);
+}
+
+.players .player.gameover-success::before {
+  background: linear-gradient(
+    135deg,
+    rgba(42, 106, 48, 0.12) 0%,
+    rgba(42, 106, 48, 0.06) 100%
+  );
+}
+
+.players .player.gameover-failure::before {
+  background: linear-gradient(
+    135deg,
+    rgba(154, 40, 40, 0.14) 0%,
+    rgba(154, 40, 40, 0.07) 100%
+  );
+}
+
+/* Big tick/cross icon */
+.players .player.gameover-success::after,
+.players .player.gameover-failure::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  font-size: 3.5rem;
+  font-weight: 900;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(2);
+  animation: gameover-icon 0.5s ease-out forwards;
+  animation-delay: var(--reveal-delay, 0s);
+  z-index: 1;
+  line-height: 1;
+}
+
+.players .player.gameover-success::after {
+  content: "\2713";
+  color: rgba(42, 106, 48, 0.3);
+  text-shadow: 0 0 20px rgba(42, 106, 48, 0.15);
+}
+
+.players .player.gameover-failure::after {
+  content: "\2717";
+  color: rgba(154, 40, 40, 0.35);
+  text-shadow: 0 0 20px rgba(154, 40, 40, 0.15);
+}
+
+@keyframes gameover-tint {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes gameover-icon {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2.5);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* Victory/Defeat banner pulse */
+.game-status.victory {
+  animation: victory-glow 2s ease-in-out infinite alternate;
+}
+
+.game-status.defeat {
+  animation: defeat-glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes victory-glow {
+  from {
+    text-shadow: 0 0 10px rgba(42, 106, 48, 0.2);
+  }
+  to {
+    text-shadow:
+      0 0 20px rgba(42, 106, 48, 0.4),
+      0 0 40px rgba(42, 106, 48, 0.15);
+  }
+}
+
+@keyframes defeat-glow {
+  from {
+    text-shadow: 0 0 10px rgba(154, 40, 40, 0.2);
+  }
+  to {
+    text-shadow:
+      0 0 20px rgba(154, 40, 40, 0.4),
+      0 0 40px rgba(154, 40, 40, 0.15);
+  }
+}
