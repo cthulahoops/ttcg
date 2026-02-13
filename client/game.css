@@ -902,7 +902,6 @@ button:hover {
 .inline-decision {
   margin: var(--space-sm) 0;
   padding: var(--space-xs) var(--space-sm);
-  border-left: 3px solid var(--color-accent);
   background: rgba(154, 92, 0, 0.05);
 }
 
@@ -914,6 +913,7 @@ button:hover {
 }
 
 .inline-prompt-message {
+  font-family: "Cinzel", serif;
   color: var(--color-text-dark);
   font-style: normal;
   font-weight: 700;

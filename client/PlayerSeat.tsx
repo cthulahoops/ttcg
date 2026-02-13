@@ -166,7 +166,7 @@ export function PlayerSeat({
       )}
 
       {inlineMessage && !inlineButtons && (
-        <p className="inline-message">{inlineMessage}</p>
+        <p className="inline-message inline-prompt-message">{inlineMessage}</p>
       )}
 
       {presentedCards.length > 0 && (
