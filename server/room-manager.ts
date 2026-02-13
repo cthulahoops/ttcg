@@ -461,10 +461,14 @@ export class RoomManager {
           game.riderAllowSkip = false;
         }
       } else {
-        const eligibleRiders =
-          playerCount === 1
-            ? allRiders.filter((r) => !multiplayerOnlyRiders.has(r))
-            : allRiders;
+        const hasThreatCardCharacter = game.availableCharacters.some(
+          (c) => c.drawsThreatCard
+        );
+        const eligibleRiders = allRiders.filter((r) => {
+          if (playerCount === 1 && multiplayerOnlyRiders.has(r)) return false;
+          if (r.name === "The Unseen" && !hasThreatCardCharacter) return false;
+          return true;
+        });
         const shuffledRiders = shuffleDeck([...eligibleRiders]);
         game.drawnRider = shuffledRiders[0] ?? null;
         game.riderAllowSkip = false;
