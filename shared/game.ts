@@ -123,7 +123,7 @@ export class Game {
     if (seat.rider?.name === "The Unseen") {
       this.log(`${name} ${action} a threat card`, true, {
         visibleTo: [seat.seatIndex],
-        hiddenMessage: `${name} ${action} a threat card`,
+        hiddenMessage: `${name} ${action} threat card: ${value}`,
       });
     } else {
       this.log(`${name} ${action} threat card: ${value}`, true);
