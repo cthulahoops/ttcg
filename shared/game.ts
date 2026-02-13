@@ -1073,8 +1073,9 @@ async function runRiderAssignment(gameState: Game): Promise<void> {
   const rider = gameState.drawnRider;
   const riderText = rider?.objective.text ?? "";
 
-  // The Unseen prefers characters that draw threat cards;
-  // fall back to all seats if none qualify (assignment will cause immediate failure)
+  // The Unseen prefers characters that draw threat cards.
+  // In short games (no skip), fall back to all seats if none qualify
+  // (assignment will cause immediate failure).
   const preferredSeats = gameState.seats
     .filter(
       (seat) =>
@@ -1082,7 +1083,7 @@ async function runRiderAssignment(gameState: Game): Promise<void> {
     )
     .map((seat) => seat.seatIndex);
   const eligibleSeats =
-    preferredSeats.length > 0
+    preferredSeats.length > 0 || gameState.riderAllowSkip
       ? preferredSeats
       : gameState.seats.map((seat) => seat.seatIndex);
 
