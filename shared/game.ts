@@ -1070,6 +1070,9 @@ async function runRiderAssignment(gameState: Game): Promise<void> {
     throw new Error("Frodo seat not found for rider assignment");
   }
 
+  const rider = gameState.drawnRider;
+  const riderText = rider?.objective.text ?? "";
+
   // The Unseen can only be assigned to characters that draw threat cards
   const eligibleSeats = gameState.seats
     .filter(
@@ -1078,8 +1081,12 @@ async function runRiderAssignment(gameState: Game): Promise<void> {
     )
     .map((seat) => seat.seatIndex);
 
-  const rider = gameState.drawnRider;
-  const riderText = rider?.objective.text ?? "";
+  if (eligibleSeats.length === 0) {
+    gameState.log(`No eligible characters for ${rider.name}, skipping`, true);
+    gameState.drawnRider = null;
+    gameState.notifyStateChange();
+    return;
+  }
 
   const options: {
     forSeat: number;
