@@ -117,6 +117,19 @@ export class Game {
     this.onLog?.(line, important, options);
   }
 
+  /** Log a threat card action, hiding the value from other players if The Unseen is active. */
+  logThreatCard(seat: Seat, action: string, value: number): void {
+    const name = seat.getDisplayName();
+    if (seat.rider?.name === "The Unseen") {
+      this.log(`${name} ${action} a threat card`, true, {
+        visibleTo: [seat.seatIndex],
+        hiddenMessage: `${name} ${action} threat card: ${value}`,
+      });
+    } else {
+      this.log(`${name} ${action} threat card: ${value}`, true);
+    }
+  }
+
   // ===== GAME API METHODS FOR CHARACTER SETUP/OBJECTIVES =====
 
   async choice(
@@ -217,7 +230,7 @@ export class Game {
     } while (exclude !== undefined && threatCard === exclude);
 
     seat.threatCard = threatCard;
-    this.log(`${seat.getDisplayName()} draws threat card: ${threatCard}`, true);
+    this.logThreatCard(seat, "draws", threatCard);
     this.notifyStateChange();
 
     if (this.allowThreatRedraw && this.threatDeck.length > 0) {
@@ -244,10 +257,7 @@ export class Game {
           newCard = this.threatDeck.shift()!;
         } while (exclude !== undefined && newCard === exclude);
         seat.threatCard = newCard;
-        this.log(
-          `${seat.getDisplayName()} redraws threat card: ${newCard}`,
-          true
-        );
+        this.logThreatCard(seat, "redraws", newCard);
         this.notifyStateChange();
       }
     }
@@ -281,10 +291,7 @@ export class Game {
     }
 
     seat.threatCard = choice.value;
-    this.log(
-      `${seat.getDisplayName()} chooses threat card: ${choice.value}`,
-      true
-    );
+    this.logThreatCard(seat, "chooses", choice.value);
     this.notifyStateChange();
   }
 
@@ -1046,10 +1053,22 @@ async function runRiderAssignment(gameState: Game): Promise<void> {
     throw new Error("Frodo seat not found for rider assignment");
   }
 
-  const eligibleSeats = gameState.seats.map((seat) => seat.seatIndex);
-
   const rider = gameState.drawnRider;
   const riderText = rider?.objective.text ?? "";
+
+  // The Unseen prefers characters that draw threat cards.
+  // In short games (no skip), fall back to all seats if none qualify
+  // (assignment will cause immediate failure).
+  const preferredSeats = gameState.seats
+    .filter(
+      (seat) =>
+        rider.name !== "The Unseen" || seat.character?.drawsThreatCard === true
+    )
+    .map((seat) => seat.seatIndex);
+  const eligibleSeats =
+    preferredSeats.length > 0 || gameState.riderAllowSkip
+      ? preferredSeats
+      : gameState.seats.map((seat) => seat.seatIndex);
 
   const options: {
     forSeat: number;

@@ -4,6 +4,7 @@ import { achieveBoth, achieveCard } from "../../objectives";
 
 export const SamBurdened: CharacterDefinition = {
   name: "Sam (Burdened)",
+  drawsThreatCard: true,
   setupText: "Draw a threat card (no exchange)",
 
   setup: async (game, seat) => {

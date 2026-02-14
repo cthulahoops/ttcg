@@ -7,6 +7,7 @@ import { LegolasBurdened } from "./burdened/legolas";
 export const Legolas: CharacterDefinition = {
   name: "Legolas",
   burdened: LegolasBurdened,
+  drawsThreatCard: true,
   setupText: "Draw a Forests threat card, then exchange with Gimli or Aragorn",
 
   setup: async (game, seat, setupContext) => {

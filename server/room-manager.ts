@@ -13,6 +13,7 @@ import {
   characterRegistry,
 } from "../shared/characters/registry.js";
 import { allRiders } from "../shared/riders/registry.js";
+import { TheUnseen } from "../shared/riders/the-unseen.js";
 import type { CharacterDefinition } from "../shared/characters/registry.js";
 import type { LongGameState } from "../shared/long-game.js";
 import { toLongGameProgress } from "../shared/long-game.js";
@@ -461,7 +462,15 @@ export class RoomManager {
           game.riderAllowSkip = false;
         }
       } else {
-        const shuffledRiders = shuffleDeck([...allRiders]);
+        const hasThreatCardCharacter = game.availableCharacters.some(
+          (c) => c.drawsThreatCard
+        );
+        const eligibleRiders = allRiders.filter((r) => {
+          if (playerCount === 1 && r === TheUnseen) return false;
+          if (r.name === "The Unseen" && !hasThreatCardCharacter) return false;
+          return true;
+        });
+        const shuffledRiders = shuffleDeck([...eligibleRiders]);
         game.drawnRider = shuffledRiders[0] ?? null;
         game.riderAllowSkip = false;
       }
