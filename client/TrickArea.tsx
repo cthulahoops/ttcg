@@ -1,5 +1,6 @@
 import { Card } from "./Card";
 import type { SerializedGame, SerializedTrickPlay } from "@shared/serialized";
+import { seatLabel } from "@shared/seat-label";
 
 type TrickAreaProps = {
   game: SerializedGame;
@@ -41,10 +42,9 @@ export function TrickArea({ game }: TrickAreaProps) {
       <div className="trick-cards">
         {displayTrick.plays.map((play, idx) => {
           const seat = game.seats[play.seatIndex];
-          const name =
-            seat?.character ??
-            seat?.playerName ??
-            `Player ${play.seatIndex + 1}`;
+          const name = seat
+            ? seatLabel(seat, game.playerCount)
+            : `Seat ${play.seatIndex + 1}`;
           const isWinner =
             isCompleted && displayTrick.winner === play.seatIndex;
 

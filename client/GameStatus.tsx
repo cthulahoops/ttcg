@@ -1,4 +1,5 @@
 import type { SerializedGame, SerializedSeat } from "@shared/serialized";
+import { seatLabel } from "@shared/seat-label";
 
 type GameStatusProps = {
   game: SerializedGame;
@@ -11,7 +12,11 @@ export function GameStatus({ game }: GameStatusProps) {
   if (game.currentDecisionStatus) {
     const { seatIndex, message } = game.currentDecisionStatus;
     const actorLabel =
-      seatIndex !== undefined ? getActorLabel(game.seats[seatIndex]) : null;
+      seatIndex !== undefined
+        ? game.seats[seatIndex]
+          ? seatLabel(game.seats[seatIndex], game.playerCount)
+          : "Unknown seat"
+        : null;
     return (
       <div className="game-status">
         {actorLabel ? `${actorLabel} is ${message}` : `A player is ${message}`}
@@ -20,13 +25,8 @@ export function GameStatus({ game }: GameStatusProps) {
   }
 
   // Default: show player's turn
-  const playerName = seat.character ?? `Seat ${game.currentPlayer + 1}`;
+  const playerName = seatLabel(seat, game.playerCount);
   return <div className="game-status">{playerName}'s turn</div>;
-}
-
-function getActorLabel(seat?: SerializedSeat): string {
-  if (!seat) return "Unknown seat";
-  return seat.character ?? `Seat ${seat.seatIndex + 1}`;
 }
 
 export function GameOverStatus({
@@ -51,7 +51,11 @@ export function GameOverStatus({
   return (
     <div className="game-status defeat">
       <div>Defeat</div>
-      <FailedObjectives failedSeats={failedSeats} failedRiders={failedRiders} />
+      <FailedObjectives
+        failedSeats={failedSeats}
+        failedRiders={failedRiders}
+        playerCount={game.playerCount}
+      />
     </div>
   );
 }
@@ -59,15 +63,17 @@ export function GameOverStatus({
 function FailedObjectives({
   failedSeats,
   failedRiders,
+  playerCount,
 }: {
   failedSeats: SerializedSeat[];
   failedRiders: SerializedSeat[];
+  playerCount: number;
 }) {
   return (
     <div className="failed-objectives">
       {failedSeats.map((seat) => (
         <div key={seat.seatIndex} className="failed-objective">
-          {seat.character ?? "Unknown"}: {seat.objective}
+          {seatLabel(seat, playerCount)}: {seat.objective}
         </div>
       ))}
       {failedRiders.map((seat) => (

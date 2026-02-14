@@ -28,10 +28,14 @@ export const Shadowfax: CharacterDefinition = {
     seat.hand.removeCard(cardToSetAside);
     seat.asideCard = cardToSetAside;
 
-    game.log(`${seat.getDisplayName()} sets a card aside`, false, {
-      visibleTo: [seat.seatIndex],
-      hiddenMessage: `${seat.getDisplayName()} sets a card aside`,
-    });
+    game.log(
+      `${seat.getDisplayName(game.playerCount)} sets a card aside`,
+      false,
+      {
+        visibleTo: [seat.seatIndex],
+        hiddenMessage: `${seat.getDisplayName(game.playerCount)} sets a card aside`,
+      }
+    );
     game.notifyStateChange();
   },
 

@@ -7,6 +7,7 @@ import type {
   GamePhase,
   ObjectiveStatus,
 } from "@shared/types";
+import { seatLabel } from "@shared/seat-label";
 import { Hand } from "./Hand";
 import { Card } from "./Card";
 
@@ -209,9 +210,9 @@ export function PlayerSeat({
           {selectSeatDecision?.buttonTemplate
             ? selectSeatDecision.buttonTemplate.replace(
                 "{seat}",
-                character ?? `Seat ${seatIndex + 1}`
+                seatLabel(seat, playerCount)
               )
-            : (character ?? `Seat ${seatIndex + 1}`)}
+            : seatLabel(seat, playerCount)}
         </button>
       )}
 

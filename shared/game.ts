@@ -154,7 +154,7 @@ export class Game {
     if (shouldTake) {
       seat.hand.addCard(this.lostCard);
       this.lostCard = null;
-      this.log(`${seat.getDisplayName()} takes the lost card`);
+      this.log(`${seat.getDisplayName(this.playerCount)} takes the lost card`);
       this.notifyStateChange();
     }
   }
@@ -181,7 +181,9 @@ export class Game {
     seat.hand.addCard(this.lostCard);
     this.lostCard = cardToGive;
 
-    this.log(`${seat.getDisplayName()} exchanges with the lost card`);
+    this.log(
+      `${seat.getDisplayName(this.playerCount)} exchanges with the lost card`
+    );
 
     if (this.playerCount === 1) {
       setupContext.exchangeMade = true;
@@ -191,7 +193,9 @@ export class Game {
   }
 
   revealHand(seat: Seat): void {
-    this.log(`${seat.getDisplayName()}'s hand is now visible to all players`);
+    this.log(
+      `${seat.getDisplayName(this.playerCount)}'s hand is now visible to all players`
+    );
     seat.hand.reveal();
     this.notifyStateChange();
   }
@@ -201,7 +205,9 @@ export class Game {
     options: { exclude?: number } = {}
   ): Promise<void> {
     if (this.threatDeck.length === 0) {
-      this.log(`${seat.getDisplayName()} - No threat cards remaining!`);
+      this.log(
+        `${seat.getDisplayName(this.playerCount)} - No threat cards remaining!`
+      );
       throw new Error("Threat deck is empty!");
     }
 
@@ -210,20 +216,25 @@ export class Game {
 
     do {
       if (this.threatDeck.length === 0) {
-        this.log(`${seat.getDisplayName()} - No valid threat cards remaining!`);
+        this.log(
+          `${seat.getDisplayName(this.playerCount)} - No valid threat cards remaining!`
+        );
         throw new Error("Threat deck is empty!");
       }
       threatCard = this.threatDeck.shift()!;
     } while (exclude !== undefined && threatCard === exclude);
 
     seat.threatCard = threatCard;
-    this.log(`${seat.getDisplayName()} draws threat card: ${threatCard}`, true);
+    this.log(
+      `${seat.getDisplayName(this.playerCount)} draws threat card: ${threatCard}`,
+      true
+    );
     this.notifyStateChange();
 
     if (this.allowThreatRedraw && this.threatDeck.length > 0) {
       const choice = await seat.controller.chooseButton(
         {
-          title: `${seat.getDisplayName()} - Threat Card Drawn`,
+          title: `${seat.getDisplayName(this.playerCount)} - Threat Card Drawn`,
           message: `You drew threat card ${threatCard}. Keep or redraw?`,
           buttons: [
             { label: "Keep", value: "keep" },
@@ -245,7 +256,7 @@ export class Game {
         } while (exclude !== undefined && newCard === exclude);
         seat.threatCard = newCard;
         this.log(
-          `${seat.getDisplayName()} redraws threat card: ${newCard}`,
+          `${seat.getDisplayName(this.playerCount)} redraws threat card: ${newCard}`,
           true
         );
         this.notifyStateChange();
@@ -255,7 +266,9 @@ export class Game {
 
   async chooseThreatCard(seat: Seat): Promise<void> {
     if (this.threatDeck.length === 0) {
-      this.log(`${seat.getDisplayName()} - No threat cards available!`);
+      this.log(
+        `${seat.getDisplayName(this.playerCount)} - No threat cards available!`
+      );
       throw new Error("Threat deck is empty!");
     }
 
@@ -282,7 +295,7 @@ export class Game {
 
     seat.threatCard = choice.value;
     this.log(
-      `${seat.getDisplayName()} chooses threat card: ${choice.value}`,
+      `${seat.getDisplayName(this.playerCount)} chooses threat card: ${choice.value}`,
       true
     );
     this.notifyStateChange();
@@ -367,7 +380,7 @@ export class Game {
         )
       : availableFrom;
 
-    let messageFrom = `Choose a card to give to ${targetSeat.getDisplayName()}`;
+    let messageFrom = `Choose a card to give to ${targetSeat.getDisplayName(this.playerCount)}`;
     if (isFrodoFrom) {
       messageFrom += " (Frodo cannot give away the 1 of Rings)";
     }
@@ -395,7 +408,7 @@ export class Game {
     // Include the received card in the choices (can return it if desired)
     const choicesForSecond = [...playableTo, cardFromFirst];
 
-    let messageTo = `You received ${cardFromFirst.value} of ${cardFromFirst.suit}. Choose a card to give to ${seat.getDisplayName()}`;
+    let messageTo = `You received ${cardFromFirst.value} of ${cardFromFirst.suit}. Choose a card to give to ${seat.getDisplayName(this.playerCount)}`;
     if (isFrodoTo) {
       messageTo += " (Frodo cannot give away the 1 of Rings)";
     }
@@ -427,7 +440,7 @@ export class Game {
 
     if (sameCard) {
       this.log(
-        `${toSeat.getDisplayName()} returns the card to ${fromSeat.getDisplayName()}`
+        `${toSeat.getDisplayName(this.playerCount)} returns the card to ${fromSeat.getDisplayName(this.playerCount)}`
       );
       return;
     }
@@ -440,19 +453,19 @@ export class Game {
 
     const participants = [fromSeat.seatIndex, toSeat.seatIndex];
     this.log(
-      `${fromSeat.getDisplayName()} gives ${cardFromFirst.value} of ${cardFromFirst.suit} to ${toSeat.getDisplayName()}`,
+      `${fromSeat.getDisplayName(this.playerCount)} gives ${cardFromFirst.value} of ${cardFromFirst.suit} to ${toSeat.getDisplayName(this.playerCount)}`,
       false,
       {
         visibleTo: participants,
-        hiddenMessage: `${fromSeat.getDisplayName()} gives a card to ${toSeat.getDisplayName()}`,
+        hiddenMessage: `${fromSeat.getDisplayName(this.playerCount)} gives a card to ${toSeat.getDisplayName(this.playerCount)}`,
       }
     );
     this.log(
-      `${toSeat.getDisplayName()} gives ${cardFromSecond.value} of ${cardFromSecond.suit} to ${fromSeat.getDisplayName()}`,
+      `${toSeat.getDisplayName(this.playerCount)} gives ${cardFromSecond.value} of ${cardFromSecond.suit} to ${fromSeat.getDisplayName(this.playerCount)}`,
       false,
       {
         visibleTo: participants,
-        hiddenMessage: `${toSeat.getDisplayName()} gives a card to ${fromSeat.getDisplayName()}`,
+        hiddenMessage: `${toSeat.getDisplayName(this.playerCount)} gives a card to ${fromSeat.getDisplayName(this.playerCount)}`,
       }
     );
 
@@ -539,13 +552,15 @@ export class Game {
     const availableCards = fromSeat.hand.getAvailableCards();
 
     if (availableCards.length === 0) {
-      throw new Error(`${fromSeat.getDisplayName()} has no cards to give`);
+      throw new Error(
+        `${fromSeat.getDisplayName(this.playerCount)} has no cards to give`
+      );
     }
 
     const cardToGive = await fromSeat.controller.selectCard(
       sortHand(availableCards),
       {
-        message: `Choose a card to give to ${toSeat.getDisplayName()}`,
+        message: `Choose a card to give to ${toSeat.getDisplayName(this.playerCount)}`,
         forSeat: fromSeat.seatIndex,
       },
       "choosing a card to give"
@@ -555,11 +570,11 @@ export class Game {
     toSeat.hand.addCard(cardToGive);
 
     this.log(
-      `${fromSeat.getDisplayName()} gives ${cardToGive.value} of ${cardToGive.suit} to ${toSeat.getDisplayName()}`,
+      `${fromSeat.getDisplayName(this.playerCount)} gives ${cardToGive.value} of ${cardToGive.suit} to ${toSeat.getDisplayName(this.playerCount)}`,
       false,
       {
         visibleTo: [fromSeat.seatIndex, toSeat.seatIndex],
-        hiddenMessage: `${fromSeat.getDisplayName()} gives a card to ${toSeat.getDisplayName()}`,
+        hiddenMessage: `${fromSeat.getDisplayName(this.playerCount)} gives a card to ${toSeat.getDisplayName(this.playerCount)}`,
       }
     );
     this.notifyStateChange();
@@ -632,7 +647,7 @@ function getGameOverMessage(gameState: Game): string {
     const trickCount = seat.getTrickCount();
     const objectiveMet = checkObjective(gameState, seat);
 
-    const playerName = seat.getDisplayName();
+    const playerName = seat.getDisplayName(gameState.playerCount);
     const status = objectiveMet ? "✓ SUCCESS" : "✗ FAILED";
 
     results.push(`${playerName}: ${status} (${trickCount} tricks)`);
@@ -648,7 +663,9 @@ function getGameOverMessage(gameState: Game): string {
   if (objectiveWinners.length > 0) {
     const winnerNames = objectiveWinners.map((p) => {
       const seat = gameState.seats[p];
-      return seat ? seat.getDisplayName() : `Player ${p}`;
+      return seat
+        ? seat.getDisplayName(gameState.playerCount)
+        : `Seat ${p + 1}`;
     });
     message += `\n\nObjectives completed by: ${winnerNames.join(", ")}`;
   } else {
@@ -665,7 +682,7 @@ function checkForImpossibleObjectives(gameState: Game): void {
     if (!isObjectiveCompletable(gameState, seat)) {
       if (seat.character) {
         gameState.log(
-          `${seat.getDisplayName()}'s objective is now impossible!`,
+          `${seat.getDisplayName(gameState.playerCount)}'s objective is now impossible!`,
           true
         );
       }
@@ -744,7 +761,9 @@ async function playSelectedCard(
     isTrump: false,
   });
 
-  gameState.log(`${seat.getDisplayName()} plays ${card.value} of ${card.suit}`);
+  gameState.log(
+    `${seat.getDisplayName(gameState.playerCount)} plays ${card.value} of ${card.suit}`
+  );
 
   if (gameState.currentTrick.length === 1) {
     gameState.leadSuit = card.suit;
@@ -791,7 +810,9 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
 
       // Skip player if they have no cards (and no aside card to play)
       if (seat.hand.isEmpty() && !seat.asideCard) {
-        gameState.log(`${seat.getDisplayName()} passes (no cards)`);
+        gameState.log(
+          `${seat.getDisplayName(gameState.playerCount)} passes (no cards)`
+        );
         continue;
       }
 
@@ -861,7 +882,10 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
     gameState.currentTrickNumber++;
     gameState.lastTrickWinner = winnerIndex;
 
-    gameState.log(`${winnerSeat.getDisplayName()} wins the trick!`, true);
+    gameState.log(
+      `${winnerSeat.getDisplayName(gameState.playerCount)} wins the trick!`,
+      true
+    );
 
     for (const seat of gameState.seats) {
       seat.hand.onTrickComplete();
@@ -903,7 +927,7 @@ async function runTrickTakingPhase(gameState: Game): Promise<void> {
         if (nextLeader !== winnerIndex) {
           const chosenSeat = gameState.seats[nextLeader];
           gameState.log(
-            `${winnerSeat.getDisplayName()} chooses ${chosenSeat?.getDisplayName()} to lead the next trick.`
+            `${winnerSeat.getDisplayName(gameState.playerCount)} chooses ${chosenSeat?.getDisplayName(gameState.playerCount)} to lead the next trick.`
           );
         }
       }
@@ -949,7 +973,7 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
 
   const frodoCharacter = characterRegistry.get("Frodo")!;
   gameState.log(
-    `${frodoSeat.getDisplayName()} gets Frodo (has 1 of Rings)`,
+    `${frodoSeat.getDisplayName(gameState.playerCount)} gets Frodo (has 1 of Rings)`,
     true
   );
   frodoSeat.character = frodoCharacter;
@@ -985,7 +1009,7 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
     );
 
     gameState.log(
-      `Pyramid will be controlled by ${pyramidControllerSeat.getDisplayName()}`,
+      `Pyramid will be controlled by ${pyramidControllerSeat.getDisplayName(gameState.playerCount)}`,
       true
     );
     gameState.notifyStateChange();
@@ -1016,7 +1040,9 @@ async function runCharacterAssignment(gameState: Game): Promise<void> {
     if (!character) {
       throw new Error(`Unknown character: ${selectedName}`);
     }
-    gameState.log(`${seat.getDisplayName()} chose ${character.name}`);
+    gameState.log(
+      `${seat.getDisplayName(gameState.playerCount)} chose ${character.name}`
+    );
     seat.character = character;
     gameState.availableCharacters = gameState.availableCharacters.filter(
       (c) => c.name !== selectedName
@@ -1072,7 +1098,7 @@ async function runRiderAssignment(gameState: Game): Promise<void> {
 
   if (targetIndex === null) {
     gameState.log(
-      `${frodoSeat.getDisplayName()} skips assigning ${rider?.name}`,
+      `${frodoSeat.getDisplayName(gameState.playerCount)} skips assigning ${rider?.name}`,
       true
     );
     gameState.drawnRider = null;
@@ -1088,7 +1114,7 @@ async function runRiderAssignment(gameState: Game): Promise<void> {
   targetSeat.rider = rider;
 
   gameState.log(
-    `${frodoSeat.getDisplayName()} assigns ${rider?.name} to ${targetSeat.getDisplayName()}`,
+    `${frodoSeat.getDisplayName(gameState.playerCount)} assigns ${rider?.name} to ${targetSeat.getDisplayName(gameState.playerCount)}`,
     true
   );
 
