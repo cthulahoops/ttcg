@@ -53,7 +53,7 @@ describe("Boromir (Burdened)", () => {
 
     test("returns { final, success } when game finished, won last trick, no rings", () => {
       // Place all rings cards in other seats so seat 0 has none.
-      // 4 seatWonTrick specs → 5 remaining tricks → round-robin ends on seat 0 (trick 8).
+      // Explicitly assign all 9 tricks so the last trick (trick 8) goes to seat 0.
       const { game, seats } = new GameStateBuilder(4)
         .setCharacter(0, "Boromir (Burdened)")
         .seatWonTrick(1, [
@@ -65,7 +65,9 @@ describe("Boromir (Burdened)", () => {
         .seatWonTrick(2, [{ suit: "rings", value: 5 }])
         .seatWonTrick(3, [{ suit: "mountains", value: 2 }])
         .seatWonTrick(1, [{ suit: "mountains", value: 3 }])
-        .finishGame()
+        .seatWonTricks(2, 2)
+        .seatWonTricks(3, 2)
+        .seatWonTricks(0, 1) // seat 0 wins the last trick (trick 8)
         .build();
 
       expect(game.finished).toBe(true);
