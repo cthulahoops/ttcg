@@ -34,6 +34,16 @@ describe("seatLabel", () => {
     expect(seatLabel(seat, 4)).toBe("Taylor");
   });
 
+  test("returns controller player name for Seat in multiplayer before assignment", () => {
+    const seat = {
+      seatIndex: 1,
+      character: null,
+      controller: { playerName: "Morgan" },
+    } as Seat;
+
+    expect(seatLabel(seat, 4)).toBe("Morgan");
+  });
+
   test("falls back to Seat N in multiplayer when player name is missing", () => {
     const seat = {
       seatIndex: 3,

@@ -13,7 +13,9 @@ export function GameStatus({ game }: GameStatusProps) {
     const { seatIndex, message } = game.currentDecisionStatus;
     const actorLabel =
       seatIndex !== undefined
-        ? getActorLabel(game.seats[seatIndex], game.playerCount)
+        ? game.seats[seatIndex]
+          ? seatLabel(game.seats[seatIndex], game.playerCount)
+          : "Unknown seat"
         : null;
     return (
       <div className="game-status">
@@ -25,14 +27,6 @@ export function GameStatus({ game }: GameStatusProps) {
   // Default: show player's turn
   const playerName = seatLabel(seat, game.playerCount);
   return <div className="game-status">{playerName}'s turn</div>;
-}
-
-function getActorLabel(
-  seat: SerializedSeat | undefined,
-  playerCount: number
-): string {
-  if (!seat) return "Unknown seat";
-  return seatLabel(seat, playerCount);
 }
 
 export function GameOverStatus({
