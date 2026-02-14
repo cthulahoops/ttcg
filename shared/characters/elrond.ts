@@ -3,6 +3,7 @@ import type { Seat } from "../seat";
 import type { Game } from "../game";
 import type { CharacterDefinition } from "./types";
 import { achieveAtLeast, type ObjectivePossibilities } from "../objectives";
+import { seatLabel } from "../seat-label";
 
 /**
  * Counts how many seats can potentially win at least one ring card.
@@ -93,8 +94,8 @@ export const Elrond: CharacterDefinition = {
         return undefined; // All have rings - show nothing
       }
 
-      const names = seatsWithoutRings.map(
-        (s) => s.character?.name ?? `Seat ${s.seatIndex + 1}`
+      const names = seatsWithoutRings.map((s) =>
+        seatLabel(s, game.playerCount)
       );
 
       // Format: "Merry, Frodo, and Elrond yet to win rings"

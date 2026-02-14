@@ -11,7 +11,7 @@ export interface SelectCardOptions {
 
 export interface SelectSeatOptions {
   forSeat?: number;
-  buttonTemplate?: string; // Use {seat} placeholder for character name
+  buttonTemplate?: string; // Use {seat} placeholder for seat label
   skipLabel?: string; // If set, show a skip button with this label
 }
 

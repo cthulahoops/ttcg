@@ -7,6 +7,7 @@ import type { Card, ObjectiveStatus, Trick, Controller } from "./types";
 import type { CharacterDefinition } from "./characters/types";
 import type { RiderDefinition } from "./riders/types";
 import { achieveBoth } from "./objectives";
+import { seatLabel } from "./seat-label";
 
 export class Seat {
   seatIndex: number;
@@ -39,23 +40,8 @@ export class Seat {
   }
 
   // Display helper - encapsulates complex display logic
-  getDisplayName(): string {
-    if (this.character) {
-      if (this.isPyramid) {
-        return `${this.character.name} (Pyramid)`;
-      } else {
-        return this.character.name;
-      }
-    } else {
-      // Use player name if available, otherwise fall back to "Seat X"
-      const baseName =
-        this.controller.playerName ?? `Seat ${this.seatIndex + 1}`;
-      if (this.isPyramid) {
-        return `${baseName} (Pyramid)`;
-      } else {
-        return baseName;
-      }
-    }
+  getDisplayName(playerCount: number): string {
+    return seatLabel(this, playerCount);
   }
 
   addTrick(number: number, cards: Card[]): void {
