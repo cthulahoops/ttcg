@@ -202,17 +202,15 @@ export function PlayerSeat({
       )}
 
       {/* select_seat button */}
-      {isEligibleForSelect && (
+      {isEligibleForSelect && selectSeatDecision && (
         <button
           className="seat-select-btn"
           onClick={() => onRespond(seatIndex)}
         >
-          {selectSeatDecision?.buttonTemplate
-            ? selectSeatDecision.buttonTemplate.replace(
-                "{seat}",
-                seatLabel(seat, playerCount)
-              )
-            : seatLabel(seat, playerCount)}
+          {selectSeatDecision.buttonTemplate.replace(
+            "{seat}",
+            seatLabel(seat, playerCount)
+          )}
         </button>
       )}
 

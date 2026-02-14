@@ -80,7 +80,7 @@ export type DecisionRequest =
       seatIndex: number;
       message: string;
       eligibleSeats: number[];
-      buttonTemplate?: string; // Use {seat} placeholder for seat label
+      buttonTemplate: string; // Use {seat} placeholder for seat label
       skipLabel?: string;
       publicMessage: string;
     }
