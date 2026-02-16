@@ -589,10 +589,10 @@ export class RoomManager {
 
   /**
    * Ask all players if they want to continue the campaign. First response wins.
-   * Times out after 1 hour, defaulting to false.
+   * Times out after 1 week, defaulting to false.
    */
   private async askContinueCampaign(room: Room): Promise<boolean> {
-    const PLAY_AGAIN_TIMEOUT_MS = 60 * 60 * 1000; // 1 hour
+    const CONTINUE_CAMPAIGN_TIMEOUT_MS = 7 * 24 * 60 * 60 * 1000; // 1 week
 
     const completedCount = room.longGameState?.completedCharacters.length ?? 0;
     const totalCount = (room.longGameState?.characterPool.length ?? 1) - 1; // Exclude Frodo from count
@@ -618,7 +618,7 @@ export class RoomManager {
 
     // Timeout defaults to false
     const timeoutPromise = new Promise<boolean>((resolve) => {
-      setTimeout(() => resolve(false), PLAY_AGAIN_TIMEOUT_MS);
+      setTimeout(() => resolve(false), CONTINUE_CAMPAIGN_TIMEOUT_MS);
     });
 
     return Promise.race([...controllerPromises, timeoutPromise]);
