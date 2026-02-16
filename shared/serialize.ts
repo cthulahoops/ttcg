@@ -6,6 +6,7 @@
 import type { Game, TrickPlay, CompletedTrick } from "./game";
 import type { Seat } from "./seat";
 import type { Card } from "./types";
+import { isTheUnseen } from "./riders/the-unseen";
 import type {
   SerializedGame,
   SerializedSeat,
@@ -41,7 +42,16 @@ function serializeSeat(
     asideCard = isOwnSeat || handRevealed ? seat.asideCard : "hidden";
   }
 
-  const objectiveCards = seat.character?.objective.cards?.(game, seat);
+  // The Unseen: hide threat card and objective cards from other players
+  // until the character objective is at least tentatively successful.
+  const unseenHidden =
+    !isOwnSeat &&
+    isTheUnseen(seat.rider) &&
+    seat.character?.objective.getStatus(game, seat).outcome !== "success";
+
+  const objectiveCards = unseenHidden
+    ? undefined
+    : seat.character?.objective.cards?.(game, seat);
 
   // Rider fields
   const riderObjective =
@@ -56,7 +66,7 @@ function serializeSeat(
     playerName: seat.controller.playerName,
     character: seat.character?.name ?? null,
     setupText: seat.character?.setupText ?? null,
-    threatCard: seat.threatCard,
+    threatCard: unseenHidden ? null : seat.threatCard,
     tricksWon: seat.tricksWon,
     playedCards: seat.playedCards,
     objectiveStatus: seat.character?.objective.getStatus(game, seat),

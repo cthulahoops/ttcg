@@ -7,6 +7,7 @@ import { SamBurdened } from "./burdened/sam";
 export const Sam: CharacterDefinition = {
   name: "Sam",
   burdened: SamBurdened,
+  drawsThreatCard: true,
   setupText:
     "Draw a Hills threat card, then exchange with Frodo, Merry, or Pippin",
 

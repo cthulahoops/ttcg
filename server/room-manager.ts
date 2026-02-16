@@ -13,6 +13,7 @@ import {
   characterRegistry,
 } from "../shared/characters/registry.js";
 import { allRiders } from "../shared/riders/registry.js";
+import { TheUnseen } from "../shared/riders/the-unseen.js";
 import type { CharacterDefinition } from "../shared/characters/registry.js";
 import type { LongGameState } from "../shared/long-game.js";
 import { toLongGameProgress } from "../shared/long-game.js";
@@ -36,7 +37,25 @@ interface Room {
 
 // Long game helper functions
 
-function initializeLongGame(seatCount: number): LongGameState {
+function getEligibleRiders(
+  availableCharacters: CharacterDefinition[],
+  playerCount: number
+) {
+  const hasThreatCardCharacter = availableCharacters.some(
+    (c) => c.drawsThreatCard
+  );
+
+  return allRiders.filter((r) => {
+    if (playerCount === 1 && r === TheUnseen) return false;
+    if (r === TheUnseen && !hasThreatCardCharacter) return false;
+    return true;
+  });
+}
+
+function initializeLongGame(
+  seatCount: number,
+  playerCount: number
+): LongGameState {
   const frodo = characterRegistry.get("Frodo")!;
   const gandalf = characterRegistry.get("Gandalf")!;
 
@@ -66,12 +85,17 @@ function initializeLongGame(seatCount: number): LongGameState {
     pool.push(...shuffledExtras.slice(0, 6));
   }
 
+  const eligibleRiders = getEligibleRiders(pool, playerCount);
+  if (eligibleRiders.length === 0) {
+    throw new Error("No eligible riders available for long game campaign");
+  }
+
   return {
     characterPool: pool,
     completedCharacters: [],
     currentRound: 1,
     riderCompleted: false,
-    campaignRider: shuffleDeck([...allRiders])[0]!,
+    campaignRider: shuffleDeck([...eligibleRiders])[0]!,
   };
 }
 
@@ -364,7 +388,7 @@ export class RoomManager {
 
     // Initialize long game state if mode is "long"
     if (options?.mode === "long") {
-      room.longGameState = initializeLongGame(seatCount);
+      room.longGameState = initializeLongGame(seatCount, playerCount);
     }
 
     // Helper to get current long game progress
@@ -461,7 +485,11 @@ export class RoomManager {
           game.riderAllowSkip = false;
         }
       } else {
-        const shuffledRiders = shuffleDeck([...allRiders]);
+        const eligibleRiders = getEligibleRiders(
+          game.availableCharacters,
+          playerCount
+        );
+        const shuffledRiders = shuffleDeck([...eligibleRiders]);
         game.drawnRider = shuffledRiders[0] ?? null;
         game.riderAllowSkip = false;
       }
@@ -504,7 +532,7 @@ export class RoomManager {
           playAgain = await this.askPlayAgain(room, true);
           if (playAgain) {
             // Reset long game state for new campaign
-            room.longGameState = initializeLongGame(seatCount);
+            room.longGameState = initializeLongGame(seatCount, playerCount);
           }
         } else {
           // Continue campaign - increment round
