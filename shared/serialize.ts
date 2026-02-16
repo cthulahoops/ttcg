@@ -6,6 +6,7 @@
 import type { Game, TrickPlay, CompletedTrick } from "./game";
 import type { Seat } from "./seat";
 import type { Card } from "./types";
+import { isTheUnseen } from "./riders/the-unseen";
 import type {
   SerializedGame,
   SerializedSeat,
@@ -42,10 +43,10 @@ function serializeSeat(
   }
 
   // The Unseen: hide threat card and objective cards from other players
-  // until the character's objective is (tentatively) achieved
+  // until the character objective is at least tentatively successful.
   const unseenHidden =
     !isOwnSeat &&
-    seat.rider?.name === "The Unseen" &&
+    isTheUnseen(seat.rider) &&
     seat.character?.objective.getStatus(game, seat).outcome !== "success";
 
   const objectiveCards = unseenHidden

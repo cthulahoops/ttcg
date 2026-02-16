@@ -14,3 +14,9 @@ export const TheUnseen: RiderDefinition = {
     },
   },
 };
+
+export function isTheUnseen(
+  rider: RiderDefinition | null | undefined
+): boolean {
+  return rider === TheUnseen;
+}

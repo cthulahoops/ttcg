@@ -1093,8 +1093,7 @@ async function runRiderAssignment(gameState: Game): Promise<void> {
   // (assignment will cause immediate failure).
   const preferredSeats = gameState.seats
     .filter(
-      (seat) =>
-        rider.name !== "The Unseen" || seat.character?.drawsThreatCard === true
+      (seat) => !isTheUnseen(rider) || seat.character?.drawsThreatCard === true
     )
     .map((seat) => seat.seatIndex);
   const eligibleSeats =
