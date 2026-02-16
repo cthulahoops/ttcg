@@ -452,21 +452,27 @@ export class Game {
     toSeat.hand.addCard(cardFromFirst);
 
     const participants = [fromSeat.seatIndex, toSeat.seatIndex];
+    const hideCardIdentity =
+      !fromSeat.hand.isRevealed() && !toSeat.hand.isRevealed();
     this.log(
       `${fromSeat.getDisplayName(this.playerCount)} gives ${cardFromFirst.value} of ${cardFromFirst.suit} to ${toSeat.getDisplayName(this.playerCount)}`,
       false,
-      {
-        visibleTo: participants,
-        hiddenMessage: `${fromSeat.getDisplayName(this.playerCount)} gives a card to ${toSeat.getDisplayName(this.playerCount)}`,
-      }
+      hideCardIdentity
+        ? {
+            visibleTo: participants,
+            hiddenMessage: `${fromSeat.getDisplayName(this.playerCount)} gives a card to ${toSeat.getDisplayName(this.playerCount)}`,
+          }
+        : undefined
     );
     this.log(
       `${toSeat.getDisplayName(this.playerCount)} gives ${cardFromSecond.value} of ${cardFromSecond.suit} to ${fromSeat.getDisplayName(this.playerCount)}`,
       false,
-      {
-        visibleTo: participants,
-        hiddenMessage: `${toSeat.getDisplayName(this.playerCount)} gives a card to ${fromSeat.getDisplayName(this.playerCount)}`,
-      }
+      hideCardIdentity
+        ? {
+            visibleTo: participants,
+            hiddenMessage: `${toSeat.getDisplayName(this.playerCount)} gives a card to ${fromSeat.getDisplayName(this.playerCount)}`,
+          }
+        : undefined
     );
 
     if (this.playerCount === 1) {
@@ -572,10 +578,12 @@ export class Game {
     this.log(
       `${fromSeat.getDisplayName(this.playerCount)} gives ${cardToGive.value} of ${cardToGive.suit} to ${toSeat.getDisplayName(this.playerCount)}`,
       false,
-      {
-        visibleTo: [fromSeat.seatIndex, toSeat.seatIndex],
-        hiddenMessage: `${fromSeat.getDisplayName(this.playerCount)} gives a card to ${toSeat.getDisplayName(this.playerCount)}`,
-      }
+      !fromSeat.hand.isRevealed() && !toSeat.hand.isRevealed()
+        ? {
+            visibleTo: [fromSeat.seatIndex, toSeat.seatIndex],
+            hiddenMessage: `${fromSeat.getDisplayName(this.playerCount)} gives a card to ${toSeat.getDisplayName(this.playerCount)}`,
+          }
+        : undefined
     );
     this.notifyStateChange();
   }
