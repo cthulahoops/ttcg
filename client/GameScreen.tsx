@@ -53,6 +53,9 @@ export function GameScreen({
   const isSelectSeat = decision?.type === "select_seat";
   const isTopLevelDialog =
     pendingDecision && decisionSeatIndex === undefined && !isSelectCharacter;
+  const assignSeatIndex =
+    decisionSeatIndex !== undefined ? decisionSeatIndex : game.viewerSeat;
+  const assignLabel = `ASSIGN TO SEAT ${assignSeatIndex + 1}`;
 
   // Use decision seatIndex for active highlighting when available
   // No active highlighting during gameover
@@ -87,6 +90,8 @@ export function GameScreen({
 
       <AvailableCharacters
         characters={game.availableCharacters}
+        completedCharacters={game.longGameProgress?.completedCharacters}
+        assignLabel={assignLabel}
         selectCharacterDecision={isSelectCharacter ? decision : undefined}
         onRespond={handleRespond}
       />

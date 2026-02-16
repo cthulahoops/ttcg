@@ -2,6 +2,7 @@
 import { ClientMessage, ServerMessage, GameOptions } from "@shared/protocol";
 import { RoomManager } from "./room-manager.js";
 import { NetworkController } from "./controllers.js";
+import { toLongGameProgress } from "@shared/long-game";
 import type { ServerWebSocket } from "bun";
 
 // WebSocket data type
@@ -74,7 +75,10 @@ function handleJoinRoom(
         console.log(
           `[JoinRoom] Player ${playerId} is in seat ${seat.seatIndex}`
         );
-        seat.controller.sendGameState(room.game, seat);
+        const longGameProgress = room.longGameState
+          ? toLongGameProgress(room.longGameState)
+          : undefined;
+        seat.controller.sendGameState(room.game, seat, longGameProgress);
         seat.controller.resendPendingRequests();
       }
     }
