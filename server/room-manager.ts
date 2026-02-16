@@ -265,6 +265,10 @@ export class RoomManager {
     const player = room.players.get(playerId);
     const playerName = player?.name || "";
 
+    if (room.started) {
+      throw new Error("Cannot leave room during an active game");
+    }
+
     // Remove player from room
     room.players.delete(playerId);
     this.socketToPlayer.delete(socketId);

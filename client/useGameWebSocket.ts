@@ -18,6 +18,16 @@ type WebSocketOptions = {
   onConnect?: (send: (msg: ClientMessage) => void) => void;
 };
 
+export function shouldScheduleReconnect({
+  isCurrentSocket,
+  shouldReconnect,
+}: {
+  isCurrentSocket: boolean;
+  shouldReconnect: boolean;
+}): boolean {
+  return isCurrentSocket && shouldReconnect;
+}
+
 export function useGameWebSocket(options: WebSocketOptions = {}) {
   const { onConnect } = options;
   const [state, dispatch] = useReducer(clientReducer, initialClientState);
@@ -27,13 +37,18 @@ export function useGameWebSocket(options: WebSocketOptions = {}) {
     null
   );
   const reconnectAttemptRef = useRef(0);
+  const shouldReconnectRef = useRef(true);
   const onConnectRef = useRef(onConnect);
   useEffect(() => {
     onConnectRef.current = onConnect;
   }, [onConnect]);
 
   useEffect(() => {
+    shouldReconnectRef.current = true;
+
     function connect() {
+      if (!shouldReconnectRef.current) return;
+
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       const wsUrl = `${protocol}//${window.location.host.replace(":5173", ":3000")}`;
 
@@ -59,7 +74,14 @@ export function useGameWebSocket(options: WebSocketOptions = {}) {
       };
 
       ws.onclose = () => {
-        if (wsRef.current !== ws) return; // Stale guard
+        if (
+          !shouldScheduleReconnect({
+            isCurrentSocket: wsRef.current === ws,
+            shouldReconnect: shouldReconnectRef.current,
+          })
+        ) {
+          return;
+        }
         console.warn("WebSocket closed");
 
         // Reconnect with exponential backoff (max 10 seconds)
@@ -78,10 +100,14 @@ export function useGameWebSocket(options: WebSocketOptions = {}) {
     connect();
 
     return () => {
+      shouldReconnectRef.current = false;
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
-      wsRef.current?.close();
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
     };
   }, []);
 
