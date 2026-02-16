@@ -8,6 +8,7 @@ import { DecisionDialog } from "./DecisionDialog";
 import { AvailableCharacters } from "./AvailableCharacters";
 import { LongGameProgress } from "./LongGameProgress";
 import { GameOverOverlay } from "./GameOverOverlay";
+import { seatLabel } from "@shared/seat-label";
 
 type GameScreenProps = {
   game: SerializedGame;
@@ -55,7 +56,7 @@ export function GameScreen({
     pendingDecision && decisionSeatIndex === undefined && !isSelectCharacter;
   const assignSeatIndex =
     decisionSeatIndex !== undefined ? decisionSeatIndex : game.viewerSeat;
-  const assignLabel = `ASSIGN TO SEAT ${assignSeatIndex + 1}`;
+  const assignLabel = `Assign to ${seatLabel(game.seats[assignSeatIndex]!, game.playerCount)}`;
 
   // Use decision seatIndex for active highlighting when available
   // No active highlighting during gameover
