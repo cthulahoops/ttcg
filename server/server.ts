@@ -104,23 +104,31 @@ function handleJoinRoom(
 
 function handleLeaveRoom(ws: ServerWebSocket<WSData>) {
   const socketId = ws.data.socketId;
-  const result = roomManager.leaveRoom(socketId);
+  try {
+    const result = roomManager.leaveRoom(socketId);
 
-  if (result) {
-    const { roomCode, playerName } = result;
-    // Broadcast to remaining players
-    const leftReply: ServerMessage = {
-      type: "room_left",
-      roomCode,
-      playerName,
-    };
-    ws.send(JSON.stringify(leftReply));
+    if (result) {
+      const { roomCode, playerName } = result;
+      // Broadcast to remaining players
+      const leftReply: ServerMessage = {
+        type: "room_left",
+        roomCode,
+        playerName,
+      };
+      ws.send(JSON.stringify(leftReply));
 
-    const leftMsg: ServerMessage = {
-      type: "player_left",
-      playerName,
+      const leftMsg: ServerMessage = {
+        type: "player_left",
+        playerName,
+      };
+      broadcastToRoom(roomCode, leftMsg);
+    }
+  } catch (error) {
+    const errorMsg: ServerMessage = {
+      type: "error",
+      message: error instanceof Error ? error.message : "Failed to leave room",
     };
-    broadcastToRoom(roomCode, leftMsg);
+    ws.send(JSON.stringify(errorMsg));
   }
 }
 
