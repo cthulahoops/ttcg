@@ -353,12 +353,12 @@ button:hover {
 
 .game-status.victory {
   font-size: var(--font-size-xl);
-  color: #2a6a30;
+  color: var(--color-success);
 }
 
 .game-status.defeat {
   font-size: var(--font-size-xl);
-  color: #9a2828;
+  color: var(--color-error);
 }
 
 .failed-objectives {
@@ -393,15 +393,15 @@ button:hover {
 }
 
 .success {
-  color: #2a6a30;
+  color: var(--color-success);
 }
 
 .error {
-  color: #9a2828;
+  color: var(--color-error);
 }
 
 .impossible {
-  color: #9a2828;
+  color: var(--color-error);
 }
 
 .pending {
@@ -765,6 +765,9 @@ button:hover {
 }
 
 .character-name {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
   font-family: "Cinzel", serif;
   font-weight: 700;
   color: var(--color-accent);
@@ -772,6 +775,11 @@ button:hover {
   margin-bottom: var(--space-xs);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+}
+
+.character-completed-tick {
+  color: var(--color-success);
+  font-weight: 800;
 }
 
 .character-objective,

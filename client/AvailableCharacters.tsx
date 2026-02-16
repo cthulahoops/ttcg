@@ -8,12 +8,14 @@ type CharacterInfo = {
 
 type AvailableCharactersProps = {
   characters: CharacterInfo[];
+  completedCharacters?: string[];
   selectCharacterDecision?: DecisionRequest & { type: "select_character" };
   onRespond?: (response: unknown) => void;
 };
 
 export function AvailableCharacters({
   characters,
+  completedCharacters = [],
   selectCharacterDecision,
   onRespond,
 }: AvailableCharactersProps) {
@@ -23,6 +25,7 @@ export function AvailableCharacters({
 
   const isClickable =
     selectCharacterDecision?.type === "select_character" && onRespond;
+  const completedSet = new Set(completedCharacters);
 
   return (
     <section className="available-characters">
@@ -34,7 +37,12 @@ export function AvailableCharacters({
             className={`character-card ${isClickable ? "clickable" : ""}`}
             onClick={isClickable ? () => onRespond(char.name) : undefined}
           >
-            <div className="character-name">{char.name}</div>
+            <div className="character-name">
+              {completedSet.has(char.name) && (
+                <span className="character-completed-tick">✓</span>
+              )}
+              {char.name}
+            </div>
             <div className="character-objective">
               <strong>Objective:</strong> {char.objective}
             </div>

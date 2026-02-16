@@ -87,6 +87,7 @@ export function GameScreen({
 
       <AvailableCharacters
         characters={game.availableCharacters}
+        completedCharacters={game.longGameProgress?.completedCharacters}
         selectCharacterDecision={isSelectCharacter ? decision : undefined}
         onRespond={handleRespond}
       />
