@@ -9,6 +9,7 @@ type CharacterInfo = {
 type AvailableCharactersProps = {
   characters: CharacterInfo[];
   completedCharacters?: string[];
+  assignLabel?: string;
   selectCharacterDecision?: DecisionRequest & { type: "select_character" };
   onRespond?: (response: unknown) => void;
 };
@@ -16,6 +17,7 @@ type AvailableCharactersProps = {
 export function AvailableCharacters({
   characters,
   completedCharacters = [],
+  assignLabel = "Assign",
   selectCharacterDecision,
   onRespond,
 }: AvailableCharactersProps) {
@@ -23,7 +25,7 @@ export function AvailableCharacters({
     return null;
   }
 
-  const isClickable =
+  const isSelectingCharacter =
     selectCharacterDecision?.type === "select_character" && onRespond;
   const completedSet = new Set(completedCharacters);
 
@@ -32,11 +34,7 @@ export function AvailableCharacters({
       <h3>Available Characters</h3>
       <div className="character-list">
         {characters.map((char) => (
-          <div
-            key={char.name}
-            className={`character-card ${isClickable ? "clickable" : ""}`}
-            onClick={isClickable ? () => onRespond(char.name) : undefined}
-          >
+          <div key={char.name} className="character-card">
             <div className="character-name">
               {completedSet.has(char.name) && (
                 <span className="character-completed-tick">✓</span>
@@ -49,6 +47,15 @@ export function AvailableCharacters({
             <div className="character-setup">
               <strong>Setup:</strong> {char.setupText}
             </div>
+            {isSelectingCharacter && (
+              <button
+                type="button"
+                className="primary-btn assign-character-btn"
+                onClick={() => onRespond(char.name)}
+              >
+                {assignLabel}
+              </button>
+            )}
           </div>
         ))}
       </div>

@@ -741,8 +741,22 @@ button:hover {
 }
 
 .character-card {
+  display: flex;
+  flex-direction: column;
   background: rgba(234, 230, 220, 0.95);
   padding: var(--space-md);
+}
+
+.assign-character-btn {
+  margin-top: auto;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.character-setup {
+  margin-top: var(--space-sm);
 }
 
 /* Only use N columns if item count is divisible by N (fills rows completely) */
@@ -953,22 +967,6 @@ button:hover {
   padding: var(--space-xs) var(--space-md);
   font-size: var(--font-size-sm);
   margin: var(--space-xs) 0;
-}
-
-/* Clickable character cards during assignment */
-.character-card.clickable {
-  cursor: pointer;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
-  border: 2px solid transparent;
-}
-
-@media (hover: hover) {
-  .character-card.clickable:hover {
-    border-color: var(--color-accent);
-    box-shadow: 0 0 10px rgba(154, 92, 0, 0.15);
-  }
 }
 
 /* ===========================================
